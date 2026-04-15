@@ -25,8 +25,12 @@ export const requireRole = (...allowedRoles: string[]) => {
   return async (ctx: Context, next: Next) => {
     const role = ctx.get('role') as string;
 
-    if (!role || !allowedRoles.includes(role)) {
-      return ctx.json(`Access denied. Required role: ${allowedRoles}`, 401);
+    if (!role) {
+      return ctx.json({ err: 'Unauthorized' }, 401);
+    }
+
+    if (!allowedRoles.includes(role)) {
+      return ctx.json({ err: 'Forbidden: Insufficient permissions' }, 403);
     }
 
     await next();
