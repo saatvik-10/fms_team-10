@@ -6,7 +6,7 @@ const authRoute = new Hono();
 const controller = new Auth();
 
 authRoute.post('/super-admin/login', controller.login);
-authRoute.post('/managers', proxyAuth, requireRole('SUPER_ADMIN'), controller.createManager);
+authRoute.post('/manager', proxyAuth, requireRole('SUPER_ADMIN'), controller.createManager);
 authRoute.get('/me', proxyAuth, controller.getMe);
 
 export default authRoute;
