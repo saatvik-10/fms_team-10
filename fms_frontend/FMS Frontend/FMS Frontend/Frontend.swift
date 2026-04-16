@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct FMS_FrontendApp: App {
+struct Frontend: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
