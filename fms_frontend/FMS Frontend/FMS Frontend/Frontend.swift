@@ -6,12 +6,18 @@
 //
 
 import SwiftUI
+import GoogleMaps
 
 @main
-struct FMS_FrontendApp: App {
+struct Frontend: App {
+    
+    init() {
+          GMSServices.provideAPIKey("AIzaSyDlMQm7FBZik7fIYAI6RdY21HmCpMjn5yM")
+      }
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+           ContentView()
         }
     }
 }
