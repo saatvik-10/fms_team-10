@@ -1,0 +1,4 @@
+//
+//  GeofencingViewModel.swift
+//  FMS Frontend
+//
