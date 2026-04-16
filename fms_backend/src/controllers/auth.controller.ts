@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import { loginSchema, createManagerSchema } from '../validators/auth.validator';
+import { loginSchema, managerLoginSchema } from '../validators/auth.validator';
 import { jwtAuth } from '../lib/jwt';
 import { prisma } from '../../prisma';
 import { comparePassword, hashPassword } from '../lib/hashPassword';
@@ -8,7 +8,7 @@ const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL;
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
 
 export class Auth {
-  async login(c: Context) {
+  async signin(c: Context) {
     const body = await c.req.json();
     const result = loginSchema.safeParse(body);
 
@@ -18,36 +18,34 @@ export class Auth {
 
     const { email, password } = result.data;
 
-    let user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      const isDefaultSuperAdminLogin =
-        email === SUPER_ADMIN_EMAIL && password === SUPER_ADMIN_PASSWORD;
-
-      if (!isDefaultSuperAdminLogin) {
-        return c.json({ err: 'Invalid super admin credentials' }, 401);
-      }
-
-      const passwordHash = await hashPassword(SUPER_ADMIN_PASSWORD);
-      user = await prisma.user.create({
-        data: {
-          email: SUPER_ADMIN_EMAIL,
-          passwordHash,
-          role: 'SUPER_ADMIN',
-        },
-      });
+    if (!SUPER_ADMIN_EMAIL || !SUPER_ADMIN_PASSWORD) {
+      return c.json(
+        { err: 'Super admin env credentials are not configured' },
+        500,
+      );
     }
 
-    if (user.role !== 'SUPER_ADMIN' || !user.passwordHash || !user.email) {
+    const isEnvCredentialMatch =
+      email === SUPER_ADMIN_EMAIL && password === SUPER_ADMIN_PASSWORD;
+
+    if (!isEnvCredentialMatch) {
       return c.json({ err: 'Invalid super admin credentials' }, 401);
     }
 
-    const isPasswordValid = await comparePassword(password, user.passwordHash);
-    if (!isPasswordValid) {
-      return c.json({ err: 'Invalid credentials' }, 401);
-    }
+    const passwordHash = await hashPassword(SUPER_ADMIN_PASSWORD);
+
+    const user = await prisma.user.upsert({
+      where: { email: SUPER_ADMIN_EMAIL },
+      create: {
+        email: SUPER_ADMIN_EMAIL,
+        passwordHash,
+        role: 'SUPER_ADMIN',
+      },
+      update: {
+        passwordHash,
+        role: 'SUPER_ADMIN',
+      },
+    });
 
     const token = await jwtAuth({
       userId: user.id,
@@ -64,54 +62,40 @@ export class Auth {
     });
   }
 
-  async createManager(c: Context) {
+  async managerSignin(c: Context) {
     const body = await c.req.json();
-    const result = createManagerSchema.safeParse(body);
+    const result = managerLoginSchema.safeParse(body);
 
     if (!result.success) {
-      return c.json(
-        { err: 'Invalid input', details: result.error.flatten() },
-        400,
-      );
+      return c.json({ err: 'Invalid input' }, 400);
     }
 
-    const { name, phone, address } = result.data;
-    const superAdminId = c.get('userId');
+    const { username, password } = result.data;
 
-    const existingUser = await prisma.user.findUnique({
-      where: { phone },
+    const user = await prisma.user.findUnique({
+      where: { username },
     });
 
-    if (existingUser) {
-      return c.json({ err: 'Phone already in use' }, 409);
+    if (!user || user.role !== 'MANAGER') {
+      return c.json({ err: 'Invalid credentials' }, 401);
     }
 
-    const manager = await prisma.user.create({
-      data: {
-        name,
-        phone,
-        address,
-        role: 'MANAGER',
-        createdById: superAdminId,
-      },
+    const isPasswordValid = await comparePassword(password, user.passwordHash!);
+    if (!isPasswordValid) {
+      return c.json({ err: 'Invalid credentials' }, 401);
+    }
+
+    const token = await jwtAuth({
+      userId: user.id,
+      role: user.role,
     });
 
-    return c.json(
-      {
-        message: 'Manager created successfully',
-        manager: {
-          id: manager.id,
-          name: manager.name,
-          phone: manager.phone,
-          address: manager.address,
-          role: manager.role,
-        },
+    return c.json({
+      token,
+      manager: {
+        id: user.id,
+        name: user.name,
       },
-      201,
-    );
-  }
-
-  async signUp(c: Context) {
-    return c.json({ err: 'Wrong manager creation endpoint' }, 400);
+    });
   }
 }
