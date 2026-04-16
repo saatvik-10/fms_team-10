@@ -19,4 +19,16 @@ class WorkOrderManagementViewModel: ObservableObject {
             workOrders[index].updatedAt = Date()
         }
     }
+    
+    func addWorkOrder(vehicleId: String, description: String, technicianId: String) {
+        let newOrder = WorkOrder(
+            vehicleId: vehicleId,
+            taskDescription: description,
+            status: .pending,
+            technicianId: technicianId,
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+        workOrders.insert(newOrder, at: 0)
+    }
 }

@@ -17,6 +17,15 @@ class MaintenanceSchedulingViewModel: ObservableObject {
     @Published var selectedPriority: MaintenancePriority = .medium
     @Published var scheduledDate = Date()
     
+    init(vehicleId: String? = nil, description: String? = nil) {
+        if let vehicleId = vehicleId {
+            self.selectedVehicleId = vehicleId
+        }
+        if let description = description {
+            self.issueDescription = description
+        }
+    }
+    
     func scheduleMaintenance() {
         let newSchedule = MaintenanceSchedule(
             vehicleId: selectedVehicleId,
