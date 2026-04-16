@@ -12,5 +12,6 @@ managerRoute.post(
   controller.createManager,
 );
 // managerRoute.post('/getAll', requireRole('SUPER_ADMIN', controller.getManagers)
+managerRoute.get('/:id', proxyAuth, requireRole('MANAGER'), controller.getManager)
 
 export default managerRoute;
