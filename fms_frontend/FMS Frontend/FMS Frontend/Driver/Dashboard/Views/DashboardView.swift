@@ -1,291 +1,360 @@
 import SwiftUI
+import CoreLocation
+import GoogleMaps
+import Combine
 
-struct DashboardView: View {
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 32) {
-                headerView
-                
-                yourTripsCard
-                
-                metricsRow
-                
-                statusPill
-                
-                analyticsSection
-                
-                quickActionsSection
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 40)
-        }
-        .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
+// MARK: - Colors Palette
+//extension Color {
+//    init(hex: String) {
+//        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+//        var int: UInt64 = 0
+//        Scanner(string: hex).scanHexInt64(&int)
+//        let a, r, g, b: UInt64
+//        switch hex.count {
+//        case 3: // RGB (12-bit)
+//            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+//        case 6: // RGB (24-bit)
+//            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+//        case 8: // ARGB (32-bit)
+//            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+//        default:
+//            (a, r, g, b) = (255, 0, 0, 0)
+//        }
+//        self.init(.sRGB, red: Double(r) / 255, green: Double(g) / 255, blue:  Double(b) / 255, opacity: Double(a) / 255)
+//    }
+//    
+//    static let appPrimary = Color(hex: "0F1C24")
+//    static let appSecondaryBg = Color(hex: "C9CFD6")
+//}
+
+// MARK: - MVVM & Services
+
+class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    private let manager = CLLocationManager()
+    @Published var location: CLLocation?
+    
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.requestWhenInUseAuthorization()
+        manager.startUpdatingLocation()
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        location = locations.last
     }
 }
 
-// MARK: - Subviews
-extension DashboardView {
+class DashboardViewModel: ObservableObject {
+    @Published var userName: String = "Marcus"
+    @Published var routeNumber: String = "IND-402"
+    @Published var pickupLocation: String = "Nhava Sheva Port, Terminal 2, Mumbai"
+    @Published var destinationLocation: String = "Sector 18, Gurgaon, Haryana"
+    @Published var vehicleName: String = "Tata Prima 4028.S"
+    @Published var vehiclePlate: String = "MH 43 AB 1234"
+    @Published var fuelLevel: String = "78%"
+    @Published var maintenanceHealth: String = "Optimal"
+    @Published var maintenanceProgress: Double = 0.8
+}
+
+// MARK: - Main Tab View
+
+struct DashboardView: View {
+    var body: some View {
+        TabView {
+            NavigationStack {
+                DashboardHomeView()
+            }
+            .tabItem {
+                Label("Home", systemImage: "house.fill")
+            }
+            
+            Text("Trips Placeholder")
+            .tabItem {
+                Label("Trips", systemImage: "map.fill")
+            }
+            
+            Text("Profile Placeholder")
+            .tabItem {
+                Label("Profile", systemImage: "person.crop.circle.fill")
+            }
+        }
+        .accentColor(AppColors.primary)
+    }
+}
+
+// MARK: - Dashboard Content
+
+struct DashboardHomeView: View {
+    @StateObject private var viewModel = DashboardViewModel()
+    @StateObject private var locationManager = LocationManager()
     
-    // 1. HEADER
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Header
+                headerView
+                
+                // Active Mission Section
+                MissionCardView(viewModel: viewModel, locationManager: locationManager)
+                
+                // Vehicle Details Section
+                VehicleCardView(viewModel: viewModel)
+                
+                // Bottom Request Trip Action
+                PrimaryButton(
+                    title: "Request Trip",
+                    icon: "exclamationmark.triangle.fill",
+                    backgroundColor: AppColors.cardBackground,
+                    textColor: Color(white: 0.2)
+                ) {
+                    // Action handler
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 32)
+        }
+        .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
+        .navigationBarHidden(true)
+    }
+    
     private var headerView: some View {
         HStack(spacing: 16) {
             Image(systemName: "person.circle.fill")
                 .resizable()
-                .frame(width: 52, height: 52)
+                .frame(width: 48, height: 48)
                 .foregroundColor(Color.gray.opacity(0.8))
             
-            Text("Good Morning, Marcus")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
+            Text("Welcome, \(viewModel.userName)")
+                .font(.system(.title, design: .default, weight: .bold))
+                .foregroundColor(.black)
             
             Spacer()
             
-            Button(action: {
-                // Action
-            }) {
-                Image(systemName: "bell")
+            Button(action: {}) {
+                Image(systemName: "bell.fill")
                     .font(.title3)
-                    .foregroundColor(.primary)
-                    .padding(10)
-                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    .foregroundColor(.black)
+                    .padding(12)
+                    .background(Color.white)
                     .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
-            }
-        }
-    }
-    
-    // 2. YOUR TRIPS CARD
-    private var yourTripsCard: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            HStack {
-                Text("Your Trips")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.footnote)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
-            }
-            
-            HStack {
-                TripStatView(number: "12", label: "TOTAL")
-                Spacer()
-                TripStatView(number: "02", label: "ONGOING")
-                Spacer()
-                TripStatView(number: "10", label: "PENDING")
-            }
-        }
-        .padding(24)
-        .background(Color(UIColor.secondarySystemGroupedBackground))
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-    }
-    
-    // 3. METRICS ROW
-    private var metricsRow: some View {
-        HStack {
-            MetricItemView(value: "42 km", label: "DISTANCE")
-            Spacer()
-            MetricItemView(value: "3h 20m", label: "TIME")
-            Spacer()
-            MetricItemView(value: "25 min", label: "DELAY")
-        }
-        .padding(.horizontal, 16)
-    }
-    
-    // 4. STATUS PILL
-    private var statusPill: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(Color.primary)
-                .frame(width: 6, height: 6)
-            Text("Status: On Time")
-                .font(.footnote)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .background(Color(UIColor.secondarySystemGroupedBackground))
-        .clipShape(Capsule())
-        .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 2)
-    }
-    
-    // 5. AWARENESS ANALYTICS SECTION
-    private var analyticsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("AWARENESS ANALYTICS")
-                .font(.caption)
-                .fontWeight(.bold)
-                .foregroundColor(.secondary)
-                .tracking(1.5)
-                .padding(.leading, 4)
-            
-            AnalyticsCard(
-                title: "FUEL CONSUMPTION",
-                status: "Efficient",
-                subtext: "-8.4%",
-                caption: "Fuel usage lower than yesterday",
-                progress: 0.3
-            )
-            
-            AnalyticsCard(
-                title: "CO2 EMISSIONS",
-                status: "Normal",
-                subtext: nil,
-                caption: "Emissions within normal range",
-                progress: 0.55
-            )
-        }
-    }
-    
-    // 6. QUICK ACTIONS SECTION
-    private var quickActionsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("QUICK ACTIONS")
-                .font(.caption)
-                .fontWeight(.bold)
-                .foregroundColor(.secondary)
-                .tracking(1.5)
-                .padding(.leading, 4)
-            
-            HStack(spacing: 16) {
-                QuickActionCard(icon: "exclamationmark.triangle.fill", text: "Report Issue")
-                QuickActionCard(icon: "checklist", text: "Inspection")
+                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
             }
         }
     }
 }
 
-// MARK: - Components
+// MARK: - Reusable Components
 
-struct TripStatView: View {
-    let number: String
-    let label: String
+struct MissionCardView: View {
+    @ObservedObject var viewModel: DashboardViewModel
+    @ObservedObject var locationManager: LocationManager
     
     var body: some View {
-        VStack(alignment: .center, spacing: 6) {
-            Text(number)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundColor(.primary)
-            Text(label)
-                .font(.caption2)
-                .fontWeight(.bold)
-                .foregroundColor(.secondary)
-                .tracking(1.0)
-        }
-    }
-}
-
-struct MetricItemView: View {
-    let value: String
-    let label: String
-    
-    var body: some View {
-        VStack(alignment: .center, spacing: 6) {
-            Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(.primary)
-            Text(label)
-                .font(.caption2)
-                .fontWeight(.bold)
-                .foregroundColor(.secondary)
-                .tracking(1.0)
-        }
-    }
-}
-
-struct AnalyticsCard: View {
-    let title: String
-    let status: String
-    let subtext: String?
-    let caption: String
-    let progress: Double
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text(title)
-                    .font(.caption2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.secondary)
-                    .tracking(1.0)
-                
-                Spacer()
-                
-                // Minimal vertical bar indicators
-                HStack(alignment: .bottom, spacing: 4) {
-                    ForEach(0..<4) { i in
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(i == 3 ? Color.secondary.opacity(0.3) : Color.primary)
-                            .frame(width: 3, height: CGFloat(8 + (i % 2 == 0 ? 4 : 8)))
-                    }
+        VStack(spacing: 0) {
+            // Header Content
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("ACTIVE MISSION")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.gray)
+                    
+                    Spacer()
+                    
+                    Text("IN TRANSIT")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.blue.opacity(0.1))
+                        .foregroundColor(.blue)
+                        .cornerRadius(6)
                 }
-            }
-            
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(status)
+                
+                Text("Route #\(viewModel.routeNumber)")
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
+            }
+            .padding(16)
+            
+            // Map Integratation
+            GoogleMapView(locationManager: locationManager)
+                .frame(height: 200)
+                .clipped()
+            
+            // Details
+            VStack(alignment: .leading, spacing: 16) {
+                RouteDetailRow(label: "PICKUP", value: viewModel.pickupLocation)
+                RouteDetailRow(label: "DESTINATION", value: viewModel.destinationLocation)
                 
-                if let subtext = subtext {
-                    Text(subtext)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
+                NavigationLink(destination: TripDetailView()) {
+                    HStack {
+                        Text("View Trip")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(AppColors.primary)
+                    .cornerRadius(12)
                 }
             }
-            
-            // Progress Bar
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color(UIColor.tertiarySystemGroupedBackground))
-                        .frame(height: 6)
-                    
-                    Capsule()
-                        .fill(Color.primary)
-                        .frame(width: geometry.size.width * progress, height: 6)
-                }
-            }
-            .frame(height: 6)
-            
-            Text(caption)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.top, 4)
+            .padding(16)
         }
-        .padding(24)
-        .background(Color(UIColor.secondarySystemGroupedBackground))
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
 }
 
-struct QuickActionCard: View {
-    let icon: String
-    let text: String
+struct VehicleCardView: View {
+    @ObservedObject var viewModel: DashboardViewModel
     
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(.primary)
+            HStack(alignment: .top) {
+                HStack(spacing: 12) {
+                    Image(systemName: "box.truck.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(AppColors.primary)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(viewModel.vehicleName)
+                            .font(.headline)
+                            .foregroundColor(.black)
+                        Text(viewModel.vehiclePlate)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Fuel")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Text(viewModel.fuelLevel)
+                        .font(.headline)
+                        .foregroundColor(.black)
+                }
+            }
             
-            Text(text)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
+            Divider()
+            
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Maintenance Health")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                    Spacer()
+                    Text(viewModel.maintenanceHealth)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.black)
+                }
+                
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(AppColors.secondaryBackground)
+                            .frame(height: 8)
+                        
+                        Capsule()
+                            .fill(AppColors.primary)
+                            .frame(width: geo.size.width * viewModel.maintenanceProgress, height: 8)
+                    }
+                }
+                .frame(height: 8)
+            }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 28)
-        .background(Color(UIColor.secondarySystemGroupedBackground))
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+    }
+}
+
+struct PrimaryButton: View {
+    var title: String
+    var icon: String? = nil
+    var backgroundColor: Color = AppColors.primary
+    var textColor: Color = .white
+    var action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                if let icon = icon {
+                    Image(systemName: icon)
+                }
+                Text(title)
+            }
+            .font(.headline)
+            .foregroundColor(textColor)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(backgroundColor)
+            .cornerRadius(12)
+        }
+    }
+}
+
+struct RouteDetailRow: View {
+    var label: String
+    var value: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundColor(.gray)
+            
+            Text(value)
+                .font(.subheadline)
+                .foregroundColor(.black)
+        }
+    }
+}
+
+// MARK: - Navigation Destination Placeholders
+
+struct TripDetailView: View {
+    var body: some View {
+        VStack {
+            Text("Trip Real-Time Logistics")
+                .font(.title)
+                .fontWeight(.bold)
+            Text("Details loaded here...")
+                .foregroundColor(.secondary)
+        }
+        .navigationTitle("Trip Detail")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Google Maps Wrapper
+
+struct GoogleMapView: UIViewRepresentable {
+    @ObservedObject var locationManager: LocationManager
+    
+    func makeUIView(context: Context) -> GMSMapView {
+        let options = GMSMapViewOptions()
+        let mapView = GMSMapView(options: options)
+        mapView.isMyLocationEnabled = true
+        return mapView
+    }
+    
+    func updateUIView(_ uiView: GMSMapView, context: Context) {
+        if let location = locationManager.location {
+            let camera = GMSCameraPosition.camera(withTarget: location.coordinate, zoom: 14.0)
+            uiView.animate(to: camera)
+        }
     }
 }
 
