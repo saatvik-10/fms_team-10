@@ -1,4 +1,0 @@
-//
-//  MaintenanceSchedulingViewModel.swift
-//  FMS Frontend
-//

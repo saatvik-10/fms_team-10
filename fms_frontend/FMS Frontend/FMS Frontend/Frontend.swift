@@ -9,9 +9,15 @@ import SwiftUI
 
 @main
 struct Frontend: App {
+    @State private var isAuthenticated = false
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if isAuthenticated {
+                MaintenanceTabView(isLoggedIn: $isAuthenticated)
+            } else {
+                MaintenanceUserAuthenticationView(isLoggedIn: $isAuthenticated)
+            }
         }
     }
 }
