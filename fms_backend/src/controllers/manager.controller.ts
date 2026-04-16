@@ -1,8 +1,7 @@
 import type { Context } from 'hono';
 import { createManagerSchema } from '../validators/manager.validator';
-import { jwtAuth } from '../lib/jwt';
 import { prisma } from '../../prisma';
-import { hashPassword, comparePassword } from '../lib/hashPassword';
+import { hashPassword } from '../lib/hashPassword';
 import { customAlphabet } from 'nanoid';
 
 const nanoid = customAlphabet(
@@ -67,51 +66,72 @@ export class Manager {
     );
   }
 
-//   async getManagers(c: Context) {
-//     const managers = await prisma.user.findMany({
-//       where: { role: 'MANAGER' },
-//       select: {
-//         id: true,
-//         name: true,
-//         username: true,
-//         phone: true,
-//         address: true,
-//         email: true,
-//         createdAt: true,
-//       },
-//     });
+  //   async getManagers(c: Context) {
+  //     const managers = await prisma.user.findMany({
+  //       where: { role: 'MANAGER' },
+  //       select: {
+  //         id: true,
+  //         name: true,
+  //         username: true,
+  //         phone: true,
+  //         address: true,
+  //         email: true,
+  //         createdAt: true,
+  //       },
+  //     });
 
-//     return c.json({ managers });
-//   }
+  //     return c.json({ managers });
+  //   }
 
-  async getManager(c: Context) {
-    const body = await c.req.json();
-    const { username, password } = body;
+  async getMyProfile(c: Context) {
+    const userId = c.get('userId') as string;
 
     const user = await prisma.user.findUnique({
-      where: { username },
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        phone: true,
+        address: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
     });
 
     if (!user || user.role !== 'MANAGER') {
-      return c.json({ err: 'Invalid credentials' }, 401);
+      return c.json({ err: 'Manager not found' }, 404);
     }
-
-    const isPasswordValid = await comparePassword(password, user.passwordHash!);
-    if (!isPasswordValid) {
-      return c.json({ err: 'Invalid credentials' }, 401);
-    }
-
-    const token = await jwtAuth({
-      userId: user.id,
-      role: user.role,
-    });
 
     return c.json({
-      token,
-      manager: {
-        id: user.id,
-        name: user.name,
+      manager: user,
+    });
+  }
+
+  async getManager(c: Context) {
+    const userId = c.req.param('id');
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        phone: true,
+        address: true,
+        email: true,
+        role: true,
+        createdAt: true,
       },
+    });
+
+    if (!user || user.role !== 'MANAGER') {
+      return c.json({ err: 'Manager not found' }, 404);
+    }
+
+    return c.json({
+      manager: user,
     });
   }
 }
