@@ -81,16 +81,25 @@ struct TripDetailView: View {
                 .shadow(color: AppColors.shadow, radius: 10, x: 0, y: 4)
                 
                 // ACTION BUTTON
-                PrimaryButton(
-                    title: "Continue Navigation",
-                    icon: "location.fill",
-                    backgroundColor: AppColors.primary,
-                    textColor: .white,
-                    action: { showMap = true }
-                )
-                .navigationDestination(isPresented: $showMap) {
-                    NavigationMapView(trip: Trip.mockTrip)
+                ZStack {
+                    PrimaryButton(
+                        title: "Continue Navigation",
+                        icon: "location.fill",
+                        backgroundColor: AppColors.primary,
+                        textColor: .white
+                    ) {
+                        // Start navigation action
+                    }
+                    .allowsHitTesting(isNavigationEnabled)
+                    
+                    // Disabled overlay: faded effect without changing the button's look
+                    if !isNavigationEnabled {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(UIColor.systemBackground).opacity(0.45))
+                            .allowsHitTesting(false)
+                    }
                 }
+                .opacity(isNavigationEnabled ? 1.0 : 0.5)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.bottom, 32)
             }

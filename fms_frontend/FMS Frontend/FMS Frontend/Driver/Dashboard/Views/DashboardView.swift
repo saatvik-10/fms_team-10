@@ -68,7 +68,7 @@ struct DashboardView: View {
                 Label("Home", systemImage: "house.fill")
             }
             
-            Text("Trips Placeholder")
+            TripsView()
             .tabItem {
                 Label("Trips", systemImage: "map.fill")
             }
