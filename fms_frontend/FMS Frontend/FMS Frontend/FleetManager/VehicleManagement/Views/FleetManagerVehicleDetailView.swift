@@ -1,0 +1,439 @@
+import SwiftUI
+
+struct FleetManagerVehicleDetailView: View {
+    let vehicle: Vehicle
+    @Environment(\.dismiss) var dismiss
+    @State private var showingEditModal = false
+    
+    var body: some View {
+        ZStack {
+            AppTheme.background.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // MARK: - Header
+                HStack(spacing: 20) {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.black)
+                    }
+                    
+                    Text(vehicle.id)
+                        .font(.system(size: 20, weight: .bold))
+                    Spacer()
+                }
+                .padding(.horizontal, 40)
+                .padding(.vertical, 25)
+                .background(Color.white)
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 30) {
+                        
+                        // MARK: - Hero Row
+                        HStack(alignment: .top, spacing: 30) {
+                            // Vehicle Hero Image
+                            ZStack(alignment: .bottomLeading) {
+                                Image(vehicle.imageName)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 300)
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(20)
+                                    .clipped()
+                                
+                                // Overlay Status & Name
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(vehicle.status == .inTransit ? "ACTIVE \(vehicle.status.rawValue)" : vehicle.status.rawValue)
+                                        .font(.system(size: 10, weight: .black))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(Color.black)
+                                        .cornerRadius(8)
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(vehicle.id)
+                                            .font(.system(size: 32, weight: .black))
+                                        Text("\(vehicle.year) \(vehicle.make) \(vehicle.model) • \(vehicle.color)")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                                .padding(30)
+                            }
+                            
+                            // Odometer & Status Side Card
+                            VStack(alignment: .leading, spacing: 25) {
+                                VStack(alignment: .leading, spacing: 15) {
+                                    HStack {
+                                        Text("ODOMETER")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.gray)
+                                        Spacer()
+                                        Image(systemName: "gauge.with.dots.needle.bottom.100percent")
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                        Text(vehicle.odometer)
+                                            .font(.system(size: 42, weight: .black))
+                                        Text("MILES")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                                .padding(30)
+                                .frame(width: 280)
+                                .background(Color.white)
+                                .cornerRadius(20)
+                                
+                                VStack(alignment: .leading, spacing: 15) {
+                                    Text("STATUS")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(.gray)
+                                    
+                                    Text(vehicle.status == .inTransit ? "IN TRANSIT" : 
+                                         vehicle.status == .idle ? "IDLE" : "MAINTENANCE")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(vehicle.status == .inTransit ? AppTheme.activeGreen : 
+                                                        vehicle.status == .maintenance ? AppTheme.criticalRed : .gray)
+                                }
+                                .padding(30)
+                                .frame(width: 280, alignment: .leading)
+                                .background(Color.white)
+                                .cornerRadius(20)
+                            }
+                        }
+                        
+                        // MARK: - Assessment Spotlight (Emphasized Reason)
+                        if let reason = vehicle.assessmentReason {
+                            VStack(alignment: .leading, spacing: 15) {
+                                Text("ASSESSMENT INSIGHT")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.gray)
+                                
+                                HStack(spacing: 15) {
+                                    Circle()
+                                        .fill(Color.black)
+                                        .frame(width: 40, height: 40)
+                                        .overlay(Image(systemName: "sparkles").foregroundColor(.white))
+                                    
+                                    Text(reason)
+                                        .font(.system(size: 20, weight: .black))
+                                }
+                            }
+                            .padding(40)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.black.opacity(0.03))
+                            .cornerRadius(20)
+                            .padding(.horizontal, 40)
+                        }
+
+                        // MARK: - Transit & Driver Row
+                        HStack(alignment: .top, spacing: 30) {
+                            // Current Transit
+                            if let trip = vehicle.currentTrip {
+                                VStack(alignment: .leading, spacing: 35) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("CURRENT TRANSIT")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundColor(.gray)
+                                            Text("Active Trip")
+                                                .font(.system(size: 24, weight: .bold))
+                                        }
+                                        Spacer()
+                                        VStack(alignment: .trailing, spacing: 4) {
+                                            Text("ETA")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundColor(.gray)
+                                            Text(trip.eta)
+                                                .font(.system(size: 20, weight: .bold))
+                                        }
+                                    }
+                                    
+                                    // Origin -> Destination Progress
+                                    HStack(spacing: 30) {
+                                        HStack(spacing: 12) {
+                                            Circle()
+                                                .fill(Color.black)
+                                                .frame(width: 32, height: 32)
+                                                .overlay(Image(systemName: "arrow.right").foregroundColor(.white).font(.system(size: 12)))
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text("ORIGIN")
+                                                    .font(.system(size: 8, weight: .bold))
+                                                    .foregroundColor(.gray)
+                                                Text(trip.origin)
+                                                    .font(.system(size: 18, weight: .black))
+                                                    .lineLimit(1)
+                                            }
+                                        }
+                                        
+                                        // Progress Bar
+                                        ZStack {
+                                            Capsule()
+                                                .fill(Color.gray.opacity(0.1))
+                                                .frame(height: 12)
+                                            
+                                            Capsule()
+                                                .fill(Color.black)
+                                                .frame(width: 100, height: 12)
+                                                .overlay(
+                                                    Text("\(Int(trip.progress * 100))%")
+                                                        .font(.system(size: 8, weight: .bold))
+                                                        .foregroundColor(.white)
+                                                )
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        
+                                        HStack(spacing: 12) {
+                                            VStack(alignment: .trailing, spacing: 4) {
+                                                Text("DESTINATION")
+                                                    .font(.system(size: 8, weight: .bold))
+                                                    .foregroundColor(.gray)
+                                                Text(trip.destination)
+                                                    .font(.system(size: 18, weight: .black))
+                                                    .lineLimit(1)
+                                            }
+                                            
+                                            Circle()
+                                                .fill(Color.gray.opacity(0.1))
+                                                .frame(width: 32, height: 32)
+                                                .overlay(Image(systemName: "mappin").foregroundColor(.gray).font(.system(size: 12)))
+                                        }
+                                    }
+                                }
+                                .padding(40)
+                                .background(Color.white)
+                                .cornerRadius(20)
+                            }
+                            
+                            // Assigned Driver
+                            if let driver = vehicle.assignedDriver {
+                                VStack(alignment: .leading, spacing: 25) {
+                                    HStack {
+                                        Text("ASSIGNED DRIVER")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.gray)
+                                        Spacer()
+                                        Button("MANAGE") { }
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.black)
+                                    }
+                                    
+                                    HStack(spacing: 15) {
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.1))
+                                            .frame(width: 60, height: 60)
+                                            .overlay(Image(systemName: "person.fill").foregroundColor(.gray).font(.system(size: 25)))
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(driver.name)
+                                                .font(.system(size: 20, weight: .bold))
+                                            Text("\(driver.id) • \(driver.title.uppercased())")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    
+                                    HStack(spacing: 15) {
+                                        Button(action: { }) {
+                                            Label("Call Driver", systemImage: "phone.fill")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(.black)
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 15)
+                                                .background(Color.gray.opacity(0.05))
+                                                .cornerRadius(12)
+                                        }
+                                        
+                                        Button(action: { }) {
+                                            Label("Message", systemImage: "envelope.fill")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(.black)
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 15)
+                                                .background(Color.gray.opacity(0.05))
+                                                .cornerRadius(12)
+                                        }
+                                    }
+                                }
+                                .padding(35)
+                                .background(Color.white)
+                                .cornerRadius(20)
+                            }
+                        }
+                        
+                        // MARK: - Maintenance & History
+                        HStack(alignment: .top, spacing: 30) {
+                            // Maintenance Status
+                            VStack(alignment: .leading, spacing: 25) {
+                                HStack {
+                                    Text("MAINTENANCE STATUS")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(.gray)
+                                    Spacer()
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 20) {
+                                    HStack(spacing: 20) {
+                                        Image(systemName: "calendar.badge.checkmark")
+                                            .foregroundColor(.black)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("NEXT SERVICE")
+                                                .font(.system(size: 8, weight: .bold))
+                                                .foregroundColor(.gray)
+                                            Text(vehicle.maintenance.nextService)
+                                                .font(.system(size: 14, weight: .bold))
+                                        }
+                                    }
+                                    
+                                    HStack(spacing: 20) {
+                                        Image(systemName: "checklist")
+                                            .foregroundColor(.black)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("POST-TRIP INSPECTION")
+                                                .font(.system(size: 8, weight: .bold))
+                                                .foregroundColor(.gray)
+                                            Text(vehicle.maintenance.inspectionStatus)
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(AppTheme.activeGreen)
+                                        }
+                                    }
+                                    
+                                    if let alert = vehicle.maintenance.alerts.first {
+                                        HStack(spacing: 15) {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundColor(AppTheme.criticalRed)
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(alert.title)
+                                                    .font(.system(size: 14, weight: .bold))
+                                                    .foregroundColor(AppTheme.criticalRed)
+                                                Text(alert.detail)
+                                                    .font(.system(size: 10, weight: .medium))
+                                                    .foregroundColor(.gray)
+                                            }
+                                        }
+                                        .padding(20)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(AppTheme.criticalRed.opacity(0.05))
+                                        .cornerRadius(12)
+                                    }
+                                }
+                            }
+                            .padding(35)
+                            .background(Color.white)
+                            .cornerRadius(20)
+                            
+                            // Recent History
+                            VStack(alignment: .leading, spacing: 25) {
+                                Text("RECENT HISTORY")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.gray)
+                                
+                                VStack(spacing: 0) {
+                                    ForEach(vehicle.history) { trip in
+                                        HStack {
+                                            VStack(alignment: .leading, spacing: 8) {
+                                                Text(trip.date ?? "")
+                                                    .font(.system(size: 10, weight: .bold))
+                                                    .foregroundColor(.gray)
+                                                
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    Text("\(trip.origin) → \(trip.destination)")
+                                                        .font(.system(size: 14, weight: .bold))
+                                                        .fixedSize(horizontal: false, vertical: true)
+                                                    Text("\(trip.distance ?? "") • \(trip.duration ?? "")")
+                                                        .font(.system(size: 11))
+                                                        .foregroundColor(.gray)
+                                                }
+                                            }
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundColor(.gray.opacity(0.3))
+                                        }
+                                        .padding(.vertical, 15)
+                                        
+                                        if trip.id != vehicle.history.last?.id {
+                                            Divider()
+                                        }
+                                    }
+                                }
+                                
+                                NavigationLink(destination: VehicleLogView(vehicle: vehicle)) {
+                                    Text("VIEW FULL LOG")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(.black)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 15)
+                                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2)))
+                                }
+                            }
+                            .padding(35)
+                            .background(Color.white)
+                            .cornerRadius(20)
+                        }
+                        
+                        // MARK: - Past Reports
+                        VStack(alignment: .leading, spacing: 25) {
+                            Text("PAST REPORTS")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.gray)
+                            
+                            HStack(spacing: 20) {
+                                ForEach(vehicle.reports) { report in
+                                    HStack(spacing: 15) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 8).fill(AppTheme.criticalRed.opacity(0.1))
+                                                .frame(width: 45, height: 45)
+                                            Image(systemName: "doc.fill")
+                                                .foregroundColor(AppTheme.criticalRed)
+                                        }
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(report.title)
+                                                .font(.system(size: 14, weight: .bold))
+                                            Text(report.subtitle)
+                                                .font(.system(size: 10))
+                                                .foregroundColor(.gray)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "arrow.down.to.line")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.gray)
+                                    }
+                                    .padding(20)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.gray.opacity(0.03))
+                                    .cornerRadius(12)
+                                }
+                            }
+                            
+                            NavigationLink(destination: ArchiveListView(vehicle: vehicle)) {
+                                Text("VIEW ARCHIVE")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.black)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 15)
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2)))
+                            }
+                        }
+                        .padding(35)
+                        .background(Color.white)
+                        .cornerRadius(20)
+                        
+                    }
+                    .padding(40)
+                    .padding(.bottom, 20)
+                }
+            }
+        }
+        .navigationBarHidden(true)
+        .sheet(isPresented: $showingEditModal) {
+            AddVehicleModalView(vehicleToEdit: vehicle)
+        }
+    }
+}

@@ -73,17 +73,22 @@ struct FleetManagerDashboardView: View {
                                     Image(systemName: "chevron.right")
                                 }
                                 .foregroundColor(AppTheme.textSecondary)
-                                .font(.system(size: 12))
+                                .font(.system(size: 14, weight: .bold))
                             }
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 20) {
                                     ForEach(viewModel.assessments) { assessment in
                                         // Wrapping in NavigationLink for clickability
-                                        NavigationLink(destination: SmartFleetDetailView(assessment: assessment)) {
+                                        // Navigate to full vehicle detail by matching truckID
+                                        if let matchedVehicle = MockDataProvider.vehicles.first(where: { $0.id == assessment.truckID }) {
+                                            NavigationLink(destination: FleetManagerVehicleDetailView(vehicle: matchedVehicle)) {
+                                                FleetOpsAssessmentCard(assessment: assessment)
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        } else {
                                             FleetOpsAssessmentCard(assessment: assessment)
                                         }
-                                        .buttonStyle(PlainButtonStyle())
                                     }
                                 }
                                 .padding(.vertical, 5) // Prevent shadow clipping
@@ -91,7 +96,11 @@ struct FleetManagerDashboardView: View {
                         }
                         
                         // MARK: - Maintenance & Priority
-                        MaintenancePriorityDarkCard(alerts: viewModel.maintenanceAlerts)
+                        MaintenancePriorityDarkCard(
+                            summary: viewModel.stats.maintenanceSummary,
+                            criticalMass: viewModel.stats.criticalMass,
+                            alerts: viewModel.maintenanceAlerts
+                        )
                         
                         // MARK: - CO2 Emissions
                         FleetOpsEmissionsChart(data: viewModel.emissionData)

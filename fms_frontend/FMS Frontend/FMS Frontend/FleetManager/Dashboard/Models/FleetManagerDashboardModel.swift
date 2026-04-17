@@ -9,6 +9,10 @@ struct FleetManagerDashboardStats {
     let pendingPackagesTrend: String
     let deliveryShipments: Int
     let deliveryShipmentsTrend: String
+    
+    // Maintenance & Priority (New)
+    let maintenanceSummary: String
+    let criticalMass: Double
 }
 
 struct ShipmentActivity: Identifiable {
@@ -86,6 +90,11 @@ struct Driver: Identifiable {
     let totalHours: Int
     let activityLog: [ActivityEvent]
     
+    // Assignment info (New)
+    let currentVehicleID: String?
+    let activeRoute: String?
+    let eta: String?
+    
     var identifier: UUID { UUID() }
 }
 
@@ -112,6 +121,54 @@ struct Vehicle: Identifiable {
     let type: String
     let status: VehicleStatus
     let imageName: String
+    
+    // Detail View Fields (New)
+    let year: String
+    let color: String
+    let odometer: String
+    let operationalStatus: String
+    let currentTrip: VehicleTrip?
+    let assignedDriver: Driver?
+    let maintenance: VehicleMaintenance
+    let history: [VehicleTrip]
+    let reports: [VehicleReport]
+    let assessmentReason: String? // Direct link to dashboard assessment logic
+}
+
+struct VehicleTrip: Identifiable {
+    let id = UUID()
+    let origin: String
+    let destination: String
+    let progress: Double
+    let eta: String
+    let date: String?
+    let distance: String?
+    let duration: String?
+}
+
+struct VehicleMaintenance {
+    let nextService: String
+    let inspectionStatus: String
+    let alerts: [MaintenanceAlert]
+}
+
+struct VehicleReport: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let fileType: String // "pdf"
+    
+    // Detailed Report Data (New)
+    let date: String
+    let serviceProvider: String
+    let tasks: [ReportTask]
+    let totalCost: String
+}
+
+struct ReportTask: Identifiable {
+    let id = UUID()
+    let description: String
+    let cost: String
 }
 
 enum VehicleStatus: String {
