@@ -10,7 +10,7 @@ struct DriverDetailView: View {
             HStack(spacing: 20) {
                 Button(action: { dismiss() }) {
                     Image(systemName: "arrow.left")
-                        .foregroundColor(.black)
+                        .foregroundColor(AppTheme.primary)
                         .font(.system(size: 20, weight: .bold))
                 }
                 
@@ -59,7 +59,7 @@ struct DriverDetailView: View {
                                         .foregroundColor(.white)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 10)
-                                        .background(Color.black)
+                                        .background(AppTheme.primary)
                                         .cornerRadius(8)
                                 }
                                 
@@ -69,7 +69,7 @@ struct DriverDetailView: View {
                                         Text("Message")
                                     }
                                     .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(AppTheme.primary)
                                     .padding(.horizontal, 15)
                                     .padding(.vertical, 10)
                                     .background(Color.gray.opacity(0.1))
@@ -290,7 +290,7 @@ struct MapComponentView: View {
             MapAnnotation(coordinate: point.coordinate) {
                 Image(systemName: "truck.box.fill")
                     .padding(8)
-                    .background(Color.black)
+                    .background(AppTheme.primary)
                     .foregroundColor(.white)
                     .clipShape(Circle())
                     .overlay(Circle().stroke(Color.white, lineWidth: 2))

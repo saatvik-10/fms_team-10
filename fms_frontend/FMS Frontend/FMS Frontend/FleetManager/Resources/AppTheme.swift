@@ -2,23 +2,23 @@ import SwiftUI
 
 struct AppTheme {
     // MARK: - Colors
-    static let primary = Color.black
+    static let primary = Color(red: 0.04, green: 0.19, blue: 0.23) // #0a303a
     static let secondary = Color.gray
     static let background = Color(white: 0.98) // Very light gray background
     static let cardBackground = Color.white
-    static let darkCardBackground = Color(white: 0.1) // Black for Maintenance card
+    static let darkCardBackground = Color(red: 0.04, green: 0.19, blue: 0.23) // Black for Maintenance card
     
     // Status Colors (from FleetOps image)
     static let activeGreen = Color(red: 0.2, green: 0.8, blue: 0.4)
     static let maintenanceOrange = Color.orange
-    static let criticalRed = Color(red: 0.9, green: 0.1, blue: 0.1)
+    static let criticalRed = Color(red: 0.98, green: 0.45, blue: 0.38)
     static let alertRed = Color(red: 0.9, green: 0.3, blue: 0.3)
     static let statusBlue = Color(red: 0.3, green: 0.6, blue: 0.9)
     
     static let accentBlue = Color(red: 0.44, green: 0.66, blue: 0.86)
     
     // MARK: - Text Colors
-    static let textPrimary = Color.black
+    static let textPrimary = Color(red: 0.04, green: 0.19, blue: 0.23)
     static let textSecondary = Color.gray
     static let textInverted = Color.white
     

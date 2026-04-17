@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FleetAnalyticsView: View {
+    @EnvironmentObject var dataManager: FleetDataManager
     @Environment(\.presentationMode) var presentationMode
     @State private var selectedTimeframe = "Weekly"
     
@@ -63,7 +64,7 @@ struct FleetAnalyticsView: View {
                         
                         // Large Chart Mockup
                         HStack(alignment: .bottom, spacing: 25) {
-                            ForEach(MockDataProvider.emissionData) { item in
+                            ForEach(dataManager.emissionData) { item in
                                 VStack(spacing: 15) {
                                     ZStack(alignment: .bottom) {
                                         RoundedRectangle(cornerRadius: 8)
@@ -71,7 +72,7 @@ struct FleetAnalyticsView: View {
                                             .frame(height: 250)
                                         
                                         RoundedRectangle(cornerRadius: 8)
-                                            .fill(item.isCurrent ? Color.black : AppTheme.statusBlue.opacity(0.3))
+                                            .fill(item.isCurrent ? AppTheme.primary : AppTheme.statusBlue.opacity(0.3))
                                             .frame(height: CGFloat(item.value * 12))
                                             .overlay(
                                                 Text(String(format: "%.1f", item.value))
@@ -98,7 +99,7 @@ struct FleetAnalyticsView: View {
                     
                     // Efficiency Row
                     HStack(spacing: 30) {
-                        EfficiencySectorCard(title: "Truck Fleet", value: "82%", icon: "truck.box.fill", color: .black)
+                        EfficiencySectorCard(title: "Truck Fleet", value: "82%", icon: "truck.box.fill", color: AppTheme.primary)
                         EfficiencySectorCard(title: "Van Fleet", value: "94%", icon: "bus.fill", color: AppTheme.statusBlue)
                         EfficiencySectorCard(title: "EV Units", value: "98%", icon: "bolt.car.fill", color: AppTheme.activeGreen)
                     }

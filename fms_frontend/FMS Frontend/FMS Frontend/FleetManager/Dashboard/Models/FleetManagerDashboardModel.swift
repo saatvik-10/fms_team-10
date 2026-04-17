@@ -34,10 +34,10 @@ enum ShipmentStatus: String {
 }
 
 struct FleetVehicleStatus {
-    let active: Int
+    var active: Int
     let activeTrend: String
-    let maintenance: Int
-    let idle: Int
+    var maintenance: Int
+    var idle: Int
     let critical: Int
 }
 
@@ -119,7 +119,7 @@ struct Vehicle: Identifiable {
     let make: String
     let model: String
     let type: String
-    let status: VehicleStatus
+    var status: VehicleStatus
     let imageName: String
     
     // Detail View Fields (New)
@@ -127,7 +127,7 @@ struct Vehicle: Identifiable {
     let color: String
     let odometer: String
     let operationalStatus: String
-    let currentTrip: VehicleTrip?
+    var currentTrip: VehicleTrip?
     let assignedDriver: Driver?
     let maintenance: VehicleMaintenance
     let history: [VehicleTrip]

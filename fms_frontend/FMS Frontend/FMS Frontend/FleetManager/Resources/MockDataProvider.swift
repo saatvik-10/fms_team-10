@@ -14,10 +14,10 @@ struct MockDataProvider {
     )
     
     static let shipments: [ShipmentActivity] = [
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "$5,872.90", status: .delivered),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "$5,872.90", status: .inTransit),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "$5,872.90", status: .pending),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "$5,872.90", status: .processing)
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "₹5,872.90", status: .delivered),
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "₹5,872.90", status: .inTransit),
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "₹5,872.90", status: .pending),
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "₹5,872.90", status: .processing)
     ]
     
     static let fleetStatus = FleetVehicleStatus(
@@ -93,8 +93,8 @@ struct MockDataProvider {
             reports: [
                 VehicleReport(title: "Monthly Maintenance Report - Sept", subtitle: "PDF • 1.2 MB • SEP 30, 2023", fileType: "pdf", date: "SEP 30, 2023", serviceProvider: "Fleet Care Solutions", tasks: [
                     ReportTask(description: "Oil and Filter Change", cost: "$120.00"),
-                    ReportTask(description: "Brake Pad Replacement", cost: "$450.00")
-                ], totalCost: "$570.00"),
+                    ReportTask(description: "Brake Pad Replacement", cost: "₹450.00")
+                ], totalCost: "₹570.00"),
                 VehicleReport(title: "Trip Efficiency Analysis - Oct", subtitle: "PDF • 840 KB • OCT 15, 2023", fileType: "pdf", date: "OCT 15, 2023", serviceProvider: "Logistics Insights AI", tasks: [
                     ReportTask(description: "Fuel Efficiency Audit", cost: "$0.00"),
                     ReportTask(description: "Route Optimization Report", cost: "$0.00")

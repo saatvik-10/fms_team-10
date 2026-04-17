@@ -15,7 +15,7 @@ struct VehicleLogView: View {
                         Text("Back")
                             .font(.system(size: 16))
                     }
-                    .foregroundColor(.black)
+                    .foregroundColor(AppTheme.primary)
                 }
                 
                 Spacer()
@@ -27,7 +27,7 @@ struct VehicleLogView: View {
                 
                 // Placeholder for Export
                 Image(systemName: "square.and.arrow.up")
-                    .foregroundColor(.black)
+                    .foregroundColor(AppTheme.primary)
             }
             .padding(.horizontal, 25)
             .padding(.vertical, 20)
@@ -65,9 +65,9 @@ struct VehicleLogView: View {
                                 HStack(spacing: 20) {
                                     HStack(spacing: 12) {
                                         Circle()
-                                            .fill(Color.black.opacity(0.05))
+                                            .fill(AppTheme.primary.opacity(0.05))
                                             .frame(width: 40, height: 40)
-                                            .overlay(Image(systemName: "arrow.up.right").foregroundColor(.black))
+                                            .overlay(Image(systemName: "arrow.up.right").foregroundColor(AppTheme.primary))
                                         
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text("ORIGIN")
@@ -83,7 +83,7 @@ struct VehicleLogView: View {
                                     
                                     HStack(spacing: 12) {
                                         Circle()
-                                            .fill(Color.black.opacity(0.05))
+                                            .fill(AppTheme.primary.opacity(0.05))
                                             .frame(width: 40, height: 40)
                                             .overlay(Image(systemName: "mappin.and.ellipse").foregroundColor(.gray))
                                         

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FleetManagerDriversListView: View {
+    @EnvironmentObject var dataManager: FleetDataManager
     @State private var searchText = ""
     @State private var showingAddDriver = false
     
@@ -8,7 +9,7 @@ struct FleetManagerDriversListView: View {
         VStack(spacing: 0) {
             // MARK: - Header
             HStack(spacing: 20) {
-                Text("DRIVERS MANAGEMENT")
+                Text("Drivers")
                     .font(.system(size: 20, weight: .black))
                 
                 // Search Bar
@@ -37,7 +38,7 @@ struct FleetManagerDriversListView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 10)
-                        .background(Color.black)
+                        .background(AppTheme.primary)
                         .cornerRadius(8)
                     }
                 }
@@ -61,7 +62,7 @@ struct FleetManagerDriversListView: View {
                     .padding(.vertical, 20)
                     
                     VStack(spacing: 12) {
-                        ForEach(MockDataProvider.drivers) { driver in
+                        ForEach(dataManager.drivers) { driver in
                             NavigationLink(destination: DriverDetailView(driver: driver)) {
                                 DriverRowView(driver: driver)
                             }
@@ -110,22 +111,16 @@ struct DriverRowView: View {
             }
             .frame(width: 200, alignment: .leading)
             
+            Spacer()
             // Status
-            Text(driver.status.rawValue)
+            Text(driver.status.rawValue.uppercased())
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(driver.status == .active ? .white : .gray)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(driver.status == .active ? Color.black : Color.gray.opacity(0.1))
+                .background(driver.status == .active ? AppTheme.primary : Color.gray.opacity(0.1))
                 .cornerRadius(12)
-                .frame(width: 150, alignment: .leading)
-            
-            Spacer()
-            
-            // Action Menu
-            Image(systemName: "ellipsis")
-                .foregroundColor(.gray)
-                .frame(width: 50, alignment: .trailing)
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal, 40)
         .padding(.vertical, 20)
