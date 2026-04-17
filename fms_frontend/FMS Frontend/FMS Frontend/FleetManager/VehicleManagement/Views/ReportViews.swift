@@ -13,7 +13,7 @@ struct ArchiveListView: View {
                     Image(systemName: "chevron.left")
                     Text("Back")
                 }
-                .foregroundColor(.black)
+                .foregroundColor(AppTheme.primary)
                 Spacer()
                 Text("REPORTS ARCHIVE")
                     .font(.system(size: 14, weight: .bold))
@@ -35,6 +35,12 @@ struct ArchiveListView: View {
                     .padding(.horizontal, 30)
                     .padding(.top, 20)
                     
+                    if vehicle.reports.isEmpty {
+                        Text("No history yet")
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                            .padding(.top, 40)
+                    } else {
                     VStack(spacing: 15) {
                         ForEach(vehicle.reports) { report in
                             NavigationLink(destination: MaintenanceReportDetailView(report: report, vehicle: vehicle)) {
@@ -68,6 +74,7 @@ struct ArchiveListView: View {
                             .buttonStyle(PlainButtonStyle())
                         }
                     }
+                    }
                     .padding(.horizontal, 30)
                 }
             }
@@ -77,7 +84,111 @@ struct ArchiveListView: View {
     }
 }
 
-// MARK: - Maintenance Report Detail (Simulated PDF)
+
+// MARK: - Maintenance Requests List
+
+struct MaintenanceReportBundle: Identifiable {
+    var id: UUID { report.id }
+    let vehicle: Vehicle
+    let report: VehicleReport
+}
+struct MaintenanceRequestsListView: View {
+    @EnvironmentObject var dataManager: FleetDataManager
+    @Environment(\.presentationMode) var presentationMode
+    @State private var actionedRequests: Set<UUID> = []
+    
+    var requests: [MaintenanceReportBundle] {
+        dataManager.vehicles.flatMap { v in v.reports.map { MaintenanceReportBundle(vehicle: v, report: $0) } }
+    }
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                AppTheme.background.ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    HStack {
+                        Button("Close") { presentationMode.wrappedValue.dismiss() }.foregroundColor(AppTheme.primary)
+                        Spacer()
+                        Text("MAINTENANCE REQUESTS").font(.system(size: 14, weight: .bold))
+                        Spacer()
+                        Image(systemName: "checklist").foregroundColor(.clear)
+                    }
+                    .padding(25)
+                    .background(Color.white)
+                    
+                    ScrollView {
+                        VStack(spacing: 15) {
+                            ForEach(requests) { bundle in
+                                let vehicle = bundle.vehicle
+                                let report = bundle.report
+                                
+                                VStack(spacing: 20) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 5) {
+                                            Text(vehicle.id).font(.system(size: 18, weight: .black))
+                                            Text(report.date).font(.system(size: 12)).foregroundColor(.gray)
+                                        }
+                                        Spacer()
+                                        NavigationLink(destination: MaintenanceReportDetailView(report: report, vehicle: vehicle)) {
+                                            Text("View Assessment")
+                                                .font(.system(size: 12, weight: .bold))
+                                                .foregroundColor(AppTheme.primary)
+                                                .padding(.horizontal, 15)
+                                                .padding(.vertical, 8)
+                                                .background(AppTheme.primary.opacity(0.1))
+                                                .cornerRadius(20)
+                                        }
+                                    }
+                                    
+                                    if actionedRequests.contains(report.id) {
+                                        HStack {
+                                            Spacer()
+                                            Text("Processed")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(.gray)
+                                            Spacer()
+                                        }
+                                    } else {
+                                        HStack(spacing: 15) {
+                                            Button(action: { actionedRequests.insert(report.id) }) {
+                                                Text("Disapprove")
+                                                    .font(.system(size: 14, weight: .bold))
+                                                    .frame(maxWidth: .infinity)
+                                                    .padding(.vertical, 12)
+                                                    .foregroundColor(.white)
+                                                    .background(AppTheme.criticalRed)
+                                                    .cornerRadius(8)
+                                            }
+                                            Button(action: { actionedRequests.insert(report.id) }) {
+                                                Text("Approve")
+                                                    .font(.system(size: 14, weight: .bold))
+                                                    .frame(maxWidth: .infinity)
+                                                    .padding(.vertical, 12)
+                                                    .foregroundColor(.white)
+                                                    .background(AppTheme.activeGreen)
+                                                    .cornerRadius(8)
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(20)
+                                .background(Color.white)
+                                .cornerRadius(12)
+                                .modifier(AppTheme.cardShadow())
+                            }
+                        }
+                        .padding(30)
+                    }
+                }
+            }
+            .navigationBarHidden(true)
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
+    }
+}
+
+// MARK: - Maintenance Report Detail (Simulated PDF matching Screenshot)
 struct MaintenanceReportDetailView: View {
     let report: VehicleReport
     let vehicle: Vehicle
@@ -85,148 +196,231 @@ struct MaintenanceReportDetailView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            // Header Action Bar
             HStack {
                 Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 20, weight: .bold))
+                    Image(systemName: "chevron.left")
+                    Text("InspectionReport_\(vehicle.id)")
+                        .font(.system(size: 16, weight: .bold))
                 }
                 .foregroundColor(.black)
                 Spacer()
-                Text("DOCUMENT PREVIEW")
-                    .font(.system(size: 14, weight: .bold))
-                Spacer()
-                Button(action: { }) {
-                    Image(systemName: "square.and.arrow.up")
-                        .foregroundColor(.black)
-                }
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 20))
+                    .foregroundColor(.gray)
             }
-            .padding(25)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 15)
             .background(Color.white)
             
             ScrollView {
-                VStack(spacing: 30) {
-                    // The "PDF" Page
-                    VStack(alignment: .leading, spacing: 40) {
-                        // Document Header
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text(report.serviceProvider.uppercased())
-                                    .font(.system(size: 20, weight: .black))
-                                Text("Automotive Service & Fleet Maintenance")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.gray)
-                                Text("License #FMS-99203-A")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.gray)
-                            }
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 10) {
-                                Text("MAINTENANCE REPORT")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(AppTheme.criticalRed)
-                                Text("Date: \(report.date)")
-                                    .font(.system(size: 12))
-                                Text("Ref: #\(UUID().uuidString.prefix(8).uppercased())")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.gray)
-                            }
-                        }
+                VStack(spacing: 0) {
+                    // Page Indicator header
+                    HStack {
+                        Text("Fleet Management System — Confidential")
+                            .font(.system(size: 10))
+                        Spacer()
+                        Text("Page 1")
+                            .font(.system(size: 10))
+                    }
+                    .foregroundColor(.gray)
+                    .padding(.horizontal, 40)
+                    .padding(.vertical, 15)
+                    
+                    // PDF Core Document Main Layout
+                    VStack(alignment: .leading, spacing: 30) {
                         
-                        Divider()
-                        
-                        // Vehicle Info Section
-                        HStack(spacing: 50) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("VEHICLE IDENTITY")
-                                    .font(.system(size: 8, weight: .bold))
-                                    .foregroundColor(.gray)
-                                Text(vehicle.id)
-                                    .font(.system(size: 16, weight: .bold))
-                            }
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("VIN NUMBER")
-                                    .font(.system(size: 8, weight: .bold))
-                                    .foregroundColor(.gray)
-                                Text("4G2BM5...")
-                                    .font(.system(size: 16, weight: .bold))
-                            }
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("ODOMETER")
-                                    .font(.system(size: 8, weight: .bold))
-                                    .foregroundColor(.gray)
-                                Text("\(vehicle.odometer) MI")
-                                    .font(.system(size: 16, weight: .bold))
-                            }
-                        }
-                        
-                        // Tasks Performed
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("SERVICES PERFORMED")
-                                .font(.system(size: 12, weight: .black))
-                                .padding(.bottom, 10)
-                                .overlay(Rectangle().frame(height: 2).offset(y: 10), alignment: .bottom)
-                            
-                            ForEach(report.tasks) { task in
-                                HStack {
-                                    Text(task.description)
-                                        .font(.system(size: 14))
-                                    Spacer()
-                                    Text(task.cost)
-                                        .font(.system(size: 14, weight: .bold))
-                                }
-                                .padding(.vertical, 5)
-                                Divider()
-                            }
-                        }
-                        
-                        // Total Cost
-                        HStack {
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 10) {
-                                Text("TOTAL COST")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.gray)
-                                Text(report.totalCost)
-                                    .font(.system(size: 32, weight: .black))
-                            }
-                        }
-                        .padding(.top, 20)
-                        
-                        // Footer / Signature
-                        VStack(alignment: .leading, spacing: 15) {
-                            Text("CERTIFICATION")
-                                .font(.system(size: 10, weight: .bold))
-                            Text("I hereby certify that the above mentioned services were performed and parts replaced as described in accordance with fleet safety standards.")
+                        // Dark Blue Top Title
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("FLEET MANAGEMENT SYSTEM")
+                                .font(.system(size: 16, weight: .black))
+                                .foregroundColor(.white)
+                            Text("Vehicle Inspection Report")
                                 .font(.system(size: 12))
-                                .foregroundColor(.gray)
-                                .lineSpacing(4)
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        .padding(30)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(red: 0.04, green: 0.19, blue: 0.23)) // #0a303a AppTheme.primary
+                        
+                        VStack(alignment: .leading, spacing: 25) {
                             
+                            // Section: VEHICLE INFORMATION
+                            VStack(alignment: .leading, spacing: 10) {
+                                PdfSectionHeader(title: "VEHICLE INFORMATION")
+                                PdfRow(label: "Vehicle", value: "\(vehicle.make) \(vehicle.model) (\(vehicle.type))", isZebra: false)
+                                PdfRow(label: "VIN", value: "VIN-5930", isZebra: true)
+                                PdfRow(label: "Type", value: vehicle.type, isZebra: false)
+                                PdfRow(label: "Inspection", value: "Pre-Trip", isZebra: true)
+                                PdfRow(label: "Date", value: report.date, isZebra: false)
+                                PdfRow(label: "Inspector ID", value: "STAFF-01", isZebra: true)
+                                PdfRow(label: "Driver ID", value: "DRV-CURRENT", isZebra: false)
+                                PdfRow(label: "Status", value: "Pending", isZebra: true)
+                            }
+                            
+                            // Section: VEHICLE METRICS
+                            VStack(alignment: .leading, spacing: 10) {
+                                PdfSectionHeader(title: "VEHICLE METRICS")
+                                PdfRow(label: "Odometer", value: "\(vehicle.odometer) mi", isZebra: false)
+                                PdfRow(label: "Fuel Level", value: "75%", isZebra: true)
+                                PdfRow(label: "Fuel Effic.", value: "14.2 mpg", isZebra: false)
+                                PdfRow(label: "Engine Hours", value: "4,821 hrs", isZebra: true)
+                            }
+                            
+                            // Section: INSPECTION SUMMARY
+                            VStack(alignment: .leading, spacing: 10) {
+                                PdfSectionHeader(title: "INSPECTION SUMMARY")
+                                PdfRow(label: "Total Items", value: "13", isZebra: false)
+                                PdfRow(label: "Good", value: "9", isZebra: true)
+                                PdfRow(label: "Repair Needed", value: "0", isZebra: false)
+                                PdfRow(label: "Alert", value: "0", isZebra: true)
+                                PdfRow(label: "Pending", value: "4", isZebra: false)
+                                PdfRow(label: "Total Cost", value: "₹ \(report.totalCost.replacingOccurrences(of: "$", with: ""))", isZebra: true)
+                                
+                                HStack {
+                                    Text("✓ PASS")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(AppTheme.activeGreen)
+                                }
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(AppTheme.activeGreen.opacity(0.1))
+                            }
+                            
+                            Spacer().frame(height: 50)
+                            
+                            // Segment 2: Checklist Header
+                            Text("INSPECTION CHECKLIST")
+                                .font(.system(size: 18, weight: .black))
+                            
+                            // Checklist Table Headers
                             HStack {
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Rectangle().frame(width: 200, height: 1)
-                                    Text("Technician Signature")
+                                Text("Inspection Item").bold().frame(width: 180, alignment: .leading)
+                                Text("Result").bold().frame(width: 80, alignment: .leading)
+                                Text("Notes").bold().frame(width: 80, alignment: .leading)
+                                Text("Photo").bold().frame(width: 80, alignment: .leading)
+                            }
+                            .font(.system(size: 10))
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 10)
+                            .background(Color.gray.opacity(0.1))
+                            
+                            // Table Content Rows
+                            VStack(spacing: 0) {
+                                PdfChecklistRow(item: "Brakes & Braking System", result: "GOOD", isGood: true, hasPhoto: true, isZebra: false)
+                                PdfChecklistRow(item: "Tyres & Wheels", result: "PENDING", isGood: false, hasPhoto: false, isZebra: true)
+                                PdfChecklistRow(item: "Engine Oil & Fluid Levels", result: "GOOD", isGood: true, hasPhoto: false, isZebra: false)
+                                PdfChecklistRow(item: "Lighting & Electrical", result: "GOOD", isGood: true, hasPhoto: false, isZebra: true)
+                                PdfChecklistRow(item: "Steering & Suspension", result: "PENDING", isGood: false, hasPhoto: false, isZebra: false)
+                                PdfChecklistRow(item: "Seatbelts & Restraints", result: "GOOD", isGood: true, hasPhoto: false, isZebra: true)
+                                PdfChecklistRow(item: "Mirrors & Visibility", result: "GOOD", isGood: true, hasPhoto: false, isZebra: false)
+                                PdfChecklistRow(item: "Fuel System", result: "PENDING", isGood: false, hasPhoto: false, isZebra: true)
+                                PdfChecklistRow(item: "Battery & Charging System", result: "GOOD", isGood: true, hasPhoto: false, isZebra: false)
+                            }
+                            
+                            Spacer().frame(height: 50)
+                            
+                            // Signatures
+                            HStack {
+                                HStack {
+                                    Text("Inspector Signature:")
                                         .font(.system(size: 10))
-                                        .foregroundColor(.gray)
+                                    Rectangle().frame(width: 100, height: 1).padding(.bottom, -5).foregroundColor(.black)
                                 }
                                 Spacer()
-                                Image(systemName: "checkmark.seal.fill")
-                                    .foregroundColor(.blue)
-                                    .font(.system(size: 40))
+                                HStack {
+                                    Text("Date:")
+                                        .font(.system(size: 10))
+                                    Rectangle().frame(width: 80, height: 1).padding(.bottom, -5).foregroundColor(.black)
+                                }
                             }
-                            .padding(.top, 40)
+                            .padding(.bottom, 30)
+                            
                         }
+                        .padding(30)
+                        
                     }
-                    .padding(50)
                     .background(Color.white)
-                    .cornerRadius(2)
+                    .clipShape(RoundedRectangle(cornerRadius: 1))
                     .modifier(AppTheme.cardShadow())
-                    .padding(40)
-                    
+                    .padding(20)
                 }
             }
             .background(Color.gray.opacity(0.1))
         }
         .navigationBarHidden(true)
+    }
+}
+
+struct PdfSectionHeader: View {
+    let title: String
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 10, weight: .bold))
+            Spacer()
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(Color.gray.opacity(0.1))
+    }
+}
+
+struct PdfRow: View {
+    let label: String
+    let value: String
+    let isZebra: Bool
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.black)
+                .frame(width: 150, alignment: .leading)
+            Text(value)
+                .font(.system(size: 12))
+                .foregroundColor(.black)
+            Spacer()
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
+        .background(isZebra ? Color.gray.opacity(0.05) : Color.white)
+    }
+}
+
+struct PdfChecklistRow: View {
+    let item: String
+    let result: String
+    let isGood: Bool
+    let hasPhoto: Bool
+    let isZebra: Bool
+    
+    var body: some View {
+        HStack {
+            Text(item)
+                .font(.system(size: 12, weight: .bold))
+                .frame(width: 180, alignment: .leading)
+            
+            Text(result)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(isGood ? AppTheme.activeGreen : .gray)
+                .frame(width: 80, alignment: .leading)
+                
+            Text("-")
+                .font(.system(size: 12))
+                .frame(width: 80, alignment: .leading)
+                
+            if hasPhoto {
+                Image(systemName: "photo.fill")
+                    .foregroundColor(.gray)
+                    .frame(width: 80, alignment: .leading)
+            } else {
+                Text("-")
+                    .font(.system(size: 12))
+                    .frame(width: 80, alignment: .leading)
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 10)
+        .background(isZebra ? Color.gray.opacity(0.05) : Color.white)
     }
 }

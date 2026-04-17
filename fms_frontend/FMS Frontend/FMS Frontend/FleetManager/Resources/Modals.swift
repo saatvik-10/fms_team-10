@@ -1,4 +1,6 @@
+import MapKit
 import SwiftUI
+import Combine
 
 // MARK: - Premium Modal Components
 
@@ -12,7 +14,7 @@ struct OCRUploadArea: View {
         VStack(spacing: 15) {
             Image(systemName: "doc.text.viewfinder")
                 .font(.system(size: 40))
-                .foregroundColor(.black)
+                .foregroundColor(AppTheme.primary)
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(12)
@@ -34,7 +36,7 @@ struct OCRUploadArea: View {
                 .foregroundColor(.white)
                 .padding(.horizontal, 40)
                 .padding(.vertical, 12)
-                .background(Color.black)
+                .background(AppTheme.primary)
                 .cornerRadius(8)
             }
         }
@@ -73,14 +75,83 @@ struct ModalFormField: View {
     }
 }
 
+struct ModalSearchField: View {
+    let label: String
+    @Binding var text: String
+    @StateObject private var completer = LocationSearchCompleter()
+    @State private var isEditing = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(label.uppercased())
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.gray)
+            
+            VStack(spacing: 0) {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("Search location...", text: $text, onEditingChanged: { editing in
+                        isEditing = editing
+                        if editing { completer.searchQuery = text }
+                    })
+                    .onChange(of: text) { newValue in
+                        completer.searchQuery = newValue
+                    }
+                    .font(.system(size: 15, weight: .medium))
+                    Spacer()
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(10)
+                
+                if isEditing && !completer.completions.isEmpty {
+                    ScrollView {
+                        VStack(alignment: .leading) {
+                            ForEach(completer.completions, id: \.title) { completion in
+                                Button(action: {
+                                    text = "\(completion.title), \(completion.subtitle)"
+                                    isEditing = false
+                                    // hide keyboard
+                                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                }) {
+                                    VStack(alignment: .leading) {
+                                        Text(completion.title).font(.system(size: 14, weight: .bold)).foregroundColor(AppTheme.textPrimary)
+                                        if !completion.subtitle.isEmpty {
+                                            Text(completion.subtitle).font(.system(size: 12)).foregroundColor(.gray)
+                                        }
+                                        Divider()
+                                    }
+                                    .padding(.horizontal)
+                                    .padding(.top, 10)
+                                }
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 150)
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .modifier(AppTheme.cardShadow())
+                    .offset(y: 5)
+                }
+            }
+            .zIndex(isEditing ? 1 : 0)
+        }
+    }
+}
+
 // MARK: - Add Driver Modal (MATCH IMAGE)
 struct DriverModalView: View {
+    @EnvironmentObject var dataManager: FleetDataManager
     @Environment(\.dismiss) var dismiss
     @State private var fullName = ""
     @State private var licenseNumber = ""
     @State private var expiryDate = ""
     @State private var vehicleClasses = ""
     @State private var showingScanner = false
+
+
+
     
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
@@ -136,7 +207,11 @@ struct DriverModalView: View {
             
             // Footer Buttons
             HStack(spacing: 15) {
-                Button(action: { dismiss() }) {
+                Button(action: { 
+                    let newDriver = Driver(id: "NEW-\(Int.random(in: 1000...9999))", name: fullName, title: "Driver", licenseNum: licenseNumber, licenseExp: expiryDate, status: .offDuty, rating: 5.0, efficiency: "100%", totalTrips: 0, totalHours: 0, activityLog: [], currentVehicleID: nil, activeRoute: nil, eta: nil)
+                    dataManager.addDriver(newDriver)
+                    dismiss() 
+                }) {
                     HStack {
                         Text("Save Driver")
                         Image(systemName: "chevron.right")
@@ -146,14 +221,14 @@ struct DriverModalView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(Color.black)
+                    .background(AppTheme.primary)
                     .cornerRadius(12)
                 }
                 
                 Button(action: { dismiss() }) {
                     Text("Cancel")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(AppTheme.primary)
                         .padding(.horizontal, 30)
                         .padding(.vertical, 18)
                         .background(Color.gray.opacity(0.1))
@@ -176,6 +251,7 @@ struct DriverModalView: View {
 
 // MARK: - Add Vehicle Modal (MATCH IMAGE)
 struct AddVehicleModalView: View {
+    @EnvironmentObject var dataManager: FleetDataManager
     @Environment(\.dismiss) var dismiss
     let vehicleToEdit: Vehicle?
     
@@ -185,6 +261,9 @@ struct AddVehicleModalView: View {
     @State private var vin: String
     @State private var odometer: String
     @State private var showingScanner = false
+
+
+
     
     init(vehicleToEdit: Vehicle? = nil) {
         self.vehicleToEdit = vehicleToEdit
@@ -251,7 +330,11 @@ struct AddVehicleModalView: View {
             
             // Footer Buttons
             HStack(spacing: 15) {
-                Button(action: { dismiss() }) {
+                Button(action: { 
+                    let newVehicle = Vehicle(id: regNumber, make: make, model: model, type: "Truck", status: .idle, imageName: "truck_freightliner_m2", year: "2024", color: "White", odometer: odometer, operationalStatus: "OPERATIONAL", currentTrip: nil, assignedDriver: nil, maintenance: VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []), history: [], reports: [], assessmentReason: nil)
+                    dataManager.addVehicle(newVehicle)
+                    dismiss() 
+                }) {
                     HStack {
                         Text("Save Vehicle")
                         Image(systemName: "chevron.right")
@@ -261,14 +344,14 @@ struct AddVehicleModalView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(Color.black)
+                    .background(AppTheme.primary)
                     .cornerRadius(12)
                 }
                 
                 Button(action: { dismiss() }) {
                     Text("Cancel")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(AppTheme.primary)
                         .padding(.horizontal, 30)
                         .padding(.vertical, 18)
                         .background(Color.gray.opacity(0.1))
@@ -291,9 +374,26 @@ struct AddVehicleModalView: View {
 
 // MARK: - New Order / Add Trip Modal (MATCH IMAGE)
 struct OrderModalView: View {
+    @EnvironmentObject var dataManager: FleetDataManager
     @Environment(\.dismiss) var dismiss
-    @State private var fromLocation = "HQ Distribution Center, North"
-    @State private var toLocation = "Port Authority"
+    @State private var fromLocation = ""
+    @State private var toLocation = ""
+    @State private var selectedVehicleID = ""
+    @State private var ownerName = ""
+    @State private var phoneNum = ""
+    @State private var showingScanner = false
+
+    // Dynamic estimation logic
+    private var estimatedDistance: Int {
+        if fromLocation.isEmpty && toLocation.isEmpty { return 0 }
+        return max(45, (fromLocation.count + toLocation.count) * 12)
+    }
+    
+    private var estimatedCost: Double {
+        if estimatedDistance == 0 { return 0.0 }
+        return max(75.50, Double(estimatedDistance) * 1.5 + 25.0)
+    }
+
     
     var body: some View {
         VStack(spacing: 0) {
@@ -308,7 +408,7 @@ struct OrderModalView: View {
                     .font(.system(size: 18, weight: .bold))
             }
             .padding(25)
-            .foregroundColor(.black)
+            .foregroundColor(AppTheme.primary)
             .background(Color.white)
             
             ScrollView {
@@ -320,8 +420,8 @@ struct OrderModalView: View {
                             .font(.system(size: 14, weight: .bold))
                         
                         HStack(spacing: 20) {
-                            ModalFormField(label: "FROM", text: $fromLocation)
-                            ModalFormField(label: "TO", text: $toLocation)
+                            ModalSearchField(label: "FROM", text: $fromLocation)
+                            ModalSearchField(label: "TO", text: $toLocation)
                         }
                     }
                     
@@ -334,31 +434,50 @@ struct OrderModalView: View {
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.gray)
                         
-                        HStack {
-                            Image(systemName: "truck.box.fill")
-                                .padding()
-                                .background(Color.black)
-                                .foregroundColor(.white)
-                                .cornerRadius(8)
-                            
-                            VStack(alignment: .leading) {
-                                Text(MockDataProvider.vehicles.first?.id ?? "TRK-0000")
-                                    .font(.system(size: 16, weight: .bold))
-                                Text("\(MockDataProvider.vehicles.first?.make ?? "Unknown") • Available")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.gray)
+                        Menu {
+                            ForEach(dataManager.vehicles) { vehicle in
+                                Button(action: {
+                                    selectedVehicleID = vehicle.id
+                                }) {
+                                    Text("\(vehicle.id) - \(vehicle.make)")
+                                }
                             }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                                .font(.system(size: 14, weight: .bold))
+                        } label: {
+                            HStack {
+                                Image(systemName: "truck.box.fill")
+                                    .padding()
+                                    .background(AppTheme.primary)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
+                                
+                                VStack(alignment: .leading) {
+                                    Text(selectedVehicleID.isEmpty ? "Tap to select vehicle" : selectedVehicleID)
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(selectedVehicleID.isEmpty ? .gray : AppTheme.textPrimary)
+                                    Text("Available for dispatch")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.gray)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .foregroundColor(.gray)
+                                    .font(.system(size: 14, weight: .bold))
+                            }
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(12)
                         }
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(12)
                     }
                     
-                    // 3. Calculation Card
+                    // 3. Contact Details
+                    VStack(alignment: .leading, spacing: 15) {
+                        Label("CONTACT DETAILS", systemImage: "person.crop.circle.badge.checkmark")
+                            .font(.system(size: 14, weight: .bold))
+                        
+                        ModalFormField(label: "PHONE NUMBER", text: $phoneNum)
+                    }
+                    
+                    // 4. Calculation Card
                     VStack(alignment: .leading, spacing: 15) {
                         VStack(alignment: .leading, spacing: 20) {
                             HStack {
@@ -366,7 +485,7 @@ struct OrderModalView: View {
                                     Text("ESTIMATED FUEL COST")
                                         .font(.system(size: 10, weight: .bold))
                                         .foregroundColor(.gray)
-                                    Text("₹145.20")
+                                    Text(String(format: "$%.2f", estimatedCost))
                                         .font(.system(size: 38, weight: .black))
                                 }
                                 Spacer()
@@ -406,18 +525,23 @@ struct OrderModalView: View {
                     
                     // Bottom Button
                     VStack(spacing: 15) {
-                        Button(action: { dismiss() }) {
+                        Button(action: { 
+                            let trip = VehicleTrip(origin: fromLocation, destination: toLocation, progress: 0.0, eta: "TBD", date: "Now", distance: "0 mi", duration: "0 hrs")
+                            dataManager.addOrder(trip: trip, vehicleID: selectedVehicleID)
+                            dismiss() 
+                        }) {
                             HStack {
-                                Image(systemName: "lock.fill")
+                                Image(systemName: "lock.open.fill")
                                 Text("Create Order")
                             }
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 20)
-                            .background(Color.gray.opacity(0.2))
+                            .background(fromLocation.isEmpty || selectedVehicleID.isEmpty ? Color.gray : AppTheme.primary)
                             .cornerRadius(12)
                         }
+                        .disabled(fromLocation.isEmpty || selectedVehicleID.isEmpty)
                         
                         Text("Complete all mandatory fields to finalize dispatch")
                             .font(.system(size: 10))
@@ -428,6 +552,46 @@ struct OrderModalView: View {
                 .padding(30)
             }
         }
+        .frame(minWidth: 600, minHeight: 700)
         .background(Color.white)
+        .sheet(isPresented: $showingScanner) {
+            CameraScannerView(isPresented: $showingScanner) { name, doc, _, _ in
+                self.ownerName = name
+            }
+        }
+    }
+}
+
+
+
+class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
+    @Published var searchQuery = ""
+    @Published var completions: [MKLocalSearchCompletion] = []
+    
+    private var completer: MKLocalSearchCompleter
+    private var cancellable: AnyCancellable?
+    
+    override init() {
+        completer = MKLocalSearchCompleter()
+        super.init()
+        completer.delegate = self
+        completer.resultTypes = .address
+        
+        cancellable = $searchQuery.debounce(for: .milliseconds(250), scheduler: RunLoop.main)
+            .sink { [weak self] query in
+                if query.isEmpty {
+                    self?.completions = []
+                } else {
+                    self?.completer.queryFragment = query
+                }
+            }
+    }
+    
+    func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
+        self.completions = completer.results
+    }
+    
+    func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
+        // Handle error
     }
 }

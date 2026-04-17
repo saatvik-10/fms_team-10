@@ -1,38 +1,46 @@
 import SwiftUI
 
 struct FleetManagerVehiclesListView: View {
+    @EnvironmentObject var dataManager: FleetDataManager
     @State private var searchText = ""
     @State private var selectedFilter = "ALL"
+    @State private var showingAddVehicle = false
     
     let filters = ["ALL", "IN TRANSIT", "MAINTENANCE", "IDLE"]
     
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - Header
-            HStack(alignment: .bottom) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Vehicles")
-                        .font(.system(size: 32, weight: .bold))
-                    Text("FLEET MANAGEMENT")
-                        .font(.system(size: 10, weight: .bold))
+            HStack(spacing: 20) {
+                Text("Vehicles Management")
+                    .font(.system(size: 20, weight: .black))
+                
+                // Search Bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
                         .foregroundColor(.gray)
+                    TextField("Search unique ID, driver, or VIN...", text: $searchText)
+                        .font(.system(size: 14))
                 }
+                .padding(.horizontal, 15)
+                .padding(.vertical, 10)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+                .frame(maxWidth: .infinity)
                 
                 Spacer()
                 
-                HStack(spacing: 15) {
-                    // Search Bar
+                Button(action: { showingAddVehicle = true }) {
                     HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.gray)
-                        TextField("Search unique ID, driver, or VIN...", text: $searchText)
-                            .font(.system(size: 14))
+                        Image(systemName: "plus")
+                        Text("Add Vehicle")
                     }
-                    .padding(.horizontal, 15)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
                     .padding(.vertical, 10)
-                    .background(Color.gray.opacity(0.1))
+                    .background(AppTheme.primary)
                     .cornerRadius(8)
-                    .frame(width: 400)
                 }
             }
             .padding(30)
@@ -82,13 +90,14 @@ struct FleetManagerVehiclesListView: View {
             .background(AppTheme.background)
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showingAddVehicle) { AddVehicleModalView() }
     }
     
     var filteredVehicles: [Vehicle] {
         if selectedFilter == "ALL" {
-            return MockDataProvider.vehicles
+            return dataManager.vehicles
         } else {
-            return MockDataProvider.vehicles.filter { $0.status.rawValue == selectedFilter }
+            return dataManager.vehicles.filter { $0.status.rawValue == selectedFilter }
         }
     }
 }
@@ -139,7 +148,7 @@ struct VehicleGridCard: View {
     
     var statusColor: Color {
         switch vehicle.status {
-        case .inTransit: return Color.black
+        case .inTransit: return AppTheme.primary
         case .idle: return Color.gray.opacity(0.5)
         case .maintenance: return AppTheme.criticalRed
         }

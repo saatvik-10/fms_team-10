@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FleetManagerMainView: View {
+    @StateObject private var dataManager = FleetDataManager()
     @State private var selectedTab: Int = 0
     
     init() {
@@ -54,7 +55,8 @@ struct FleetManagerMainView: View {
             }
             .tag(3)
         }
-        .accentColor(AppTheme.primary) // Black selection color from Image 1
+        .accentColor(AppTheme.primary)
+        .environmentObject(dataManager)
     }
 }
 

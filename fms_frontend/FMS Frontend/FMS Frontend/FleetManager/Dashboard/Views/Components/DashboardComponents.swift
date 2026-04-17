@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 // MARK: - FleetOps Metric Item (Active, Maintenance, etc.)
 struct FleetOpsMetricItem: View {
@@ -144,9 +145,6 @@ struct MaintenancePriorityDarkCard: View {
     var body: some View {
         HStack(spacing: 30) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Maintenance & Priority")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
                 Text(summary)
                     .font(.system(size: 13))
                     .foregroundColor(.white.opacity(0.6))
@@ -226,51 +224,63 @@ struct MaintenancePriorityDarkCard: View {
 }
 
 // MARK: - CO2 Emissions Chart
+import Charts
+
 struct FleetOpsEmissionsChart: View {
     let data: [EmissionData]
+    var showNavigation: Bool = true
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                Text("CO2 Emissions (kg/mi)")
-                    .font(.system(size: 18, weight: .bold))
-                Spacer()
-                NavigationLink(destination: FleetAnalyticsView()) {
-                    HStack {
-                        Text("Current Week")
-                        Image(systemName: "chevron.right")
+            if showNavigation {
+                HStack {
+                    Spacer()
+                    NavigationLink(destination: FleetAnalyticsView()) {
+                        HStack {
+                            Text("Current Week")
+                            Image(systemName: "chevron.right")
+                        }
+                        .font(.system(size: 12))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(6)
+                        .foregroundColor(AppTheme.primary)
                     }
-                    .font(.system(size: 12))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(6)
-                    .foregroundColor(.black)
                 }
             }
             
-            HStack(alignment: .bottom, spacing: 20) {
+            Chart {
                 ForEach(data) { item in
-                    VStack(spacing: 12) {
+                    BarMark(
+                        x: .value("Day", item.day),
+                        y: .value("Emissions", item.value)
+                    )
+                    .foregroundStyle(item.isCurrent ? AppTheme.primary : AppTheme.secondary.opacity(0.2))
+                    .cornerRadius(4)
+                    .annotation(position: .top) {
                         if item.isCurrent {
                             Text(String(format: "%.1f", item.value))
                                 .font(.system(size: 10, weight: .bold))
+                                .padding(.bottom, 2)
                         }
-                        
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(item.isCurrent ? Color.black : Color.gray.opacity(0.1))
-                            .frame(height: CGFloat(item.value * 6))
-                        
-                        Text(item.day)
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(AppTheme.textSecondary)
                     }
-                    .frame(maxWidth: .infinity)
                 }
             }
-            .frame(height: 180)
+            .chartXAxis {
+                AxisMarks(values: .automatic) { _ in
+                    AxisValueLabel()
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color.gray)
+                }
+            }
+            .chartYAxis(.hidden)
+            .frame(height: 150)
         }
-        .fmsCardStyle()
+        .padding(30)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppTheme.cardShadow())
     }
 }
 
@@ -288,7 +298,7 @@ struct FleetOpsActionButton: View {
                 Text(title.uppercased())
                     .font(.system(size: 10, weight: .bold))
             }
-            .foregroundColor(.black)
+            .foregroundColor(AppTheme.primary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 20)
             .background(Color.white)
