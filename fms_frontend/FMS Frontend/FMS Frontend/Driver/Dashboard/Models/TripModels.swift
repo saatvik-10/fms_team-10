@@ -30,13 +30,13 @@ extension Trip {
             routeNumber: "IND-402",
             pickup: TripStop(
                 name: "Nhava Sheva Port, Terminal 2, Mumbai",
-                coordinate: CLLocationCoordinate2D(latitude: 18.9499, longitude: 72.9525),
+                coordinate: CLLocationCoordinate2D(latitude: 18.9497, longitude: 72.9494),
                 time: "08:00 AM",
                 status: .completed
             ),
             destination: TripStop(
                 name: "Sector 18, Gurgaon, Haryana",
-                coordinate: CLLocationCoordinate2D(latitude: 28.4815, longitude: 77.0736),
+                coordinate: CLLocationCoordinate2D(latitude: 28.4595, longitude: 77.0266),
                 time: "10:00 PM",
                 status: .upcoming
             ),
