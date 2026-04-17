@@ -140,7 +140,7 @@ struct DriverModalView: View {
                     HStack {
                         Text("Save Driver")
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12))
+                            .font(.system(size: 14, weight: .bold))
                     }
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
@@ -177,17 +177,29 @@ struct DriverModalView: View {
 // MARK: - Add Vehicle Modal (MATCH IMAGE)
 struct AddVehicleModalView: View {
     @Environment(\.dismiss) var dismiss
-    @State private var make = ""
-    @State private var model = ""
-    @State private var regNumber = ""
-    @State private var vin = ""
+    let vehicleToEdit: Vehicle?
+    
+    @State private var make: String
+    @State private var model: String
+    @State private var regNumber: String
+    @State private var vin: String
+    @State private var odometer: String
     @State private var showingScanner = false
+    
+    init(vehicleToEdit: Vehicle? = nil) {
+        self.vehicleToEdit = vehicleToEdit
+        _make = State(initialValue: vehicleToEdit?.make ?? "")
+        _model = State(initialValue: vehicleToEdit?.model ?? "")
+        _regNumber = State(initialValue: vehicleToEdit?.id ?? "")
+        _vin = State(initialValue: "4G2BM5...")
+        _odometer = State(initialValue: vehicleToEdit?.odometer ?? "")
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
             // Header
             HStack {
-                Text("Add Vehicle")
+                Text(vehicleToEdit == nil ? "Add Vehicle" : "Update Vehicle")
                     .font(.system(size: 28, weight: .bold))
                 Spacer()
                 Button(action: { dismiss() }) {
@@ -230,6 +242,8 @@ struct AddVehicleModalView: View {
                             ModalFormField(label: "Registration Number", text: $regNumber)
                             ModalFormField(label: "Chassis Number / VIN", text: $vin)
                         }
+                        
+                        ModalFormField(label: "Total Odometer Run (MI)", text: $odometer)
                     }
                 }
                 .padding(.bottom, 30)
@@ -241,7 +255,7 @@ struct AddVehicleModalView: View {
                     HStack {
                         Text("Save Vehicle")
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12))
+                            .font(.system(size: 14, weight: .bold))
                     }
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
@@ -328,15 +342,16 @@ struct OrderModalView: View {
                                 .cornerRadius(8)
                             
                             VStack(alignment: .leading) {
-                                Text("TRK-9042")
+                                Text(MockDataProvider.vehicles.first?.id ?? "TRK-0000")
                                     .font(.system(size: 16, weight: .bold))
-                                Text("Heavy Duty Freightliner • Available")
+                                Text("\(MockDataProvider.vehicles.first?.make ?? "Unknown") • Available")
                                     .font(.system(size: 12))
                                     .foregroundColor(.gray)
                             }
                             Spacer()
-                            Image(systemName: "chevron.down")
+                            Image(systemName: "chevron.right")
                                 .foregroundColor(.gray)
+                                .font(.system(size: 14, weight: .bold))
                         }
                         .padding()
                         .background(Color.gray.opacity(0.1))

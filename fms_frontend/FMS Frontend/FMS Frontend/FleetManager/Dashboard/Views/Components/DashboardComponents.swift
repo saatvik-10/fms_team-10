@@ -128,7 +128,7 @@ struct FleetOpsAssessmentCard: View {
     var statusText: String {
         switch assessment.status {
         case .inTransit: return "In Transit"
-        case .alertReceived: return "Alert Received"
+        case .alertReceived: return "Critical: Engine Overheat" // Example specific alert
         case .restStop: return "Rest Stop"
         case .scheduled: return "Scheduled"
         }
@@ -137,6 +137,8 @@ struct FleetOpsAssessmentCard: View {
 
 // MARK: - Maintenance & Priority Dark Card
 struct MaintenancePriorityDarkCard: View {
+    let summary: String
+    let criticalMass: Double
     let alerts: [MaintenanceAlert]
     
     var body: some View {
@@ -145,7 +147,7 @@ struct MaintenancePriorityDarkCard: View {
                 Text("Maintenance & Priority")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.white)
-                Text("Real-time status of 18 pending service requirements across the fleet.")
+                Text(summary)
                     .font(.system(size: 13))
                     .foregroundColor(.white.opacity(0.6))
                 
@@ -186,12 +188,12 @@ struct MaintenancePriorityDarkCard: View {
                     Circle()
                         .stroke(Color.white.opacity(0.1), lineWidth: 12)
                     Circle()
-                        .trim(from: 0, to: 0.22) // 22%
+                        .trim(from: 0, to: criticalMass)
                         .stroke(AppTheme.criticalRed, style: StrokeStyle(lineWidth: 12, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                     
                     VStack(spacing: 0) {
-                        Text("22%")
+                        Text("\(Int(criticalMass * 100))%")
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
                         Text("CRITICAL MASS")
@@ -233,12 +235,10 @@ struct FleetOpsEmissionsChart: View {
                 Text("CO2 Emissions (kg/mi)")
                     .font(.system(size: 18, weight: .bold))
                 Spacer()
-                Menu {
-                    Button("Current Week") { }
-                } label: {
+                NavigationLink(destination: FleetAnalyticsView()) {
                     HStack {
                         Text("Current Week")
-                        Image(systemName: "chevron.down")
+                        Image(systemName: "chevron.right")
                     }
                     .font(.system(size: 12))
                     .padding(.horizontal, 10)

@@ -4,7 +4,7 @@ struct FleetManagerVehiclesListView: View {
     @State private var searchText = ""
     @State private var selectedFilter = "ALL"
     
-    let filters = ["ALL", "ACTIVE", "MAINTENANCE", "IDLE"]
+    let filters = ["ALL", "IN TRANSIT", "MAINTENANCE", "IDLE"]
     
     var body: some View {
         VStack(spacing: 0) {
@@ -32,31 +32,7 @@ struct FleetManagerVehiclesListView: View {
                     .padding(.vertical, 10)
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(8)
-                    .frame(width: 300)
-                    
-                    Menu {
-                        ForEach(filters, id: \.self) { filter in
-                            Button(filter) { selectedFilter = filter }
-                        }
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease")
-                            .foregroundColor(.gray)
-                            .padding(10)
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(8)
-                    }
-                    
-                    Menu {
-                        Button("ID (Ascending)") { }
-                        Button("ID (Descending)") { }
-                        Button("Status") { }
-                    } label: {
-                        Image(systemName: "text.alignleft")
-                            .foregroundColor(.gray)
-                            .padding(10)
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(8)
-                    }
+                    .frame(width: 400)
                 }
             }
             .padding(30)
@@ -95,7 +71,10 @@ struct FleetManagerVehiclesListView: View {
                     GridItem(.flexible(), spacing: 25)
                 ], spacing: 30) {
                     ForEach(filteredVehicles) { vehicle in
-                        VehicleGridCard(vehicle: vehicle)
+                        NavigationLink(destination: FleetManagerVehicleDetailView(vehicle: vehicle)) {
+                            VehicleGridCard(vehicle: vehicle)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .padding(30)
