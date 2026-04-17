@@ -10,7 +10,7 @@ import SwiftUI
 struct MaintenanceTabView: View {
     @Binding var isLoggedIn: Bool
     @StateObject var store = MaintenanceStore()
-    
+
     var body: some View {
         TabView {
             // Tab 1: Dashboard
@@ -20,7 +20,9 @@ struct MaintenanceTabView: View {
             .tabItem {
                 Label("Dashboard", systemImage: "square.grid.2x2.fill")
             }
-            
+
+
+
             // Tab 3: Inspections
             NavigationStack {
                 TripInspectionView()

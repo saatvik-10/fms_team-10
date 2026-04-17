@@ -153,37 +153,50 @@ struct PDFKitView: UIViewRepresentable {
 /// A unified card for work order tasks.
 struct WorkOrderTaskCard: View {
     let order: WorkOrder
-    
+
+    private var statusColor: Color {
+        switch order.status {
+        case .completed: return .green
+        case .inProgress: return .blue
+        case .pending:    return .orange
+        }
+    }
+
     var body: some View {
-        HStack(spacing: 16) {
-            // Icon
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemGray6))
-                    .frame(width: 48, height: 48)
-                Image(systemName: "wrench.and.screwdriver.fill")
-                    .foregroundColor(AppColors.primary)
-                    .font(.system(size: 20))
+        VStack(alignment: .leading, spacing: 12) {
+            // Top row: icon + title/vehicle
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.systemGray6))
+                        .frame(width: 46, height: 46)
+                    Image(systemName: "wrench.and.screwdriver.fill")
+                        .foregroundColor(AppColors.primary)
+                        .font(.system(size: 19))
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(order.title)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+
+                    Text(order.vehicleName)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
             }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(order.title)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                Text(order.vehicleName)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing, spacing: 10) {
+
+            // Bottom row: priority (left) + status (right)
+            HStack {
                 PriorityBadge(priority: order.priority.rawValue)
-                
-                Image(systemName: "chevron.right")
+                Spacer()
+                Text(order.status.rawValue)
                     .font(.caption.bold())
-                    .foregroundColor(Color(.systemGray3))
+                    .foregroundColor(statusColor)
             }
         }
         .padding(16)

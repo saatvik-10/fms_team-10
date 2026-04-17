@@ -14,29 +14,22 @@ struct MaintenanceDashboardView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                // Scheduled Work Orders Section
+                // Work Orders Section
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Scheduled Work Orders")
-                                .font(.headline)
-                            Text("Monitor maintenance events for the week")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                        Text("Work Orders")
+                            .font(.title2.bold())
+
                         Spacer()
-                        
+
                         NavigationLink(destination: WorkOrderManagementView()) {
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(.secondary)
-                                .padding(8)
-                                .background(Color.secondary.opacity(0.1))
-                                .clipShape(Circle())
                         }
                     }
                     .padding(.horizontal)
-                    
+
                     VStack(spacing: 12) {
                         let sortedOrders = store.workOrders.sorted { $0.priority.sortingOrder < $1.priority.sortingOrder }
                         ForEach(sortedOrders.prefix(5)) { order in

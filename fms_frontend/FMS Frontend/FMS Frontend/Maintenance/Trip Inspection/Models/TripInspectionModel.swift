@@ -64,45 +64,31 @@ struct TripInspection: Identifiable, Codable {
     }
     
     static func mockItems(for type: VehicleType) -> [InspectionItem] {
-        var items = [
+        return [
             InspectionItem(
-                name: "Braking System",
-                verificationCriteria: "Pad thickness > 4mm. No leaks in air/hydraulic lines.",
-                result: .good,
-                isImageRequired: true
-            ),
-            InspectionItem(
-                name: "Tire Integrity",
-                verificationCriteria: "Tread depth > 4/32\". No sidewall bulges or deep cuts.",
+                name: "Brakes & Steering",
+                verificationCriteria: "Check brake pad thickness, steering play, and brake fluid.",
                 result: .pending,
                 isImageRequired: true
             ),
             InspectionItem(
-                name: "Engine & Fluid Levels",
-                verificationCriteria: "Oil, coolant, and washer fluid at MAX. No active leaks.",
-                result: .good,
-                isImageRequired: true
-            ),
-            InspectionItem(
-                name: "Lighting & Signals",
-                verificationCriteria: "Headlights, hazards, and brake lights fully functional.",
-                result: .good,
-                isImageRequired: false
-            ),
-            InspectionItem(
-                name: "Steering & Suspension",
-                verificationCriteria: "No excessive play in wheel. Shock absorbers dry.",
+                name: "Engine & Fluids",
+                verificationCriteria: "Check oil, coolant levels, and any active leaks.",
                 result: .pending,
                 isImageRequired: false
             ),
             InspectionItem(
-                name: "Safety Equipment",
-                verificationCriteria: "Fire extinguisher charged. Triangles and vest present.",
-                result: .good,
+                name: "Lights & Signals",
+                verificationCriteria: "Check headlights, indicators, hazard and brake lights.",
+                result: .pending,
+                isImageRequired: false
+            ),
+            InspectionItem(
+                name: "Tyres & Body",
+                verificationCriteria: "Check tread depth, tire pressure, and body damage.",
+                result: .pending,
                 isImageRequired: true
             )
         ]
-        
-        return items
     }
 }

@@ -111,4 +111,8 @@ class MaintenanceStore: ObservableObject {
     func addInspection(_ inspection: TripInspection) {
         inspections.insert(inspection, at: 0)
     }
+    
+    func deleteInspections(forUnit unitName: String) {
+        inspections.removeAll { $0.unitName == unitName }
+    }
 }

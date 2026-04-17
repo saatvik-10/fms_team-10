@@ -4,12 +4,322 @@
 //
 
 import SwiftUI
+import PDFKit
 
+// MARK: - PDF Report Generator
+struct InspectionReportGenerator {
+
+    static func generate(for inspection: TripInspection) -> URL? {
+        let pdfMetaData: [String: Any] = [
+            "Creator": "FMS Fleet Management",
+            "Author":  "Fleet Management System",
+            "Title":   "Vehicle Inspection Report"
+        ]
+        let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842) // A4
+        let format = UIGraphicsPDFRendererFormat()
+        format.documentInfo = pdfMetaData
+        let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
+
+        let data = renderer.pdfData { ctx in
+            // ── Page 1: Header & Vehicle Info ───────────────────────────
+            ctx.beginPage()
+            drawPage1(ctx: ctx.cgContext, pageRect: pageRect, inspection: inspection)
+
+            // ── Page 2+: Checklist ───────────────────────────────────────
+            ctx.beginPage()
+            drawChecklist(ctx: ctx.cgContext, pageRect: pageRect, inspection: inspection)
+        }
+
+        // Write to temp file
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("InspectionReport_\(inspection.unitName.replacingOccurrences(of: " ", with: "_")).pdf")
+        try? data.write(to: url)
+        return url
+    }
+
+    // MARK: Page 1 — Header + Vehicle Info
+    private static func drawPage1(ctx: CGContext, pageRect: CGRect, inspection: TripInspection) {
+        let margin: CGFloat = 48
+        var y: CGFloat = margin
+
+        // ── Brand header bar ─────────────────────────────────────────────
+        let headerRect = CGRect(x: 0, y: 0, width: pageRect.width, height: 80)
+        UIColor(AppColors.primary).setFill()
+        ctx.fill(headerRect)
+
+        "FLEET MANAGEMENT SYSTEM".draw(
+            at: CGPoint(x: margin, y: 22),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 18, weight: .bold),
+                .foregroundColor: UIColor.white
+            ]
+        )
+        "Vehicle Inspection Report".draw(
+            at: CGPoint(x: margin, y: 46),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 12, weight: .regular),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.8)
+            ]
+        )
+
+        y = 100
+
+        // ── Section: Vehicle Information ─────────────────────────────────
+        y = drawSectionHeader("VEHICLE INFORMATION", y: y, pageRect: pageRect, ctx: ctx)
+
+        let vehicleFields: [(String, String)] = [
+            ("Vehicle",       inspection.unitName),
+            ("VIN",           inspection.unitVIN),
+            ("Type",          inspection.vehicleType.rawValue),
+            ("Inspection",    inspection.type.rawValue),
+            ("Date",          inspection.timestamp.formatted(date: .long, time: .shortened)),
+            ("Inspector ID",  inspection.maintenanceStaffId),
+            ("Driver ID",     inspection.driverId),
+            ("Status",        inspection.status.rawValue)
+        ]
+        for (label, value) in vehicleFields {
+            y = drawRow(label: label, value: value, y: y, margin: margin, pageRect: pageRect, ctx: ctx)
+        }
+
+        // ── Section: Metrics ─────────────────────────────────────────────
+        y += 16
+        y = drawSectionHeader("VEHICLE METRICS", y: y, pageRect: pageRect, ctx: ctx)
+
+        let metrics: [(String, String)] = [
+            ("Odometer",      inspection.odometer),
+            ("Fuel Level",    inspection.fuelLevel),
+            ("Fuel Effic.",   inspection.efficiency),
+            ("Engine Hours",  inspection.engineHours)
+        ]
+        for (label, value) in metrics {
+            y = drawRow(label: label, value: value, y: y, margin: margin, pageRect: pageRect, ctx: ctx)
+        }
+
+        // ── Summary stats ────────────────────────────────────────────────
+        y += 24
+        let good   = inspection.items.filter { $0.result == .good }.count
+        let repair = inspection.items.filter { $0.result == .repair }.count
+        let alert  = inspection.items.filter { $0.result == .alert }.count
+        let pending = inspection.items.filter { $0.result == .pending }.count
+        let total  = inspection.items.count
+        let passed = good == total - pending // rough pass
+
+        y = drawSectionHeader("INSPECTION SUMMARY", y: y, pageRect: pageRect, ctx: ctx)
+        y = drawRow(label: "Total Items",   value: "\(total)",  y: y, margin: margin, pageRect: pageRect, ctx: ctx)
+        y = drawRow(label: "Good",          value: "\(good)",   y: y, margin: margin, pageRect: pageRect, ctx: ctx)
+        y = drawRow(label: "Repair Needed", value: "\(repair)", y: y, margin: margin, pageRect: pageRect, ctx: ctx)
+        y = drawRow(label: "Alert",         value: "\(alert)",  y: y, margin: margin, pageRect: pageRect, ctx: ctx)
+        y = drawRow(label: "Pending",       value: "\(pending)", y: y, margin: margin, pageRect: pageRect, ctx: ctx)
+
+        // Verdict badge
+        y += 16
+        let verdictColor: UIColor = (repair > 0 || alert > 0) ? .systemRed : .systemGreen
+        let verdict: String       = (repair > 0 || alert > 0) ? "⚠ REQUIRES ATTENTION" : "✓ PASS"
+        ctx.setFillColor(verdictColor.withAlphaComponent(0.1).cgColor)
+        ctx.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: 36))
+        verdict.draw(
+            at: CGPoint(x: margin + 12, y: y + 10),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 13, weight: .bold),
+                .foregroundColor: verdictColor
+            ]
+        )
+        y += 48
+
+        // ── Notes ────────────────────────────────────────────────────────
+        if let notes = inspection.notes, !notes.isEmpty {
+            y = drawSectionHeader("ADDITIONAL NOTES", y: y, pageRect: pageRect, ctx: ctx)
+            notes.draw(
+                in: CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: 80),
+                withAttributes: [
+                    .font: UIFont.systemFont(ofSize: 11),
+                    .foregroundColor: UIColor.darkGray
+                ]
+            )
+        }
+
+        drawFooter(pageRect: pageRect, ctx: ctx, pageNumber: 1)
+    }
+
+    // MARK: Page 2 — Checklist Table
+    private static func drawChecklist(ctx: CGContext, pageRect: CGRect, inspection: TripInspection) {
+        let margin: CGFloat = 48
+        var y: CGFloat = margin
+
+        // Page title
+        "INSPECTION CHECKLIST".draw(
+            at: CGPoint(x: margin, y: y),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 16, weight: .bold),
+                .foregroundColor: UIColor(AppColors.primary)
+            ]
+        )
+        y += 30
+
+        // Column headers
+        let colWidths: [CGFloat] = [220, 80, 120, 80]  // Item, Result, Notes/Criteria, Image
+        let colX: [CGFloat] = [margin, margin + 220, margin + 300, margin + 420]
+        let headers = ["Inspection Item", "Result", "Notes", "Photo"]
+
+        ctx.setFillColor(UIColor(AppColors.primary).withAlphaComponent(0.08).cgColor)
+        ctx.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: 22))
+
+        for (i, header) in headers.enumerated() {
+            header.draw(
+                at: CGPoint(x: colX[i] + 4, y: y + 5),
+                withAttributes: [
+                    .font: UIFont.systemFont(ofSize: 10, weight: .bold),
+                    .foregroundColor: UIColor(AppColors.primary)
+                ]
+            )
+        }
+        y += 26
+
+        // Rows
+        for (index, item) in inspection.items.enumerated() {
+            let rowHeight: CGFloat = 38
+            let bg: UIColor = index.isMultiple(of: 2) ? UIColor.systemGray6 : .white
+            ctx.setFillColor(bg.cgColor)
+            ctx.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: rowHeight))
+
+            // Item name
+            item.name.draw(
+                in: CGRect(x: colX[0] + 4, y: y + 4, width: colWidths[0] - 8, height: 30),
+                withAttributes: [
+                    .font: UIFont.systemFont(ofSize: 10, weight: .medium),
+                    .foregroundColor: UIColor.black
+                ]
+            )
+
+            // Result coloured
+            let resultColor: UIColor
+            switch item.result {
+            case .good:    resultColor = .systemGreen
+            case .repair:  resultColor = .systemOrange
+            case .alert:   resultColor = .systemRed
+            case .pending: resultColor = .systemGray
+            }
+            item.result.rawValue.draw(
+                at: CGPoint(x: colX[1] + 4, y: y + 12),
+                withAttributes: [
+                    .font: UIFont.systemFont(ofSize: 10, weight: .bold),
+                    .foregroundColor: resultColor
+                ]
+            )
+
+            // Notes
+            let noteText = item.notes.isEmpty ? "—" : item.notes
+            noteText.draw(
+                in: CGRect(x: colX[2] + 4, y: y + 4, width: colWidths[2] - 8, height: 30),
+                withAttributes: [
+                    .font: UIFont.systemFont(ofSize: 9),
+                    .foregroundColor: UIColor.darkGray
+                ]
+            )
+
+            // Photo
+            if let data = item.imageData, let img = UIImage(data: data) {
+                let imgRect = CGRect(x: colX[3] + 4, y: y + 2, width: 32, height: 32)
+                img.draw(in: imgRect)
+            } else {
+                "—".draw(
+                    at: CGPoint(x: colX[3] + 4, y: y + 12),
+                    withAttributes: [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.systemGray]
+                )
+            }
+
+            y += rowHeight
+        }
+
+        // Signature block
+        y += 40
+        let signY = min(y, pageRect.height - 120)
+        "Inspector Signature: ___________________________".draw(
+            at: CGPoint(x: margin, y: signY),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 11),
+                .foregroundColor: UIColor.darkGray
+            ]
+        )
+        "Date: ______________".draw(
+            at: CGPoint(x: pageRect.width - 200, y: signY),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 11),
+                .foregroundColor: UIColor.darkGray
+            ]
+        )
+
+        drawFooter(pageRect: pageRect, ctx: ctx, pageNumber: 2)
+    }
+
+    // MARK: Helpers
+    @discardableResult
+    private static func drawSectionHeader(_ title: String, y: CGFloat, pageRect: CGRect, ctx: CGContext) -> CGFloat {
+        let margin: CGFloat = 48
+        ctx.setFillColor(UIColor(AppColors.primary).withAlphaComponent(0.06).cgColor)
+        ctx.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: 20))
+        title.draw(
+            at: CGPoint(x: margin + 4, y: y + 4),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 9, weight: .black),
+                .foregroundColor: UIColor(AppColors.primary)
+            ]
+        )
+        return y + 24
+    }
+
+    @discardableResult
+    private static func drawRow(label: String, value: String, y: CGFloat, margin: CGFloat, pageRect: CGRect, ctx: CGContext) -> CGFloat {
+        let labelAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 11, weight: .semibold),
+            .foregroundColor: UIColor.darkGray
+        ]
+        let valueAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 11),
+            .foregroundColor: UIColor.black
+        ]
+        label.draw(at: CGPoint(x: margin, y: y), withAttributes: labelAttrs)
+        value.draw(at: CGPoint(x: margin + 140, y: y), withAttributes: valueAttrs)
+
+        ctx.setStrokeColor(UIColor.systemGray5.cgColor)
+        ctx.setLineWidth(0.5)
+        ctx.move(to: CGPoint(x: margin, y: y + 16))
+        ctx.addLine(to: CGPoint(x: pageRect.width - margin, y: y + 16))
+        ctx.strokePath()
+
+        return y + 20
+    }
+
+    private static func drawFooter(pageRect: CGRect, ctx: CGContext, pageNumber: Int) {
+        let footerY = pageRect.height - 36
+        ctx.setFillColor(UIColor.systemGray6.cgColor)
+        ctx.fill(CGRect(x: 0, y: footerY, width: pageRect.width, height: 36))
+
+        "Fleet Management System — Confidential".draw(
+            at: CGPoint(x: 48, y: footerY + 10),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 9),
+                .foregroundColor: UIColor.darkGray
+            ]
+        )
+        "Page \(pageNumber)".draw(
+            at: CGPoint(x: pageRect.width - 72, y: footerY + 10),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 9),
+                .foregroundColor: UIColor.darkGray
+            ]
+        )
+    }
+}
+
+// MARK: - Main View
 struct DetailedInspectionView: View {
     @Environment(\.dismiss) var dismiss
     @State var inspection: TripInspection
-    @State private var expandedSections: Set<String> = ["Mechanical Systems"]
-    
+    @State private var showShareSheet = false
+    @State private var reportURL: URL?
+    @State private var isGenerating = false
+
     var body: some View {
         VStack(spacing: 0) {
             // Native-like Header
@@ -27,7 +337,7 @@ struct DetailedInspectionView: View {
             }
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
-            
+
             ScrollView {
                 VStack(spacing: 24) {
                     // Vehicle Info & Metrics Card
@@ -41,23 +351,26 @@ struct DetailedInspectionView: View {
                                     .font(.system(size: 40))
                                     .foregroundColor(.secondary.opacity(0.3))
                             }
-                            
+
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(inspection.unitName)
                                     .font(.title3.bold())
                                 Text("VIN: \(inspection.unitVIN)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
+                                Text(inspection.type.rawValue)
+                                    .font(.caption.bold())
+                                    .foregroundColor(AppColors.primary)
                             }
                             Spacer()
                         }
-                        
+
                         Divider()
-                        
+
                         MetricsGrid(metrics: [
-                            ("ODOMETER", inspection.odometer),
-                            ("FUEL LEVEL", inspection.fuelLevel),
-                            ("EFFICIENCY", inspection.efficiency),
+                            ("ODOMETER",     inspection.odometer),
+                            ("FUEL LEVEL",   inspection.fuelLevel),
+                            ("EFFICIENCY",   inspection.efficiency),
                             ("ENGINE HOURS", inspection.engineHours)
                         ])
                     }
@@ -65,29 +378,29 @@ struct DetailedInspectionView: View {
                     .background(Color(.secondarySystemGroupedBackground))
                     .cornerRadius(16)
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.05), lineWidth: 1))
-                    
-                    // Inspection Checklist Section
+
+                    // Inspection Checklist
                     VStack(alignment: .leading, spacing: 20) {
                         Text("SYSTEM CHECKLIST")
                             .font(.system(size: 12, weight: .black))
                             .foregroundColor(AppColors.primary.opacity(0.7))
                             .padding(.horizontal)
-                        
+
                         VStack(spacing: 0) {
                             ForEach($inspection.items) { $item in
                                 InspectionListItem(item: $item)
                                     .padding()
                                     .background(Color(.secondarySystemGroupedBackground))
-                                
+
                                 if item.id != inspection.items.last?.id {
                                     Divider().padding(.leading, 16)
                                 }
                             }
-                            
-                            // Add Other Option
+
+                            // Add Other
                             Button(action: {
                                 let newItem = InspectionItem(
-                                    name: "Custom Factor",
+                                    name: "Custom Observation",
                                     verificationCriteria: "User-defined criteria",
                                     isImageRequired: false
                                 )
@@ -95,7 +408,7 @@ struct DetailedInspectionView: View {
                             }) {
                                 HStack {
                                     Image(systemName: "plus.circle.fill")
-                                    Text("Add Other Factor")
+                                    Text("Add Observation")
                                 }
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(AppColors.primary)
@@ -110,20 +423,27 @@ struct DetailedInspectionView: View {
                         .cornerRadius(16)
                         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.05), lineWidth: 1))
                     }
-                    
+
                     Spacer(minLength: 120)
                 }
                 .padding()
             }
             .background(Color(.systemGroupedBackground))
-            
+
             // Sticky Bottom Button
-            VStack {
+            VStack(spacing: 0) {
                 Divider()
-                Button(action: { dismiss() }) {
+                Button(action: submitAndGeneratePDF) {
                     HStack {
-                        Text("Submit Inspection Report")
-                        Image(systemName: "text.badge.checkmark")
+                        if isGenerating {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .padding(.trailing, 6)
+                        }
+                        Text(isGenerating ? "Generating Report…" : "Done — Generate Report")
+                        if !isGenerating {
+                            Image(systemName: "text.badge.checkmark")
+                        }
                     }
                     .font(.headline)
                     .frame(maxWidth: .infinity)
@@ -132,29 +452,137 @@ struct DetailedInspectionView: View {
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }
+                .disabled(isGenerating)
                 .padding()
                 .background(.ultraThinMaterial)
             }
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showShareSheet) {
+            if let url = reportURL {
+                ShareSheet(activityItems: [url])
+            }
+        }
     }
-    
-    private func toggleSection(_ id: String) {
-        if expandedSections.contains(id) {
-            expandedSections.remove(id)
-        } else {
-            expandedSections.insert(id)
+
+    private func submitAndGeneratePDF() {
+        isGenerating = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let url = InspectionReportGenerator.generate(for: inspection)
+            DispatchQueue.main.async {
+                isGenerating = false
+                reportURL = url
+                showShareSheet = url != nil
+            }
         }
     }
 }
 
+// MARK: - Inspection List Item (Optional Images)
+struct InspectionListItem: View {
+    @Binding var item: InspectionItem
+    @State private var showImagePicker = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Row 1: Title & Status Menu
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    Text(item.verificationCriteria)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 12)
+                
+                Menu {
+                    Button(action: { item.result = .good }) {
+                        Label("Pass", systemImage: "checkmark.circle.fill")
+                    }
+                    Button(action: { item.result = .repair }) {
+                        Label("Repair", systemImage: "wrench.and.screwdriver.fill")
+                    }
+                    Button(action: { item.result = .alert }) {
+                        Label("Alert", systemImage: "exclamationmark.triangle.fill")
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(item.result == .pending ? "Select" : item.result.rawValue.capitalized)
+                            .font(.system(size: 13, weight: .bold))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(statusColor(item.result).opacity(0.1))
+                    .foregroundColor(statusColor(item.result))
+                    .cornerRadius(8)
+                }
+            }
+
+            // Row 2: Photo Button & Notes Field
+            HStack(spacing: 12) {
+                Button(action: { showImagePicker = true }) {
+                    if let data = item.imageData, let uiImage = UIImage(data: data) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 36, height: 36)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .overlay(
+                                Image(systemName: "pencil.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white)
+                                    .shadow(radius: 1)
+                                    .padding(2),
+                                alignment: .bottomTrailing
+                            )
+                    } else {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color(.systemGray5))
+                                .frame(width: 36, height: 36)
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(item.isImageRequired ? AppColors.primary : .secondary)
+                        }
+                    }
+                }
+                
+                TextField("Add a note...", text: $item.notes)
+                    .font(.subheadline)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(8)
+            }
+        }
+        .sheet(isPresented: $showImagePicker) {
+            ImagePicker(imageData: $item.imageData, sourceType: .photoLibrary)
+        }
+    }
+    
+    private func statusColor(_ result: InspectionResult) -> Color {
+        switch result {
+        case .good: return .green
+        case .repair: return .orange
+        case .alert: return .red
+        case .pending: return .blue
+        }
+    }
+}
+
+// MARK: - Accordion Section (kept for other uses)
 struct InspectionAccordionSection<Content: View>: View {
     let title: String
     let systemImage: String
     let isExpanded: Bool
     let toggle: () -> Void
     let content: Content
-    
+
     init(title: String, systemImage: String, isExpanded: Bool, toggle: @escaping () -> Void, @ViewBuilder content: () -> Content) {
         self.title = title
         self.systemImage = systemImage
@@ -162,7 +590,7 @@ struct InspectionAccordionSection<Content: View>: View {
         self.toggle = toggle
         self.content = content()
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             Button(action: toggle) {
@@ -180,63 +608,16 @@ struct InspectionAccordionSection<Content: View>: View {
                 .padding()
                 .background(Color(.secondarySystemGroupedBackground))
             }
-            
+
             if isExpanded {
                 VStack {
                     Divider()
-                    content
-                        .padding()
+                    content.padding()
                 }
                 .background(Color(.secondarySystemGroupedBackground))
             }
         }
         .cornerRadius(12)
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.05), lineWidth: 1))
-    }
-}
-
-struct InspectionListItem: View {
-    @Binding var item: InspectionItem
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text(item.name)
-                    .font(.body.bold())
-                Spacer()
-                ChoiceButtonGroup(selected: $item.result)
-            }
-            
-            HStack(spacing: 12) {
-                // Photo Placeholder
-                Button(action: {}) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(style: StrokeStyle(lineWidth: 1, dash: [4]))
-                            .foregroundColor(Color(.systemGray4))
-                            .frame(width: 80, height: 80)
-                        
-                        Image(systemName: "camera.badge.ellipsis")
-                            .foregroundColor(.secondary)
-                    }
-                }
-                
-                if let data = item.imageData, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 80, height: 80)
-                        .cornerRadius(8)
-                }
-            }
-            
-            TextField("Add notes for \(item.name.lowercased())...", text: $item.notes)
-                .font(.caption)
-                .padding(8)
-                .background(Color(.systemGray6))
-                .cornerRadius(6)
-            
-            Divider()
-        }
     }
 }

@@ -66,7 +66,7 @@ struct AppColors {
     // Priorities
     static let priorityCritical = Color(hex: "8B0000") // Deep Red
     static let priorityHigh = Color(hex: "C0392B")     // Bright Red
-    static let priorityMedium = Color(hex: "2980B9")   // Blue
+    static let priorityMedium = Color(hex: "0a303a ")   // Blue
     static let priorityLow = Color(hex: "7F8C8D")      // Grey
     
     // UI Elements
