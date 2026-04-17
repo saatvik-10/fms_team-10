@@ -2,8 +2,11 @@
 //  UIComponents.swift
 //  FMS Frontend
 //
+//  Created by Antigravity on 16/04/26.
+//
 
 import SwiftUI
+import PDFKit
 
 /// A premium, enterprise-level card container following iOS HIG.
 struct CardView<Content: View>: View {
@@ -96,5 +99,21 @@ struct PrimaryButton: View {
             .cornerRadius(14)
             .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
         }
+    }
+}
+
+/// A native PDFKit wrapper for SwiftUI to view generated reports.
+struct PDFKitView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> PDFView {
+        let pdfView = PDFView()
+        pdfView.document = PDFDocument(url: url)
+        pdfView.autoScales = true
+        return pdfView
+    }
+
+    func updateUIView(_ pdfView: PDFView, context: Context) {
+        // We typically don't need to update the document here unless the URL changes dynamically
     }
 }

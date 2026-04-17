@@ -25,6 +25,8 @@ struct InspectionItem: Identifiable, Codable {
     let name: String
     let verificationCriteria: String // e.g., "Fluid level between MIN and MAX"
     var isFulfilled: Bool?           // nil = pending, true = Yes, false = No
+    var imageData: Data?             // Image taken during inspection
+    var isImageRequired: Bool        // Whether an image is mandatory for this item
 }
 
 struct TripInspection: Identifiable, Codable {
@@ -49,17 +51,20 @@ struct TripInspection: Identifiable, Codable {
             InspectionItem(
                 name: "Brake Fluid",
                 verificationCriteria: "Fluid level between MIN and MAX marks. Amber/clear color.",
-                isFulfilled: nil
+                isFulfilled: nil,
+                isImageRequired: true
             ),
             InspectionItem(
                 name: "Engine Oil",
                 verificationCriteria: "Dipstick reading within cross-hatched area. No major leaks.",
-                isFulfilled: true
+                isFulfilled: true,
+                isImageRequired: true
             ),
             InspectionItem(
                 name: "Lights & Indicators",
                 verificationCriteria: "All headlights, brake lights, and hazards operational.",
-                isFulfilled: nil
+                isFulfilled: nil,
+                isImageRequired: false
             )
         ]
         
@@ -68,7 +73,8 @@ struct TripInspection: Identifiable, Codable {
                 InspectionItem(
                     name: "Trailer Connection",
                     verificationCriteria: "Fifth wheel jaw locked. Air lines secure. Safety pin engaged.",
-                    isFulfilled: false
+                    isFulfilled: false,
+                    isImageRequired: true
                 )
             )
         }
