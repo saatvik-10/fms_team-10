@@ -48,9 +48,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
 class DashboardViewModel: ObservableObject {
     @Published var userName: String = "Marcus"
-    @Published var routeNumber: String = "IND-402"
-    @Published var pickupLocation: String = "Nhava Sheva Port, Terminal 2, Mumbai"
-    @Published var destinationLocation: String = "Sector 18, Gurgaon, Haryana"
+    @Published var activeTrip: Trip = Trip.mockTrip
     @Published var vehicleName: String = "Tata Prima 4028.S"
     @Published var vehiclePlate: String = "MH 43 AB 1234"
     @Published var fuelLevel: String = "78%"
@@ -174,7 +172,7 @@ struct MissionCardView: View {
                         .cornerRadius(6)
                 }
                 
-                Text("Route #\(viewModel.routeNumber)")
+                Text("Route #\(viewModel.activeTrip.routeNumber)")
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.black)
@@ -188,10 +186,10 @@ struct MissionCardView: View {
             
             // Details
             VStack(alignment: .leading, spacing: 16) {
-                RouteDetailRow(label: "PICKUP", value: viewModel.pickupLocation)
-                RouteDetailRow(label: "DESTINATION", value: viewModel.destinationLocation)
+                RouteDetailRow(label: "PICKUP", value: viewModel.activeTrip.pickup.name)
+                RouteDetailRow(label: "DESTINATION", value: viewModel.activeTrip.destination.name)
                 
-                NavigationLink(destination: TripDetailView()) {
+                NavigationLink(destination: TripDetailView(trip: viewModel.activeTrip)) {
                     HStack {
                         Text("View Trip")
                     }
@@ -324,19 +322,7 @@ struct RouteDetailRow: View {
 
 // MARK: - Navigation Destination Placeholders
 
-struct TripDetailView: View {
-    var body: some View {
-        VStack {
-            Text("Trip Real-Time Logistics")
-                .font(.title)
-                .fontWeight(.bold)
-            Text("Details loaded here...")
-                .foregroundColor(.secondary)
-        }
-        .navigationTitle("Trip Detail")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
+// TripDetailView is implemented in its own file
 
 // MARK: - Google Maps Wrapper
 
