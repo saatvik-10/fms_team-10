@@ -29,7 +29,7 @@ class GoogleDirectionsService {
     static let shared = GoogleDirectionsService()
     
     // API KEY found in Frontend.swift
-    private let apiKey = "AIzaSyDlMQm7FBZik7fIYAI6RdY21HmCpMjn5yM"
+    private let apiKey = "AIzaSyBblB9O0UzmpYM8b9MISNVODw3yvxOnD0g"
     
     func fetchDirections(trip: Trip) async throws -> (eta: String, polyline: String) {
         let originParams = "\(trip.pickup.coordinate.latitude),\(trip.pickup.coordinate.longitude)"

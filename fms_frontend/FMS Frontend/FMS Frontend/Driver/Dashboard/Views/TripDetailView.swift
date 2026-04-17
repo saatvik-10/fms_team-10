@@ -8,6 +8,7 @@ struct TripDetailView: View {
     @State private var estimatedArrival: String = "Loading..."
     @State private var routePolyline: String = ""
     @State private var isLoadingEta: Bool = true
+    @State private var showMap = false
     
     // Extracted shared padding for precise alignment
     private let horizontalPadding: CGFloat = 20
@@ -84,9 +85,11 @@ struct TripDetailView: View {
                     title: "Continue Navigation",
                     icon: "location.fill",
                     backgroundColor: AppColors.primary,
-                    textColor: .white
-                ) {
-                    // Start navigation action
+                    textColor: .white,
+                    action: { showMap = true }
+                )
+                .navigationDestination(isPresented: $showMap) {
+                    NavigationMapView(trip: Trip.mockTrip)
                 }
                 .padding(.horizontal, horizontalPadding)
                 .padding(.bottom, 32)
