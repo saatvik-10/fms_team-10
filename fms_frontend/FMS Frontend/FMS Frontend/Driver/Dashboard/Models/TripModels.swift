@@ -17,6 +17,7 @@ struct TripStop: Identifiable {
 
 struct Trip {
     var routeNumber: String
+    var tripDate: String
     var pickup: TripStop
     var destination: TripStop
     var stops: [TripStop]
@@ -28,6 +29,7 @@ extension Trip {
     static var mockTrip: Trip {
         Trip(
             routeNumber: "IND-402",
+            tripDate: "", // Dashboard mock trip has no date lock
             pickup: TripStop(
                 name: "Nhava Sheva Port, Terminal 2, Mumbai",
                 coordinate: CLLocationCoordinate2D(latitude: 18.9499, longitude: 72.9525),

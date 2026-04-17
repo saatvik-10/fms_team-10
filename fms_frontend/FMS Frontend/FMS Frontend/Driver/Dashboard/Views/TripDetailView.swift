@@ -9,6 +9,15 @@ struct TripDetailView: View {
     @State private var routePolyline: String = ""
     @State private var isLoadingEta: Bool = true
     
+    // Date-gate: Compare today's date against trip date (e.g. "Oct 18")
+    private var isNavigationEnabled: Bool {
+        guard !trip.tripDate.isEmpty else { return true } // No lock if date is blank
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        let todayString = formatter.string(from: Date())
+        return todayString == trip.tripDate
+    }
+    
     // Extracted shared padding for precise alignment
     private let horizontalPadding: CGFloat = 20
     
@@ -80,14 +89,25 @@ struct TripDetailView: View {
                 .shadow(color: AppColors.shadow, radius: 10, x: 0, y: 4)
                 
                 // ACTION BUTTON
-                PrimaryButton(
-                    title: "Continue Navigation",
-                    icon: "location.fill",
-                    backgroundColor: AppColors.primary,
-                    textColor: .white
-                ) {
-                    // Start navigation action
+                ZStack {
+                    PrimaryButton(
+                        title: "Continue Navigation",
+                        icon: "location.fill",
+                        backgroundColor: AppColors.primary,
+                        textColor: .white
+                    ) {
+                        // Start navigation action
+                    }
+                    .allowsHitTesting(isNavigationEnabled)
+                    
+                    // Disabled overlay: faded effect without changing the button's look
+                    if !isNavigationEnabled {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(UIColor.systemBackground).opacity(0.45))
+                            .allowsHitTesting(false)
+                    }
                 }
+                .opacity(isNavigationEnabled ? 1.0 : 0.5)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.bottom, 32)
             }
