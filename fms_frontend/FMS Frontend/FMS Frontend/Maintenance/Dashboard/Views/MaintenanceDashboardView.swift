@@ -6,101 +6,75 @@
 import SwiftUI
 
 struct MaintenanceDashboardView: View {
-    @StateObject private var viewModel = MaintenanceDashboardViewModel()
+    @EnvironmentObject var store: MaintenanceStore
+    @State private var showingCreateInspection = false
+    @State private var showingEmergencyInspection = false
+    @State private var showingCreateWorkOrder = false
     
     var body: some View {
-        ZStack {
-            AppColors.screenBackground.ignoresSafeArea()
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // Header Region (Integrated with Tab)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Fleet Health")
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
-                            .foregroundColor(AppColors.primaryText)
-                        Text("Real-time maintenance status and alerts")
-                            .font(.system(size: 15))
-                            .foregroundColor(AppColors.secondaryText)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // Scheduled Work Orders Section
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Scheduled Work Orders")
+                                .font(.headline)
+                            Text("Monitor maintenance events for the week")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        
+                        NavigationLink(destination: WorkOrderManagementView()) {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.secondary)
+                                .padding(8)
+                                .background(Color.secondary.opacity(0.1))
+                                .clipShape(Circle())
+                        }
                     }
                     .padding(.horizontal)
-                    .padding(.top, 10)
                     
-                    // Summary Stats: Enterprise Look
-                    HStack(spacing: 16) {
-                        SummaryCard(title: "Inspections", count: "\(viewModel.pendingInspectionsCount)", icon: "checkmark.shield.fill", color: AppColors.primary)
-                        SummaryCard(title: "Work Orders", count: "\(viewModel.activeWorkOrdersCount)", icon: "wrench.and.screwdriver.fill", color: .orange)
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // Alerts Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("Critical Alerts")
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
-                            Spacer()
-                            Text("View All")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(AppColors.primary)
-                        }
-                        .padding(.horizontal, 24)
-                        
-                        VStack(spacing: 12) {
-                            ForEach(viewModel.recentAlerts) { alert in
-                                NavigationLink {
-                                    if alert.type == .maintenance {
-                                        MaintenanceSchedulingView(vehicleId: alert.vehicleId, description: alert.issueDescription)
-                                    } else if alert.type == .inspection {
-                                        TripInspectionView()
-                                    } else {
-                                        Text("Alert Details: \(alert.title)")
-                                    }
-                                } label: {
-                                    AlertCard(alert: alert)
-                                }
-                                .buttonStyle(.plain)
+                    VStack(spacing: 12) {
+                        let sortedOrders = store.workOrders.sorted { $0.priority.sortingOrder < $1.priority.sortingOrder }
+                        ForEach(sortedOrders.prefix(5)) { order in
+                            NavigationLink(destination: WorkOrderDetailsView(workOrder: order)) {
+                                WorkOrderTaskCard(order: order)
                             }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
-                    
-                    // Operational Shortcuts
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Operations")
-                            .font(.system(size: 18, weight: .bold))
-                            .padding(.horizontal)
-                        
-                        VStack(spacing: 0) {
-                            NavigationLink(destination: TripInspectionView()) {
-                                QuickActionRow(title: "New Pre-Trip Inspection", icon: "plus.circle.fill", isLast: false)
-                            }
-                            Divider().padding(.leading, 54)
-                            NavigationLink(destination: MaintenanceSchedulingView()) {
-                                QuickActionRow(title: "Schedule Repair", icon: "calendar.badge.plus", isLast: false)
-                            }
-                            Divider().padding(.leading, 54)
-                            NavigationLink(destination: WorkOrderManagementView()) {
-                                QuickActionRow(title: "Open Work Orders", icon: "list.bullet.rectangle.portrait", isLast: true)
-                            }
-                        }
-                        .background(Color.white)
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.black.opacity(0.05), lineWidth: 1)
-                        )
-                        .padding(.horizontal)
-                    }
-                    
-                    Spacer(minLength: 40)
+                    .padding(.horizontal)
+                }
+                
+                Spacer(minLength: 30)
+            }
+            .padding(.top)
+        }
+        .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle("Maintenance")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: MaintenanceProfileView(isLoggedIn: .constant(true))) {
+                    Image(systemName: "person.circle")
+                        .font(.system(size: 22))
                 }
             }
         }
-        .navigationTitle("")
-        .navigationBarHidden(true)
+        .sheet(isPresented: $showingCreateInspection) {
+            CreateInspectionModal(isEmergency: false)
+        }
+        .sheet(isPresented: $showingEmergencyInspection) {
+            CreateInspectionModal(isEmergency: true)
+        }
+        .sheet(isPresented: $showingCreateWorkOrder) {
+            CreateWorkOrderModal()
+        }
     }
 }
-
-// MARK: - Subviews Re-styled for Enterprise
 
 struct SummaryCard: View {
     let title: String

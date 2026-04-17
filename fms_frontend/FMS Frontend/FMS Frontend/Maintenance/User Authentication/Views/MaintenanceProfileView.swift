@@ -9,94 +9,83 @@ struct MaintenanceProfileView: View {
     @Binding var isLoggedIn: Bool
     
     var body: some View {
-        ZStack {
-            AppColors.screenBackground.ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Identity Section
-                    VStack(spacing: 16) {
-                        Image(systemName: "person.circle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 100, height: 100)
-                            .foregroundColor(AppColors.primary)
-                            .background(Circle().fill(Color.white).shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5))
+        List {
+            // Identity Header
+            Section {
+                VStack(spacing: 16) {
+                    Image(systemName: "person.crop.circle.fill")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(AppColors.primary)
+                        .background(Circle().fill(Color.white).shadow(color: Color.black.opacity(0.1), radius: 10))
+                    
+                    VStack(spacing: 4) {
+                        Text("Anshul Kumaria")
+                            .font(.title2.bold())
+                        Text("Senior Maintenance Technician")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                         
-                        VStack(spacing: 4) {
-                            Text("Anshul Kumaria")
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
-                                .foregroundColor(AppColors.primaryText)
-                            
-                            Text("Senior Maintenance Technician")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(AppColors.secondaryText)
-                            
-                            Text("ID: MS-7729-2026")
-                                .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(6)
-                                .padding(.top, 4)
-                        }
+                        Text("ID: MS-7729-2026")
+                            .font(.caption.monospaced())
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(4)
                     }
-                    .padding(.top, 20)
-                    
-                    // Stats Section
-                    HStack(spacing: 20) {
-                        ProfileStatItem(title: "Completed", value: "142", icon: "wrench.fill")
-                        ProfileStatItem(title: "Verifications", value: "98%", icon: "checkmark.seal.fill")
-                        ProfileStatItem(title: "Hrs Logged", value: "1.2k", icon: "clock.fill")
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+            }
+            .listRowBackground(Color.clear)
+            
+            Section("Account Security") {
+                ProfileMenuRow(title: "Face ID & Passcode", icon: "faceid", color: .blue)
+                ProfileMenuRow(title: "Two-Factor Auth", icon: "lock.shield", color: .green)
+                ProfileMenuRow(title: "Session Management", icon: "list.bullet.rectangle", color: .orange)
+            }
+            
+            Section("App Preferences") {
+                ProfileMenuRow(title: "Notifications", icon: "bell.badge", color: .red)
+                ProfileMenuRow(title: "Dark Mode", icon: "moon.fill", color: .purple)
+                ProfileMenuRow(title: "Units of Measure (mi/mpg)", icon: "speedometer", color: .blue)
+            }
+            
+            Section("Fleet Administration") {
+                ProfileMenuRow(title: "Sync Offline Data", icon: "arrow.triangle.2.circlepath", color: .teal)
+                ProfileMenuRow(title: "Download Fleet Manuals", icon: "book.closed", color: .brown)
+                ProfileMenuRow(title: "Help & Support", icon: "questionmark.circle", color: .blue)
+            }
+            
+            Section {
+                Button(action: {
+                    withAnimation {
+                        isLoggedIn = false
                     }
-                    .padding(.horizontal)
-                    
-                    // Settings & Actions
-                    VStack(spacing: 0) {
-                        ProfileMenuRow(title: "Notification Settings", icon: "bell.fill", color: .red)
-                        Divider().padding(.leading, 56)
-                        ProfileMenuRow(title: "Security & Privacy", icon: "lock.shield.fill", color: .blue)
-                        Divider().padding(.leading, 56)
-                        ProfileMenuRow(title: "Language (English)", icon: "globe", color: .green)
-                        Divider().padding(.leading, 56)
-                        ProfileMenuRow(title: "Help & Documentation", icon: "questionmark.circle.fill", color: .orange)
-                    }
-                    .background(Color.white)
-                    .cornerRadius(16)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.black.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(.horizontal)
-                    
-                    // Logout Action
-                    Button(action: {
-                        withAnimation {
-                            isLoggedIn = false
-                        }
-                    }) {
-                        HStack {
-                            Image(systemName: "power")
-                            Text("Logout Session")
-                                .fontWeight(.bold)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Color.red.opacity(0.1))
+                }) {
+                    Text("Logout Session")
+                        .fontWeight(.bold)
                         .foregroundColor(.red)
-                        .cornerRadius(16)
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 12)
-                    
-                    Text("App Version 1.0.4 (Enterprise Build)")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(AppColors.secondaryText)
-                        .padding(.bottom, 20)
+                        .frame(maxWidth: .infinity)
                 }
             }
+            
+            Section {
+                VStack(alignment: .center, spacing: 4) {
+                    Text("Fleet Management System - Maintenance")
+                    Text("Version 1.2.0 (Stable)")
+                    Text("© 2026 FleetCore Pro")
+                }
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity)
+            }
+            .listRowBackground(Color.clear)
         }
+        .listStyle(.insetGrouped)
         .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

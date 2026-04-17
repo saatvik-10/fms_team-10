@@ -67,8 +67,15 @@ class PDFService {
                 name.draw(at: CGPoint(x: 40, y: currentY), withAttributes: [.font: UIFont.systemFont(ofSize: 12)])
                 
                 // Status
-                let status = item.isFulfilled == true ? "PASS" : (item.isFulfilled == false ? "FAIL" : "PENDING")
-                let statusColor = item.isFulfilled == true ? UIColor.systemGreen : (item.isFulfilled == false ? UIColor.systemRed : UIColor.systemGray)
+                let status = item.result == .good ? "PASS" : (item.result == .repair ? "REPAIR" : (item.result == .alert ? "FAIL" : "PENDING"))
+                let statusColor: UIColor
+                switch item.result {
+                case .good: statusColor = .systemGreen
+                case .repair: statusColor = .systemOrange
+                case .alert: statusColor = .systemRed
+                case .pending: statusColor = .systemGray
+                }
+                
                 status.draw(at: CGPoint(x: pageWidth - 100, y: currentY), withAttributes: [
                     .font: UIFont.boldSystemFont(ofSize: 12),
                     .foregroundColor: statusColor

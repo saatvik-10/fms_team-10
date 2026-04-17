@@ -59,11 +59,17 @@ struct AppColors {
     static let secondaryText = Color.gray
     
     // Status
-    static let success = Color.green
-    static let warning = Color.orange
-    static let error = Color.red
+    static let success = Color(hex: "27AE60")
+    static let warning = Color(hex: "F2994A")
+    static let error = Color(hex: "EB5757")
+    
+    // Priorities
+    static let priorityCritical = Color(hex: "8B0000") // Deep Red
+    static let priorityHigh = Color(hex: "C0392B")     // Bright Red
+    static let priorityMedium = Color(hex: "2980B9")   // Blue
+    static let priorityLow = Color(hex: "7F8C8D")      // Grey
     
     // UI Elements
-    static let divider = Color.gray.opacity(0.2)
-    static let shadow = Color.black.opacity(0.05)
+    static let divider = Color.gray.opacity(0.1)
+    static let shadow = Color.black.opacity(0.06)
 }

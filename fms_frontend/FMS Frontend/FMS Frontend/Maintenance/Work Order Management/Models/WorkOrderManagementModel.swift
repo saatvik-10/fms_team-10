@@ -11,23 +11,65 @@ enum WorkOrderStatus: String, Codable, CaseIterable {
     case completed = "Completed"
 }
 
+enum WorkOrderPriority: String, Codable, CaseIterable {
+    case critical = "Critical"
+    case high = "High"
+    case medium = "Medium"
+    case low = "Low"
+    
+    var sortingOrder: Int {
+        switch self {
+        case .critical: return 0
+        case .high: return 1
+        case .medium: return 2
+        case .low: return 3
+        }
+    }
+}
+
+struct Part: Identifiable, Codable {
+    var id = UUID()
+    let name: String
+    let description: String
+    let iconName: String // SF Symbol or mock image name
+}
+
 struct WorkOrder: Identifiable, Codable {
     var id = UUID()
-    let vehicleId: String
-    let taskDescription: String
+    var title: String
+    var vehicleName: String
+    var vehicleVIN: String
+    var serviceType: String
+    var priority: WorkOrderPriority
     var status: WorkOrderStatus
-    let technicianId: String
-    let createdAt: Date
-    var updatedAt: Date
+    var taskDetails: String
+    var scheduledDate: Date
+    var technicianId: String
+    var technicianNotes: String = ""
+    var partsNeeded: [Part] = []
+    var imageURL: String? = nil
+    var voiceTranscript: String? = nil
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
     
     static var mock: WorkOrder {
         WorkOrder(
-            vehicleId: "V-5678",
-            taskDescription: "Replace brake pads and check fluid levels",
+            title: "Brake Pad Replacement",
+            vehicleName: "Unit 842-Alpha",
+            vehicleVIN: "1HGCM8263JA05",
+            serviceType: "Routine PM",
+            priority: .high,
             status: .inProgress,
+            taskDetails: "Reported by Driver: Squealing sounds coming from front passenger side and noticeably decreased braking efficiency under load. Inspection of rotors required for scoring or heat damage.",
+            scheduledDate: Date().addingTimeInterval(86400),
             technicianId: "TECH-01",
-            createdAt: Date().addingTimeInterval(-172800),
-            updatedAt: Date()
+            technicianNotes: "Detail observations, adjustments, or remaining concerns...",
+            partsNeeded: [
+                Part(name: "Ceramic Brake Pads", description: "Primary wear item replacement", iconName: "shippingbox.fill"),
+                Part(name: "DOT 4 Fluid", description: "Hydraulic system top-off/flush", iconName: "drop.fill"),
+                Part(name: "Front Rotors (2)", description: "Potential replacement for scoring", iconName: "circle.circle.fill")
+            ],
+            voiceTranscript: "Hey, it started happening around mile marker 40. Every time I hit the brakes, there's this high-pitched metal-on-metal sound. The stopping distance feels a bit longer than usual, especially when I'm fully loaded. Sending some photos of the wheel area now."
         )
     }
 }

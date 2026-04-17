@@ -104,13 +104,15 @@ struct MaintenanceReportsView: View {
     
     func generateMockReport() {
         let mockItems = [
-            InspectionItem(name: "Front Brakes", verificationCriteria: "Pads > 4mm. No squeal.", isFulfilled: true, isImageRequired: true),
-            InspectionItem(name: "Tire Pressure", verificationCriteria: "All tires at 32 PSI.", isFulfilled: true, isImageRequired: false),
-            InspectionItem(name: "Engine Coolant", verificationCriteria: "Level at MAX. Pink color.", isFulfilled: false, isImageRequired: true)
+            InspectionItem(name: "Front Brakes", verificationCriteria: "Pads > 4mm. No squeal.", result: .good, isImageRequired: true),
+            InspectionItem(name: "Tire Pressure", verificationCriteria: "All tires at 32 PSI.", result: .good, isImageRequired: false),
+            InspectionItem(name: "Engine Coolant", verificationCriteria: "Level at MAX. Pink color.", result: .repair, isImageRequired: true)
         ]
         
         let mockInspection = TripInspection(
             vehicleId: "V-SAMPLE-99",
+            unitName: "Unit 99-Sample",
+            unitVIN: "VIN-999999999",
             driverId: "D-SIMULATOR",
             timestamp: Date(),
             type: .preTrip,

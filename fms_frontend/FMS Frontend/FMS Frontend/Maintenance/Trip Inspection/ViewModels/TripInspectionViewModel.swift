@@ -12,9 +12,9 @@ import Vision
 class TripInspectionViewModel: ObservableObject {
     // Published properties so SwiftUI updates the view
     @Published var inspections: [TripInspection] = [
-        TripInspection(vehicleId: "V-TRUCK-01", driverId: "D-92", timestamp: Date(), type: .preTrip, vehicleType: .truck, status: .pending, items: TripInspection.mockItems(for: .truck), maintenanceStaffId: "M-1"),
-        TripInspection(vehicleId: "V-CAR-05", driverId: "D-11", timestamp: Date(), type: .preTrip, vehicleType: .car, status: .pending, items: TripInspection.mockItems(for: .car), maintenanceStaffId: "M-1"),
-        TripInspection(vehicleId: "V-TRUCK-02", driverId: "D-44", timestamp: Date(), type: .postTrip, vehicleType: .truck, status: .completed, items: TripInspection.mockItems(for: .truck), maintenanceStaffId: "M-1")
+        TripInspection(vehicleId: "V-TRUCK-01", unitName: "Unit 842-Alpha", unitVIN: "1HGCM8263JA05", driverId: "D-92", timestamp: Date(), type: .preTrip, vehicleType: .truck, status: .pending, items: TripInspection.mockItems(for: .truck), maintenanceStaffId: "M-1"),
+        TripInspection(vehicleId: "V-CAR-05", unitName: "Unit 319-Echo", unitVIN: "3VWCP1192BM10", driverId: "D-11", timestamp: Date(), type: .preTrip, vehicleType: .car, status: .pending, items: TripInspection.mockItems(for: .car), maintenanceStaffId: "M-1"),
+        TripInspection(vehicleId: "V-TRUCK-02", unitName: "Unit 115-Delta", unitVIN: "JTMBU4230L901", driverId: "D-44", timestamp: Date(), type: .postTrip, vehicleType: .truck, status: .completed, items: TripInspection.mockItems(for: .truck), maintenanceStaffId: "M-1")
     ]
     
     @Published var selectedStatus: InspectionStatus = .pending
@@ -29,10 +29,10 @@ class TripInspectionViewModel: ObservableObject {
         inspections.filter { $0.status == selectedStatus }
     }
     
-    func setItemStatus(for vehicleId: String, itemId: UUID, status: Bool?) {
+    func setItemResult(for vehicleId: String, itemId: UUID, result: InspectionResult) {
         if let vIndex = inspections.firstIndex(where: { $0.vehicleId == vehicleId }),
            let iIndex = inspections[vIndex].items.firstIndex(where: { $0.id == itemId }) {
-            inspections[vIndex].items[iIndex].isFulfilled = status
+            inspections[vIndex].items[iIndex].result = result
         }
     }
     
@@ -77,7 +77,7 @@ class TripInspectionViewModel: ObservableObject {
             let inspection = inspections[index]
             
             // Validation
-            let allChecked = inspection.items.allSatisfy { $0.isFulfilled != nil }
+            let allChecked = inspection.items.allSatisfy { $0.result != .pending }
             let mandatoryImagesPresent = inspection.items.filter { $0.isImageRequired }.allSatisfy { $0.imageData != nil }
             
             if !allChecked || !mandatoryImagesPresent {

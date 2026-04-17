@@ -9,41 +9,27 @@ import SwiftUI
 
 struct MaintenanceTabView: View {
     @Binding var isLoggedIn: Bool
+    @StateObject var store = MaintenanceStore()
     
     var body: some View {
         TabView {
-            // Tab 1: Work Orders
+            // Tab 1: Dashboard
             NavigationStack {
-                WorkOrderManagementView()
+                MaintenanceDashboardView()
             }
             .tabItem {
-                Label("Work Orders", systemImage: "list.bullet.rectangle.portrait.fill")
+                Label("Dashboard", systemImage: "square.grid.2x2.fill")
             }
             
-            // Tab 2: Inspections
+            // Tab 3: Inspections
             NavigationStack {
                 TripInspectionView()
             }
             .tabItem {
-                Label("Inspections", systemImage: "checkmark.shield.fill")
-            }
-            
-            // Tab 3: Reports
-            NavigationStack {
-                MaintenanceReportsView()
-            }
-            .tabItem {
-                Label("Reports", systemImage: "doc.text.fill")
-            }
-            
-            // Tab 4: Chat
-            NavigationStack {
-                ChatView()
-            }
-            .tabItem {
-                Label("Chat", systemImage: "bubble.left.and.bubble.right.fill")
+                Label("Inspections", systemImage: "clipboard.fill")
             }
         }
+        .environmentObject(store)
         .accentColor(AppColors.primary)
     }
 }
