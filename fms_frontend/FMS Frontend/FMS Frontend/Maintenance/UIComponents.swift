@@ -7,6 +7,16 @@
 
 import SwiftUI
 import PDFKit
+import UIKit
+
+extension UIColor {
+    func image(_ size: CGSize = CGSize(width: 100, height: 100)) -> UIImage {
+        return UIGraphicsImageRenderer(size: size).image { rendererContext in
+            self.setFill()
+            rendererContext.fill(CGRect(origin: .zero, size: size))
+        }
+    }
+}
 
 /// A premium, enterprise-level card container following iOS HIG.
 struct CardView<Content: View>: View {
@@ -176,15 +186,11 @@ struct WorkOrderTaskCard: View {
                         .font(.system(size: 20))
                 }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(order.title)
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.primary)
-                            .lineLimit(1)
-                        
-                        PriorityBadge(priority: order.priority.rawValue)
-                    }
+                            .fixedSize(horizontal: false, vertical: true)
 
                     Text(order.vehicleName)
                         .font(.system(size: 13, weight: .medium))
@@ -335,7 +341,7 @@ struct InspectionTaskCard: View {
                         Text(inspection.title.isEmpty ? inspection.type.rawValue : inspection.title)
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.primary)
-                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
                         
                         Text(inspection.type == .preTrip ? "PRE-TRIP" : "POST-TRIP")
                             .font(.system(size: 8, weight: .black))

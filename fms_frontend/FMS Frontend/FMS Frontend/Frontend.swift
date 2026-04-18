@@ -15,9 +15,18 @@ struct Frontend: App {
         WindowGroup {
             if isAuthenticated {
                 MaintenanceTabView(isLoggedIn: $isAuthenticated)
+                    .environmentObject(MaintenanceStore())
             } else {
-                MaintenanceUserAuthenticationView(isLoggedIn: $isAuthenticated)
+                LoginView(isLoggedIn: $isAuthenticated)
             }
         }
+    }
+}
+
+// Simple preference key to communicate auth status back to root
+struct AuthKey: PreferenceKey {
+    static var defaultValue: Bool = false
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = nextValue()
     }
 }

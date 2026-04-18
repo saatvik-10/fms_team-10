@@ -64,7 +64,7 @@ class MaintenanceStore: ObservableObject {
                 items: TripInspection.mockItems(for: .truck),
                 maintenanceStaffId: "STAFF-01",
                 imageAsset: "truck_main",
-                imagesData: [UIImage(named: "truck_main")?.jpegData(compressionQuality: 0.5)].compactMap { $0 },
+                imagesData: [UIImage(named: "truck_main")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemBlue.image().jpegData(compressionQuality: 0.1)!],
                 imageAnalyses: ["Analysis: Front chassis and cab exterior appear within operational standards. No structural stress detected in the primary load-bearing points."]
             ),
             TripInspection(
@@ -80,7 +80,7 @@ class MaintenanceStore: ObservableObject {
                 items: TripInspection.mockItems(for: .truck),
                 maintenanceStaffId: "STAFF-01",
                 imageAsset: "truck_main",
-                imagesData: [UIImage(named: "tire_part")?.jpegData(compressionQuality: 0.5)].compactMap { $0 },
+                imagesData: [UIImage(named: "tire_part")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemOrange.image().jpegData(compressionQuality: 0.1)!],
                 imageAnalyses: ["Analysis: Tire tread depth remains optimal. Minor particulate buildup detected in the outer groove, but no sharp object penetration observed."]
             ),
             TripInspection(
@@ -96,7 +96,7 @@ class MaintenanceStore: ObservableObject {
                 items: TripInspection.mockItems(for: .truck),
                 maintenanceStaffId: "STAFF-01",
                 imageAsset: "truck_main",
-                imagesData: [UIImage(named: "engine_part")?.jpegData(compressionQuality: 0.5)].compactMap { $0 },
+                imagesData: [UIImage(named: "engine_part")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemRed.image().jpegData(compressionQuality: 0.1)!],
                 imageAnalyses: ["Analysis: Engine manifold thermal signature appears uniform. No fluid seepage detected around the secondary gasket seal."]
             ),
             TripInspection(
@@ -112,7 +112,7 @@ class MaintenanceStore: ObservableObject {
                 items: TripInspection.mockItems(for: .truck),
                 maintenanceStaffId: "STAFF-01",
                 imageAsset: "truck_main",
-                imagesData: [UIImage(named: "brake_part")?.jpegData(compressionQuality: 0.5)].compactMap { $0 },
+                imagesData: [UIImage(named: "brake_part")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemGreen.image().jpegData(compressionQuality: 0.1)!],
                 imageAnalyses: ["Analysis: Brake disc surface shows normal friction heat patterns. No scoring or micro-fractures detected in the high-stress contact zone."]
             )
         ]

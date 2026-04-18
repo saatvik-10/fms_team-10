@@ -20,8 +20,10 @@ struct PDFPreviewView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
-                        Button("Done") {
-                            dismiss()
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.primary)
                         }
                     }
                     ToolbarItem(placement: .navigationBarTrailing) {

@@ -116,7 +116,6 @@ struct InspectionReportGenerator {
         let alert  = inspection.items.filter { $0.result == .alert }.count
         let pending = inspection.items.filter { $0.result == .pending }.count
         let total  = inspection.items.count
-        let passed = good == total - pending // rough pass
 
         y = drawSectionHeader("INSPECTION SUMMARY", y: y, pageRect: pageRect, ctx: ctx)
         y = drawRow(label: "Total Items",   value: "\(total)",  y: y, margin: margin, pageRect: pageRect, ctx: ctx)
@@ -498,6 +497,7 @@ struct DetailedInspectionView: View {
                             }
                         }
                     }
+                    .padding(.horizontal)
                 }
 
                 Spacer(minLength: 120)
@@ -535,9 +535,24 @@ struct DetailedInspectionView: View {
         }
         .fullScreenCover(isPresented: $showingPDFPreview) {
             if let url = reportURL {
-                PDFPreviewView(url: url, title: reportURL?.lastPathComponent ?? "Report")
+                PDFPreviewView(url: url, title: getReportTitle())
+            } else {
+                EmptyView()
             }
         }
+    }
+
+    private func getReportTitle() -> String {
+        let initials = inspection.unitName.components(separatedBy: " ")
+            .compactMap { $0.first }
+            .map { String($0) }
+            .joined()
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yy"
+        let dateStr = formatter.string(from: Date())
+        
+        return "\(initials) - \(dateStr)"
     }
 
     private func submitAndGeneratePDF() {
