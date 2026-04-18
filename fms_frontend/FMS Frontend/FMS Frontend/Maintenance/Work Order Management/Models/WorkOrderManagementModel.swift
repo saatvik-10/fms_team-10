@@ -32,6 +32,7 @@ struct Part: Identifiable, Codable {
     let name: String
     let description: String
     let iconName: String // SF Symbol or mock image name
+    var imageAsset: String? = nil
 }
 
 struct WorkOrder: Identifiable, Codable {
@@ -48,9 +49,11 @@ struct WorkOrder: Identifiable, Codable {
     var technicianNotes: String = ""
     var partsNeeded: [Part] = []
     var imageURL: String? = nil
+    var imageAsset: String? = nil
     var voiceTranscript: String? = nil
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
+    var proofOfWorkImages: [Data] = []
     
     static var mock: WorkOrder {
         WorkOrder(
@@ -60,15 +63,16 @@ struct WorkOrder: Identifiable, Codable {
             serviceType: "Routine PM",
             priority: .high,
             status: .inProgress,
-            taskDetails: "Reported by Driver: Squealing sounds coming from front passenger side and noticeably decreased braking efficiency under load. Inspection of rotors required for scoring or heat damage.",
+            taskDetails: "Driver reports: Squealing sounds coming from front passenger side and noticeably decreased braking efficiency under load. Inspection of rotors required for scoring or heat damage.",
             scheduledDate: Date().addingTimeInterval(86400),
             technicianId: "TECH-01",
-            technicianNotes: "Detail observations, adjustments, or remaining concerns...",
+            technicianNotes: "Rotors show significant heat discoloration. Recommending full rotor replacement alongside pads.",
             partsNeeded: [
                 Part(name: "Ceramic Brake Pads", description: "Primary wear item replacement", iconName: "shippingbox.fill"),
                 Part(name: "DOT 4 Fluid", description: "Hydraulic system top-off/flush", iconName: "drop.fill"),
                 Part(name: "Front Rotors (2)", description: "Potential replacement for scoring", iconName: "circle.circle.fill")
             ],
+            imageAsset: "brake_part",
             voiceTranscript: "Hey, it started happening around mile marker 40. Every time I hit the brakes, there's this high-pitched metal-on-metal sound. The stopping distance feels a bit longer than usual, especially when I'm fully loaded. Sending some photos of the wheel area now."
         )
     }

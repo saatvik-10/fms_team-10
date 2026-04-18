@@ -28,12 +28,26 @@ struct InspectionReportGenerator {
             // ── Page 2+: Checklist ───────────────────────────────────────
             ctx.beginPage()
             drawChecklist(ctx: ctx.cgContext, pageRect: pageRect, inspection: inspection)
+            
+            // ── Page 3+: Documentation & Analysis ────────────────────────
+            if !inspection.imagesData.isEmpty {
+                ctx.beginPage()
+                drawDocumentationPage(rendererContext: ctx, pageRect: pageRect, inspection: inspection)
+            }
         }
 
         // Write to temp file
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("InspectionReport_\(inspection.unitName.replacingOccurrences(of: " ", with: "_")).pdf")
-        try? data.write(to: url)
+        let dateString = Date().formatted(.dateTime.day(.twoDigits).month(.twoDigits).year(.twoDigits)).replacingOccurrences(of: "/", with: "-")
+        let cleanUnitName = inspection.unitName.replacingOccurrences(of: "[^a-zA-Z0-9]", with: "", options: .regularExpression)
+        let filename = "Report_\(cleanUnitName)_\(dateString).pdf"
+        
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        do {
+            try data.write(to: url)
+        } catch {
+            print("Failed to write PDF: \(error)")
+            return nil
+        }
         return url
     }
 
@@ -252,6 +266,69 @@ struct InspectionReportGenerator {
         drawFooter(pageRect: pageRect, ctx: ctx, pageNumber: 2)
     }
 
+    // MARK: Page 3 — Documentation & AI Analysis
+    private static func drawDocumentationPage(rendererContext: UIGraphicsPDFRendererContext, pageRect: CGRect, inspection: TripInspection) {
+        let ctx = rendererContext.cgContext
+        let margin: CGFloat = 48
+        var y: CGFloat = margin
+
+        // Page title
+        "DOCUMENTATION & AI ANALYSIS".draw(
+            at: CGPoint(x: margin, y: y),
+            withAttributes: [
+                .font: UIFont.systemFont(ofSize: 16, weight: .bold),
+                .foregroundColor: UIColor(AppColors.primary)
+            ]
+        )
+        y += 40
+
+        for (index, data) in inspection.imagesData.enumerated() {
+            if let img = UIImage(data: data) {
+                // Image Box
+                let imgWidth: CGFloat = 120
+                let imgHeight: CGFloat = 120
+                let imgRect = CGRect(x: margin, y: y, width: imgWidth, height: imgHeight)
+                
+                // Draw rounded background for image
+                ctx.setFillColor(UIColor.systemGray6.cgColor)
+                ctx.fill(imgRect.insetBy(dx: -4, dy: -4))
+                img.draw(in: imgRect)
+                
+                // Analysis Text
+                let analysisX = margin + imgWidth + 24
+                let analysisWidth = pageRect.width - analysisX - margin
+                let analysis = inspection.imageAnalyses.indices.contains(index) ? inspection.imageAnalyses[index] : "Analysis not available."
+                
+                "AI ANALYSIS REPORT".draw(
+                    at: CGPoint(x: analysisX, y: y),
+                    withAttributes: [
+                        .font: UIFont.systemFont(ofSize: 10, weight: .black),
+                        .foregroundColor: UIColor(AppColors.primary)
+                    ]
+                )
+                
+                analysis.draw(
+                    in: CGRect(x: analysisX, y: y + 16, width: analysisWidth, height: imgHeight - 16),
+                    withAttributes: [
+                        .font: UIFont.systemFont(ofSize: 10),
+                        .foregroundColor: UIColor.darkGray
+                    ]
+                )
+                
+                y += imgHeight + 40
+                
+                // Check if we need a new page
+                if y > pageRect.height - 150 && index < inspection.imagesData.count - 1 {
+                    drawFooter(pageRect: pageRect, ctx: ctx, pageNumber: 3)
+                    rendererContext.beginPage()
+                    y = margin
+                }
+            }
+        }
+
+        drawFooter(pageRect: pageRect, ctx: ctx, pageNumber: 3)
+    }
+
     // MARK: Helpers
     @discardableResult
     private static func drawSectionHeader(_ title: String, y: CGFloat, pageRect: CGRect, ctx: CGContext) -> CGFloat {
@@ -316,151 +393,149 @@ struct InspectionReportGenerator {
 struct DetailedInspectionView: View {
     @Environment(\.dismiss) var dismiss
     @State var inspection: TripInspection
-    @State private var showShareSheet = false
+    @State private var showingPDFPreview = false
     @State private var reportURL: URL?
     @State private var isGenerating = false
 
+    @State private var showingDoneAlert = false
+
     var body: some View {
-        VStack(spacing: 0) {
-            // Native-like Header
-            HStack {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "arrow.left")
-                        .font(.headline)
-                        .foregroundColor(AppColors.primary)
-                }
-                Text("Inspection")
-                    .font(.headline)
-                    .padding(.leading, 8)
-                Spacer()
-                StatusBadge(text: "IN PROGRESS", color: .blue)
-            }
-            .padding()
-            .background(Color(.secondarySystemGroupedBackground))
-
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Vehicle Info & Metrics Card
-                    VStack(spacing: 20) {
-                        HStack(spacing: 16) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(.systemGray6))
-                                    .frame(width: 80, height: 80)
-                                Image(systemName: "car.fill")
-                                    .font(.system(size: 40))
-                                    .foregroundColor(.secondary.opacity(0.3))
-                            }
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(inspection.unitName)
-                                    .font(.title3.bold())
-                                Text("VIN: \(inspection.unitVIN)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(inspection.type.rawValue)
-                                    .font(.caption.bold())
-                                    .foregroundColor(AppColors.primary)
-                            }
-                            Spacer()
+        ScrollView {
+            VStack(spacing: 24) {
+                // Vehicle Info & Metrics Card
+                VStack(spacing: 20) {
+                    HStack(spacing: 16) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(.systemGray6))
+                                .frame(width: 80, height: 80)
+                            Image(systemName: "car.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(.secondary.opacity(0.3))
                         }
 
-                        Divider()
-
-                        MetricsGrid(metrics: [
-                            ("ODOMETER",     inspection.odometer),
-                            ("FUEL LEVEL",   inspection.fuelLevel),
-                            ("EFFICIENCY",   inspection.efficiency),
-                            ("ENGINE HOURS", inspection.engineHours)
-                        ])
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(inspection.unitName)
+                                .font(.title3.bold())
+                            Text("VIN: \(inspection.unitVIN)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(inspection.type.rawValue)
+                                .font(.caption.bold())
+                                .foregroundColor(AppColors.primary)
+                        }
+                        Spacer()
                     }
-                    .padding()
+
+                    Divider()
+
+                    MetricsGrid(metrics: [
+                        ("ODOMETER",     inspection.odometer),
+                        ("FUEL LEVEL",   inspection.fuelLevel),
+                        ("EFFICIENCY",   inspection.efficiency),
+                        ("ENGINE HOURS", inspection.engineHours)
+                    ])
+                }
+                .padding()
+                .background(Color(.secondarySystemGroupedBackground))
+                .cornerRadius(16)
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.05), lineWidth: 1))
+
+                // Inspection Checklist
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("SYSTEM CHECKLIST")
+                        .font(.system(size: 12, weight: .black))
+                        .foregroundColor(AppColors.primary.opacity(0.7))
+                        .padding(.horizontal)
+
+                    VStack(spacing: 0) {
+                        ForEach($inspection.items) { $item in
+                            InspectionListItem(item: $item)
+                                .padding()
+                                .background(Color(.secondarySystemGroupedBackground))
+
+                            if item.id != inspection.items.last?.id {
+                                Divider().padding(.leading, 16)
+                            }
+                        }
+
+                        // Add Other
+                        Button(action: {
+                            let newItem = InspectionItem(
+                                name: "Custom Observation",
+                                verificationCriteria: "User-defined criteria",
+                                isImageRequired: false
+                            )
+                            inspection.items.append(newItem)
+                        }) {
+                            HStack {
+                                Image(systemName: "plus.circle.fill")
+                                Text("Add Observation")
+                            }
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(AppColors.primary)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .padding()
+                        }
+                    }
                     .background(Color(.secondarySystemGroupedBackground))
                     .cornerRadius(16)
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.05), lineWidth: 1))
+                }
 
-                    // Inspection Checklist
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text("SYSTEM CHECKLIST")
-                            .font(.system(size: 12, weight: .black))
-                            .foregroundColor(AppColors.primary.opacity(0.7))
-                            .padding(.horizontal)
-
-                        VStack(spacing: 0) {
-                            ForEach($inspection.items) { $item in
-                                InspectionListItem(item: $item)
-                                    .padding()
-                                    .background(Color(.secondarySystemGroupedBackground))
-
-                                if item.id != inspection.items.last?.id {
-                                    Divider().padding(.leading, 16)
-                                }
-                            }
-
-                            // Add Other
-                            Button(action: {
-                                let newItem = InspectionItem(
-                                    name: "Custom Observation",
-                                    verificationCriteria: "User-defined criteria",
-                                    isImageRequired: false
+                // Documentation Section
+                if !inspection.imagesData.isEmpty {
+                    InfoSection(title: "DOCUMENTATION & AI ANALYSIS") {
+                        VStack(spacing: 12) {
+                            ForEach(0..<inspection.imagesData.count, id: \.self) { index in
+                                ImageAnalysisCard(
+                                    imageData: inspection.imagesData[index],
+                                    analysis: inspection.imageAnalyses.indices.contains(index) ? inspection.imageAnalyses[index] : "Analysis not available"
                                 )
-                                inspection.items.append(newItem)
-                            }) {
-                                HStack {
-                                    Image(systemName: "plus.circle.fill")
-                                    Text("Add Observation")
-                                }
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(AppColors.primary)
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(12)
-                                .padding()
                             }
                         }
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .cornerRadius(16)
-                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.05), lineWidth: 1))
                     }
-
-                    Spacer(minLength: 120)
                 }
-                .padding()
+
+                Spacer(minLength: 120)
             }
-            .background(Color(.systemGroupedBackground))
-
-            // Sticky Bottom Button
-            VStack(spacing: 0) {
-                Divider()
-                Button(action: submitAndGeneratePDF) {
-                    HStack {
-                        if isGenerating {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .padding(.trailing, 6)
-                        }
-                        Text(isGenerating ? "Generating Report…" : "Done — Generate Report")
-                        if !isGenerating {
-                            Image(systemName: "text.badge.checkmark")
-                        }
-                    }
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(AppColors.primary)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
+            .padding()
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle(inspection.title.isEmpty ? "Inspection" : inspection.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(AppColors.primary)
                 }
-                .disabled(isGenerating)
-                .padding()
-                .background(.ultraThinMaterial)
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { showingDoneAlert = true }) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(AppColors.primary)
+                }
             }
         }
-        .navigationBarHidden(true)
-        .sheet(isPresented: $showShareSheet) {
+        .alert("Complete Inspection ?", isPresented: $showingDoneAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Generate Report") {
+                submitAndGeneratePDF()
+            }
+        } message: {
+            Text("This will generate a full trip report.")
+        }
+        .fullScreenCover(isPresented: $showingPDFPreview) {
             if let url = reportURL {
-                ShareSheet(activityItems: [url])
+                PDFPreviewView(url: url, title: reportURL?.lastPathComponent ?? "Report")
             }
         }
     }
@@ -472,7 +547,7 @@ struct DetailedInspectionView: View {
             DispatchQueue.main.async {
                 isGenerating = false
                 reportURL = url
-                showShareSheet = url != nil
+                showingPDFPreview = url != nil
             }
         }
     }

@@ -163,50 +163,79 @@ struct WorkOrderTaskCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Top row: icon + title/vehicle
-            HStack(spacing: 14) {
+        VStack(spacing: 0) {
+            // Main Content Area
+            HStack(spacing: 20) {
+                // Left: Icon
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 14)
                         .fill(Color(.systemGray6))
-                        .frame(width: 46, height: 46)
+                        .frame(width: 48, height: 48)
                     Image(systemName: "wrench.and.screwdriver.fill")
                         .foregroundColor(AppColors.primary)
-                        .font(.system(size: 19))
+                        .font(.system(size: 20))
                 }
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(order.title)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 12) {
+                        Text(order.title)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                        
+                        PriorityBadge(priority: order.priority.rawValue)
+                    }
 
                     Text(order.vehicleName)
-                        .font(.subheadline)
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.secondary)
-                        .lineLimit(1)
                 }
-
+                
                 Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color(.systemGray4))
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
 
-            // Bottom row: priority (left) + status (right)
-            HStack {
-                PriorityBadge(priority: order.priority.rawValue)
-                Spacer()
-                Text(order.status.rawValue)
-                    .font(.caption.bold())
-                    .foregroundColor(statusColor)
+            Divider()
+
+            // Bottom 3-Part Metadata Row
+            HStack(spacing: 0) {
+                // Date Section
+                MetadataCell(icon: "calendar", text: order.scheduledDate.formatted(.dateTime.day().month(.abbreviated)))
+                
+                Divider().frame(height: 16)
+                
+                // Time Section
+                MetadataCell(icon: "clock", text: order.scheduledDate.formatted(.dateTime.hour().minute()))
+                
+                Divider().frame(height: 16)
+                
+                // Status Section (Rightmost)
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 7, height: 7)
+                    Text(order.status.rawValue.uppercased())
+                        .font(.system(size: 10, weight: .black))
+                }
+                .foregroundColor(statusColor)
+                .frame(maxWidth: .infinity)
             }
+            .padding(.vertical, 12)
+            .background(Color(.systemGray6).opacity(0.2))
         }
-        .padding(16)
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(16)
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.primary.opacity(0.04), lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.02), radius: 8, x: 0, y: 4)
     }
 }
 
@@ -267,6 +296,128 @@ struct ChoiceButton: View {
     }
 }
 
+
+/// A professional card for trip inspections in a list view.
+struct InspectionTaskCard: View {
+    let inspection: TripInspection
+    var showUnitName: Bool = true
+
+    private var statusColor: Color {
+        switch inspection.status {
+        case .completed: return .green
+        case .pending:    return .orange
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Main Content Area
+            HStack(spacing: 20) {
+                // Left: Icon with Subtle indicator
+                ZStack(alignment: .topTrailing) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color(.systemGray6))
+                            .frame(width: 48, height: 48)
+                        Image(systemName: "clipboard.fill")
+                            .foregroundColor(AppColors.primary)
+                            .font(.system(size: 20))
+                    }
+                    
+                    Circle()
+                        .fill(inspection.type == .preTrip ? Color.blue : Color.purple)
+                        .frame(width: 10, height: 10)
+                        .offset(x: 3, y: -3)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 12) {
+                        Text(inspection.title.isEmpty ? inspection.type.rawValue : inspection.title)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                        
+                        Text(inspection.type == .preTrip ? "PRE-TRIP" : "POST-TRIP")
+                            .font(.system(size: 8, weight: .black))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(inspection.type == .preTrip ? Color.blue.opacity(0.1) : Color.purple.opacity(0.1))
+                            .foregroundColor(inspection.type == .preTrip ? .blue : .purple)
+                            .cornerRadius(5)
+                    }
+
+                    if showUnitName {
+                        Text(inspection.unitName)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color(.systemGray4))
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+
+            Divider()
+
+            // Bottom 3-Part Metadata Row
+            HStack(spacing: 0) {
+                // Date Section
+                MetadataCell(icon: "calendar", text: inspection.timestamp.formatted(.dateTime.day().month(.abbreviated)))
+                
+                Divider().frame(height: 16)
+                
+                // Time Section
+                MetadataCell(icon: "clock", text: inspection.timestamp.formatted(.dateTime.hour().minute()))
+                
+                Divider().frame(height: 16)
+                
+                // Status Section (Rightmost)
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 7, height: 7)
+                    Text(inspection.status.rawValue.uppercased())
+                        .font(.system(size: 10, weight: .black))
+                }
+                .foregroundColor(statusColor)
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 12)
+            .background(Color(.systemGray6).opacity(0.2))
+        }
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.primary.opacity(0.04), lineWidth: 1)
+        )
+    }
+}
+
+// Helper component for metadata cells
+struct MetadataCell: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 10))
+            Text(text)
+                .font(.system(size: 10, weight: .bold))
+        }
+        .foregroundColor(.secondary)
+        .frame(maxWidth: .infinity)
+    }
+}
+
 /// A section for information blocks in details views.
 struct InfoSection<Content: View>: View {
     let title: String
@@ -284,6 +435,68 @@ struct InfoSection<Content: View>: View {
                 .foregroundColor(AppColors.primary.opacity(0.7))
             content
         }
+    }
+}
+
+/// A card for displaying captured inspection images with an expandable AI analysis.
+struct ImageAnalysisCard: View {
+    let imageData: Data
+    let analysis: String
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Button(action: { withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { isExpanded.toggle() } }) {
+                HStack(spacing: 16) {
+                    if let uiImage = UIImage(data: imageData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 56, height: 56)
+                            .cornerRadius(10)
+                            .clipped()
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Photo Analysis")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.primary)
+                        Text(isExpanded ? "Hide Details" : "Tap to view AI Insights")
+                            .font(.system(size: 12))
+                            .foregroundColor(AppColors.primary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                }
+                .padding(12)
+                .background(Color(.systemGray6).opacity(0.3))
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 8) {
+                    Divider().padding(.horizontal, 12)
+                    Text(analysis)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                        .lineSpacing(4)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 14)
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(14)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.primary.opacity(0.04), lineWidth: 1)
+        )
     }
 }
 

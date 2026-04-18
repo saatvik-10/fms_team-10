@@ -38,10 +38,19 @@ struct WorkOrderManagementView: View {
                         WorkOrderTaskCard(order: order)
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            withAnimation {
+                                store.deleteWorkOrder(order)
+                            }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
                 }
 
                 if filteredOrders.isEmpty {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         Image(systemName: "wrench.and.screwdriver")
                             .font(.system(size: 44))
                             .foregroundColor(.secondary.opacity(0.4))
@@ -63,7 +72,7 @@ struct WorkOrderManagementView: View {
         }
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Work Orders")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 14) {

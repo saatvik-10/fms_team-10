@@ -26,12 +26,14 @@ class MaintenanceStore: ObservableObject {
                 serviceType: "Routine PM",
                 priority: .medium,
                 status: .pending,
-                taskDetails: "Standard calibration for multi-axle trailer.",
+                taskDetails: "Driver reports slight pulling to the left. Standard calibration for multi-axle trailer required.",
                 scheduledDate: Date().addingTimeInterval(172800),
                 technicianId: "TECH-02",
+                technicianNotes: "Verified all 18 tires. Outer rear axle on passenger side was 5 PSI low.",
                 partsNeeded: [
-                    Part(name: "Air Valve Caps", description: "Replacement for missing valve covers", iconName: "gearshape.fill")
-                ]
+                    Part(name: "Air Valve Caps", description: "Replacement for missing valve covers", iconName: "gearshape.fill", imageAsset: "tire_part")
+                ],
+                imageAsset: "tire_part"
             ),
             WorkOrder(
                 title: "Engine Diagnostic",
@@ -40,14 +42,17 @@ class MaintenanceStore: ObservableObject {
                 serviceType: "Repair",
                 priority: .critical,
                 status: .completed,
-                taskDetails: "Check engine light active. P0420 code detected.",
+                taskDetails: "Check engine light active. P0420 code detected. Possible catalytic converter issue.",
                 scheduledDate: Date().addingTimeInterval(-86400),
-                technicianId: "TECH-01"
+                technicianId: "TECH-01",
+                technicianNotes: "Replaced O2 sensor. Cleared codes and performed 20-mile test drive. No reoccurrence.",
+                imageAsset: "engine_part"
             )
         ]
         
         self.inspections = [
             TripInspection(
+                title: "Pre-Trip Audit",
                 vehicleId: "V-842",
                 unitName: "Unit 842-Alpha",
                 unitVIN: "1HGCM8263JA05",
@@ -57,9 +62,13 @@ class MaintenanceStore: ObservableObject {
                 vehicleType: .truck,
                 status: .pending,
                 items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "STAFF-01"
+                maintenanceStaffId: "STAFF-01",
+                imageAsset: "truck_main",
+                imagesData: [UIImage(named: "truck_main")?.jpegData(compressionQuality: 0.5)].compactMap { $0 },
+                imageAnalyses: ["Analysis: Front chassis and cab exterior appear within operational standards. No structural stress detected in the primary load-bearing points."]
             ),
             TripInspection(
+                title: "Post-Trip Verification",
                 vehicleId: "V-319",
                 unitName: "Unit 319-Echo",
                 unitVIN: "3VWCP1192BM12",
@@ -69,9 +78,13 @@ class MaintenanceStore: ObservableObject {
                 vehicleType: .truck,
                 status: .completed,
                 items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "STAFF-01"
+                maintenanceStaffId: "STAFF-01",
+                imageAsset: "truck_main",
+                imagesData: [UIImage(named: "tire_part")?.jpegData(compressionQuality: 0.5)].compactMap { $0 },
+                imageAnalyses: ["Analysis: Tire tread depth remains optimal. Minor particulate buildup detected in the outer groove, but no sharp object penetration observed."]
             ),
             TripInspection(
+                title: "Daily Pre-Trip",
                 vehicleId: "V-115",
                 unitName: "Unit 115-Delta",
                 unitVIN: "JTMBU4230L901",
@@ -81,9 +94,13 @@ class MaintenanceStore: ObservableObject {
                 vehicleType: .truck,
                 status: .pending,
                 items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "STAFF-01"
+                maintenanceStaffId: "STAFF-01",
+                imageAsset: "truck_main",
+                imagesData: [UIImage(named: "engine_part")?.jpegData(compressionQuality: 0.5)].compactMap { $0 },
+                imageAnalyses: ["Analysis: Engine manifold thermal signature appears uniform. No fluid seepage detected around the secondary gasket seal."]
             ),
             TripInspection(
+                title: "Standard Post-Trip",
                 vehicleId: "V-990",
                 unitName: "Unit 990-Zeta",
                 unitVIN: "5FNRL3H42GB91",
@@ -93,7 +110,10 @@ class MaintenanceStore: ObservableObject {
                 vehicleType: .truck,
                 status: .completed,
                 items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "STAFF-01"
+                maintenanceStaffId: "STAFF-01",
+                imageAsset: "truck_main",
+                imagesData: [UIImage(named: "brake_part")?.jpegData(compressionQuality: 0.5)].compactMap { $0 },
+                imageAnalyses: ["Analysis: Brake disc surface shows normal friction heat patterns. No scoring or micro-fractures detected in the high-stress contact zone."]
             )
         ]
     }
@@ -114,5 +134,21 @@ class MaintenanceStore: ObservableObject {
     
     func deleteInspections(forUnit unitName: String) {
         inspections.removeAll { $0.unitName == unitName }
+    }
+
+    func deleteWorkOrder(_ order: WorkOrder) {
+        workOrders.removeAll { $0.id == order.id }
+    }
+
+    func deleteInspection(_ inspection: TripInspection) {
+        inspections.removeAll { $0.id == inspection.id }
+    }
+
+    func updateInspectionAnalysis(id: UUID, index: Int, analysis: String) {
+        if let idx = inspections.firstIndex(where: { $0.id == id }) {
+            if index < inspections[idx].imageAnalyses.count {
+                inspections[idx].imageAnalyses[index] = analysis
+            }
+        }
     }
 }

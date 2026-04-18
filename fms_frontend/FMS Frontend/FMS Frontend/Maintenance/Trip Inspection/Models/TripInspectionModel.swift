@@ -8,6 +8,7 @@ import Foundation
 enum InspectionType: String, Codable {
     case preTrip = "Pre-Trip"
     case postTrip = "Post-Trip"
+    case combined = "Pre + Post"
 }
 
 enum VehicleType: String, Codable {
@@ -39,6 +40,7 @@ struct InspectionItem: Identifiable, Codable {
 
 struct TripInspection: Identifiable, Codable {
     var id = UUID()
+    var title: String = ""
     let vehicleId: String
     let unitName: String
     let unitVIN: String
@@ -57,6 +59,9 @@ struct TripInspection: Identifiable, Codable {
     var fuelLevel: String = "75%"
     var efficiency: String = "14.2 mpg"
     var engineHours: String = "4,821 hrs"
+    var imageAsset: String? = nil
+    var imagesData: [Data] = []
+    var imageAnalyses: [String] = []
     
     var completionPercentage: Double {
         let checked = items.filter { $0.result != .pending }.count

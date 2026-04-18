@@ -24,22 +24,31 @@ struct MaintenanceDashboardView: View {
 
                         NavigationLink(destination: WorkOrderManagementView()) {
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(.secondary)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(Color(.systemGray3))
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
 
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         let sortedOrders = store.workOrders.sorted { $0.priority.sortingOrder < $1.priority.sortingOrder }
                         ForEach(sortedOrders.prefix(5)) { order in
                             NavigationLink(destination: WorkOrderDetailsView(workOrder: order)) {
                                 WorkOrderTaskCard(order: order)
                             }
                             .buttonStyle(PlainButtonStyle())
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    withAnimation {
+                                        store.deleteWorkOrder(order)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
                 }
                 
                 Spacer(minLength: 30)
