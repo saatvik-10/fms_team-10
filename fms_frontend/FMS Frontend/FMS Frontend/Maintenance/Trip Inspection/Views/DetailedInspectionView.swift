@@ -487,7 +487,7 @@ struct DetailedInspectionView: View {
 
                 // Documentation Section
                 if !inspection.imagesData.isEmpty {
-                    InfoSection(title: "DOCUMENTATION & AI ANALYSIS") {
+                    InfoSection(title: "Documentation") {
                         VStack(spacing: 12) {
                             ForEach(0..<inspection.imagesData.count, id: \.self) { index in
                                 ImageAnalysisCard(
