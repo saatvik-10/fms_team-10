@@ -136,6 +136,7 @@ struct WorkOrderDetailsView: View {
                                 }
                             }
                             .padding(20)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.white)
                             .cornerRadius(16)
                             .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
@@ -185,6 +186,7 @@ struct WorkOrderDetailsView: View {
                                 }
                             }
                             .padding(20)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.white)
                             .cornerRadius(16)
                             .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
@@ -220,6 +222,7 @@ struct WorkOrderDetailsView: View {
                                 }
                             }
                             .padding(20)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.white)
                             .cornerRadius(16)
                             .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)

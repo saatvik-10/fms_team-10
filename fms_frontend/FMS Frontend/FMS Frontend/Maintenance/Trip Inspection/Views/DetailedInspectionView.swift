@@ -534,13 +534,11 @@ struct DetailedInspectionView: View {
                 }
             }
         }
-        .alert("Complete Inspection", isPresented: $showingDoneAlert) {
+        .alert("", isPresented: $showingDoneAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Generate Report") {
                 submitAndGeneratePDF()
             }
-        } message: {
-            Text("All checklist items will be locked. A PDF report will be generated and ready to export.")
         }
         .fullScreenCover(isPresented: $showingPDFPreview) {
             if let url = reportURL {
