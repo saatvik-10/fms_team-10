@@ -56,9 +56,9 @@ struct TripDetailView: View {
     
     private let horizontalPadding: CGFloat = 20
     
-    private var isNavigationEnabled: Bool {
-        !isLoadingEta && !routePolyline.isEmpty
-    }
+//    private var isNavigationEnabled: Bool {
+//        !isLoadingEta && !routePolyline.isEmpty
+//    }
     
     var body: some View {
         ScrollView {
@@ -130,7 +130,7 @@ struct TripDetailView: View {
                             backgroundColor: AppColors.primary,
                             textColor: .white
                         ) {
-                            // Start navigation action (home tab)
+                            showNavigationMap = true
                         }
                         .allowsHitTesting(isNavigationEnabled)
 
@@ -151,7 +151,7 @@ struct TripDetailView: View {
         .navigationTitle("Trip Details")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showNavigationMap) {
-            NavigationMapView(trip: trip)
+            CustomNavigationView(trip: trip)
         }
         .task {
             do {
