@@ -48,12 +48,12 @@ struct FleetManagerVehiclesListView: View {
             
             // MARK: - Filters
             HStack(spacing: 0) {
-                HStack(spacing: 20) {
+                HStack(spacing: 0) {
                     ForEach(filters, id: \.self) { filter in
                         Button(action: { selectedFilter = filter }) {
                             Text(filter)
                                 .font(.system(size: 12, weight: .bold))
-                                .padding(.horizontal, 20)
+                                .frame(maxWidth: .infinity)
                                 .padding(.vertical, 8)
                                 .background(selectedFilter == filter ? Color.white : Color.clear)
                                 .foregroundColor(selectedFilter == filter ? .black : .gray)
@@ -64,8 +64,6 @@ struct FleetManagerVehiclesListView: View {
                 .padding(5)
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(25)
-                
-                Spacer()
             }
             .padding(.horizontal, 30)
             .padding(.bottom, 20)

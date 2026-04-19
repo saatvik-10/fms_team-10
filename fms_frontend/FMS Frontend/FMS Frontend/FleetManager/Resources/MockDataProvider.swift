@@ -14,10 +14,10 @@ struct MockDataProvider {
     )
     
     static let shipments: [ShipmentActivity] = [
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "₹5,872.90", status: .delivered),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "₹5,872.90", status: .inTransit),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "₹5,872.90", status: .pending),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "London - Prague", price: "₹5,872.90", status: .processing)
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .delivered),
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .inTransit),
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .pending),
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .processing)
     ]
     
     static let fleetStatus = FleetVehicleStatus(
@@ -29,10 +29,10 @@ struct MockDataProvider {
     )
     
     static let assessments: [SmartFleetAssessment] = [
-        SmartFleetAssessment(truckName: "Freightliner M2 106", truckID: "TRK-9042", routeFrom: "Chicago, IL", routeTo: "Detroit, MI", etaTime: "16:15", etaDay: "Today", status: .inTransit, imageName: "truck_freightliner_m2"),
-        SmartFleetAssessment(truckName: "Rivian EDV 700", truckID: "EV-9910", routeFrom: "Amazon Hub", routeTo: "Sector 4", etaTime: "Critical", etaDay: "", status: .alertReceived, imageName: "van_rivian"),
-        SmartFleetAssessment(truckName: "Kenworth T680", truckID: "TRK-5502", routeFrom: "Dallas, TX", routeTo: "Austin, TX", etaTime: "11:00", etaDay: "Today", status: .inTransit, imageName: "truck_kenworth_t680"),
-        SmartFleetAssessment(truckName: "Volvo FH16", truckID: "TRK-2101", routeFrom: "Berlin, DE", routeTo: "Prague, CZ", etaTime: "21:30", etaDay: "Today", status: .inTransit, imageName: "truck_volvo_fh")
+        SmartFleetAssessment(truckName: "Freightliner M2 106", truckID: "TRK-9042", routeFrom: "DEL", routeTo: "JAI", etaTime: "16:15", etaDay: "Today", status: .inTransit, imageName: "truck_freightliner_m2"),
+        SmartFleetAssessment(truckName: "Rivian EDV 700", truckID: "EV-9910", routeFrom: "BLR Hub", routeTo: "HSR Lyt", etaTime: "Critical", etaDay: "", status: .alertReceived, imageName: "van_rivian"),
+        SmartFleetAssessment(truckName: "Kenworth T680", truckID: "TRK-5502", routeFrom: "MAA", routeTo: "COK", etaTime: "11:00", etaDay: "Today", status: .inTransit, imageName: "truck_kenworth_t680"),
+        SmartFleetAssessment(truckName: "Volvo FH16", truckID: "TRK-2101", routeFrom: "HYD", routeTo: "PNQ", etaTime: "21:30", etaDay: "Today", status: .inTransit, imageName: "truck_volvo_fh")
     ]
     
     static let maintenanceAlerts: [MaintenanceAlert] = [
@@ -52,26 +52,26 @@ struct MockDataProvider {
 
     // MARK: - Drivers Dataset (from Image 1 & 3)
     static let drivers: [Driver] = [
-        Driver(id: "KM-1029", name: "Marcus Thorne", title: "Class A CDL Expert", licenseNum: "DL-99203381", licenseExp: "Oct 2026", status: .active, rating: 4.92, efficiency: "98.4%", totalTrips: 124, totalHours: 8420, activityLog: mockActivityLog, currentVehicleID: "VX-7702", activeRoute: "IH-35 North bound", eta: "14:20 (22 mins)"),
-        Driver(id: "KM-1044", name: "Elena Rodriguez", title: "Heavy Haul Specialist", licenseNum: "DL-44810293", licenseExp: "Mar 2025", status: .onTrip, rating: 4.88, efficiency: "95.2%", totalTrips: 89, totalHours: 6200, activityLog: [], currentVehicleID: "VN-4209", activeRoute: "Route B-12", eta: "1h 12m"),
-        Driver(id: "KM-1011", name: "Julian Vane", title: "Regional Dispatcher", licenseNum: "DL-88293310", licenseExp: "Jan 2027", status: .offDuty, rating: 4.95, efficiency: "99.1%", totalTrips: 156, totalHours: 9800, activityLog: [], currentVehicleID: nil, activeRoute: nil, eta: nil),
-        Driver(id: "KM-1052", name: "Sarah Jenkins", title: "Long Haul Driver", licenseNum: "DL-11029384", licenseExp: "Aug 2025", status: .active, rating: 4.76, efficiency: "94.8%", totalTrips: 72, totalHours: 5100, activityLog: [], currentVehicleID: "EV-9910", activeRoute: "Sector 4", eta: "45m"),
-        Driver(id: "KM-1008", name: "Tobias Kraft", title: "Safety Protocol Lead", licenseNum: "DL-77382291", licenseExp: "Dec 2024", status: .onTrip, rating: 4.99, efficiency: "99.9%", totalTrips: 210, totalHours: 12400, activityLog: [], currentVehicleID: "VX-8812", activeRoute: "North Route", eta: "10m")
+        Driver(id: "KM-1029", name: "Rahul Sharma", title: "Class A CDL Expert", licenseNum: "DL-99203381", licenseExp: "Oct 2026", status: .active, rating: 4.92, efficiency: "98.4%", totalTrips: 124, totalHours: 8420, activityLog: mockActivityLog, currentVehicleID: "VX-7702", activeRoute: "IH-35 North bound", eta: "14:20 (22 mins)"),
+        Driver(id: "KM-1044", name: "Priya Patel", title: "Heavy Haul Specialist", licenseNum: "DL-44810293", licenseExp: "Mar 2025", status: .onTrip, rating: 4.88, efficiency: "95.2%", totalTrips: 89, totalHours: 6200, activityLog: [], currentVehicleID: "VN-4209", activeRoute: "Route B-12", eta: "1h 12m"),
+        Driver(id: "KM-1011", name: "Amit Kumar", title: "Regional Dispatcher", licenseNum: "DL-88293310", licenseExp: "Jan 2027", status: .offDuty, rating: 4.95, efficiency: "99.1%", totalTrips: 156, totalHours: 9800, activityLog: [], currentVehicleID: nil, activeRoute: nil, eta: nil),
+        Driver(id: "KM-1052", name: "Sneha Rao", title: "Long Haul Driver", licenseNum: "DL-11029384", licenseExp: "Aug 2025", status: .active, rating: 4.76, efficiency: "94.8%", totalTrips: 72, totalHours: 5100, activityLog: [], currentVehicleID: "EV-9910", activeRoute: "Sector 4", eta: "45m"),
+        Driver(id: "KM-1008", name: "Vikram Singh", title: "Safety Protocol Lead", licenseNum: "DL-77382291", licenseExp: "Dec 2024", status: .onTrip, rating: 4.99, efficiency: "99.9%", totalTrips: 210, totalHours: 12400, activityLog: [], currentVehicleID: "VX-8812", activeRoute: "North Route", eta: "10m")
     ]
     
     static let mockActivityLog: [ActivityEvent] = [
-        ActivityEvent(title: "Cargo Delivery Completed", detail: "Drop-off: Warehouse B-12", time: "2h ago", type: "completed", value: "+$240.00"),
-        ActivityEvent(title: "Refueling Stopped", detail: "Shell Express #429", time: "5h ago", type: "refueling", value: "14.2 gal"),
-        ActivityEvent(title: "Shift Started", detail: "Main Depot", time: "8h ago", type: "started", value: "SYSTEM"),
-        ActivityEvent(title: "Hard Braking Incident", detail: "Route A-1", time: "Yesterday", type: "incident", value: "FLAGGED")
+        ActivityEvent(title: "Cargo Delivery Completed", detail: "Drop-off: WH-B12", time: "2h ago", type: "completed", value: "+₹2400.00"),
+        ActivityEvent(title: "Refueling Stopped", detail: "IOCL #429", time: "5h ago", type: "refueling", value: "14.2 L"),
+        ActivityEvent(title: "Shift Started", detail: "Main Dpt", time: "8h ago", type: "started", value: "SYSTEM"),
+        ActivityEvent(title: "Hard Braking Incident", detail: "Rt A-1", time: "Yesterday", type: "incident", value: "FLAGGED")
     ]
 
     // MARK: - Vehicles Dataset (Expanded)
     static let vehicles: [Vehicle] = [
         Vehicle(
             id: "TRK-9042",
-            make: "Freightliner",
-            model: "M2 106",
+            make: "Tata",
+            model: "Prima",
             type: "Truck",
             status: .inTransit,
             imageName: "truck_freightliner_m2",
@@ -79,7 +79,7 @@ struct MockDataProvider {
             color: "Silver Birch Metallic",
             odometer: "42,892",
             operationalStatus: "OPERATIONAL",
-            currentTrip: VehicleTrip(origin: "Chicago, IL", destination: "Detroit, MI", progress: 0.72, eta: "4:15 PM", date: nil, distance: nil, duration: nil),
+            currentTrip: VehicleTrip(origin: "DEL", destination: "JAI", progress: 0.72, eta: "4:15 PM", date: nil, distance: nil, duration: nil),
             assignedDriver: drivers.first,
             maintenance: VehicleMaintenance(
                 nextService: "Oct 24, 2023",
@@ -87,18 +87,18 @@ struct MockDataProvider {
                 alerts: [MaintenanceAlert(title: "Minor: Left Tail Lamp", detail: "LOGGED 2D AGO", iconName: "exclamationmark.triangle.fill", status: "Minor")]
             ),
             history: [
-                VehicleTrip(origin: "Chicago", destination: "St. Louis", progress: 1.0, eta: "", date: "OCT 12", distance: "297 MI", duration: "4.5 HRS"),
-                VehicleTrip(origin: "St. Louis", destination: "Memphis", progress: 1.0, eta: "", date: "OCT 09", distance: "284 MI", duration: "4.2 HRS")
+                VehicleTrip(origin: "DEL", destination: "AGR", progress: 1.0, eta: "", date: "OCT 12", distance: "297 KM", duration: "4.5 HRS"),
+                VehicleTrip(origin: "AGR", destination: "NDA", progress: 1.0, eta: "", date: "OCT 09", distance: "284 KM", duration: "4.2 HRS")
             ],
             reports: [
                 VehicleReport(title: "Monthly Maintenance Report - Sept", subtitle: "PDF • 1.2 MB • SEP 30, 2023", fileType: "pdf", date: "SEP 30, 2023", serviceProvider: "Fleet Care Solutions", tasks: [
-                    ReportTask(description: "Oil and Filter Change", cost: "$120.00"),
-                    ReportTask(description: "Brake Pad Replacement", cost: "₹450.00")
-                ], totalCost: "₹570.00"),
+                    ReportTask(description: "Oil and Filter Change", cost: "₹1200.00"),
+                    ReportTask(description: "Brake Pad Replacement", cost: "₹4500.00")
+                ], totalCost: "₹5700.00"),
                 VehicleReport(title: "Trip Efficiency Analysis - Oct", subtitle: "PDF • 840 KB • OCT 15, 2023", fileType: "pdf", date: "OCT 15, 2023", serviceProvider: "Logistics Insights AI", tasks: [
-                    ReportTask(description: "Fuel Efficiency Audit", cost: "$0.00"),
-                    ReportTask(description: "Route Optimization Report", cost: "$0.00")
-                ], totalCost: "$0.00")
+                    ReportTask(description: "Fuel Efficiency Audit", cost: "₹0.00"),
+                    ReportTask(description: "Route Optimization Report", cost: "₹0.00")
+                ], totalCost: "₹0.00")
             ],
             assessmentReason: "Route Optimized: Fuel Savings +12%"
         ),
@@ -144,8 +144,8 @@ struct MockDataProvider {
         ),
         Vehicle(
             id: "TRK-2101",
-            make: "Volvo",
-            model: "FH16",
+            make: "Ashok Leyland",
+            model: "Blag",
             type: "Truck",
             status: .inTransit,
             imageName: "truck_volvo_fh",
@@ -153,7 +153,7 @@ struct MockDataProvider {
             color: "Titanium Grey",
             odometer: "68,200",
             operationalStatus: "OPERATIONAL",
-            currentTrip: VehicleTrip(origin: "Berlin, DE", destination: "Prague, CZ", progress: 0.45, eta: "9:30 PM", date: nil, distance: nil, duration: nil),
+            currentTrip: VehicleTrip(origin: "HYD", destination: "PNQ", progress: 0.45, eta: "9:30 PM", date: nil, distance: nil, duration: nil),
             assignedDriver: drivers[3],
             maintenance: VehicleMaintenance(nextService: "Nov 01, 2023", inspectionStatus: "Completed", alerts: []),
             history: [],
@@ -180,8 +180,8 @@ struct MockDataProvider {
         ),
         Vehicle(
             id: "TRK-5502",
-            make: "Kenworth",
-            model: "T680",
+            make: "Eicher",
+            model: "Pro",
             type: "Truck",
             status: .inTransit,
             imageName: "truck_kenworth_t680",
@@ -189,7 +189,7 @@ struct MockDataProvider {
             color: "Radiant Red",
             odometer: "15,200",
             operationalStatus: "OPERATIONAL",
-            currentTrip: VehicleTrip(origin: "Dallas, TX", destination: "Austin, TX", progress: 0.88, eta: "11:00 AM", date: nil, distance: nil, duration: nil),
+            currentTrip: VehicleTrip(origin: "MAA", destination: "COK", progress: 0.88, eta: "11:00 AM", date: nil, distance: nil, duration: nil),
             assignedDriver: drivers.first,
             maintenance: VehicleMaintenance(nextService: "Jan 15, 2024", inspectionStatus: "Completed", alerts: []),
             history: [],

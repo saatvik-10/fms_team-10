@@ -9,7 +9,7 @@ struct FleetManagerDriversListView: View {
         VStack(spacing: 0) {
             // MARK: - Header
             HStack(spacing: 20) {
-                Text("Drivers")
+                Text("Drivers Management")
                     .font(.system(size: 20, weight: .black))
                 
                 // Search Bar
@@ -18,13 +18,12 @@ struct FleetManagerDriversListView: View {
                         .foregroundColor(.gray)
                     TextField("Search by name, license or status...", text: $searchText)
                         .font(.system(size: 14))
-                    Spacer()
                 }
                 .padding(.horizontal, 15)
                 .padding(.vertical, 10)
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
-                .frame(maxWidth: 400)
+                .frame(maxWidth: .infinity)
                 
                 Spacer()
                 
@@ -51,14 +50,16 @@ struct FleetManagerDriversListView: View {
                 VStack(spacing: 0) {
                     // Column Headers
                     HStack {
-                        Text("DRIVER IDENTITY").frame(width: 250, alignment: .leading)
+                        Text("DRIVER IDENTITY")
+                            .padding(.leading, 55)
+                            .frame(width: 250, alignment: .leading)
                         Text("LICENSE DETAILS").frame(width: 200, alignment: .leading)
-                        Text("STATUS").frame(width: 150, alignment: .leading)
                         Spacer()
+                        Text("STATUS")
                     }
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.gray)
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, 70)
                     .padding(.vertical, 20)
                     
                     VStack(spacing: 12) {
@@ -120,7 +121,7 @@ struct DriverRowView: View {
                 .padding(.vertical, 6)
                 .background(driver.status == .active ? AppTheme.primary : Color.gray.opacity(0.1))
                 .cornerRadius(12)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+                .cornerRadius(12)
         }
         .padding(.horizontal, 40)
         .padding(.vertical, 20)

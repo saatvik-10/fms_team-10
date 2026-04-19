@@ -46,14 +46,6 @@ struct FleetManagerMainView: View {
             }
             .tag(2)
             
-            NavigationView {
-                Text("More Options View") // Placeholder for now
-            }
-            .navigationViewStyle(.stack)
-            .tabItem {
-                Label("More", systemImage: "ellipsis.circle.fill")
-            }
-            .tag(3)
         }
         .accentColor(AppTheme.primary)
         .environmentObject(dataManager)

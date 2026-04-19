@@ -3,7 +3,9 @@ import SwiftUI
 struct FleetManagerVehicleDetailView: View {
     let vehicle: Vehicle
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var dataManager: FleetDataManager
     @State private var showingEditModal = false
+    @State private var showingDeleteAlert = false
     
     var body: some View {
         ZStack {
@@ -21,6 +23,24 @@ struct FleetManagerVehicleDetailView: View {
                     Text(vehicle.id)
                         .font(.system(size: 20, weight: .bold))
                     Spacer()
+                    
+                    Menu {
+                        Button(action: { showingEditModal = true }) {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        Button(role: .destructive, action: {
+                            showingDeleteAlert = true
+                        }) {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.gray)
+                            .padding(10)
+                            .background(Color.gray.opacity(0.1))
+                            .clipShape(Circle())
+                    }
                 }
                 .padding(.horizontal, 40)
                 .padding(.vertical, 25)
@@ -44,13 +64,6 @@ struct FleetManagerVehicleDetailView: View {
                                 
                                 // Overlay Status & Name
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text(vehicle.status == .inTransit ? "ACTIVE \(vehicle.status.rawValue)" : vehicle.status.rawValue)
-                                        .font(.system(size: 10, weight: .black))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(AppTheme.primary)
-                                        .cornerRadius(8)
                                     
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(vehicle.id)
@@ -156,53 +169,42 @@ struct FleetManagerVehicleDetailView: View {
                                 if let trip = vehicle.currentTrip {
                                     // Origin -> Destination Progress
                                     HStack(spacing: 30) {
-                                        HStack(spacing: 12) {
-                                            Circle()
-                                                .fill(AppTheme.primary)
-                                                .frame(width: 32, height: 32)
-                                                .overlay(Image(systemName: "arrow.right").foregroundColor(.white).font(.system(size: 12)))
-                                            
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text("ORIGIN")
-                                                    .font(.system(size: 8, weight: .bold))
-                                                    .foregroundColor(.gray)
-                                                Text(trip.origin)
-                                                    .font(.system(size: 18, weight: .black))
-                                                    .lineLimit(1)
-                                            }
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("ORIGIN")
+                                                .font(.system(size: 8, weight: .bold))
+                                                .foregroundColor(.gray)
+                                            Text(trip.origin)
+                                                .font(.system(size: 18, weight: .black))
                                         }
                                         
                                         // Progress Bar
-                                        ZStack {
-                                            Capsule()
-                                                .fill(Color.gray.opacity(0.1))
-                                                .frame(height: 12)
+                                        VStack(spacing: 8) {
+                                            Text("\(Int(trip.progress * 100))%")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(AppTheme.primary)
                                             
-                                            Capsule()
-                                                .fill(AppTheme.primary)
-                                                .frame(width: 100, height: 12)
-                                                .overlay(
-                                                    Text("\(Int(trip.progress * 100))%")
-                                                        .font(.system(size: 8, weight: .bold))
-                                                        .foregroundColor(.white)
-                                                )
+                                            GeometryReader { geo in
+                                                ZStack(alignment: .leading) {
+                                                    Capsule()
+                                                        .fill(Color.gray.opacity(0.2))
+                                                        .frame(height: 8)
+                                                    
+                                                    Capsule()
+                                                        .fill(AppTheme.primary)
+                                                        .frame(width: geo.size.width * CGFloat(trip.progress), height: 8)
+                                                }
+                                            }
+                                            .frame(height: 8)
                                         }
                                         .frame(maxWidth: .infinity)
                                         
-                                        HStack(spacing: 12) {
-                                            VStack(alignment: .trailing, spacing: 4) {
-                                                Text("DESTINATION")
-                                                    .font(.system(size: 8, weight: .bold))
-                                                    .foregroundColor(.gray)
-                                                Text(trip.destination)
-                                                    .font(.system(size: 18, weight: .black))
-                                                    .lineLimit(1)
-                                            }
-                                            
-                                            Circle()
-                                                .fill(Color.gray.opacity(0.1))
-                                                .frame(width: 32, height: 32)
-                                                .overlay(Image(systemName: "mappin").foregroundColor(.gray).font(.system(size: 12)))
+                                        VStack(alignment: .trailing, spacing: 4) {
+                                            Text("DESTINATION")
+                                                .font(.system(size: 8, weight: .bold))
+                                                .foregroundColor(.gray)
+                                            Text(trip.destination)
+                                                .font(.system(size: 18, weight: .black))
+                                                .multilineTextAlignment(.trailing)
                                         }
                                     }
                                 } else {
@@ -218,22 +220,16 @@ struct FleetManagerVehicleDetailView: View {
                                 Spacer()
                             }
                             .padding(40)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                             .background(Color.white)
                             .cornerRadius(20)
                             
                             // Assigned Driver
                             if let driver = vehicle.assignedDriver {
                                 VStack(alignment: .leading, spacing: 25) {
-                                    HStack {
                                         Text("ASSIGNED DRIVER")
                                             .font(.system(size: 10, weight: .bold))
                                             .foregroundColor(.gray)
-                                        Spacer()
-                                        Button("MANAGE") { }
-                                            .font(.system(size: 10, weight: .bold))
-                                            .foregroundColor(AppTheme.primary)
-                                    }
                                     
                                     HStack(spacing: 15) {
                                         Circle()
@@ -273,13 +269,14 @@ struct FleetManagerVehicleDetailView: View {
                                     }
                                 }
                                 .padding(35)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                                 .background(Color.white)
                                 .cornerRadius(20)
                             }
                         }
                         
                         // MARK: - Maintenance & History
-                        HStack(alignment: .top, spacing: 30) {
+                        HStack(spacing: 30) {
                             // Maintenance Status
                             VStack(alignment: .leading, spacing: 25) {
                                 HStack {
@@ -306,7 +303,7 @@ struct FleetManagerVehicleDetailView: View {
                                         Image(systemName: "checklist")
                                             .foregroundColor(AppTheme.primary)
                                         VStack(alignment: .leading, spacing: 4) {
-                                            Text("POST-TRIP INSPECTION")
+                                            Text("PRE-TRIP INSPECTION")
                                                 .font(.system(size: 8, weight: .bold))
                                                 .foregroundColor(.gray)
                                             Text(vehicle.maintenance.inspectionStatus)
@@ -336,6 +333,7 @@ struct FleetManagerVehicleDetailView: View {
                                 }
                             }
                             .padding(35)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                             .background(Color.white)
                             .cornerRadius(20)
                             
@@ -392,6 +390,7 @@ struct FleetManagerVehicleDetailView: View {
                                 }
                             }
                             .padding(35)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                             .background(Color.white)
                             .cornerRadius(20)
                         }
@@ -460,6 +459,17 @@ struct FleetManagerVehicleDetailView: View {
         .navigationBarHidden(true)
         .sheet(isPresented: $showingEditModal) {
             AddVehicleModalView(vehicleToEdit: vehicle)
+        }
+        .alert("Confirm Delete", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                if let index = dataManager.vehicles.firstIndex(where: { $0.id == vehicle.id }) {
+                    dataManager.vehicles.remove(at: index)
+                }
+                dismiss()
+            }
+        } message: {
+            Text("Are you sure you want to delete this vehicle?")
         }
     }
 }

@@ -35,45 +35,47 @@ struct ArchiveListView: View {
                     .padding(.horizontal, 30)
                     .padding(.top, 20)
                     
-                    if vehicle.reports.isEmpty {
-                        Text("No history yet")
-                            .font(.system(size: 16))
-                            .foregroundColor(.gray)
-                            .padding(.top, 40)
-                    } else {
-                    VStack(spacing: 15) {
-                        ForEach(vehicle.reports) { report in
-                            NavigationLink(destination: MaintenanceReportDetailView(report: report, vehicle: vehicle)) {
-                                HStack(spacing: 20) {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 12).fill(AppTheme.criticalRed.opacity(0.1))
-                                            .frame(width: 55, height: 55)
-                                        Image(systemName: "doc.text.fill")
-                                            .font(.system(size: 24))
-                                            .foregroundColor(AppTheme.criticalRed)
+                    Group {
+                        if vehicle.reports.isEmpty {
+                            Text("No history yet")
+                                .font(.system(size: 16))
+                                .foregroundColor(.gray)
+                                .padding(.top, 40)
+                        } else {
+                            VStack(spacing: 15) {
+                                ForEach(vehicle.reports) { report in
+                                    NavigationLink(destination: MaintenanceReportDetailView(report: report, vehicle: vehicle)) {
+                                        HStack(spacing: 20) {
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 12).fill(AppTheme.criticalRed.opacity(0.1))
+                                                    .frame(width: 55, height: 55)
+                                                Image(systemName: "doc.text.fill")
+                                                    .font(.system(size: 24))
+                                                    .foregroundColor(AppTheme.criticalRed)
+                                            }
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(report.title)
+                                                    .font(.system(size: 18, weight: .bold))
+                                                Text(report.subtitle)
+                                                    .font(.system(size: 12))
+                                                    .foregroundColor(.gray)
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            Image(systemName: "chevron.right")
+                                                .foregroundColor(.gray.opacity(0.3))
+                                        }
+                                        .padding(20)
+                                        .background(Color.white)
+                                        .cornerRadius(16)
+                                        .modifier(AppTheme.cardShadow())
                                     }
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(report.title)
-                                            .font(.system(size: 18, weight: .bold))
-                                        Text(report.subtitle)
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.gray)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray.opacity(0.3))
+                                    .buttonStyle(PlainButtonStyle())
                                 }
-                                .padding(20)
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .modifier(AppTheme.cardShadow())
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
-                    }
                     }
                     .padding(.horizontal, 30)
                 }
