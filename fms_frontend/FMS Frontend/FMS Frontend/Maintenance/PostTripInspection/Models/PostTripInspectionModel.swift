@@ -1,4 +1,0 @@
-//
-//  PostTripInspectionModel.swift
-//  FMS Frontend
-//
