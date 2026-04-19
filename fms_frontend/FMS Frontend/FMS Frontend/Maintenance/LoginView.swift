@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct LoginView: View {
-    @Binding var isLoggedIn: Bool
+    @Binding var userRole: UserRole
     
     @State private var email = ""
     @State private var password = ""
@@ -69,7 +69,15 @@ struct LoginView: View {
                         // Simulate network delay
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                             isLoggingIn = false
-                            isLoggedIn = true
+                            if email.lowercased().contains("driver") {
+                                userRole = .driver
+                            } else if email.lowercased().contains("maintenance") {
+                                userRole = .maintenance
+                            } else {
+                                // Default to maintenance if not specified, 
+                                // but ideally we'd show an error. Let's just default to driver for now
+                                userRole = .driver
+                            }
                         }
                     }) {
                         HStack {
