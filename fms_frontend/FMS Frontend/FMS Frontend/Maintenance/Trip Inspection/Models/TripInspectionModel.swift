@@ -8,7 +8,6 @@ import Foundation
 enum InspectionType: String, Codable {
     case preTrip = "Pre-Trip"
     case postTrip = "Post-Trip"
-    case combined = "Pre + Post"
 }
 
 enum VehicleType: String, Codable {

@@ -33,8 +33,7 @@ struct TripInspectionView: View {
                             let inspections = vehicleGroups[unitName] ?? []
                             NavigationLink(
                                 destination: VehicleInspectionsListView(
-                                    unitName: unitName,
-                                    inspections: inspections
+                                    unitName: unitName
                                 )
                             ) {
                                 VehicleFolderTile(unitName: unitName, count: inspections.count)
@@ -54,8 +53,7 @@ struct TripInspectionView: View {
                         let inspections = vehicleGroups[unitName] ?? []
                         NavigationLink(
                             destination: VehicleInspectionsListView(
-                                unitName: unitName,
-                                inspections: inspections
+                                unitName: unitName
                             )
                         ) {
                             VehicleFolderListRow(unitName: unitName, count: inspections.count)
@@ -80,15 +78,15 @@ struct TripInspectionView: View {
                 HStack(spacing: 14) {
                     Button(action: { isGridView.toggle() }) {
                         Image(systemName: isGridView ? "list.bullet" : "square.grid.2x2")
-                            .font(.system(size: 20))
+                            .font(.title3)
                     }
                     Button(action: { showingCreateModal = true }) {
                         Image(systemName: "doc.badge.plus")
-                            .font(.system(size: 20))
+                            .font(.title3)
                     }
                     NavigationLink(destination: MaintenanceProfileView(isLoggedIn: .constant(true))) {
                         Image(systemName: "person.circle")
-                            .font(.system(size: 22))
+                            .font(.title2)
                     }
                 }
             }
@@ -122,7 +120,7 @@ struct VehicleFolderTile: View {
         VStack(alignment: .leading, spacing: 10) {
             // Folder icon
             Image(systemName: "folder.fill")
-                .font(.system(size: 40))
+                .font(.largeTitle)
                 .foregroundColor(AppColors.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -130,7 +128,7 @@ struct VehicleFolderTile: View {
 
             // Unit name
             Text(unitName)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(.primary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -160,12 +158,12 @@ struct VehicleFolderListRow: View {
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: "folder.fill")
-                .font(.system(size: 28))
+                .font(.title)
                 .foregroundColor(AppColors.primary)
                 
             VStack(alignment: .leading, spacing: 4) {
                 Text(unitName)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundColor(.primary)
                 
                 Text("\(count) inspection\(count == 1 ? "" : "s")")

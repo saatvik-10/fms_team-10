@@ -58,7 +58,7 @@ struct WorkOrder: Identifiable, Codable {
     static var mock: WorkOrder {
         WorkOrder(
             title: "Brake Pad Replacement",
-            vehicleName: "Unit 842-Alpha",
+            vehicleName: "Mercedes-Benz Actros (Truck)",
             vehicleVIN: "1HGCM8263JA05",
             serviceType: "Routine PM",
             priority: .high,

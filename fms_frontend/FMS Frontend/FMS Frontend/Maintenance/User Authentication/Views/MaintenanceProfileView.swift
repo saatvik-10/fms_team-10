@@ -40,24 +40,14 @@ struct MaintenanceProfileView: View {
             }
             .listRowBackground(Color.clear)
             
-            Section("Account Security") {
-                ProfileMenuRow(title: "Face ID & Passcode", icon: "faceid", color: .blue)
-                ProfileMenuRow(title: "Two-Factor Auth", icon: "lock.shield", color: .green)
-                ProfileMenuRow(title: "Session Management", icon: "list.bullet.rectangle", color: .orange)
-            }
-            
+
             Section("App Preferences") {
                 ProfileMenuRow(title: "Notifications", icon: "bell.badge", color: .red)
                 ProfileMenuRow(title: "Dark Mode", icon: "moon.fill", color: .purple)
                 ProfileMenuRow(title: "Units of Measure (mi/mpg)", icon: "speedometer", color: .blue)
             }
             
-            Section("Fleet Administration") {
-                ProfileMenuRow(title: "Sync Offline Data", icon: "arrow.triangle.2.circlepath", color: .teal)
-                ProfileMenuRow(title: "Download Fleet Manuals", icon: "book.closed", color: .brown)
-                ProfileMenuRow(title: "Help & Support", icon: "questionmark.circle", color: .blue)
-            }
-            
+
             Section {
                 Button(action: {
                     withAnimation {
@@ -97,14 +87,14 @@ struct ProfileStatItem: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 18))
+                .font(.headline)
                 .foregroundColor(AppColors.primary)
             
             VStack(spacing: 2) {
                 Text(value)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.headline.bold())
                 Text(title)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.caption2.bold())
                     .foregroundColor(AppColors.secondaryText)
                     .textCase(.uppercase)
             }
@@ -125,20 +115,20 @@ struct ProfileMenuRow: View {
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.body)
                 .foregroundColor(.white)
                 .frame(width: 32, height: 32)
                 .background(color)
                 .cornerRadius(8)
             
             Text(title)
-                .font(.system(size: 16, weight: .medium))
+                .font(.body.weight(.medium))
                 .foregroundColor(AppColors.primaryText)
             
             Spacer()
             
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .bold))
+                .font(.caption.weight(.bold))
                 .foregroundColor(AppColors.secondaryText.opacity(0.3))
         }
         .padding(.vertical, 12)

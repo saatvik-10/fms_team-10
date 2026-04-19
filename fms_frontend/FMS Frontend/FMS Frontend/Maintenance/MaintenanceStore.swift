@@ -21,7 +21,7 @@ class MaintenanceStore: ObservableObject {
             WorkOrder.mock,
             WorkOrder(
                 title: "Tire Pressure Calibration",
-                vehicleName: "Unit 319-Echo",
+                vehicleName: "Volvo FH16 (Truck)",
                 vehicleVIN: "3VWCP1192BM00",
                 serviceType: "Routine PM",
                 priority: .medium,
@@ -37,7 +37,7 @@ class MaintenanceStore: ObservableObject {
             ),
             WorkOrder(
                 title: "Engine Diagnostic",
-                vehicleName: "Unit 115-Delta",
+                vehicleName: "MAN TGX (Truck)",
                 vehicleVIN: "JTMBU4230L901",
                 serviceType: "Repair",
                 priority: .critical,
@@ -54,7 +54,7 @@ class MaintenanceStore: ObservableObject {
             TripInspection(
                 title: "Pre-Trip Audit",
                 vehicleId: "V-842",
-                unitName: "Unit 842-Alpha",
+                unitName: "Mercedes-Benz Actros (Truck)",
                 unitVIN: "1HGCM8263JA05",
                 driverId: "DRV-101",
                 timestamp: Date(),
@@ -70,7 +70,7 @@ class MaintenanceStore: ObservableObject {
             TripInspection(
                 title: "Post-Trip Verification",
                 vehicleId: "V-319",
-                unitName: "Unit 319-Echo",
+                unitName: "Volvo FH16 (Truck)",
                 unitVIN: "3VWCP1192BM12",
                 driverId: "DRV-102",
                 timestamp: Date(),
@@ -86,7 +86,7 @@ class MaintenanceStore: ObservableObject {
             TripInspection(
                 title: "Daily Pre-Trip",
                 vehicleId: "V-115",
-                unitName: "Unit 115-Delta",
+                unitName: "MAN TGX (Truck)",
                 unitVIN: "JTMBU4230L901",
                 driverId: "DRV-103",
                 timestamp: Date(),
@@ -102,14 +102,14 @@ class MaintenanceStore: ObservableObject {
             TripInspection(
                 title: "Standard Post-Trip",
                 vehicleId: "V-990",
-                unitName: "Unit 990-Zeta",
+                unitName: "Toyota Coaster (Bus)",
                 unitVIN: "5FNRL3H42GB91",
                 driverId: "DRV-104",
                 timestamp: Date(),
-                type: .preTrip,
-                vehicleType: .truck,
+                type: .postTrip,
+                vehicleType: .car,
                 status: .completed,
-                items: TripInspection.mockItems(for: .truck),
+                items: TripInspection.mockItems(for: .car),
                 maintenanceStaffId: "STAFF-01",
                 imageAsset: "truck_main",
                 imagesData: [UIImage(named: "brake_part")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemGreen.image().jpegData(compressionQuality: 0.1)!],
@@ -142,6 +142,12 @@ class MaintenanceStore: ObservableObject {
 
     func deleteInspection(_ inspection: TripInspection) {
         inspections.removeAll { $0.id == inspection.id }
+    }
+
+    func updateInspection(_ inspection: TripInspection) {
+        if let index = inspections.firstIndex(where: { $0.id == inspection.id }) {
+            inspections[index] = inspection
+        }
     }
 
     func updateInspectionAnalysis(id: UUID, index: Int, analysis: String) {

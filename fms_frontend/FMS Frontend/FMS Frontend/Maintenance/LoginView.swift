@@ -16,11 +16,7 @@ struct LoginView: View {
         NavigationStack {
             ZStack {
                 // Background
-                LinearGradient(
-                    gradient: Gradient(colors: [Color(hex: "1A1C1E"), Color(hex: "0F1012")]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+                Color(.systemBackground)
                 .ignoresSafeArea()
                 
                 // Content
@@ -31,38 +27,38 @@ struct LoginView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "safari.fill")
                             .font(.system(size: 60))
-                            .foregroundColor(.white)
+                            .foregroundColor(.black)
                             .padding(20)
                             .background(
                                 RoundedRectangle(cornerRadius: 24)
-                                    .fill(Color.white.opacity(0.1))
+                                    .fill(Color.black.opacity(0.05))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 24)
-                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
                                     )
                             )
                         
                         VStack(spacing: 4) {
                             Text("FMS")
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
+                                .font(.largeTitle.bold())
+                                .foregroundColor(.primary)
                             Text("Fleet Management Solution")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.6))
+                                .font(.subheadline.weight(.medium))
+                                .foregroundColor(.secondary)
                                 .tracking(2)
                         }
                     }
                     
                     // Irnput Fields
                     VStack(spacing: 16) {
-                        LoginTextField(icon: "envelope.fill", placeholder: "Enterprise Email", text: $email)
+                        LoginTextField(icon: "envelope.fill", placeholder: "Email", text: $email)
                         LoginSecureField(icon: "lock.fill", placeholder: "Password", text: $password)
                         
                         HStack {
                             Spacer()
                             Button("Forgot Password?") { }
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.6))
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(.secondary)
                         }
                     }
                     .padding(.horizontal, 24)
@@ -79,30 +75,24 @@ struct LoginView: View {
                         HStack {
                             if isLoggingIn {
                                 ProgressView()
-                                    .tint(.black)
+                                    .tint(.white)
                             } else {
                                 Text("Sign In")
-                                    .font(.system(size: 16, weight: .bold))
+                                    .font(.headline.bold())
                                 Image(systemName: "arrow.right")
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.subheadline.bold())
                             }
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Color.white)
-                        .foregroundColor(.black)
+                        .background(Color.black)
+                        .foregroundColor(.white)
                         .cornerRadius(16)
                     }
                     .padding(.horizontal, 24)
                     .disabled(isLoggingIn || email.isEmpty || password.isEmpty)
                     
                     Spacer()
-                    
-                    // Footer
-                    Text("© 2026 Antigravity Systems. All Rights Reserved.")
-                        .font(.system(size: 10))
-                        .foregroundColor(.white.opacity(0.4))
-                        .padding(.bottom, 20)
                 }
             }
         }
@@ -117,18 +107,18 @@ struct LoginTextField: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(.white.opacity(0.4))
+                .foregroundColor(.secondary)
                 .frame(width: 20)
             TextField(placeholder, text: $text)
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .autocapitalization(.none)
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Color.black.opacity(0.03))
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.black.opacity(0.08), lineWidth: 1)
         )
     }
 }
@@ -141,17 +131,17 @@ struct LoginSecureField: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(.white.opacity(0.4))
+                .foregroundColor(.secondary)
                 .frame(width: 20)
             SecureField(placeholder, text: $text)
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Color.black.opacity(0.03))
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.black.opacity(0.08), lineWidth: 1)
         )
     }
 }

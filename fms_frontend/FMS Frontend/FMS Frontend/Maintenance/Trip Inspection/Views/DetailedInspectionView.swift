@@ -9,7 +9,7 @@ import PDFKit
 // MARK: - PDF Report Generator
 struct InspectionReportGenerator {
 
-    static func generate(for inspection: TripInspection) -> URL? {
+    static func generate(for inspection: TripInspection, allInspections: [TripInspection]) -> URL? {
         let pdfMetaData: [String: Any] = [
             "Creator": "FMS Fleet Management",
             "Author":  "Fleet Management System",
@@ -27,12 +27,13 @@ struct InspectionReportGenerator {
 
             // ── Page 2+: Checklist ───────────────────────────────────────
             ctx.beginPage()
-            drawChecklist(ctx: ctx.cgContext, pageRect: pageRect, inspection: inspection)
+            drawChecklist(rendererContext: ctx, pageRect: pageRect, allInspections: allInspections)
             
             // ── Page 3+: Documentation & Analysis ────────────────────────
-            if !inspection.imagesData.isEmpty {
+            let inspectionsWithImages = allInspections.filter { !$0.imagesData.isEmpty }
+            if !inspectionsWithImages.isEmpty {
                 ctx.beginPage()
-                drawDocumentationPage(rendererContext: ctx, pageRect: pageRect, inspection: inspection)
+                drawDocumentationPage(rendererContext: ctx, pageRect: pageRect, allInspections: inspectionsWithImages)
             }
         }
 
@@ -155,97 +156,104 @@ struct InspectionReportGenerator {
     }
 
     // MARK: Page 2 — Checklist Table
-    private static func drawChecklist(ctx: CGContext, pageRect: CGRect, inspection: TripInspection) {
+    private static func drawChecklist(rendererContext: UIGraphicsPDFRendererContext, pageRect: CGRect, allInspections: [TripInspection]) {
+        let ctx = rendererContext.cgContext
         let margin: CGFloat = 48
         var y: CGFloat = margin
+        
+        let inspections = allInspections.sorted(by: { $0.type.rawValue < $1.type.rawValue })
 
-        // Page title
-        "INSPECTION CHECKLIST".draw(
-            at: CGPoint(x: margin, y: y),
-            withAttributes: [
-                .font: UIFont.systemFont(ofSize: 16, weight: .bold),
-                .foregroundColor: UIColor(AppColors.primary)
-            ]
-        )
-        y += 30
-
-        // Column headers
-        let colWidths: [CGFloat] = [220, 80, 120, 80]  // Item, Result, Notes/Criteria, Image
-        let colX: [CGFloat] = [margin, margin + 220, margin + 300, margin + 420]
-        let headers = ["Inspection Item", "Result", "Notes", "Photo"]
-
-        ctx.setFillColor(UIColor(AppColors.primary).withAlphaComponent(0.08).cgColor)
-        ctx.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: 22))
-
-        for (i, header) in headers.enumerated() {
-            header.draw(
-                at: CGPoint(x: colX[i] + 4, y: y + 5),
+        for inspection in inspections {
+            if y > pageRect.height - 150 {
+                drawFooter(pageRect: pageRect, ctx: ctx, pageNumber: 2)
+                rendererContext.beginPage()
+                y = margin
+            }
+            
+            // Title
+            "\(inspection.type.rawValue.uppercased()) CHECKLIST".draw(
+                at: CGPoint(x: margin, y: y),
                 withAttributes: [
-                    .font: UIFont.systemFont(ofSize: 10, weight: .bold),
+                    .font: UIFont.systemFont(ofSize: 16, weight: .bold),
                     .foregroundColor: UIColor(AppColors.primary)
                 ]
             )
-        }
-        y += 26
+            y += 30
 
-        // Rows
-        for (index, item) in inspection.items.enumerated() {
-            let rowHeight: CGFloat = 38
-            let bg: UIColor = index.isMultiple(of: 2) ? UIColor.systemGray6 : .white
-            ctx.setFillColor(bg.cgColor)
-            ctx.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: rowHeight))
+            // Column headers
+            let colWidths: [CGFloat] = [220, 80, 120, 80]  // Item, Result, Notes/Criteria, Image
+            let colX: [CGFloat] = [margin, margin + 220, margin + 300, margin + 420]
+            let headers = ["Inspection Item", "Result", "Notes", "Photo"]
 
-            // Item name
-            item.name.draw(
-                in: CGRect(x: colX[0] + 4, y: y + 4, width: colWidths[0] - 8, height: 30),
-                withAttributes: [
-                    .font: UIFont.systemFont(ofSize: 10, weight: .medium),
-                    .foregroundColor: UIColor.black
-                ]
-            )
+            ctx.setFillColor(UIColor(AppColors.primary).withAlphaComponent(0.08).cgColor)
+            ctx.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: 22))
 
-            // Result coloured
-            let resultColor: UIColor
-            switch item.result {
-            case .good:    resultColor = .systemGreen
-            case .repair:  resultColor = .systemOrange
-            case .alert:   resultColor = .systemRed
-            case .pending: resultColor = .systemGray
-            }
-            item.result.rawValue.draw(
-                at: CGPoint(x: colX[1] + 4, y: y + 12),
-                withAttributes: [
-                    .font: UIFont.systemFont(ofSize: 10, weight: .bold),
-                    .foregroundColor: resultColor
-                ]
-            )
-
-            // Notes
-            let noteText = item.notes.isEmpty ? "—" : item.notes
-            noteText.draw(
-                in: CGRect(x: colX[2] + 4, y: y + 4, width: colWidths[2] - 8, height: 30),
-                withAttributes: [
-                    .font: UIFont.systemFont(ofSize: 9),
-                    .foregroundColor: UIColor.darkGray
-                ]
-            )
-
-            // Photo
-            if let data = item.imageData, let img = UIImage(data: data) {
-                let imgRect = CGRect(x: colX[3] + 4, y: y + 2, width: 32, height: 32)
-                img.draw(in: imgRect)
-            } else {
-                "—".draw(
-                    at: CGPoint(x: colX[3] + 4, y: y + 12),
-                    withAttributes: [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.systemGray]
+            for (i, header) in headers.enumerated() {
+                header.draw(
+                    at: CGPoint(x: colX[i] + 4, y: y + 5),
+                    withAttributes: [
+                        .font: UIFont.systemFont(ofSize: 10, weight: .bold),
+                        .foregroundColor: UIColor(AppColors.primary)
+                    ]
                 )
             }
+            y += 26
 
-            y += rowHeight
+            // Rows
+            for (index, item) in inspection.items.enumerated() {
+                if y > pageRect.height - 100 {
+                    drawFooter(pageRect: pageRect, ctx: ctx, pageNumber: 2)
+                    rendererContext.beginPage()
+                    y = margin
+                    
+                    ctx.setFillColor(UIColor(AppColors.primary).withAlphaComponent(0.08).cgColor)
+                    ctx.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: 22))
+                    for (i, header) in headers.enumerated() {
+                        header.draw(at: CGPoint(x: colX[i] + 4, y: y + 5), withAttributes: [.font: UIFont.systemFont(ofSize: 10, weight: .bold), .foregroundColor: UIColor(AppColors.primary)])
+                    }
+                    y += 26
+                }
+                
+                let rowHeight: CGFloat = 38
+                let bg: UIColor = index.isMultiple(of: 2) ? UIColor.systemGray6 : .white
+                ctx.setFillColor(bg.cgColor)
+                ctx.fill(CGRect(x: margin, y: y, width: pageRect.width - margin * 2, height: rowHeight))
+
+                // Item name
+                item.name.draw(in: CGRect(x: colX[0] + 4, y: y + 4, width: colWidths[0] - 8, height: 30), withAttributes: [.font: UIFont.systemFont(ofSize: 10, weight: .medium), .foregroundColor: UIColor.black])
+                
+                // Result coloured
+                let resultColor: UIColor
+                switch item.result {
+                case .good:    resultColor = .systemGreen
+                case .repair:  resultColor = .systemOrange
+                case .alert:   resultColor = .systemRed
+                case .pending: resultColor = .systemGray
+                }
+                item.result.rawValue.draw(at: CGPoint(x: colX[1] + 4, y: y + 12), withAttributes: [.font: UIFont.systemFont(ofSize: 10, weight: .bold), .foregroundColor: resultColor])
+
+                // Notes
+                let noteText = item.notes.isEmpty ? "—" : item.notes
+                noteText.draw(in: CGRect(x: colX[2] + 4, y: y + 4, width: colWidths[2] - 8, height: 30), withAttributes: [.font: UIFont.systemFont(ofSize: 9), .foregroundColor: UIColor.darkGray])
+
+                // Photo
+                if let data = item.imageData, let img = UIImage(data: data) {
+                    let imgRect = CGRect(x: colX[3] + 4, y: y + 2, width: 32, height: 32)
+                    img.draw(in: imgRect)
+                } else {
+                    "—".draw(at: CGPoint(x: colX[3] + 4, y: y + 12), withAttributes: [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.systemGray])
+                }
+
+                y += rowHeight
+            }
+            y += 40
         }
 
-        // Signature block
-        y += 40
+        if y > pageRect.height - 120 {
+            drawFooter(pageRect: pageRect, ctx: ctx, pageNumber: 2)
+            rendererContext.beginPage()
+            y = margin
+        }
         let signY = min(y, pageRect.height - 120)
         "Inspector Signature: ___________________________".draw(
             at: CGPoint(x: margin, y: signY),
@@ -266,7 +274,7 @@ struct InspectionReportGenerator {
     }
 
     // MARK: Page 3 — Documentation & AI Analysis
-    private static func drawDocumentationPage(rendererContext: UIGraphicsPDFRendererContext, pageRect: CGRect, inspection: TripInspection) {
+    private static func drawDocumentationPage(rendererContext: UIGraphicsPDFRendererContext, pageRect: CGRect, allInspections: [TripInspection]) {
         let ctx = rendererContext.cgContext
         let margin: CGFloat = 48
         var y: CGFloat = margin
@@ -281,46 +289,48 @@ struct InspectionReportGenerator {
         )
         y += 40
 
-        for (index, data) in inspection.imagesData.enumerated() {
-            if let img = UIImage(data: data) {
-                // Image Box
-                let imgWidth: CGFloat = 120
-                let imgHeight: CGFloat = 120
-                let imgRect = CGRect(x: margin, y: y, width: imgWidth, height: imgHeight)
-                
-                // Draw rounded background for image
-                ctx.setFillColor(UIColor.systemGray6.cgColor)
-                ctx.fill(imgRect.insetBy(dx: -4, dy: -4))
-                img.draw(in: imgRect)
-                
-                // Analysis Text
-                let analysisX = margin + imgWidth + 24
-                let analysisWidth = pageRect.width - analysisX - margin
-                let analysis = inspection.imageAnalyses.indices.contains(index) ? inspection.imageAnalyses[index] : "Analysis not available."
-                
-                "AI ANALYSIS REPORT".draw(
-                    at: CGPoint(x: analysisX, y: y),
-                    withAttributes: [
-                        .font: UIFont.systemFont(ofSize: 10, weight: .black),
-                        .foregroundColor: UIColor(AppColors.primary)
-                    ]
-                )
-                
-                analysis.draw(
-                    in: CGRect(x: analysisX, y: y + 16, width: analysisWidth, height: imgHeight - 16),
-                    withAttributes: [
-                        .font: UIFont.systemFont(ofSize: 10),
-                        .foregroundColor: UIColor.darkGray
-                    ]
-                )
-                
-                y += imgHeight + 40
-                
-                // Check if we need a new page
-                if y > pageRect.height - 150 && index < inspection.imagesData.count - 1 {
-                    drawFooter(pageRect: pageRect, ctx: ctx, pageNumber: 3)
-                    rendererContext.beginPage()
-                    y = margin
+        for inspection in allInspections {
+            for (index, data) in inspection.imagesData.enumerated() {
+                if let img = UIImage(data: data) {
+                    // Image Box
+                    let imgWidth: CGFloat = 120
+                    let imgHeight: CGFloat = 120
+                    let imgRect = CGRect(x: margin, y: y, width: imgWidth, height: imgHeight)
+                    
+                    // Draw rounded background for image
+                    ctx.setFillColor(UIColor.systemGray6.cgColor)
+                    ctx.fill(imgRect.insetBy(dx: -4, dy: -4))
+                    img.draw(in: imgRect)
+                    
+                    // Analysis Text
+                    let analysisX = margin + imgWidth + 24
+                    let analysisWidth = pageRect.width - analysisX - margin
+                    let analysis = inspection.imageAnalyses.indices.contains(index) ? inspection.imageAnalyses[index] : "Analysis not available."
+                    
+                    "AI ANALYSIS REPORT - \(inspection.type.rawValue.uppercased())".draw(
+                        at: CGPoint(x: analysisX, y: y),
+                        withAttributes: [
+                            .font: UIFont.systemFont(ofSize: 10, weight: .black),
+                            .foregroundColor: UIColor(AppColors.primary)
+                        ]
+                    )
+                    
+                    analysis.draw(
+                        in: CGRect(x: analysisX, y: y + 16, width: analysisWidth, height: imgHeight - 16),
+                        withAttributes: [
+                            .font: UIFont.systemFont(ofSize: 10),
+                            .foregroundColor: UIColor.darkGray
+                        ]
+                    )
+                    
+                    y += imgHeight + 40
+                    
+                    // Check if we need a new page
+                    if y > pageRect.height - 150 {
+                        drawFooter(pageRect: pageRect, ctx: ctx, pageNumber: 3)
+                        rendererContext.beginPage()
+                        y = margin
+                    }
                 }
             }
         }
@@ -391,6 +401,7 @@ struct InspectionReportGenerator {
 // MARK: - Main View
 struct DetailedInspectionView: View {
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var store: MaintenanceStore
     @State var inspection: TripInspection
     @State private var showingPDFPreview = false
     @State private var reportURL: URL?
@@ -440,15 +451,12 @@ struct DetailedInspectionView: View {
                 .cornerRadius(16)
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.05), lineWidth: 1))
 
-                // Inspection Checklist
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("SYSTEM CHECKLIST")
-                        .font(.system(size: 12, weight: .black))
-                        .foregroundColor(AppColors.primary.opacity(0.7))
+                    SectionHeader(title: "SYSTEM CHECKLIST", icon: "checklist")
                         .padding(.horizontal)
 
                     VStack(spacing: 0) {
-                        ForEach($inspection.items) { $item in
+                        ForEach($inspection.items, id: \.id) { $item in
                             InspectionListItem(item: $item)
                                 .padding()
                                 .background(Color(.secondarySystemGroupedBackground))
@@ -457,7 +465,6 @@ struct DetailedInspectionView: View {
                                 Divider().padding(.leading, 16)
                             }
                         }
-
                         // Add Other
                         Button(action: {
                             let newItem = InspectionItem(
@@ -484,10 +491,12 @@ struct DetailedInspectionView: View {
                     .cornerRadius(16)
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.05), lineWidth: 1))
                 }
-
                 // Documentation Section
                 if !inspection.imagesData.isEmpty {
-                    InfoSection(title: "Documentation") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeader(title: "Documentation", icon: "photo.fill")
+                            .padding(.horizontal)
+                        
                         VStack(spacing: 12) {
                             ForEach(0..<inspection.imagesData.count, id: \.self) { index in
                                 ImageAnalysisCard(
@@ -496,8 +505,8 @@ struct DetailedInspectionView: View {
                                 )
                             }
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
                 }
 
                 Spacer(minLength: 120)
@@ -556,9 +565,22 @@ struct DetailedInspectionView: View {
     }
 
     private func submitAndGeneratePDF() {
+        // Ensure changes are persisted
+        inspection.status = .completed
+        store.updateInspection(inspection)
+        
         isGenerating = true
+        
+        var inspectionsToInclude: [TripInspection] = [inspection]
+        
+        // If Post-Trip, include Pre-Trip as well (if available) for the report sections
+        if inspection.type == .postTrip {
+            let allForUnit = store.inspections.filter { $0.unitName == inspection.unitName }
+            inspectionsToInclude = allForUnit.sorted(by: { $0.type.rawValue < $1.type.rawValue })
+        }
+        
         DispatchQueue.global(qos: .userInitiated).async {
-            let url = InspectionReportGenerator.generate(for: inspection)
+            let url = InspectionReportGenerator.generate(for: inspection, allInspections: inspectionsToInclude)
             DispatchQueue.main.async {
                 isGenerating = false
                 reportURL = url
@@ -590,7 +612,7 @@ struct InspectionListItem: View {
                 
                 Menu {
                     Button(action: { item.result = .good }) {
-                        Label("Pass", systemImage: "checkmark.circle.fill")
+                        Label("Good", systemImage: "checkmark.circle.fill")
                     }
                     Button(action: { item.result = .repair }) {
                         Label("Repair", systemImage: "wrench.and.screwdriver.fill")

@@ -16,6 +16,7 @@ struct WorkOrderDetailsView: View {
     @State private var showingImagePicker = false
     @State private var showingCamera = false
     @State private var showingProofSource = false
+    @State private var newNoteText: String = ""
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -53,7 +54,7 @@ struct WorkOrderDetailsView: View {
                         // Vehicle Info Header
                         VStack(alignment: .leading, spacing: 10) {
                             Text(workOrder.vehicleName)
-                                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                                .font(.largeTitle.weight(.heavy))
                                 .foregroundColor(.primary)
                             
                             HStack(spacing: 8) {
@@ -88,15 +89,24 @@ struct WorkOrderDetailsView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "TASK DETAILS", icon: "doc.text.fill")
                             
-                            Text(workOrder.taskDetails)
-                                .font(.body)
-                                .foregroundColor(.primary)
-                                .lineSpacing(6)
-                                .padding(20)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+                            VStack(alignment: .leading, spacing: 8) {
+                                let points = workOrder.taskDetails.components(separatedBy: ".").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+                                ForEach(points, id: \.self) { point in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Text("•")
+                                            .font(.body.weight(.bold))
+                                            .foregroundColor(AppColors.primary)
+                                        Text(point + ".")
+                                            .font(.body)
+                                            .foregroundColor(.primary)
+                                    }
+                                }
+                            }
+                            .padding(20)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
                         }
                         
                         // Driver Notes Card
@@ -110,12 +120,12 @@ struct WorkOrderDetailsView: View {
                                             Image(systemName: "waveform")
                                                 .foregroundColor(AppColors.primary)
                                             Text("VOICE TRANSCRIPT")
-                                                .font(.system(size: 11, weight: .black))
+                                                .font(.caption.weight(.black))
                                                 .foregroundColor(AppColors.primary)
                                         }
                                         
                                         Text("\"\(transcript)\"")
-                                            .font(.system(size: 15).italic())
+                                            .font(.subheadline.italic())
                                             .foregroundColor(.secondary)
                                             .lineSpacing(4)
                                     }
@@ -123,22 +133,11 @@ struct WorkOrderDetailsView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .background(Color(.systemGray6).opacity(0.5))
                                     .cornerRadius(12)
-                                }
-                                
-                                // Image Gallery
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 12) {
-                                        ForEach(0..<3) { _ in
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(Color(.systemGray6))
-                                                .frame(width: 90, height: 90)
-                                                .overlay(
-                                                    Image(systemName: "photo")
-                                                        .foregroundColor(.secondary.opacity(0.5))
-                                                        .font(.system(size: 24))
-                                                )
-                                        }
-                                    }
+                                } else {
+                                    Text("No driver notes available.")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                        .padding(.vertical, 4)
                                 }
                             }
                             .padding(20)
@@ -151,20 +150,59 @@ struct WorkOrderDetailsView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "TECHNICIAN NOTES", icon: "wrench.and.screwdriver.fill")
                             
-                            TextEditor(text: Binding(
-                                get: { workOrder.technicianNotes },
-                                set: { workOrder.technicianNotes = $0 }
-                            ))
-                            .frame(height: 120)
-                            .padding(12)
+                            VStack(alignment: .leading, spacing: 8) {
+                                let notesPoints = workOrder.technicianNotes.components(separatedBy: "\n").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+                                
+                                if notesPoints.isEmpty {
+                                    Text("No technician notes yet.")
+                                        .font(.body)
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    ForEach(notesPoints, id: \.self) { point in
+                                        HStack(alignment: .top, spacing: 8) {
+                                            Text("•")
+                                                .font(.body.weight(.bold))
+                                                .foregroundColor(AppColors.primary)
+                                            Text(point)
+                                                .font(.body)
+                                                .foregroundColor(.primary)
+                                        }
+                                    }
+                                }
+                                
+                                Divider().padding(.vertical, 4)
+
+                                HStack(alignment: .top, spacing: 10) {
+                                    TextField("Add a new note...", text: $newNoteText, axis: .vertical)
+                                        .font(.body)
+                                        .textFieldStyle(.plain)
+                                        .lineLimit(1...5)
+                                    
+                                    Button(action: {
+                                        let trimmed = newNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        if !trimmed.isEmpty {
+                                            let newNotes = workOrder.technicianNotes.isEmpty ? trimmed : workOrder.technicianNotes + "\n" + trimmed
+                                            workOrder.technicianNotes = newNotes
+                                            store.updateWorkOrder(workOrder)
+                                            newNoteText = ""
+                                        }
+                                    }) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.title3)
+                                            .foregroundColor(newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : AppColors.primary)
+                                    }
+                                    .disabled(newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                }
+                            }
+                            .padding(20)
                             .background(Color.white)
                             .cornerRadius(16)
                             .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
                         }
 
-                        // Proof of Work Gallery
+                        // Service Media Gallery
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "PROOF OF WORK", icon: "camera.fill")
+                            SectionHeader(title: "SERVICE MEDIA", icon: "camera.fill")
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 12) {
@@ -180,9 +218,9 @@ struct WorkOrderDetailsView: View {
                                     Button(action: { showingProofSource = true }) {
                                         VStack(spacing: 4) {
                                             Image(systemName: "plus.circle.fill")
-                                                .font(.system(size: 20))
+                                                .font(.title3)
                                             Text("Capture")
-                                                .font(.system(size: 10, weight: .bold))
+                                                .font(.caption2.weight(.bold))
                                         }
                                         .frame(width: 90, height: 90)
                                         .background(Color(.systemGray6))
@@ -191,11 +229,11 @@ struct WorkOrderDetailsView: View {
                                     }
                                 }
                             }
+                            .padding(20)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
                         }
-                        .padding(20)
-                        .background(Color.white)
-                        .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
                         
                         Spacer(minLength: 160) // Extra space for sticky footer + tab bar
                     }
@@ -330,12 +368,11 @@ struct SectionHeader: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold))
-            Text(title)
-                .font(.system(size: 11, weight: .black))
-                .tracking(1)
+                .font(.subheadline.weight(.semibold))
+            Text(title.uppercased())
+                .font(.subheadline.weight(.semibold))
         }
-        .foregroundColor(AppColors.primary.opacity(0.7))
+        .foregroundColor(.secondary)
         .padding(.leading, 4)
     }
 }

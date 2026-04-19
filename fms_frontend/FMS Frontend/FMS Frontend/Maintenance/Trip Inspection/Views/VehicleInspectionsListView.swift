@@ -9,9 +9,12 @@ import SwiftUI
 
 struct VehicleInspectionsListView: View {
     let unitName: String
-    let inspections: [TripInspection]
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var store: MaintenanceStore
+    
+    private var inspections: [TripInspection] {
+        store.inspections.filter { $0.unitName == unitName }
+    }
     
     @State private var filter: InspectionFilter = .all
     
@@ -74,7 +77,7 @@ struct VehicleInspectionsListView: View {
     }
     
     private func deleteItems(at offsets: IndexSet) {
-        let sorted = inspections.sorted(by: { $0.timestamp > $1.timestamp })
+        let sorted = filteredInspections.sorted(by: { $0.timestamp > $1.timestamp })
         for index in offsets {
             let inspectionToDelete = sorted[index]
             withAnimation {

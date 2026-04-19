@@ -78,11 +78,11 @@ struct WorkOrderManagementView: View {
                 HStack(spacing: 14) {
                     Button(action: { showingFilter = true }) {
                         Image(systemName: "line.3.horizontal.decrease.circle")
-                            .font(.system(size: 20))
+                            .font(.title3)
                     }
                     Button(action: { showingCreateModal = true }) {
                         Image(systemName: "plus")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.headline)
                     }
                 }
             }

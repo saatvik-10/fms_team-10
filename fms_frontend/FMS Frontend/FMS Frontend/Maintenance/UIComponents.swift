@@ -223,11 +223,8 @@ struct WorkOrderTaskCard: View {
                 
                 // Status Section (Rightmost)
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(statusColor)
-                        .frame(width: 7, height: 7)
                     Text(order.status.rawValue.uppercased())
-                        .font(.system(size: 10, weight: .black))
+                        .font(.caption.bold())
                 }
                 .foregroundColor(statusColor)
                 .frame(maxWidth: .infinity)
@@ -385,11 +382,8 @@ struct InspectionTaskCard: View {
                 
                 // Status Section (Rightmost)
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(statusColor)
-                        .frame(width: 7, height: 7)
                     Text(inspection.status.rawValue.uppercased())
-                        .font(.system(size: 10, weight: .black))
+                        .font(.caption.bold())
                 }
                 .foregroundColor(statusColor)
                 .frame(maxWidth: .infinity)
@@ -415,9 +409,9 @@ struct MetadataCell: View {
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.system(size: 10))
+                .font(.caption)
             Text(text)
-                .font(.system(size: 10, weight: .bold))
+                .font(.caption.bold())
         }
         .foregroundColor(.secondary)
         .frame(maxWidth: .infinity)
@@ -436,9 +430,9 @@ struct InfoSection<Content: View>: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 12, weight: .black))
-                .foregroundColor(AppColors.primary.opacity(0.7))
+            Text(title.uppercased())
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.secondary)
             content
         }
     }
