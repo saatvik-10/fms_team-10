@@ -8,9 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		2C2ACB4A2F90C20B005FC85A /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = 2C2ACB492F90C20B005FC85A /* GoogleMaps */; };
+		2CC1CC7C2F92590800FB9453 /* map_style.json in Resources */ = {isa = PBXBuildFile; fileRef = 2CC1CC7B2F92590800FB9453 /* map_style.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2CC1CC7B2F92590800FB9453 /* map_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = map_style.json; sourceTree = "<group>"; };
 		BF4D0FB62F90972D00D2DCFD /* FMS Frontend.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FMS Frontend.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -35,6 +37,7 @@
 		BF4D0FAD2F90972D00D2DCFD = {
 			isa = PBXGroup;
 			children = (
+				2CC1CC7B2F92590800FB9453 /* map_style.json */,
 				BF4D0FB82F90972D00D2DCFD /* FMS Frontend */,
 				BF4D0FB72F90972D00D2DCFD /* Products */,
 			);
@@ -113,6 +116,7 @@
 		BF4D0FB42F90972D00D2DCFD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
+				2CC1CC7C2F92590800FB9453 /* map_style.json in Resources */,
 			);
 		};
 /* End PBXResourcesBuildPhase section */
@@ -257,6 +261,7 @@
 				DEVELOPMENT_TEAM = 8T6H99BDWA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location for navigation\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -268,7 +273,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "akumaria1604-gmail.com.FMS-Frontend";
+				PRODUCT_BUNDLE_IDENTIFIER = com.gargee.fmsfrontend;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -291,6 +296,7 @@
 				DEVELOPMENT_TEAM = 8T6H99BDWA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location for navigation\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
