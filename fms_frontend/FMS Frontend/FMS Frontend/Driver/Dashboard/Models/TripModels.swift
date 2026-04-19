@@ -17,6 +17,7 @@ struct TripStop: Identifiable {
 
 struct Trip {
     var routeNumber: String
+    var tripDate: String
     var pickup: TripStop
     var destination: TripStop
     var stops: [TripStop]
