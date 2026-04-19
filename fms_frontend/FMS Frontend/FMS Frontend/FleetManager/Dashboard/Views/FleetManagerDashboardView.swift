@@ -93,7 +93,7 @@ struct FleetManagerDashboardView: View {
                             FleetOpsActionButton(title: "Log Repair", iconName: "wrench.and.screwdriver.fill") { }
                             FleetOpsActionButton(title: "Add Driver", iconName: "person.badge.plus.fill") { showingAddDriver = true }
                             FleetOpsActionButton(title: "Add Vehicle", iconName: "truck.box.fill") { showingAddVehicle = true }
-                            FleetOpsActionButton(title: "Reports", iconName: "printer.fill") { showingRequestsList = true }
+                            FleetOpsActionButton(title: "Maintenace Requests", iconName: "printer.fill") { showingRequestsList = true }
                         }
                         .padding(.bottom, 30)
                         }
