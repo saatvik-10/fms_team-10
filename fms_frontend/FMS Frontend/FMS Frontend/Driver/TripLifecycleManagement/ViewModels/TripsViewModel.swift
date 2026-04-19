@@ -16,14 +16,14 @@ class TripsViewModel: ObservableObject {
     private func loadMockData() {
         trips = [
             // Assigned Trips
-            LifecycleTrip(id: "TRP-10492", source: "Chicago, IL", destination: "Detroit, MI", status: .assigned, dateValue: "Oct 18", timeLabel: "Arrival Window", timeValue: "08:00 - 10:00", loadInfo: "24 Pallets", distance: 283.4),
-            LifecycleTrip(id: "TRP-10495", source: "Gary, IN", destination: "Columbus, OH", status: .assigned, dateValue: "Oct 19", timeLabel: "Arrival Window", timeValue: "13:30 - 15:00", loadInfo: "18 Pallets", distance: 250.0),
+            LifecycleTrip(id: "TRP-10492", source: "Chicago, IL", destination: "Detroit, MI", status: .assigned, dateValue: "Oct 18", timeLabel: "Arrival Window", timeValue: "08:00 - 10:00", loadInfo: "24 Pallets", distance: 283.4, vehicleNumber: nil),
+            LifecycleTrip(id: "TRP-10495", source: "Gary, IN", destination: "Columbus, OH", status: .assigned, dateValue: "Oct 19", timeLabel: "Arrival Window", timeValue: "13:30 - 15:00", loadInfo: "18 Pallets", distance: 250.0, vehicleNumber: nil),
             
             // Accepted Trips
-            LifecycleTrip(id: "TRP-10488", source: "Indianapolis, IN", destination: "Louisville, KY", status: .scheduled, dateValue: "Oct 20", timeLabel: "Scheduled Start", timeValue: "14:30", loadInfo: "12 Pallets", distance: 114.2),
+            LifecycleTrip(id: "TRP-10488", source: "Indianapolis, IN", destination: "Louisville, KY", status: .scheduled, dateValue: "Oct 20", timeLabel: "Scheduled Start", timeValue: "14:30", loadInfo: "12 Pallets", distance: 114.2, vehicleNumber: "MH01BK9392"),
             
             // Past Trips
-            LifecycleTrip(id: "TRP-10470", source: "Nashville, TN", destination: "Atlanta, GA", status: .completed, dateValue: "Oct 15", timeLabel: "Completion Time", timeValue: "Yesterday, 18:45", loadInfo: "20 Pallets", distance: 248.1)
+            LifecycleTrip(id: "TRP-10470", source: "Nashville, TN", destination: "Atlanta, GA", status: .completed, dateValue: "Oct 15", timeLabel: "Completion Time", timeValue: "Yesterday, 18:45", loadInfo: "20 Pallets", distance: 248.1, vehicleNumber: "XYZ-9876")
         ]
     }
     
@@ -40,9 +40,20 @@ class TripsViewModel: ObservableObject {
                 timeLabel: "Scheduled Start",
                 timeValue: "Pending",
                 loadInfo: existing.loadInfo,
-                distance: existing.distance
+                distance: existing.distance,
+                vehicleNumber: generateRandomVehicleNumber()
             )
         }
+    }
+    
+    private func generateRandomVehicleNumber() -> String {
+        let prefixes = ["MH01", "DL01", "KA01", "GA01"]
+        let letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        let randomPrefix = prefixes.randomElement() ?? "MH01"
+        let randomLetter1 = letters.randomElement() ?? "A"
+        let randomLetter2 = letters.randomElement() ?? "B"
+        let randomNumber = Int.random(in: 1000...9999)
+        return "\(randomPrefix)\(randomLetter1)\(randomLetter2)\(randomNumber)"
     }
     
     func declineTrip(_ trip: LifecycleTrip) {

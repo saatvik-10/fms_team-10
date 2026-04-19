@@ -2,13 +2,45 @@ import SwiftUI
 import GoogleMaps
 import CoreLocation
 
+// MARK: - Trip Progress State (Trips Tab Only)
+// Drives the Start Trip / End Trip button UI.
+// Teammate: inject real CLLocationDistance into distanceToDestinationMeters
+// from your location/tracking layer to trigger state transitions.
+enum TripProgressState {
+    case notStarted      // Driver has not yet tapped "Start Trip"
+    case inProgress      // Trip is underway; destination is far (>100 m)
+    case nearDestination // CONSTRAINT: distance <= 100 m → "End Trip" unlocks
+    case ended           // Trip completed (manually or auto-triggered)
+}
+
 struct TripDetailView: View {
     let trip: Trip
-    
+
+    // Set true when navigating from the Trips tab (TripsView).
+    // Keeps the Home tab's "Continue Navigation" button completely unchanged.
+    var showTripControls: Bool = false
+
     @State private var estimatedArrival: String = "Loading..."
     @State private var routePolyline: String = ""
     @State private var isLoadingEta: Bool = true
-    
+
+    // ── Trips-tab state ───────────────────────────────────────────────────
+    // TEAMMATE HOOK: Update distanceToDestinationMeters from your tracking
+    // ViewModel/service. The UI reacts to its value automatically.
+    @State var distanceToDestinationMeters: Double = 999  // stub — far by default
+    @State private var tripProgressState: TripProgressState = .notStarted
+
+    // CONSTRAINT: "End Trip" button is enabled when distance ≤ 100 m
+    private var isEndTripEnabled: Bool {
+        distanceToDestinationMeters <= 100
+    }
+
+    // CONSTRAINT: Auto-end trip when distance reaches 0 m (exact destination)
+    private var hasReachedDestination: Bool {
+        distanceToDestinationMeters <= 0
+    }
+
+    // ── Home-tab gate (unchanged behaviour) ───────────────────────────────
     // Date-gate: Compare today's date against trip date (e.g. "Oct 18")
     private var isNavigationEnabled: Bool {
         guard !trip.tripDate.isEmpty else { return true } // No lock if date is blank
@@ -17,7 +49,7 @@ struct TripDetailView: View {
         let todayString = formatter.string(from: Date())
         return todayString == trip.tripDate
     }
-    
+
     // Extracted shared padding for precise alignment
     private let horizontalPadding: CGFloat = 20
     
@@ -88,28 +120,33 @@ struct TripDetailView: View {
                 .padding(.horizontal, horizontalPadding)
                 .shadow(color: AppColors.shadow, radius: 10, x: 0, y: 4)
                 
-                // ACTION BUTTON
-                ZStack {
-                    PrimaryButton(
-                        title: "Continue Navigation",
-                        icon: "location.fill",
-                        backgroundColor: AppColors.primary,
-                        textColor: .white
-                    ) {
-                        // Start navigation action
+                // ACTION BUTTONS
+                if showTripControls {
+                    // ── TRIPS TAB: State-driven Start / End Trip ──────────
+                    tripActionButtons
+                } else {
+                    // ── HOME TAB: Original "Continue Navigation" (unchanged) ──
+                    ZStack {
+                        PrimaryButton(
+                            title: "Continue Navigation",
+                            icon: "location.fill",
+                            backgroundColor: AppColors.primary,
+                            textColor: .white
+                        ) {
+                            // Start navigation action (home tab)
+                        }
+                        .allowsHitTesting(isNavigationEnabled)
+
+                        if !isNavigationEnabled {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(UIColor.systemBackground).opacity(0.45))
+                                .allowsHitTesting(false)
+                        }
                     }
-                    .allowsHitTesting(isNavigationEnabled)
-                    
-                    // Disabled overlay: faded effect without changing the button's look
-                    if !isNavigationEnabled {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(UIColor.systemBackground).opacity(0.45))
-                            .allowsHitTesting(false)
-                    }
+                    .opacity(isNavigationEnabled ? 1.0 : 0.5)
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.bottom, 32)
                 }
-                .opacity(isNavigationEnabled ? 1.0 : 0.5)
-                .padding(.horizontal, horizontalPadding)
-                .padding(.bottom, 32)
             }
             .padding(.top, 16)
         }
@@ -131,6 +168,142 @@ struct TripDetailView: View {
                 }
             }
         }
+        // CONSTRAINT: Watch distance and auto-end when destination reached
+        .onChange(of: distanceToDestinationMeters) { _, newDistance in
+            guard showTripControls else { return }
+            if tripProgressState == .inProgress || tripProgressState == .nearDestination {
+                if newDistance <= 0 {
+                    // AUTO-END: Driver has reached exact destination
+                    tripProgressState = .ended
+                } else if newDistance <= 100 {
+                    // NEAR DESTINATION: Unlock "End Trip" button (50–100 m range)
+                    tripProgressState = .nearDestination
+                } else {
+                    // Back in progress if somehow distance increases (edge case)
+                    tripProgressState = .inProgress
+                }
+            }
+        }
+    }
+
+    // MARK: - Trips Tab Action Buttons
+
+    @ViewBuilder
+    private var tripActionButtons: some View {
+        VStack(spacing: 12) {
+            switch tripProgressState {
+
+            case .notStarted:
+                // ── START TRIP button ─────────────────────────────────────
+                // CONSTRAINT: Only enabled on the scheduled trip date.
+                // Reuses the same date-gate as the Home tab's Continue Navigation.
+                if !isNavigationEnabled && !trip.tripDate.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
+                        Text("Available on \(trip.tripDate)")
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+
+                ZStack {
+                    PrimaryButton(
+                        title: "Start Trip",
+                        icon: "arrow.right.circle.fill",
+                        backgroundColor: Color(hex: "0a303a"),
+                        textColor: .white
+                    ) {
+                        // TEAMMATE: trigger your navigation/tracking start here
+                        guard isNavigationEnabled else { return }
+                        tripProgressState = .inProgress
+                    }
+                    .allowsHitTesting(isNavigationEnabled)
+
+                    // Disabled overlay when trip date hasn't arrived
+                    if !isNavigationEnabled {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(UIColor.systemBackground).opacity(0.45))
+                            .allowsHitTesting(false)
+                    }
+                }
+                .opacity(isNavigationEnabled ? 1.0 : 0.45)
+
+
+            case .inProgress:
+                // ── END TRIP button (locked — too far from destination) ───
+                distanceHintLabel
+                endTripButton(enabled: false)
+
+            case .nearDestination:
+                // ── END TRIP button (unlocked — within 100 m) ─────────────
+                distanceHintLabel
+                endTripButton(enabled: true)
+
+            case .ended:
+                // ── TRIP ENDED confirmation banner ────────────────────────
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundColor(AppColors.success)
+                        .font(.title3)
+                    Text("Trip Completed")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(AppColors.primaryText)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(AppColors.success.opacity(0.12))
+                .cornerRadius(12)
+            }
+        }
+        .padding(.horizontal, horizontalPadding)
+        .padding(.bottom, 32)
+    }
+
+    // MARK: - Sub-views
+
+    /// Small hint showing how far the driver still is from the destination
+    private var distanceHintLabel: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "location.fill")
+                .font(.caption)
+                .foregroundColor(isEndTripEnabled ? AppColors.success : AppColors.secondaryText)
+            Text(isEndTripEnabled
+                 ? String(format: "%.0f m to destination — you can end the trip", distanceToDestinationMeters)
+                 : String(format: "%.0f m to destination", distanceToDestinationMeters))
+                .font(.caption)
+                .foregroundColor(isEndTripEnabled ? AppColors.success : AppColors.secondaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    /// "End Trip" button — appearance changes based on enabled state
+    @ViewBuilder
+    private func endTripButton(enabled: Bool) -> some View {
+        ZStack {
+            PrimaryButton(
+                title: "End Trip",
+                icon: "flag.checkered",
+                backgroundColor: enabled ? AppColors.success : AppColors.secondaryText.opacity(0.25),
+                textColor: enabled ? .white : AppColors.secondaryText
+            ) {
+                guard enabled else { return }
+                // TEAMMATE: trigger your trip-end / stop-tracking logic here
+                tripProgressState = .ended
+            }
+            .allowsHitTesting(enabled)
+
+            // Blocked overlay when disabled
+            if !enabled {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.clear)
+                    .allowsHitTesting(false)
+            }
+        }
+        .opacity(enabled ? 1.0 : 0.45)
     }
 }
 

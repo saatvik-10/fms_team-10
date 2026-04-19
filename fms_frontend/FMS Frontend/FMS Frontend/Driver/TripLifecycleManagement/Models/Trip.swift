@@ -27,6 +27,7 @@ struct LifecycleTrip: Identifiable {
     let timeValue: String
     let loadInfo: String
     let distance: Double
+    let vehicleNumber: String?
     
     var segment: TripSegment {
         switch status {

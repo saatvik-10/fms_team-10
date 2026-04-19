@@ -13,10 +13,24 @@ struct TripCardView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Top Row: ID and Status badge
             HStack(alignment: .top) {
-                Text(trip.id)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .fontWeight(.medium)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(trip.id)
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.secondary)
+                    
+                    if let vehicleNo = trip.vehicleNumber {
+                        HStack(spacing: 4) {
+                            Image(systemName: "box.truck.fill")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                            Text(vehicleNo)
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                                .fontWeight(.medium)
+                        }
+                    }
+                }
                 
                 Spacer()
                 
@@ -53,6 +67,7 @@ struct TripCardView: View {
             }
             .padding(.vertical, 4)
             
+            
             Divider()
             
             // Time & Info row
@@ -74,13 +89,14 @@ struct TripCardView: View {
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text(trip.loadInfo)
-                        .font(.subheadline)
-                        .foregroundColor(.primary)
-                        .fontWeight(.medium)
-                    Text(String(format: "%.1f mi", trip.distance))
-                        .font(.subheadline)
+                    Text("Total Distance")
+                        .font(.caption)
                         .foregroundColor(.secondary)
+                        .fontWeight(.medium)
+                    Text(String(format: "%.1f km", trip.distance * 1.60934))
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .fontWeight(.bold)
                 }
             }
             
@@ -104,7 +120,7 @@ struct TripCardView: View {
                             .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(Color.black)
+                            .background(Color(hex: "0a303a"))
                             .foregroundColor(.white)
                             .cornerRadius(10)
                     }
@@ -115,19 +131,19 @@ struct TripCardView: View {
                             .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(Color.black)
+                            .background(Color(hex: "0a303a"))
                             .foregroundColor(.white)
                             .cornerRadius(10)
                     }
                 } else if trip.segment == .past {
                     Button(action: { onViewSummary?() }) {
-                        Text("View Summary")
+                        Text("View Report")
                             .font(.subheadline)
                             .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(Color(UIColor.systemGray6))
-                            .foregroundColor(.primary)
+                            .background(Color(hex: "0a303a"))
+                            .foregroundColor(.white)
                             .cornerRadius(10)
                     }
                 }
