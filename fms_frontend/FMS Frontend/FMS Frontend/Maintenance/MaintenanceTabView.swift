@@ -15,17 +15,15 @@ struct MaintenanceTabView: View {
         TabView {
             // Tab 1: Dashboard
             NavigationStack {
-                MaintenanceDashboardView()
+                MaintenanceDashboardView(isLoggedIn: $isLoggedIn)
             }
             .tabItem {
                 Label("Dashboard", systemImage: "square.grid.2x2.fill")
             }
 
-
-
-            // Tab 3: Inspections
+            // Tab 2: Inspections
             NavigationStack {
-                TripInspectionView()
+                TripInspectionView(isLoggedIn: $isLoggedIn)
             }
             .tabItem {
                 Label("Inspections", systemImage: "clipboard.fill")

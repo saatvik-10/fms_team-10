@@ -27,7 +27,12 @@ struct WorkOrderManagementView: View {
             let matchesModel = filter.vehicleModel == "All" || order.vehicleName.contains(filter.vehicleModel)
             return matchesSeverity && matchesProgress && matchesModel
         }
-        .sorted { $0.priority.sortingOrder < $1.priority.sortingOrder }
+        .sorted {
+            // Completed always last
+            if $0.status == .completed && $1.status != .completed { return false }
+            if $0.status != .completed && $1.status == .completed { return true }
+            return $0.priority.sortingOrder < $1.priority.sortingOrder
+        }
     }
 
     var body: some View {

@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct TripInspectionView: View {
+    @Binding var isLoggedIn: Bool
     @EnvironmentObject var store: MaintenanceStore
     @State private var showingCreateModal = false
     @State private var isGridView = true
@@ -84,7 +85,7 @@ struct TripInspectionView: View {
                         Image(systemName: "doc.badge.plus")
                             .font(.title3)
                     }
-                    NavigationLink(destination: MaintenanceProfileView(isLoggedIn: .constant(true))) {
+                    NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
                         Image(systemName: "person.circle")
                             .font(.title2)
                     }

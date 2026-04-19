@@ -18,6 +18,8 @@ struct CreateInspectionModal: View {
     @State private var showingImagePicker = false
     @State private var showingCamera = false
     @State private var showingSourceSelect = false
+    @State private var showingVehiclePicker = false
+    @State private var vehicleSearchText = ""
 
     let units = [
         "Mercedes-Benz Actros (Truck)",
@@ -51,10 +53,17 @@ struct CreateInspectionModal: View {
                         }
 
                         FormGroup(title: "SELECT VEHICLE") {
-                            Picker("Vehicle", selection: $unitName) {
-                                ForEach(units, id: \.self) { Text($0) }
+                            Button(action: { showingVehiclePicker = true }) {
+                                HStack {
+                                    Text(unitName)
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
                             }
-                            .pickerStyle(.menu)
                         }
 
                         FormGroup(title: "INSPECTION TYPE") {
@@ -123,6 +132,37 @@ struct CreateInspectionModal: View {
                 Button("Camera") { showingCamera = true }
                 Button("Photo Library") { showingImagePicker = true }
                 Button("Cancel", role: .cancel) { }
+            }
+            .sheet(isPresented: $showingVehiclePicker) {
+                NavigationStack {
+                    List {
+                        ForEach(units.filter { vehicleSearchText.isEmpty || $0.localizedCaseInsensitiveContains(vehicleSearchText) }, id: \.self) { vehicle in
+                            Button(action: {
+                                unitName = vehicle
+                                showingVehiclePicker = false
+                            }) {
+                                HStack {
+                                    Text(vehicle)
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    if unitName == vehicle {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(AppColors.primary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .searchable(text: $vehicleSearchText, prompt: "Search vehicles")
+                    .navigationTitle("Select Vehicle")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Cancel") { showingVehiclePicker = false }
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showingImagePicker) {
                 PhotoPicker(images: $selectedImages)

@@ -89,17 +89,12 @@ struct WorkOrderDetailsView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "TASK DETAILS", icon: "doc.text.fill")
                             
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 12) {
                                 let points = workOrder.taskDetails.components(separatedBy: ".").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
                                 ForEach(points, id: \.self) { point in
-                                    HStack(alignment: .top, spacing: 8) {
-                                        Text("•")
-                                            .font(.body.weight(.bold))
-                                            .foregroundColor(AppColors.primary)
-                                        Text(point + ".")
-                                            .font(.body)
-                                            .foregroundColor(.primary)
-                                    }
+                                    Text(point + ".")
+                                        .font(.body)
+                                        .foregroundColor(.primary)
                                 }
                             }
                             .padding(20)
@@ -159,14 +154,9 @@ struct WorkOrderDetailsView: View {
                                         .foregroundColor(.secondary)
                                 } else {
                                     ForEach(notesPoints, id: \.self) { point in
-                                        HStack(alignment: .top, spacing: 8) {
-                                            Text("•")
-                                                .font(.body.weight(.bold))
-                                                .foregroundColor(AppColors.primary)
-                                            Text(point)
-                                                .font(.body)
-                                                .foregroundColor(.primary)
-                                        }
+                                        Text(point)
+                                            .font(.body)
+                                            .foregroundColor(.primary)
                                     }
                                 }
                                 

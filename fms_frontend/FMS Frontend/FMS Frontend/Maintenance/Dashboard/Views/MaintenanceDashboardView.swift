@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct MaintenanceDashboardView: View {
+    @Binding var isLoggedIn: Bool
     @EnvironmentObject var store: MaintenanceStore
     @State private var showingCreateInspection = false
     @State private var showingEmergencyInspection = false
@@ -31,7 +32,11 @@ struct MaintenanceDashboardView: View {
                     .padding(.horizontal, 20)
 
                     VStack(spacing: 16) {
-                        let sortedOrders = store.workOrders.sorted { $0.priority.sortingOrder < $1.priority.sortingOrder }
+                        let sortedOrders = store.workOrders.sorted {
+                        if $0.status == .completed && $1.status != .completed { return false }
+                        if $0.status != .completed && $1.status == .completed { return true }
+                        return $0.priority.sortingOrder < $1.priority.sortingOrder
+                    }
                         ForEach(sortedOrders.prefix(5)) { order in
                             NavigationLink(destination: WorkOrderDetailsView(workOrder: order)) {
                                 WorkOrderTaskCard(order: order)
@@ -56,11 +61,11 @@ struct MaintenanceDashboardView: View {
             .padding(.top)
         }
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
-        .navigationTitle("Maintenance")
+        .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: MaintenanceProfileView(isLoggedIn: .constant(true))) {
+                NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
                     Image(systemName: "person.circle")
                         .font(.system(size: 22))
                 }
@@ -190,7 +195,7 @@ struct QuickActionRow: View {
 struct MaintenanceDashboardView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
-            MaintenanceDashboardView()
+            MaintenanceDashboardView(isLoggedIn: .constant(true))
         }
     }
 }
