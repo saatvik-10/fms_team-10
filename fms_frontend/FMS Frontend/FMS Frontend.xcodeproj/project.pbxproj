@@ -3,10 +3,16 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 100;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2C2ACB4A2F90C20B005FC85A /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = 2C2ACB492F90C20B005FC85A /* GoogleMaps */; };
+		2CC1CC7C2F92590800FB9453 /* map_style.json in Resources */ = {isa = PBXBuildFile; fileRef = 2CC1CC7B2F92590800FB9453 /* map_style.json */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		2CC1CC7B2F92590800FB9453 /* map_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = map_style.json; sourceTree = "<group>"; };
 		BF4D0FB62F90972D00D2DCFD /* FMS Frontend.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FMS Frontend.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -21,10 +27,9 @@
 /* Begin PBXFrameworksBuildPhase section */
 		BF4D0FB32F90972D00D2DCFD /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
+				2C2ACB4A2F90C20B005FC85A /* GoogleMaps in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -32,6 +37,7 @@
 		BF4D0FAD2F90972D00D2DCFD = {
 			isa = PBXGroup;
 			children = (
+				2CC1CC7B2F92590800FB9453 /* map_style.json */,
 				BF4D0FB82F90972D00D2DCFD /* FMS Frontend */,
 				BF4D0FB72F90972D00D2DCFD /* Products */,
 			);
@@ -58,13 +64,12 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			fileSystemSynchronizedGroups = (
 				BF4D0FB82F90972D00D2DCFD /* FMS Frontend */,
 			);
 			name = "FMS Frontend";
 			packageProductDependencies = (
+				2C2ACB492F90C20B005FC85A /* GoogleMaps */,
 			);
 			productName = "FMS Frontend";
 			productReference = BF4D0FB62F90972D00D2DCFD /* FMS Frontend.app */;
@@ -94,7 +99,10 @@
 			);
 			mainGroup = BF4D0FAD2F90972D00D2DCFD;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
+			packageReferences = (
+				2C2ACB482F90C20B005FC85A /* XCRemoteSwiftPackageReference "ios-maps-sdk" */,
+			);
+			preferredProjectObjectVersion = 100;
 			productRefGroup = BF4D0FB72F90972D00D2DCFD /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -107,25 +115,22 @@
 /* Begin PBXResourcesBuildPhase section */
 		BF4D0FB42F90972D00D2DCFD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
+				2CC1CC7C2F92590800FB9453 /* map_style.json in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		BF4D0FB22F90972D00D2DCFD /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		BF4D0FBF2F90972E00D2DCFD /* Debug */ = {
+		BF4D0FBF2F90972E00D2DCFD /* Debug configuration for PBXProject "FMS Frontend" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -189,7 +194,7 @@
 			};
 			name = Debug;
 		};
-		BF4D0FC02F90972E00D2DCFD /* Release */ = {
+		BF4D0FC02F90972E00D2DCFD /* Release configuration for PBXProject "FMS Frontend" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -246,7 +251,7 @@
 			};
 			name = Release;
 		};
-		BF4D0FC22F90972E00D2DCFD /* Debug */ = {
+		BF4D0FC22F90972E00D2DCFD /* Debug configuration for PBXNativeTarget "FMS Frontend" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -256,17 +261,19 @@
 				DEVELOPMENT_TEAM = 8T6H99BDWA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location for navigation\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "akumaria1604-gmail.com.FMS-Frontend";
+				PRODUCT_BUNDLE_IDENTIFIER = com.gargee.fmsfrontend;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -278,28 +285,32 @@
 			};
 			name = Debug;
 		};
-		BF4D0FC32F90972E00D2DCFD /* Release */ = {
+		BF4D0FC32F90972E00D2DCFD /* Release configuration for PBXNativeTarget "FMS Frontend" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8T6H99BDWA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location for navigation\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "akumaria1604-gmail.com.FMS-Frontend";
+				PRODUCT_BUNDLE_IDENTIFIER = com.gargee.fmsfrontend;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -316,22 +327,39 @@
 		BF4D0FB12F90972D00D2DCFD /* Build configuration list for PBXProject "FMS Frontend" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BF4D0FBF2F90972E00D2DCFD /* Debug */,
-				BF4D0FC02F90972E00D2DCFD /* Release */,
+				BF4D0FBF2F90972E00D2DCFD /* Debug configuration for PBXProject "FMS Frontend" */,
+				BF4D0FC02F90972E00D2DCFD /* Release configuration for PBXProject "FMS Frontend" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		BF4D0FC12F90972E00D2DCFD /* Build configuration list for PBXNativeTarget "FMS Frontend" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BF4D0FC22F90972E00D2DCFD /* Debug */,
-				BF4D0FC32F90972E00D2DCFD /* Release */,
+				BF4D0FC22F90972E00D2DCFD /* Debug configuration for PBXNativeTarget "FMS Frontend" */,
+				BF4D0FC32F90972E00D2DCFD /* Release configuration for PBXNativeTarget "FMS Frontend" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2C2ACB482F90C20B005FC85A /* XCRemoteSwiftPackageReference "ios-maps-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googlemaps/ios-maps-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.12.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2C2ACB492F90C20B005FC85A /* GoogleMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2C2ACB482F90C20B005FC85A /* XCRemoteSwiftPackageReference "ios-maps-sdk" */;
+			productName = GoogleMaps;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BF4D0FAE2F90972D00D2DCFD /* Project object */;
 }
