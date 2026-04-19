@@ -1,7 +1,9 @@
 import Foundation
 import CoreLocation
+internal import UIKit
 
-// Define the response structures for Google Directions API
+// MARK: - API Response Models
+
 struct DirectionsResponse: Codable {
     let routes: [Route]
     let status: String
@@ -14,6 +16,20 @@ struct Route: Codable {
 
 struct Leg: Codable {
     let duration: DurationItem
+    let distance: DurationItem
+    let steps: [DirectionStep]
+}
+
+struct DirectionStep: Codable {
+    let html_instructions: String
+    let distance: DurationItem
+    let duration: DurationItem
+    let end_location: LocationCoordinate
+}
+
+struct LocationCoordinate: Codable {
+    let lat: Double
+    let lng: Double
 }
 
 struct DurationItem: Codable {
@@ -25,131 +41,177 @@ struct Polyline: Codable {
     let points: String
 }
 
+// MARK: - Clean Navigation Instruction Model
+
+struct NavigationInstruction {
+    let instruction: String           // Clean plain text e.g. "Turn right onto MG Road"
+    let distanceText: String          // e.g. "300 m" or "1.2 km"
+    let fullText: String              // Combined: "Turn right onto MG Road in 300 m"
+    let endLocation: CLLocationCoordinate2D
+}
+
+// MARK: - Service
+
 class GoogleDirectionsService {
     static let shared = GoogleDirectionsService()
-    
-    // API KEY found in Frontend.swift
+
     private let apiKey = "AIzaSyBblB9O0UzmpYM8b9MISNVODw3yvxOnD0g"
-    
-    // Validate coordinate helper
+
+    // MARK: - Coordinate Validation
+
     private func isValidCoordinate(_ coord: CLLocationCoordinate2D) -> Bool {
         return coord.latitude != 0.0 && coord.longitude != 0.0 &&
                coord.latitude >= -90 && coord.latitude <= 90 &&
                coord.longitude >= -180 && coord.longitude <= 180
     }
-    
-    func fetchDirections(trip: Trip) async throws -> (eta: String, polyline: String) {
-        print("--- DEBUG Directions API ---")
-        
-        // 1. Validate Input Data
-        if !isValidCoordinate(trip.pickup.coordinate) {
-            print("Directions API error: Invalid pickup coordinate (0,0 or out of bounds)")
-            throw NSError(domain: "GoogleDirectionsAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid pickup coordinate"])
+
+    // MARK: - HTML Stripping (service layer only — not in ViewModel)
+
+    func stripHTML(from string: String) -> String {
+        guard let data = string.data(using: .utf8) else {
+            return string.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
         }
-        if !isValidCoordinate(trip.destination.coordinate) {
-            print("Directions API error: Invalid destination coordinate (0,0 or out of bounds)")
-            throw NSError(domain: "GoogleDirectionsAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid destination coordinate"])
+        let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+            .documentType: NSAttributedString.DocumentType.html,
+            .characterEncoding: String.Encoding.utf8.rawValue
+        ]
+        if let attributed = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
+            return attributed.string.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return string.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+    }
+
+    // MARK: - DirectionStep → NavigationInstruction
+
+    private func makeInstruction(from step: DirectionStep) -> NavigationInstruction {
+        let clean = stripHTML(from: step.html_instructions)
+        let distance = step.distance.text
+        let full = "\(clean) in \(distance)"
+        let coord = CLLocationCoordinate2D(
+            latitude: step.end_location.lat,
+            longitude: step.end_location.lng
+        )
+        return NavigationInstruction(
+            instruction: clean,
+            distanceText: distance,
+            fullText: full,
+            endLocation: coord
+        )
+    }
+
+    // MARK: - Full Trip Directions (used by TripDetailView preview)
+
+    func fetchDirections(trip: Trip) async throws -> (eta: String, polyline: String, steps: [NavigationInstruction]) {
+        print("--- DEBUG Directions API ---")
+
+        guard isValidCoordinate(trip.pickup.coordinate) else {
+            throw NSError(domain: "GoogleDirectionsAPI", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Invalid pickup coordinate"])
+        }
+        guard isValidCoordinate(trip.destination.coordinate) else {
+            throw NSError(domain: "GoogleDirectionsAPI", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Invalid destination coordinate"])
         }
         for (index, stop) in trip.stops.enumerated() {
-            if !isValidCoordinate(stop.coordinate) {
-                print("Directions API error: Invalid stop coordinate at index \(index)")
-                throw NSError(domain: "GoogleDirectionsAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid stop coordinate"])
+            guard isValidCoordinate(stop.coordinate) else {
+                throw NSError(domain: "GoogleDirectionsAPI", code: -1,
+                              userInfo: [NSLocalizedDescriptionKey: "Invalid stop coordinate at index \(index)"])
             }
         }
-        print("Step 1: Input data validated")
-        
-        // 2 & 3. Validate API Key & Build URL
-        if apiKey.isEmpty {
-            print("Directions API error: API Key is missing")
-            throw NSError(domain: "GoogleDirectionsAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "API Key missing"])
-        }
-        
-        let originParams = "\(trip.pickup.coordinate.latitude),\(trip.pickup.coordinate.longitude)"
-        let destParams = "\(trip.destination.coordinate.latitude),\(trip.destination.coordinate.longitude)"
-        
+
+        let originParams  = "\(trip.pickup.coordinate.latitude),\(trip.pickup.coordinate.longitude)"
+        let destParams    = "\(trip.destination.coordinate.latitude),\(trip.destination.coordinate.longitude)"
+
         var waypoints = ""
         if !trip.stops.isEmpty {
-            // Using via: to avoid splitting into separate legs, or if you need separate legs, remove via:
             let wpStrings = trip.stops.map { "via:\($0.coordinate.latitude),\($0.coordinate.longitude)" }
             waypoints = "&waypoints=" + wpStrings.joined(separator: "|")
         }
-        
-        // Ensure the URL is properly encoded
-        let urlString = "https://maps.googleapis.com/maps/api/directions/json?origin=\(originParams)&destination=\(destParams)\(waypoints)&key=\(apiKey)"
-        
-        // Use allowed characters for URL query avoiding issues with '|' and other characters
-        guard let encodedURLString = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: encodedURLString) else {
-            print("Directions API error: Failed to construct valid URL")
+
+        let urlString = "https://maps.googleapis.com/maps/api/directions/json"
+            + "?origin=\(originParams)&destination=\(destParams)\(waypoints)&key=\(apiKey)"
+
+        guard let encoded = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: encoded) else {
             throw URLError(.badURL)
         }
-        
-        print("Step 2: URL Constructed")
-        print("Request URL:", encodedURLString)
-        
-        // 4. Network Call
-        let data: Data
-        let response: URLResponse
-        do {
-            let result = try await URLSession.shared.data(from: url)
-            data = result.0
-            response = result.1
-        } catch {
-            print("Directions API error:", error.localizedDescription)
-            throw error
-        }
-        
-        if let httpResponse = response as? HTTPURLResponse {
-            print("Response status code:", httpResponse.statusCode)
-        }
-        
-        if let jsonString = String(data: data, encoding: .utf8) {
-            print("Raw JSON response:", jsonString)
-        }
-        print("Step 3: Network call successful")
 
-        // 5. JSON Parsing
-        let decoder = JSONDecoder()
-        let decodedResponse: DirectionsResponse
-        do {
-            decodedResponse = try decoder.decode(DirectionsResponse.self, from: data)
-        } catch {
-            print("Directions API error during JSON parsing:", error)
-            throw error
+        print("[Directions] Request URL:", encoded)
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        if let http = response as? HTTPURLResponse {
+            print("[Directions] HTTP status:", http.statusCode)
         }
-        
-        if decodedResponse.status != "OK" {
-            print("Directions API error: status was \(decodedResponse.status)")
-            throw NSError(domain: "GoogleDirectionsAPI", code: 1, userInfo: [NSLocalizedDescriptionKey: "API returned status: \(decodedResponse.status)"])
+
+        let decoded = try JSONDecoder().decode(DirectionsResponse.self, from: data)
+
+        guard decoded.status == "OK" else {
+            throw NSError(domain: "GoogleDirectionsAPI", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "API status: \(decoded.status)"])
         }
-        
-        guard let route = decodedResponse.routes.first else {
-            print("Directions API error: No routes found in response")
-            throw NSError(domain: "GoogleDirectionsAPI", code: 2, userInfo: [NSLocalizedDescriptionKey: "No route returned"])
+        guard let route = decoded.routes.first, !route.legs.isEmpty else {
+            throw NSError(domain: "GoogleDirectionsAPI", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "No route returned"])
         }
-        
-        if route.legs.isEmpty {
-            print("Directions API error: Route has no legs")
-            throw NSError(domain: "GoogleDirectionsAPI", code: 3, userInfo: [NSLocalizedDescriptionKey: "Route has no legs"])
-        }
-        
-        // Sum the duration values to get total ETA
-        var totalDurationSeconds = 0
+
+        var totalSeconds = 0
+        var allInstructions: [NavigationInstruction] = []
         for leg in route.legs {
-            totalDurationSeconds += leg.duration.value
+            totalSeconds += leg.duration.value
+            allInstructions.append(contentsOf: leg.steps.map { makeInstruction(from: $0) })
         }
-        
-        let hours = totalDurationSeconds / 3600
-        let minutes = (totalDurationSeconds % 3600) / 60
-        
-        let totalDurationText: String
-        if hours > 0 {
-            totalDurationText = "\(hours) hrs \(minutes) min"
-        } else {
-            totalDurationText = "\(minutes) min"
+
+        let hours   = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let etaText = hours > 0 ? "\(hours) hrs \(minutes) min" : "\(minutes) min"
+
+        print("[Directions] ETA: \(etaText), steps: \(allInstructions.count)")
+        return (eta: etaText, polyline: route.overview_polyline.points, steps: allInstructions)
+    }
+
+    // MARK: - Segment Directions (used by NavigationViewModel — origin = user location)
+
+    func fetchSegmentDirections(
+        origin: CLLocationCoordinate2D,
+        destination: CLLocationCoordinate2D
+    ) async throws -> (eta: String, distance: String, polyline: String, steps: [NavigationInstruction]) {
+
+        guard isValidCoordinate(origin) && isValidCoordinate(destination) else {
+            throw NSError(domain: "GoogleDirectionsAPI", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Invalid coordinate passed to segment request"])
         }
-        
-        print("Step 4: Parsed ETA successfully -> \(totalDurationText)")
-        return (eta: totalDurationText, polyline: route.overview_polyline.points)
+
+        let urlString = "https://maps.googleapis.com/maps/api/directions/json"
+            + "?origin=\(origin.latitude),\(origin.longitude)"
+            + "&destination=\(destination.latitude),\(destination.longitude)"
+            + "&key=\(apiKey)"
+
+        guard let encoded = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: encoded) else {
+            throw URLError(.badURL)
+        }
+
+        print("[Segment] Request URL:", encoded)
+
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let decoded   = try JSONDecoder().decode(DirectionsResponse.self, from: data)
+
+        guard decoded.status == "OK",
+              let route = decoded.routes.first,
+              let leg   = route.legs.first else {
+            throw NSError(domain: "GoogleDirectionsAPI", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "Segment request empty or failed"])
+        }
+
+        let instructions = leg.steps.map { makeInstruction(from: $0) }
+
+        print("[Segment] dist=\(leg.distance.text) eta=\(leg.duration.text) steps=\(instructions.count)")
+        return (
+            eta:      leg.duration.text,
+            distance: leg.distance.text,
+            polyline: route.overview_polyline.points,
+            steps:    instructions
+        )
     }
 }

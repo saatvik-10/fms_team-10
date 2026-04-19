@@ -89,7 +89,7 @@ struct TripDetailView: View {
                     action: { showMap = true }
                 )
                 .navigationDestination(isPresented: $showMap) {
-                    NavigationMapView(trip: Trip.mockTrip)
+                    CustomNavigationView(trip: trip)
                 }
                 .padding(.horizontal, horizontalPadding)
                 .padding(.bottom, 32)
@@ -263,58 +263,53 @@ struct TimelineView: View {
 
 // MARK: - Google Maps SDK Wrapper
 
+// MARK: - Google Maps SDK Wrapper (Navigation-aware preview)
+// Replace the existing GoogleTripMapView struct with this one.
+
 struct GoogleTripMapView: UIViewRepresentable {
     let trip: Trip
     let encodedPolyline: String
-    
+
     func makeUIView(context: Context) -> GMSMapView {
         let options = GMSMapViewOptions()
         let mapView = GMSMapView(options: options)
-        mapView.isUserInteractionEnabled = false // Standard map display without scroll disruption
+        mapView.isUserInteractionEnabled = false
         return mapView
     }
-    
+
     func updateUIView(_ uiView: GMSMapView, context: Context) {
-        uiView.clear() // Clear existing overlays to prevent duplicates
-        
-        // Setup marker coordinates tracking for bounds
-        var bounds = GMSCoordinateBounds()
-        let allStops = [trip.pickup] + trip.stops + [trip.destination]
-        
-        for stop in allStops {
-            let marker = GMSMarker()
-            marker.position = stop.coordinate
-            marker.title = stop.name
-            
-            // Map markers conceptually matching status schemas
-            if stop.status == .completed {
-                marker.icon = GMSMarker.markerImage(with: .gray)
-            } else if stop.status == .active {
-                // Derived AppColors.primary HEX 0F1C24 translation to UIColor
-                let navyColor = UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1)
-                marker.icon = GMSMarker.markerImage(with: navyColor)
-            } else {
-                marker.icon = GMSMarker.markerImage(with: .lightGray)
+        uiView.clear()
+
+        // Show only the active stop as the destination marker (not all stops)
+        let activeStop = ([trip.pickup] + trip.stops + [trip.destination])
+            .first(where: { $0.status == .active })
+            ?? trip.destination
+
+        let destMarker = GMSMarker(position: activeStop.coordinate)
+        destMarker.title = activeStop.name
+        let navyColor = UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1)
+        destMarker.icon = GMSMarker.markerImage(with: navyColor)
+        destMarker.map = uiView
+
+        // Draw current-segment polyline only
+        if !encodedPolyline.isEmpty, let path = GMSPath(fromEncodedPath: encodedPolyline) {
+            let polyline = GMSPolyline(path: path)
+            polyline.strokeColor = navyColor
+            polyline.strokeWidth = 6.0
+            polyline.map = uiView
+
+            // Static overview: fit to polyline bounds (this is a preview, not live nav)
+            let bounds = GMSCoordinateBounds(path: path)
+            if bounds.isValid {
+                DispatchQueue.main.async {
+                    uiView.animate(with: GMSCameraUpdate.fit(bounds, withPadding: 40.0))
+                }
             }
-            
-            marker.map = uiView
-            bounds = bounds.includingCoordinate(stop.coordinate)
-        }
-        
-        // Re-construct the exact route polyline visually returned from Directions Matrix
-        if !encodedPolyline.isEmpty {
-            if let path = GMSPath(fromEncodedPath: encodedPolyline) {
-                let polyline = GMSPolyline(path: path)
-                polyline.strokeColor = UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1) // #0F1C24
-                polyline.strokeWidth = 4.0 // Prominent distinct path line
-                polyline.map = uiView
-            }
-        }
-        
-        if bounds.isValid {
-            // Apply camera bounds mapping with padding
-            let update = GMSCameraUpdate.fit(bounds, withPadding: 40.0)
-            uiView.animate(with: update)
+        } else if CLLocationCoordinate2DIsValid(activeStop.coordinate) {
+            // Fallback: center on active stop
+            uiView.animate(to: GMSCameraPosition.camera(
+                withTarget: activeStop.coordinate, zoom: 14
+            ))
         }
     }
 }

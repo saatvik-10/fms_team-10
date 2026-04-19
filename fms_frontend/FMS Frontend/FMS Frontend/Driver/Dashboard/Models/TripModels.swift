@@ -27,41 +27,41 @@ struct Trip {
 extension Trip {
     static var mockTrip: Trip {
         Trip(
-            routeNumber: "IND-402",
+            routeNumber: "IND-900",
             pickup: TripStop(
-                name: "Nhava Sheva Port, Terminal 2, Mumbai",
-                coordinate: CLLocationCoordinate2D(latitude: 18.9497, longitude: 72.9494),
+                name: "Mysore Palace",
+                coordinate: CLLocationCoordinate2D(latitude: 12.3051, longitude: 76.6551),
                 time: "08:00 AM",
                 status: .completed
             ),
             destination: TripStop(
-                name: "Sector 18, Gurgaon, Haryana",
-                coordinate: CLLocationCoordinate2D(latitude: 28.4595, longitude: 77.0266),
-                time: "10:00 PM",
+                name: "Bangalore Airport (Kempegowda International Airport)",
+                coordinate: CLLocationCoordinate2D(latitude: 13.1986, longitude: 77.7066),
+                time: "01:30 PM",
                 status: .upcoming
             ),
             stops: [
                 TripStop(
-                    name: "Vadodara Checkpoint",
-                    coordinate: CLLocationCoordinate2D(latitude: 22.3072, longitude: 73.1812),
-                    time: "02:30 PM",
-                    status: .completed
+                    name: "Mandya",
+                    coordinate: CLLocationCoordinate2D(latitude: 12.5218, longitude: 76.8950),
+                    time: "09:30 AM",
+                    status: .upcoming
                 ),
                 TripStop(
-                    name: "Udaipur Hub",
-                    coordinate: CLLocationCoordinate2D(latitude: 24.5854, longitude: 73.7125),
-                    time: "08:15 PM",
-                    status: .active
+                    name: "Ramanagara",
+                    coordinate: CLLocationCoordinate2D(latitude: 12.7218, longitude: 77.2811),
+                    time: "11:00 AM",
+                    status: .upcoming
                 ),
                 TripStop(
-                    name: "Jaipur Transit",
-                    coordinate: CLLocationCoordinate2D(latitude: 26.9124, longitude: 75.7873),
-                    time: "01:00 AM",
+                    name: "Yelahanka",
+                    coordinate: CLLocationCoordinate2D(latitude: 13.1007, longitude: 77.5963),
+                    time: "12:45 PM",
                     status: .upcoming
                 )
             ],
-            cargoWeight: "18.4t",
-            cargoUnits: "Standard Pallets (24)"
+            cargoWeight: "12.0t",
+            cargoUnits: "Industrial Goods (18)"
         )
     }
 }

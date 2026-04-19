@@ -73,10 +73,10 @@ struct DashboardView: View {
                 Label("Trips", systemImage: "map.fill")
             }
             
-            Text("Profile Placeholder")
-            .tabItem {
-                Label("Profile", systemImage: "person.crop.circle.fill")
-            }
+//            Text("Profile Placeholder")
+//            .tabItem {
+//                Label("Profile", systemImage: "person.crop.circle.fill")
+//            }
         }
         .accentColor(AppColors.primary)
     }
@@ -125,8 +125,8 @@ struct DashboardHomeView: View {
                 .frame(width: 48, height: 48)
                 .foregroundColor(Color.gray.opacity(0.8))
             
-            Text("Welcome, \(viewModel.userName)")
-                .font(.system(.title, design: .default, weight: .bold))
+            Text("Hi, \(viewModel.userName)")
+                .font(.system(.title2, design: .default, weight: .bold))
                 .foregroundColor(.black)
             
             Spacer()
@@ -313,9 +313,22 @@ struct RouteDetailRow: View {
                 .fontWeight(.bold)
                 .foregroundColor(.gray)
             
-            Text(value)
-                .font(.subheadline)
-                .foregroundColor(.black)
+            let parts = value.split(separator: ",", maxSplits: 1).map(String.init)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                // ✅ Place name (bold)
+                Text(parts.first ?? "")
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.black)
+                
+                // ✅ Remaining address (lighter)
+                if parts.count > 1 {
+                    Text(parts[1])
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
         }
     }
 }
