@@ -47,7 +47,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 }
 
 class DashboardViewModel: ObservableObject {
-    @Published var userName: String = "Marcus"
+    @Published var userName: String = "Rahul"
     @Published var activeTrip: Trip = Trip.mockTrip
     @Published var vehicleName: String = "Tata Prima 4028.S"
     @Published var vehiclePlate: String = "MH 43 AB 1234"
@@ -73,10 +73,12 @@ struct DashboardView: View {
                 Label("Trips", systemImage: "map.fill")
             }
             
-//            Text("Profile Placeholder")
-//            .tabItem {
-//                Label("Profile", systemImage: "person.crop.circle.fill")
-//            }
+            NavigationStack {
+                DriverProfileView()
+            }
+            .tabItem {
+                Label("Profile", systemImage: "person.crop.circle.fill")
+            }
         }
         .accentColor(AppColors.primary)
     }
@@ -338,3 +340,51 @@ struct DashboardView_Previews: PreviewProvider {
         DashboardView()
     }
 }
+
+struct DriverProfileView: View {
+    let profile = UserProfile.mockDriver
+    
+    var body: some View {
+        List {
+            Section {
+                VStack(spacing: 16) {
+                    Image(systemName: "person.crop.circle.fill")
+                        .resizable()
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(AppColors.primary)
+                    
+                    VStack(spacing: 4) {
+                        Text(profile.name)
+                            .font(.title2.bold())
+                        Text("Certified Commercial Driver")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+            }
+            .listRowBackground(Color.clear)
+            
+            Section("Account Details") {
+                AppProfileInfoRow(label: "USERNAME", value: profile.username)
+                AppProfileInfoRow(label: "PHONE", value: profile.phone)
+                AppProfileInfoRow(label: "EMAIL", value: profile.email)
+                AppProfileInfoRow(label: "ADDRESS", value: profile.address)
+                AppProfileInfoRow(label: "ROLE", value: profile.role.rawValue)
+                AppProfileInfoRow(label: "JOINED", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
+                AppProfileInfoRow(label: "CUID", value: profile.id)
+            }
+            
+            Section {
+                Button(action: {}) {
+                    Text("Logout")
+                        .foregroundColor(.red)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .navigationTitle("Profile")
+    }
+}
+

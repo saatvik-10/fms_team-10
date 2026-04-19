@@ -20,20 +20,30 @@ struct MaintenanceProfileView: View {
                         .foregroundColor(AppColors.primary)
                         .background(Circle().fill(Color.white).shadow(color: Color.black.opacity(0.1), radius: 10))
                     
+                    let profile = UserProfile.mockMaintenance
                     VStack(spacing: 4) {
-                        Text("Anshul Kumaria")
+                        Text(profile.name)
                             .font(.title2.bold())
                         Text("Senior Maintenance Technician")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         
-                        Text("ID: MS-7729-2026")
+                        Text("ID: \(profile.id)")
                             .font(.caption.monospaced())
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(Color(.systemGray6))
                             .cornerRadius(4)
                     }
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        AppProfileInfoRow(label: "Username", value: profile.username)
+                        AppProfileInfoRow(label: "Email", value: profile.email)
+                        AppProfileInfoRow(label: "Phone", value: profile.phone)
+                        AppProfileInfoRow(label: "Address", value: profile.address)
+                        AppProfileInfoRow(label: "Role", value: profile.role.rawValue)
+                    }
+                    .padding(.top, 16)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)

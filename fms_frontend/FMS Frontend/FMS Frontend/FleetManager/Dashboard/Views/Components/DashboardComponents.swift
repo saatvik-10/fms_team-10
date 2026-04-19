@@ -231,25 +231,7 @@ struct FleetOpsEmissionsChart: View {
     var showNavigation: Bool = true
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            if showNavigation {
-                HStack {
-                    Spacer()
-                    NavigationLink(destination: FleetAnalyticsView()) {
-                        HStack {
-                            Text("Current Week")
-                            Image(systemName: "chevron.right")
-                        }
-                        .font(.system(size: 12))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(6)
-                        .foregroundColor(AppTheme.primary)
-                    }
-                }
-            }
-            
+        VStack(alignment: .leading, spacing: 30) {
             Chart {
                 ForEach(data) { item in
                     BarMark(
@@ -258,13 +240,6 @@ struct FleetOpsEmissionsChart: View {
                     )
                     .foregroundStyle(item.isCurrent ? AppTheme.primary : AppTheme.secondary.opacity(0.2))
                     .cornerRadius(4)
-                    .annotation(position: .top) {
-                        if item.isCurrent {
-                            Text(String(format: "%.1f", item.value))
-                                .font(.system(size: 10, weight: .bold))
-                                .padding(.bottom, 2)
-                        }
-                    }
                 }
             }
             .chartXAxis {
@@ -276,11 +251,60 @@ struct FleetOpsEmissionsChart: View {
             }
             .chartYAxis(.hidden)
             .frame(height: 150)
+            
+            // Fleet Stats at the Bottom (Updated to 2 items with dynamic bars)
+            HStack(spacing: 20) {
+                FleetCategoryStatItem(icon: "truck.box.fill", title: "TRUCK FLEET", value: "34%", progress: 0.34, color: Color(red: 13/255, green: 43/255, blue: 50/255))
+                FleetCategoryStatItem(icon: "bus.fill", title: "VAN FLEET", value: "28%", progress: 0.28, color: Color.blue)
+            }
         }
         .padding(30)
         .background(Color.white)
         .cornerRadius(16)
         .modifier(AppTheme.cardShadow())
+    }
+}
+
+struct FleetCategoryStatItem: View {
+    let icon: String
+    let title: String
+    let value: String
+    let progress: Double
+    let color: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(white: 0.2))
+                Spacer()
+                Text(value)
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundColor(.black)
+            }
+            
+            Text(title)
+                .font(.system(size: 8, weight: .bold))
+                .foregroundColor(.gray)
+            
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.05))
+                        .frame(height: 3)
+                    Rectangle()
+                        .fill(color)
+                        .frame(width: geometry.size.width * progress, height: 3)
+                }
+            }
+            .frame(height: 3)
+        }
+        .padding(15)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
     }
 }
 

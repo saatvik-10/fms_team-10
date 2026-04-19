@@ -20,33 +20,20 @@ class MaintenanceStore: ObservableObject {
         self.workOrders = [
             WorkOrder.mock,
             WorkOrder(
-                title: "Tire Pressure Calibration",
-                vehicleName: "Volvo FH16 (Truck)",
+                title: "Tire Calibration",
+                vehicleName: "Tata Prima",
                 vehicleVIN: "3VWCP1192BM00",
-                serviceType: "Routine PM",
+                serviceType: "Routine",
                 priority: .medium,
                 status: .pending,
-                taskDetails: "Driver reports slight pulling to the left. Standard calibration for multi-axle trailer required.",
+                taskDetails: "Standard calibration required.",
                 scheduledDate: Date().addingTimeInterval(172800),
-                technicianId: "TECH-02",
-                technicianNotes: "Verified all 18 tires. Outer rear axle on passenger side was 5 PSI low.",
+                technicianId: "Arjun-M",
+                technicianNotes: "Verified all tires.",
                 partsNeeded: [
-                    Part(name: "Air Valve Caps", description: "Replacement for missing valve covers", iconName: "gearshape.fill", imageAsset: "tire_part")
+                    Part(name: "Air Valve Caps", description: "Replacement", iconName: "gearshape.fill", imageAsset: "tire_part")
                 ],
                 imageAsset: "tire_part"
-            ),
-            WorkOrder(
-                title: "Engine Diagnostic",
-                vehicleName: "MAN TGX (Truck)",
-                vehicleVIN: "JTMBU4230L901",
-                serviceType: "Repair",
-                priority: .critical,
-                status: .completed,
-                taskDetails: "Check engine light active. P0420 code detected. Possible catalytic converter issue.",
-                scheduledDate: Date().addingTimeInterval(-86400),
-                technicianId: "TECH-01",
-                technicianNotes: "Replaced O2 sensor. Cleared codes and performed 20-mile test drive. No reoccurrence.",
-                imageAsset: "engine_part"
             )
         ]
         
@@ -54,66 +41,34 @@ class MaintenanceStore: ObservableObject {
             TripInspection(
                 title: "Pre-Trip Audit",
                 vehicleId: "V-842",
-                unitName: "Mercedes-Benz Actros (Truck)",
+                unitName: "Ashok Leyland Captain",
                 unitVIN: "1HGCM8263JA05",
-                driverId: "DRV-101",
+                driverId: "DRV-Rahul",
                 timestamp: Date(),
                 type: .preTrip,
                 vehicleType: .truck,
                 status: .pending,
                 items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "STAFF-01",
+                maintenanceStaffId: "Arjun-S",
                 imageAsset: "truck_main",
                 imagesData: [UIImage(named: "truck_main")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemBlue.image().jpegData(compressionQuality: 0.1)!],
-                imageAnalyses: ["Analysis: Front chassis and cab exterior appear within operational standards. No structural stress detected in the primary load-bearing points."]
-            ),
-            TripInspection(
-                title: "Post-Trip Verification",
-                vehicleId: "V-319",
-                unitName: "Volvo FH16 (Truck)",
-                unitVIN: "3VWCP1192BM12",
-                driverId: "DRV-102",
-                timestamp: Date(),
-                type: .postTrip,
-                vehicleType: .truck,
-                status: .completed,
-                items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "STAFF-01",
-                imageAsset: "truck_main",
-                imagesData: [UIImage(named: "tire_part")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemOrange.image().jpegData(compressionQuality: 0.1)!],
-                imageAnalyses: ["Analysis: Tire tread depth remains optimal. Minor particulate buildup detected in the outer groove, but no sharp object penetration observed."]
+                imageAnalyses: ["Analysis: Within operational standards."]
             ),
             TripInspection(
                 title: "Daily Pre-Trip",
                 vehicleId: "V-115",
-                unitName: "MAN TGX (Truck)",
+                unitName: "BharatBenz 3523R",
                 unitVIN: "JTMBU4230L901",
-                driverId: "DRV-103",
+                driverId: "DRV-Amit",
                 timestamp: Date(),
                 type: .preTrip,
                 vehicleType: .truck,
                 status: .pending,
                 items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "STAFF-01",
+                maintenanceStaffId: "Arjun-S",
                 imageAsset: "truck_main",
                 imagesData: [UIImage(named: "engine_part")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemRed.image().jpegData(compressionQuality: 0.1)!],
-                imageAnalyses: ["Analysis: Engine manifold thermal signature appears uniform. No fluid seepage detected around the secondary gasket seal."]
-            ),
-            TripInspection(
-                title: "Standard Post-Trip",
-                vehicleId: "V-990",
-                unitName: "Toyota Coaster (Bus)",
-                unitVIN: "5FNRL3H42GB91",
-                driverId: "DRV-104",
-                timestamp: Date(),
-                type: .postTrip,
-                vehicleType: .car,
-                status: .completed,
-                items: TripInspection.mockItems(for: .car),
-                maintenanceStaffId: "STAFF-01",
-                imageAsset: "truck_main",
-                imagesData: [UIImage(named: "brake_part")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemGreen.image().jpegData(compressionQuality: 0.1)!],
-                imageAnalyses: ["Analysis: Brake disc surface shows normal friction heat patterns. No scoring or micro-fractures detected in the high-stress contact zone."]
+                imageAnalyses: ["Analysis: Manifold signature uniform."]
             )
         ]
     }

@@ -26,7 +26,27 @@ struct PrimaryButton: View {
             .padding(.vertical, 16)
             .background(backgroundColor)
             .foregroundColor(textColor)
-            .cornerRadius(14)
+            .cornerRadius(12)
         }
+    }
+}
+
+// MARK: - AppProfileInfoRow
+struct AppProfileInfoRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            Spacer()
+            Text(value)
+                .font(.subheadline.bold())
+                .foregroundColor(.primary)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 4)
     }
 }

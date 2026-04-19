@@ -217,7 +217,22 @@ struct DriverModalView: View {
             // Footer Buttons
             HStack(spacing: 15) {
                 Button(action: { 
-                    let newDriver = Driver(id: "NEW-\(Int.random(in: 1000...9999))", name: fullName, title: "Driver", licenseNum: licenseNumber, licenseExp: expiryDate, status: .offDuty, rating: 5.0, efficiency: "100%", totalTrips: 0, totalHours: 0, activityLog: [], currentVehicleID: nil, activeRoute: nil, eta: nil)
+                    let newDriver = Driver(
+                        id: "NEW-\(Int.random(in: 1000...9999))",
+                        name: fullName,
+                        title: "Driver",
+                        licenseNum: licenseNumber,
+                        licenseExp: expiryDate,
+                        status: .offDuty,
+                        rating: 5.0,
+                        efficiency: "100%",
+                        totalTrips: 0,
+                        totalHours: 0,
+                        activityLog: [],
+                        currentVehicleID: nil as String?,
+                        activeRoute: nil as String?,
+                        eta: nil as String?
+                    )
                     dataManager.addDriver(newDriver)
                     dismiss() 
                 }) {
@@ -269,7 +284,7 @@ struct AddVehicleModalView: View {
         _model = State(initialValue: vehicleToEdit?.model ?? "")
         _regNumber = State(initialValue: vehicleToEdit?.id ?? "")
         _vin = State(initialValue: "4G2BM59XYZ1234567")
-        _odometer = State(initialValue: vehicleToEdit?.odometer ?? "")
+        _odometer = State(initialValue: vehicleToEdit?.odometer ?? "0")
     }
     
     var body: some View {
@@ -329,7 +344,24 @@ struct AddVehicleModalView: View {
             // Footer Buttons
             HStack(spacing: 15) {
                 Button(action: { 
-                    let newVehicle = Vehicle(id: regNumber, make: make, model: model, type: "Truck", status: .idle, imageName: "truck_freightliner_m2", year: "2024", color: "White", odometer: odometer, operationalStatus: "OPERATIONAL", currentTrip: nil, assignedDriver: nil, maintenance: VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []), history: [], reports: [], assessmentReason: nil)
+                    let newVehicle = Vehicle(
+                        id: regNumber,
+                        make: make,
+                        model: model,
+                        type: "Truck",
+                        status: .idle,
+                        imageName: "truck_freightliner_m2",
+                        year: "2024",
+                        color: "White",
+                        odometer: odometer,
+                        operationalStatus: "OPERATIONAL",
+                        currentTrip: nil as VehicleTrip?,
+                        assignedDriver: nil as Driver?,
+                        maintenance: VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
+                        history: [],
+                        reports: [],
+                        assessmentReason: nil as String?
+                    )
                     dataManager.addVehicle(newVehicle)
                     dismiss() 
                 }) {

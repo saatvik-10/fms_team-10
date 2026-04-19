@@ -21,13 +21,13 @@ struct FleetManagerDashboardView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Lincoln Saris")
+                            Text("Vikram S. Rathore")
                                 .font(.system(size: 32, weight: .black))
                         }
                         Spacer()
                         
                         Button(action: { showingManagerProfile = true }) {
-                            Text("LS")
+                            Text("VR")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(width: 44, height: 44)
@@ -193,9 +193,9 @@ struct ManagerProfileView: View {
                         .modifier(AppTheme.cardShadow())
                         
                         VStack(spacing: 5) {
-                            Text("Lincoln Saris")
+                            Text("Hi, Vikram Rathore")
                                 .font(.system(size: 24, weight: .black))
-                            Text("Senior Fleet Manager")
+                            Text("Fleet Manager")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(AppTheme.primary)
                         }
@@ -204,21 +204,26 @@ struct ManagerProfileView: View {
                     
                     // Stats
                     HStack(spacing: 20) {
-                        ProfileStatBox(title: "Active Years", value: "5")
-                        ProfileStatBox(title: "Vehicles Managed", value: "142")
-                        ProfileStatBox(title: "Rating", value: "4.9")
+                        ProfileStatBox(title: "Active Years", value: "8")
+                        ProfileStatBox(title: "Vehicles Managed", value: "22")
+                        ProfileStatBox(title: "Rating", value: "4.95")
                     }
                     
-                    // Details
+                    // Details (Strictly following Prisma Schema from image)
                     VStack(alignment: .leading, spacing: 20) {
-                        Text("CONTACT INFORMATION")
+                        Text("ACCOUNT DETAILS")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.gray)
                         
-                        ProfileDetailRow(icon: "envelope.fill", label: "Email", value: "l.saris@fleetops.net")
-                        ProfileDetailRow(icon: "phone.fill", label: "Phone", value: "+1 (555) 019-2830")
-                        ProfileDetailRow(icon: "building.2.fill", label: "Office", value: "Chicago Hub, Terminal 4")
-                        ProfileDetailRow(icon: "badge.plus.radiowaves.right", label: "Manager ID", value: "MGR-8991-A")
+                        let profile = UserProfile.mockManager
+                        ProfileDetailRow(icon: "person.fill", label: "NAME", value: profile.name)
+                        ProfileDetailRow(icon: "at", label: "USERNAME", value: profile.username)
+                        ProfileDetailRow(icon: "phone.fill", label: "PHONE", value: profile.phone)
+                        ProfileDetailRow(icon: "mappin.and.ellipse", label: "ADDRESS", value: profile.address)
+                        ProfileDetailRow(icon: "envelope.fill", label: "EMAIL", value: profile.email)
+                        ProfileDetailRow(icon: "lock.shield.fill", label: "ROLE", value: profile.role.rawValue)
+                        ProfileDetailRow(icon: "calendar", label: "CREATED AT", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
+                        ProfileDetailRow(icon: "tag.fill", label: "CUID", value: profile.id)
                     }
                     .padding(25)
                     .background(Color.white)

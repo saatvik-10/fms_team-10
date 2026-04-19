@@ -11,6 +11,7 @@ enum UserRole {
     case none
     case driver
     case maintenance
+    case manager
 }
 
 struct ContentView: View {
@@ -26,6 +27,8 @@ struct ContentView: View {
                 get: { userRole == .maintenance },
                 set: { if !$0 { userRole = .none } }
             ))
+        } else if userRole == .manager {
+            FleetManagerMainView()
         }
     }
 }

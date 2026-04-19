@@ -47,29 +47,31 @@ extension Color {
 struct AppColors {
     
     // Primary
-    static let primary = Color(hex: "0a303a")        // Brand teal-navy
+    static let primary = Color(red: 0.04, green: 0.19, blue: 0.23) // #0a303a
     
     // Backgrounds
-    static let secondaryBackground = Color(hex: "C9CFD6")
-    static let screenBackground = Color(UIColor.systemGroupedBackground)
+    static let secondaryBackground = Color(hex: "F2F5F8")
+    static let screenBackground = Color(white: 0.98)
     static let cardBackground = Color.white
     
     // Text
-    static let primaryText = Color(hex: "0a303a")
+    static let primaryText = Color(red: 0.04, green: 0.19, blue: 0.23)
     static let secondaryText = Color.gray
     
     // Status
-    static let success = Color(hex: "27AE60")
-    static let warning = Color(hex: "F2994A")
-    static let error = Color(hex: "EB5757")
+    static let success = Color(red: 0.2, green: 0.8, blue: 0.4)
+    static let warning = Color.orange
+    static let error = Color(red: 0.98, green: 0.45, blue: 0.38)
     
     // Priorities
-    static let priorityCritical = Color(hex: "8B0000") // Deep Red
-    static let priorityHigh = Color(hex: "C0392B")     // Bright Red
-    static let priorityMedium = Color(hex: "0a303a ")   // Blue
-    static let priorityLow = Color(hex: "7F8C8D")      // Grey
+    static let priorityCritical = Color(red: 0.9, green: 0.3, blue: 0.3)
+    static let priorityHigh = Color(red: 0.98, green: 0.45, blue: 0.38)
+    static let priorityMedium = Color(red: 0.3, green: 0.6, blue: 0.9)
+    static let priorityLow = Color.gray
     
     // UI Elements
     static let divider = Color.gray.opacity(0.1)
-    static let shadow = Color.black.opacity(0.06)
+    static let shadow = Color.black.opacity(0.05)
+    
+    static let cornerRadius: CGFloat = 12
 }

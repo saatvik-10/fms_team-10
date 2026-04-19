@@ -14,25 +14,25 @@ struct MockDataProvider {
     )
     
     static let shipments: [ShipmentActivity] = [
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .delivered),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .inTransit),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .pending),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Exetron Co.", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .processing)
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Tata Logistics", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .delivered),
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Industrial", company: "Mahindra Logistics", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .inTransit),
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "FMCG", company: "Delhivery", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .pending),
+        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Auto Parts", company: "Eicher Motors", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .processing)
     ]
     
     static let fleetStatus = FleetVehicleStatus(
-        active: 142,
-        activeTrend: "+4%",
-        maintenance: 14,
-        idle: 08,
-        critical: 02
+        active: 12,
+        activeTrend: "+2%",
+        maintenance: 04,
+        idle: 03,
+        critical: 01
     )
     
     static let assessments: [SmartFleetAssessment] = [
-        SmartFleetAssessment(truckName: "Freightliner M2 106", truckID: "TRK-9042", routeFrom: "DEL", routeTo: "JAI", etaTime: "16:15", etaDay: "Today", status: .inTransit, imageName: "truck_freightliner_m2"),
-        SmartFleetAssessment(truckName: "Rivian EDV 700", truckID: "EV-9910", routeFrom: "BLR Hub", routeTo: "HSR Lyt", etaTime: "Critical", etaDay: "", status: .alertReceived, imageName: "van_rivian"),
-        SmartFleetAssessment(truckName: "Kenworth T680", truckID: "TRK-5502", routeFrom: "MAA", routeTo: "COK", etaTime: "11:00", etaDay: "Today", status: .inTransit, imageName: "truck_kenworth_t680"),
-        SmartFleetAssessment(truckName: "Volvo FH16", truckID: "TRK-2101", routeFrom: "HYD", routeTo: "PNQ", etaTime: "21:30", etaDay: "Today", status: .inTransit, imageName: "truck_volvo_fh")
+        SmartFleetAssessment(truckName: "Tata Prima 4028.S", truckID: "TRK-9042", routeFrom: "DEL", routeTo: "JAI", etaTime: "16:15", etaDay: "Today", status: .inTransit, imageName: "truck_freightliner_m2"),
+        SmartFleetAssessment(truckName: "Tata Ace EV", truckID: "EV-9910", routeFrom: "BLR Hub", routeTo: "HSR Lyt", etaTime: "Critical", etaDay: "", status: .alertReceived, imageName: "van_rivian"),
+        SmartFleetAssessment(truckName: "Eicher Pro 6028", truckID: "TRK-5502", routeFrom: "MAA", routeTo: "COK", etaTime: "11:00", etaDay: "Today", status: .inTransit, imageName: "truck_kenworth_t680"),
+        SmartFleetAssessment(truckName: "BharatBenz 3523R", truckID: "TRK-2101", routeFrom: "HYD", routeTo: "PNQ", etaTime: "21:30", etaDay: "Today", status: .inTransit, imageName: "truck_volvo_fh")
     ]
     
     static let maintenanceAlerts: [MaintenanceAlert] = [
@@ -104,13 +104,13 @@ struct MockDataProvider {
         ),
         Vehicle(
             id: "VN-4209",
-            make: "Ford",
-            model: "Transit",
+            make: "Mahindra",
+            model: "Bolero Pik-Up",
             type: "Van",
             status: .idle,
             imageName: "van_ford",
             year: "2022",
-            color: "Frozen White",
+            color: "White",
             odometer: "12,140",
             operationalStatus: "OPERATIONAL",
             currentTrip: nil,
@@ -122,13 +122,13 @@ struct MockDataProvider {
         ),
         Vehicle(
             id: "EV-9910",
-            make: "Rivian",
-            model: "EDV 700",
+            make: "Tata",
+            model: "Ace EV",
             type: "EV",
             status: .maintenance,
             imageName: "van_rivian",
             year: "2024",
-            color: "Amazon Blue",
+            color: "Deep Blue",
             odometer: "3,420",
             operationalStatus: "UNDER SERVICE",
             currentTrip: nil,
@@ -136,16 +136,16 @@ struct MockDataProvider {
             maintenance: VehicleMaintenance(nextService: "Oct 18, 2023", inspectionStatus: "In Progress", alerts: [MaintenanceAlert(title: "Battery Optimization", detail: "FIRMWARE UPGRADE", iconName: "bolt.fill", status: "Critical")]),
             history: [],
             reports: [
-                VehicleReport(title: "Initial Compliance Report", subtitle: "PDF • 500 KB • AUG 12, 2023", fileType: "pdf", date: "AUG 12, 2023", serviceProvider: "Rivian Service", tasks: [
-                    ReportTask(description: "Standard Inspection", cost: "$150.00")
-                ], totalCost: "$150.00")
+                VehicleReport(title: "Initial Compliance Report", subtitle: "PDF • 500 KB • AUG 12, 2023", fileType: "pdf", date: "AUG 12, 2023", serviceProvider: "Tata Motors Service", tasks: [
+                    ReportTask(description: "Standard Inspection", cost: "₹1,500.00")
+                ], totalCost: "₹1,500.00")
             ],
             assessmentReason: "Predictive: Battery Thermal Variance"
         ),
         Vehicle(
             id: "TRK-2101",
             make: "Ashok Leyland",
-            model: "Blag",
+            model: "Captain",
             type: "Truck",
             status: .inTransit,
             imageName: "truck_volvo_fh",
@@ -162,8 +162,8 @@ struct MockDataProvider {
         ),
         Vehicle(
             id: "VN-1100",
-            make: "Mercedes",
-            model: "Sprinter",
+            make: "Mahindra",
+            model: "Supro",
             type: "Van",
             status: .idle,
             imageName: "van_sprinter",
@@ -181,7 +181,7 @@ struct MockDataProvider {
         Vehicle(
             id: "TRK-5502",
             make: "Eicher",
-            model: "Pro",
+            model: "Pro 6000",
             type: "Truck",
             status: .inTransit,
             imageName: "truck_kenworth_t680",

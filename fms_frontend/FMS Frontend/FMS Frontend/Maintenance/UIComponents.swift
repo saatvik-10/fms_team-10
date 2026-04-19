@@ -30,9 +30,9 @@ struct CardView<Content: View>: View {
         content
             .padding(16)
             .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(16)
+            .cornerRadius(12)
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(Color.primary.opacity(0.05), lineWidth: 1)
             )
     }
@@ -194,10 +194,10 @@ struct WorkOrderTaskCard: View {
             .background(Color(.systemGray6).opacity(0.2))
         }
         .background(Color.white)
-        .cornerRadius(20)
+        .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.primary.opacity(0.04), lineWidth: 1)
         )
     }
@@ -223,8 +223,8 @@ struct MetricsGrid: View {
         }
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(16)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.05), lineWidth: 1))
+        .cornerRadius(12)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.05), lineWidth: 1))
     }
 }
 
@@ -353,10 +353,10 @@ struct InspectionTaskCard: View {
             .background(Color(.systemGray6).opacity(0.2))
         }
         .background(Color.white)
-        .cornerRadius(20)
+        .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.primary.opacity(0.04), lineWidth: 1)
         )
     }

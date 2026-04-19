@@ -50,7 +50,7 @@ struct LoginView: View {
                     }
                     
                     // Irnput Fields
-                    VStack(spacing: 16) {
+                    VStack(spacing: 20) {
                         LoginTextField(icon: "envelope.fill", placeholder: "Email", text: $email)
                         LoginSecureField(icon: "lock.fill", placeholder: "Password", text: $password)
                         
@@ -61,6 +61,9 @@ struct LoginView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                    .padding(12)
+                    .background(Color(.systemGray6).opacity(0.3))
+                    .cornerRadius(12)
                     .padding(.horizontal, 24)
                     
                     // Login Button
@@ -69,7 +72,9 @@ struct LoginView: View {
                         // Simulate network delay
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                             isLoggingIn = false
-                            if email.lowercased().contains("driver") {
+                            if email.lowercased() == "fleet@fms.com" {
+                                userRole = .manager
+                            } else if email.lowercased().contains("driver") {
                                 userRole = .driver
                             } else if email.lowercased().contains("maintenance") {
                                 userRole = .maintenance
@@ -95,7 +100,7 @@ struct LoginView: View {
                         .frame(height: 56)
                         .background(AppColors.primary)
                         .foregroundColor(.white)
-                        .cornerRadius(16)
+                        .cornerRadius(12)
                     }
                     .padding(.horizontal, 24)
                     .disabled(isLoggingIn || email.isEmpty || password.isEmpty)

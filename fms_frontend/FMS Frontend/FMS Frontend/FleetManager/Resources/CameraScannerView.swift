@@ -1,5 +1,5 @@
 import SwiftUI
-import UIKit
+internal import UIKit
 
 struct CameraScannerView: UIViewControllerRepresentable {
     @Binding var isPresented: Bool
@@ -22,7 +22,7 @@ struct CameraScannerView: UIViewControllerRepresentable {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 // Return dummy data based on common patterns
                 self.parent.didFinishScanning(
-                    "Alexander Vance Sterling",
+                    "Vikram Singh Rathore",
                     "DL-992834-TX",
                     "12 / 24 / 2028",
                     "CLASS A, HAZMAT"
