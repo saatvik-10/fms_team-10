@@ -3,7 +3,7 @@
 //  FMS Frontend
 //
 
-import UIKit
+internal import UIKit
 
 struct AIAnalysisService {
     static func analyze(image: UIImage, completion: @escaping (String) -> Void) {

@@ -119,23 +119,3 @@ struct TripReportView: View {
     }
 }
 
-// MARK: - PDFKit UIViewRepresentable wrapper
-
-struct PDFKitView: UIViewRepresentable {
-    let document: PDFDocument
-
-    func makeUIView(context: Context) -> PDFView {
-        let view = PDFView()
-        view.autoScales          = true
-        view.displayMode         = .singlePageContinuous
-        view.displayDirection    = .vertical
-        view.usePageViewController(false)
-        view.backgroundColor     = UIColor.systemGroupedBackground
-        view.document            = document
-        return view
-    }
-
-    func updateUIView(_ uiView: PDFView, context: Context) {
-        uiView.document = document
-    }
-}

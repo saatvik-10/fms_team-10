@@ -277,30 +277,6 @@ struct VehicleCardView: View {
     }
 }
 
-struct PrimaryButton: View {
-    var title: String
-    var icon: String? = nil
-    var backgroundColor: Color = AppColors.primary
-    var textColor: Color = .white
-    var action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                if let icon = icon {
-                    Image(systemName: icon)
-                }
-                Text(title)
-            }
-            .font(.headline)
-            .foregroundColor(textColor)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(backgroundColor)
-            .cornerRadius(12)
-        }
-    }
-}
 
 struct RouteDetailRow: View {
     var label: String

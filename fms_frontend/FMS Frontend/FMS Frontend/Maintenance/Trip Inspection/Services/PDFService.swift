@@ -6,7 +6,7 @@
 //
 
 import PDFKit
-import UIKit
+internal import UIKit
 
 class PDFService {
     static let shared = PDFService()
