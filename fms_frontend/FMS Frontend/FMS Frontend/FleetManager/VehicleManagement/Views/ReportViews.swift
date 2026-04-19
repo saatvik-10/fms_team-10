@@ -114,7 +114,7 @@ struct MaintenanceRequestsListView: View {
                         Spacer()
                         Text("MAINTENANCE REQUESTS").font(.system(size: 14, weight: .bold))
                         Spacer()
-                        Image(systemName: "checklist").foregroundColor(.clear)
+                        
                     }
                     .padding(25)
                     .background(Color.white)
