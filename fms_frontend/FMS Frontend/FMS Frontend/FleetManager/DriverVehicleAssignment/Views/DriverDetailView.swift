@@ -4,22 +4,44 @@ import MapKit
 struct DriverDetailView: View {
     let driver: Driver
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var dataManager: FleetDataManager
+    @State private var showingEditModal = false
+    @State private var showingDeleteAlert = false
     
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 20) {
                 Button(action: { dismiss() }) {
-                    Image(systemName: "arrow.left")
-                        .foregroundColor(AppTheme.primary)
+                    Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(AppTheme.primary)
                 }
                 
-                Text("DRIVERS MANAGEMENT")
-                    .font(.system(size: 14, weight: .black))
+                Text(driver.name)
+                    .font(.system(size: 20, weight: .bold))
                 
                 Spacer()
+                
+                Menu {
+                    Button(action: { showingEditModal = true }) {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    Button(role: .destructive, action: {
+                        showingDeleteAlert = true
+                    }) {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.gray)
+                        .padding(10)
+                        .background(Color.gray.opacity(0.1))
+                        .clipShape(Circle())
+                }
             }
-            .padding(25)
+            .padding(.horizontal, 40)
+            .padding(.vertical, 25)
             .background(Color.white)
             
             ScrollView {
@@ -52,38 +74,7 @@ struct DriverDetailView: View {
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.gray)
                             
-                            HStack(spacing: 12) {
-                                Button(action: {}) {
-                                    Label("Call", systemImage: "phone.fill")
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 20)
-                                        .padding(.vertical, 10)
-                                        .background(AppTheme.primary)
-                                        .cornerRadius(8)
-                                }
-                                
-                                Button(action: {}) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "message.fill")
-                                        Text("Message")
-                                    }
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(AppTheme.primary)
-                                    .padding(.horizontal, 15)
-                                    .padding(.vertical, 10)
-                                    .background(Color.gray.opacity(0.1))
-                                    .cornerRadius(8)
-                                }
-                                
-                                Button(action: {}) {
-                                    Image(systemName: "ellipsis")
-                                        .foregroundColor(.gray)
-                                        .padding(10)
-                                        .background(Color.gray.opacity(0.1))
-                                        .cornerRadius(8)
-                                }
-                            }
+
                         }
                         
                         Spacer()
@@ -101,13 +92,13 @@ struct DriverDetailView: View {
                     HStack(spacing: 25) {
                         MiniStatCard(label: "LICENSE NO.", value: driver.licenseNum)
                         MiniStatCard(label: "EXPIRY DATE", value: driver.licenseExp)
-                        MiniStatCard(label: "TOTAL TRIPS", value: "\(driver.totalTrips)", trend: "+12 this month", trendColor: AppTheme.activeGreen)
+                        MiniStatCard(label: "TOTAL TRIPS", value: "\(driver.totalTrips)")
                         MiniStatCard(label: "TOTAL HOURS", value: "\(driver.totalHours)")
                     }
                     .frame(height: 120) // Consistent height for all cards
                     
                     // MARK: - Current Assignment & Activity Log
-                    HStack(alignment: .top, spacing: 25) {
+                    HStack(spacing: 25) {
                         // Left: Map Card
                         VStack(alignment: .leading, spacing: 15) {
                             HStack {
@@ -150,7 +141,7 @@ struct DriverDetailView: View {
                             .cornerRadius(8)
                         }
                         .padding(25)
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         .background(Color.white)
                         .cornerRadius(16)
                         
@@ -160,9 +151,6 @@ struct DriverDetailView: View {
                                 Text("RECENT ACTIVITY LOG")
                                     .font(.system(size: 10, weight: .bold))
                                     .foregroundColor(.gray)
-                                Spacer()
-                                Text("View All")
-                                    .font(.system(size: 12, weight: .bold))
                             }
                             
                             VStack(spacing: 20) {
@@ -173,6 +161,7 @@ struct DriverDetailView: View {
                         }
                         .padding(25)
                         .frame(width: 400)
+                        .frame(maxHeight: .infinity, alignment: .topLeading)
                         .background(Color.white)
                         .cornerRadius(16)
                     }
@@ -184,6 +173,20 @@ struct DriverDetailView: View {
             .background(AppTheme.background)
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showingEditModal) {
+            DriverModalView(driverToEdit: driver)
+        }
+        .alert("Confirm Delete", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                if let index = dataManager.drivers.firstIndex(where: { $0.id == driver.id }) {
+                    dataManager.drivers.remove(at: index)
+                }
+                dismiss()
+            }
+        } message: {
+            Text("Are you sure you want to delete this driver?")
+        }
     }
 }
 
@@ -221,6 +224,8 @@ struct MiniStatCard: View {
             HStack(alignment: .bottom) {
                 Text(value)
                     .font(.system(size: 24, weight: .black))
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
                 
                 if let trend = trend {
                     Text(trend)
@@ -286,8 +291,8 @@ struct MapComponentView: View {
     )
     
     var body: some View {
-        Map(coordinateRegion: $region, annotationItems: [MapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194))]) { point in
-            MapAnnotation(coordinate: point.coordinate) {
+        Map(initialPosition: .region(region)) {
+            Annotation("", coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)) {
                 Image(systemName: "truck.box.fill")
                     .padding(8)
                     .background(AppTheme.primary)

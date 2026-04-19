@@ -63,6 +63,7 @@ struct ModalFormField: View {
             HStack {
                 TextField("", text: $text)
                     .font(.system(size: 15, weight: .medium))
+                    .minimumScaleFactor(0.5)
                 Spacer()
                 Image(systemName: "pencil")
                     .font(.system(size: 12))
@@ -95,7 +96,7 @@ struct ModalSearchField: View {
                         isEditing = editing
                         if editing { completer.searchQuery = text }
                     })
-                    .onChange(of: text) { newValue in
+                    .onChange(of: text) { _, newValue in
                         completer.searchQuery = newValue
                     }
                     .font(.system(size: 15, weight: .medium))
@@ -144,20 +145,28 @@ struct ModalSearchField: View {
 struct DriverModalView: View {
     @EnvironmentObject var dataManager: FleetDataManager
     @Environment(\.dismiss) var dismiss
-    @State private var fullName = ""
-    @State private var licenseNumber = ""
-    @State private var expiryDate = ""
-    @State private var vehicleClasses = ""
+    let driverToEdit: Driver?
+    
+    @State private var fullName: String
+    @State private var licenseNumber: String
+    @State private var expiryDate: String
+    @State private var vehicleClasses: String
     @State private var showingScanner = false
 
-
+    init(driverToEdit: Driver? = nil) {
+        self.driverToEdit = driverToEdit
+        _fullName = State(initialValue: driverToEdit?.name ?? "")
+        _licenseNumber = State(initialValue: driverToEdit?.licenseNum ?? "")
+        _expiryDate = State(initialValue: driverToEdit?.licenseExp ?? "")
+        _vehicleClasses = State(initialValue: "")
+    }
 
     
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
             // Header
             HStack {
-                Text("Add Driver")
+                Text(driverToEdit == nil ? "Add Driver" : "Update Driver")
                     .font(.system(size: 28, weight: .bold))
                 Spacer()
                 Button(action: { dismiss() }) {
@@ -214,8 +223,6 @@ struct DriverModalView: View {
                 }) {
                     HStack {
                         Text("Save Driver")
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .bold))
                     }
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
@@ -224,16 +231,7 @@ struct DriverModalView: View {
                     .background(AppTheme.primary)
                     .cornerRadius(12)
                 }
-                
-                Button(action: { dismiss() }) {
-                    Text("Cancel")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(AppTheme.primary)
-                        .padding(.horizontal, 30)
-                        .padding(.vertical, 18)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(12)
-                }
+
             }
         }
         .padding(30)
@@ -270,7 +268,7 @@ struct AddVehicleModalView: View {
         _make = State(initialValue: vehicleToEdit?.make ?? "")
         _model = State(initialValue: vehicleToEdit?.model ?? "")
         _regNumber = State(initialValue: vehicleToEdit?.id ?? "")
-        _vin = State(initialValue: "4G2BM5...")
+        _vin = State(initialValue: "4G2BM59XYZ1234567")
         _odometer = State(initialValue: vehicleToEdit?.odometer ?? "")
     }
     
@@ -337,8 +335,6 @@ struct AddVehicleModalView: View {
                 }) {
                     HStack {
                         Text("Save Vehicle")
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .bold))
                     }
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
@@ -347,16 +343,7 @@ struct AddVehicleModalView: View {
                     .background(AppTheme.primary)
                     .cornerRadius(12)
                 }
-                
-                Button(action: { dismiss() }) {
-                    Text("Cancel")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(AppTheme.primary)
-                        .padding(.horizontal, 30)
-                        .padding(.vertical, 18)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(12)
-                }
+
             }
         }
         .padding(30)
@@ -399,13 +386,14 @@ struct OrderModalView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Button("Cancel") { dismiss() }
-                Spacer()
                 Text("New Order")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 28, weight: .bold))
                 Spacer()
-                Button("Create") { dismiss() }
-                    .font(.system(size: 18, weight: .bold))
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 20))
+                }
             }
             .padding(25)
             .foregroundColor(AppTheme.primary)
@@ -531,7 +519,6 @@ struct OrderModalView: View {
                             dismiss() 
                         }) {
                             HStack {
-                                Image(systemName: "lock.open.fill")
                                 Text("Create Order")
                             }
                             .font(.system(size: 18, weight: .bold))
