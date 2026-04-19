@@ -1,4 +1,4 @@
-import UIKit
+internal import UIKit
 import PDFKit
 
 // MARK: - Professional Fleet Trip Report Generator

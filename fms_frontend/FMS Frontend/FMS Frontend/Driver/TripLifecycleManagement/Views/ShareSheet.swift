@@ -1,5 +1,5 @@
 import SwiftUI
-import UIKit
+internal import UIKit
 
 // MARK: - ShareSheet
 // Wraps UIActivityViewController so PDFs (and any items) can be shared

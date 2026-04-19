@@ -197,7 +197,7 @@ struct MissionCardView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(AppColors.primary)
+                    .background(Color(hex: "0a303a"))
                     .cornerRadius(12)
                 }
             }
@@ -263,7 +263,7 @@ struct VehicleCardView: View {
                             .frame(height: 8)
                         
                         Capsule()
-                            .fill(AppColors.primary)
+                            .fill(Color(hex: "0a303a"))
                             .frame(width: geo.size.width * viewModel.maintenanceProgress, height: 8)
                     }
                 }

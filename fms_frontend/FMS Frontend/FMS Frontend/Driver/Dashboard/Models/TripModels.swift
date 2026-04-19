@@ -28,7 +28,7 @@ struct Trip {
 extension Trip {
     static var mockTrip: Trip {
         Trip(
-            routeNumber: "IND-900",
+            routeNumber: "IND-900", tripDate: "",
             pickup: TripStop(
                 name: "Mysore Palace",
                 coordinate: CLLocationCoordinate2D(latitude: 12.3051, longitude: 76.6551),

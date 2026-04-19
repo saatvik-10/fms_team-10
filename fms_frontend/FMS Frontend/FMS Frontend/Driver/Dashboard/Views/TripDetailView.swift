@@ -127,7 +127,7 @@ struct TripDetailView: View {
                         PrimaryButton(
                             title: "Continue Navigation",
                             icon: "location.fill",
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: Color(hex: "0a303a"),
                             textColor: .white
                         ) {
                             showNavigationMap = true
