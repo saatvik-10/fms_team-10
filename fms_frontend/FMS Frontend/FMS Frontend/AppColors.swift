@@ -47,7 +47,7 @@ extension Color {
 struct AppColors {
     
     // Primary
-    static let primary = Color(hex: "0F1C24")        // Deep navy
+    static let primary = Color(hex: "0a303a")        // Brand teal-navy
     
     // Backgrounds
     static let secondaryBackground = Color(hex: "C9CFD6")
@@ -55,7 +55,7 @@ struct AppColors {
     static let cardBackground = Color.white
     
     // Text
-    static let primaryText = Color.black
+    static let primaryText = Color(hex: "0a303a")
     static let secondaryText = Color.gray
     
     // Status

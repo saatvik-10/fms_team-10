@@ -27,14 +27,14 @@ struct LoginView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "safari.fill")
                             .font(.system(size: 60))
-                            .foregroundColor(.black)
+                            .foregroundColor(AppColors.primary)
                             .padding(20)
                             .background(
                                 RoundedRectangle(cornerRadius: 24)
-                                    .fill(Color.black.opacity(0.05))
+                                    .fill(AppColors.primary.opacity(0.05))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 24)
-                                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                                            .stroke(AppColors.primary.opacity(0.15), lineWidth: 1)
                                     )
                             )
                         
@@ -85,7 +85,7 @@ struct LoginView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Color.black)
+                        .background(AppColors.primary)
                         .foregroundColor(.white)
                         .cornerRadius(16)
                     }
@@ -114,11 +114,11 @@ struct LoginTextField: View {
                 .autocapitalization(.none)
         }
         .padding()
-        .background(Color.black.opacity(0.03))
+        .background(AppColors.primary.opacity(0.04))
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                .stroke(AppColors.primary.opacity(0.15), lineWidth: 1)
         )
     }
 }
@@ -137,11 +137,11 @@ struct LoginSecureField: View {
                 .foregroundColor(.primary)
         }
         .padding()
-        .background(Color.black.opacity(0.03))
+        .background(AppColors.primary.opacity(0.04))
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                .stroke(AppColors.primary.opacity(0.15), lineWidth: 1)
         )
     }
 }
