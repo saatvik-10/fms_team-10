@@ -51,30 +51,32 @@ struct TripDetailView: View {
     }
 
     // Extracted shared padding for precise alignment
+    @State private var showMap = false
+    @State private var showNavigationMap = false
+    
     private let horizontalPadding: CGFloat = 20
+    
+    private var isNavigationEnabled: Bool {
+        !isLoadingEta && !routePolyline.isEmpty
+    }
     
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 
-                // HEADER ROUTE NAME
                 Text("\(trip.pickup.name.split(separator: ",").first ?? "") ➝ \(trip.destination.name.split(separator: ",").first ?? "")")
                     .font(.title2)
                     .fontWeight(.bold)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, horizontalPadding)
                 
-                // TOP SECTION (NEW: CARDS)
                 HStack(spacing: 16) {
-                    // ETA Card
                     MetricCardView(
                         title: "ESTIMATED ARRIVAL",
                         value: estimatedArrival,
                         subtext: isLoadingEta ? "" : "On time",
                         isLoading: isLoadingEta
                     )
-                    
-                    // Cargo Load Card
                     MetricCardView(
                         title: "CARGO LOAD",
                         value: trip.cargoWeight,
@@ -84,31 +86,26 @@ struct TripDetailView: View {
                 }
                 .padding(.horizontal, horizontalPadding)
                 
-                // MAP SECTION (Google Maps SDK)
                 GoogleTripMapView(trip: trip, encodedPolyline: routePolyline)
                     .frame(height: 250)
-                    .cornerRadius(16) // Applied to container matching Timeline
+                    .cornerRadius(16)
                     .padding(.horizontal, horizontalPadding)
                     .shadow(color: AppColors.shadow, radius: 8, x: 0, y: 4)
                 
-                // TIMELINE SECTION (Must match Map horizontally identically)
                 VStack(alignment: .leading, spacing: 0) {
                     Text("ROUTE PROGRESS")
                         .font(.caption)
                         .fontWeight(.bold)
                         .foregroundColor(AppColors.secondaryText)
                         .padding(.bottom, 16)
-                    
                     TimelineView(trip: trip)
                 }
                 .padding()
                 .background(AppColors.cardBackground)
                 .cornerRadius(16)
-                // Ensures identical horizontal padding matching Map parent bounds
                 .padding(.horizontal, horizontalPadding)
                 .shadow(color: AppColors.shadow, radius: 10, x: 0, y: 4)
                 
-                // ROUTE DETAILS
                 VStack(alignment: .leading, spacing: 16) {
                     RouteDetailRow(label: "PICKUP", value: trip.pickup.name)
                     RouteDetailRow(label: "DESTINATION", value: trip.destination.name)
@@ -153,6 +150,9 @@ struct TripDetailView: View {
         .background(AppColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Trip Details")
         .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(isPresented: $showNavigationMap) {
+            NavigationMapView(trip: trip)
+        }
         .task {
             do {
                 let result = try await GoogleDirectionsService.shared.fetchDirections(trip: trip)
@@ -357,17 +357,14 @@ struct TimelineView: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(allStops.enumerated()), id: \.element.id) { index, stop in
                 HStack(alignment: .top, spacing: 16) {
-                    // Time column
                     Text(stop.time)
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(AppColors.secondaryText)
-                        .frame(width: 65, alignment: .leading) // Left aligned timeframe
+                        .frame(width: 65, alignment: .leading)
                         .padding(.top, 4)
                     
-                    // Line and Indicator column
                     VStack(spacing: 0) {
-                        // Indicator
                         Circle()
                             .fill(indicatorColor(for: stop.status))
                             .overlay(
@@ -377,7 +374,6 @@ struct TimelineView: View {
                             .frame(width: 14, height: 14)
                             .padding(.top, 4)
                         
-                        // Line
                         if index < allStops.count - 1 {
                             Rectangle()
                                 .fill(AppColors.secondaryText.opacity(0.3))
@@ -387,7 +383,6 @@ struct TimelineView: View {
                         }
                     }
                     
-                    // Content
                     VStack(alignment: .leading, spacing: 4) {
                         Text(stop.name.split(separator: ",").first ?? "")
                             .font(.subheadline)
@@ -405,16 +400,11 @@ struct TimelineView: View {
         }
     }
     
-    // Status Logic
-    // completed -> green text + grey dot
-    // active -> bold + navy filled dot
-    // upcoming -> light grey + outlined dot
-    
     private func indicatorColor(for status: StopStatus) -> Color {
         switch status {
-        case .completed: return AppColors.secondaryText // Grey filled dot
-        case .active: return AppColors.primary // Navy filled dot
-        case .upcoming: return AppColors.cardBackground // Outlined (white filled) dot
+        case .completed: return AppColors.secondaryText
+        case .active: return AppColors.primary
+        case .upcoming: return AppColors.cardBackground
         }
     }
     
@@ -422,7 +412,7 @@ struct TimelineView: View {
         switch status {
         case .completed: return .clear
         case .active: return .clear
-        case .upcoming: return AppColors.secondaryText // Light grey stroke
+        case .upcoming: return AppColors.secondaryText
         }
     }
     
@@ -444,7 +434,7 @@ struct TimelineView: View {
     
     private func statusTextColor(for status: StopStatus) -> Color {
         switch status {
-        case .completed: return AppColors.success // Green Text
+        case .completed: return AppColors.success
         case .active: return AppColors.primary
         case .upcoming: return AppColors.secondaryText
         }
@@ -453,58 +443,53 @@ struct TimelineView: View {
 
 // MARK: - Google Maps SDK Wrapper
 
+// MARK: - Google Maps SDK Wrapper (Navigation-aware preview)
+// Replace the existing GoogleTripMapView struct with this one.
+
 struct GoogleTripMapView: UIViewRepresentable {
     let trip: Trip
     let encodedPolyline: String
-    
+
     func makeUIView(context: Context) -> GMSMapView {
         let options = GMSMapViewOptions()
         let mapView = GMSMapView(options: options)
-        mapView.isUserInteractionEnabled = false // Standard map display without scroll disruption
+        mapView.isUserInteractionEnabled = false
         return mapView
     }
-    
+
     func updateUIView(_ uiView: GMSMapView, context: Context) {
-        uiView.clear() // Clear existing overlays to prevent duplicates
-        
-        // Setup marker coordinates tracking for bounds
-        var bounds = GMSCoordinateBounds()
-        let allStops = [trip.pickup] + trip.stops + [trip.destination]
-        
-        for stop in allStops {
-            let marker = GMSMarker()
-            marker.position = stop.coordinate
-            marker.title = stop.name
-            
-            // Map markers conceptually matching status schemas
-            if stop.status == .completed {
-                marker.icon = GMSMarker.markerImage(with: .gray)
-            } else if stop.status == .active {
-                // Derived AppColors.primary HEX 0F1C24 translation to UIColor
-                let navyColor = UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1)
-                marker.icon = GMSMarker.markerImage(with: navyColor)
-            } else {
-                marker.icon = GMSMarker.markerImage(with: .lightGray)
+        uiView.clear()
+
+        // Show only the active stop as the destination marker (not all stops)
+        let activeStop = ([trip.pickup] + trip.stops + [trip.destination])
+            .first(where: { $0.status == .active })
+            ?? trip.destination
+
+        let destMarker = GMSMarker(position: activeStop.coordinate)
+        destMarker.title = activeStop.name
+        let navyColor = UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1)
+        destMarker.icon = GMSMarker.markerImage(with: navyColor)
+        destMarker.map = uiView
+
+        // Draw current-segment polyline only
+        if !encodedPolyline.isEmpty, let path = GMSPath(fromEncodedPath: encodedPolyline) {
+            let polyline = GMSPolyline(path: path)
+            polyline.strokeColor = navyColor
+            polyline.strokeWidth = 6.0
+            polyline.map = uiView
+
+            // Static overview: fit to polyline bounds (this is a preview, not live nav)
+            let bounds = GMSCoordinateBounds(path: path)
+            if bounds.isValid {
+                DispatchQueue.main.async {
+                    uiView.animate(with: GMSCameraUpdate.fit(bounds, withPadding: 40.0))
+                }
             }
-            
-            marker.map = uiView
-            bounds = bounds.includingCoordinate(stop.coordinate)
-        }
-        
-        // Re-construct the exact route polyline visually returned from Directions Matrix
-        if !encodedPolyline.isEmpty {
-            if let path = GMSPath(fromEncodedPath: encodedPolyline) {
-                let polyline = GMSPolyline(path: path)
-                polyline.strokeColor = UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1) // #0F1C24
-                polyline.strokeWidth = 4.0 // Prominent distinct path line
-                polyline.map = uiView
-            }
-        }
-        
-        if bounds.isValid {
-            // Apply camera bounds mapping with padding
-            let update = GMSCameraUpdate.fit(bounds, withPadding: 40.0)
-            uiView.animate(with: update)
+        } else if CLLocationCoordinate2DIsValid(activeStop.coordinate) {
+            // Fallback: center on active stop
+            uiView.animate(to: GMSCameraPosition.camera(
+                withTarget: activeStop.coordinate, zoom: 14
+            ))
         }
     }
 }

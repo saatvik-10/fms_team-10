@@ -12,12 +12,12 @@ import GoogleMaps
 struct Frontend: App {
     
     init() {
-          GMSServices.provideAPIKey("AIzaSyDlMQm7FBZik7fIYAI6RdY21HmCpMjn5yM")
+          GMSServices.provideAPIKey("AIzaSyBB3dlvvPvm-HPrUjHtSondvWgEJ_l3FbM")
       }
     
     var body: some Scene {
         WindowGroup {
-           ContentView()
+           DashboardView()
         }
     }
 }
