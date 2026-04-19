@@ -4,7 +4,7 @@
 //
 
 import SwiftUI
-import UIKit
+internal import UIKit
 
 // MARK: - UICalendarView Wrapper
 struct NativeCalendarView: UIViewRepresentable {

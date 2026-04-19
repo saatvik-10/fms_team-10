@@ -7,7 +7,7 @@
 
 import SwiftUI
 import PDFKit
-import UIKit
+internal import UIKit
 
 extension UIColor {
     func image(_ size: CGSize = CGSize(width: 100, height: 100)) -> UIImage {
@@ -119,46 +119,7 @@ struct ActionButton: View {
     }
 }
 
-/// A professional primary button for bottom actions.
-struct PrimaryButton: View {
-    let title: String
-    let action: () -> Void
-    var isLoading: Bool = false
-    
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                if isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .padding(.trailing, 8)
-                }
-                Text(title)
-                    .font(.headline)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(AppColors.primary)
-            .foregroundColor(.white)
-            .cornerRadius(14)
-        }
-    }
-}
 
-/// A native PDFKit wrapper for SwiftUI to view generated reports.
-struct PDFKitView: UIViewRepresentable {
-    let url: URL
-
-    func makeUIView(context: Context) -> PDFView {
-        let pdfView = PDFView()
-        pdfView.document = PDFDocument(url: url)
-        pdfView.autoScales = true
-        return pdfView
-    }
-
-    func updateUIView(_ pdfView: PDFView, context: Context) {
-    }
-}
 
 /// A unified card for work order tasks.
 struct WorkOrderTaskCard: View {
