@@ -493,11 +493,14 @@ struct AddVehicleModalView: View {
         .padding(30)
         .background(Color.white)
         .sheet(isPresented: $showingScanner) {
-            CameraScannerView(isPresented: $showingScanner) { make, model, reg, vin in
-                self.make = "TATA MOTORS"
-                self.model = "PRIMA G.35 K"
-                self.regNumber = "MH-12-XY-1234"
-                self.vin = "4G2BM5..."
+            RCScannerView(isPresented: $showingScanner) { owner, reg, model, chassis in
+                self.regNumber = reg
+                self.model = model
+                self.vin = chassis
+                // Try to extract make from owner name or leave empty for user to fill
+                if !owner.isEmpty {
+                    self.make = owner
+                }
             }
         }
     }
