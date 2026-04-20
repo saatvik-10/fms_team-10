@@ -92,6 +92,7 @@ struct Driver: Identifiable {
     
     // Assignment info (New)
     let currentVehicleID: String?
+    let vehicleClasses: [String] // Format like "Class A", "Class B"
     let activeRoute: String?
     let eta: String?
     

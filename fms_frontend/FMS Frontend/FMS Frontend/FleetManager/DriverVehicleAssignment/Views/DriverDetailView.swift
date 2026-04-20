@@ -61,7 +61,7 @@ struct DriverDetailView: View {
                                 )
                             
                             Circle()
-                                .fill(AppTheme.activeGreen)
+                                .fill(statusColor)
                                 .frame(width: 25, height: 25)
                                 .overlay(Circle().stroke(Color.white, lineWidth: 4))
                         }
@@ -70,9 +70,14 @@ struct DriverDetailView: View {
                             Text(driver.name)
                                 .font(.system(size: 38, weight: .black))
                             
-                            Text(driver.title.uppercased())
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.gray)
+                            HStack(spacing: 5) {
+                                Image(systemName: "licenseplate.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(statusColor)
+                                Text(driver.vehicleClasses.joined(separator: ", "))
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(statusColor)
+                            }
                             
 
                         }
@@ -80,7 +85,7 @@ struct DriverDetailView: View {
                         Spacer()
                         
                         HStack(spacing: 40) {
-                            DetailHeaderStat(label: "STATUS", value: driver.status.rawValue, color: AppTheme.activeGreen)
+                            DetailHeaderStat(label: "STATUS", value: driver.status.rawValue, color: statusColor)
                         }
                     }
                     .padding(30)
@@ -93,7 +98,6 @@ struct DriverDetailView: View {
                         MiniStatCard(label: "LICENSE NO.", value: driver.licenseNum)
                         MiniStatCard(label: "EXPIRY DATE", value: driver.licenseExp)
                         MiniStatCard(label: "TOTAL TRIPS", value: "\(driver.totalTrips)")
-                        MiniStatCard(label: "TOTAL HOURS", value: "\(driver.totalHours)")
                     }
                     .frame(height: 120) // Consistent height for all cards
                     
@@ -186,6 +190,14 @@ struct DriverDetailView: View {
             }
         } message: {
             Text("Are you sure you want to delete this driver?")
+        }
+    }
+    
+    var statusColor: Color {
+        switch driver.status {
+        case .active, .onDuty: return AppTheme.activeGreen
+        case .onTrip: return AppTheme.maintenanceOrange
+        case .offDuty: return AppTheme.criticalRed
         }
     }
 }

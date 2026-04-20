@@ -63,7 +63,7 @@ struct FleetManagerDriversListView: View {
                     .padding(.vertical, 20)
                     
                     VStack(spacing: 12) {
-                        ForEach(dataManager.drivers) { driver in
+                        ForEach(filteredDrivers) { driver in
                             NavigationLink(destination: DriverDetailView(driver: driver)) {
                                 DriverRowView(driver: driver)
                             }
@@ -77,6 +77,17 @@ struct FleetManagerDriversListView: View {
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingAddDriver) { DriverModalView() }
+    }
+    
+    private var filteredDrivers: [Driver] {
+        if searchText.isEmpty {
+            return dataManager.drivers
+        } else {
+            return dataManager.drivers.filter {
+                $0.name.localizedCaseInsensitiveContains(searchText) ||
+                $0.id.localizedCaseInsensitiveContains(searchText)
+            }
+        }
     }
 }
 
@@ -114,20 +125,32 @@ struct DriverRowView: View {
             
             Spacer()
             // Status
-            Text(driver.status.rawValue.uppercased())
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(driver.status == .active ? .white : .gray)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(driver.status == .active ? AppTheme.primary : Color.gray.opacity(0.1))
-                .cornerRadius(12)
-                .cornerRadius(12)
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(statusColor)
+                    .frame(width: 6, height: 6)
+                Text(driver.status.rawValue.uppercased())
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(statusColor)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(statusColor.opacity(0.1))
+            .cornerRadius(12)
         }
         .padding(.horizontal, 40)
         .padding(.vertical, 20)
         .background(Color.white)
         .cornerRadius(8)
         .padding(.horizontal, 30)
+    }
+    
+    var statusColor: Color {
+        switch driver.status {
+        case .active, .onDuty: return AppTheme.activeGreen
+        case .onTrip: return AppTheme.maintenanceOrange
+        case .offDuty: return AppTheme.criticalRed
+        }
     }
 }
 
