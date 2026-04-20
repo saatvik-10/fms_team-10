@@ -13,19 +13,21 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String?
-  username     String?  @unique
-  phone        String?  @unique
-  address      String?
-  email        String?  @unique
-  passwordHash String?
-  role         Role
-  createdById  String?
-  createdBy    User?    @relation("UserCreatedUsers", fields: [createdById], references: [id])
-  createdUsers User[]   @relation("UserCreatedUsers")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String          @id @default(cuid())
+  name            String?
+  username        String?         @unique
+  phone           String?         @unique
+  address         String?
+  email           String?         @unique
+  passwordHash    String?
+  licenceNumber   String?
+  vehiclesAllowed VehiclesAllowed?
+  role            Role
+  createdById     String?
+  createdBy       User?           @relation("UserCreatedUsers", fields: [createdById], references: [id])
+  createdUsers    User[]          @relation("UserCreatedUsers")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 enum Role {
@@ -33,4 +35,10 @@ enum Role {
   MANAGER
   DRIVER
   MAINTENANCE
+}
+
+enum VehiclesAllowed {
+  MCWG
+  LMV
+  MVSD
 }
