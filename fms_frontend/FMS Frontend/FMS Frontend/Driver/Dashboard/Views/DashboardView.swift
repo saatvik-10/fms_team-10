@@ -48,9 +48,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
 class DashboardViewModel: ObservableObject {
     @Published var userName: String = "Marcus"
-    @Published var routeNumber: String = "IND-402"
-    @Published var pickupLocation: String = "Nhava Sheva Port, Terminal 2, Mumbai"
-    @Published var destinationLocation: String = "Sector 18, Gurgaon, Haryana"
+    @Published var activeTrip: Trip = Trip.mockTrip
     @Published var vehicleName: String = "Tata Prima 4028.S"
     @Published var vehiclePlate: String = "MH 43 AB 1234"
     @Published var fuelLevel: String = "78%"
@@ -70,15 +68,15 @@ struct DashboardView: View {
                 Label("Home", systemImage: "house.fill")
             }
             
-            Text("Trips Placeholder")
+            TripsView()
             .tabItem {
                 Label("Trips", systemImage: "map.fill")
             }
             
-            Text("Profile Placeholder")
-            .tabItem {
-                Label("Profile", systemImage: "person.crop.circle.fill")
-            }
+//            Text("Profile Placeholder")
+//            .tabItem {
+//                Label("Profile", systemImage: "person.crop.circle.fill")
+//            }
         }
         .accentColor(AppColors.primary)
     }
@@ -127,8 +125,8 @@ struct DashboardHomeView: View {
                 .frame(width: 48, height: 48)
                 .foregroundColor(Color.gray.opacity(0.8))
             
-            Text("Welcome, \(viewModel.userName)")
-                .font(.system(.title, design: .default, weight: .bold))
+            Text("Hi, \(viewModel.userName)")
+                .font(.system(.title2, design: .default, weight: .bold))
                 .foregroundColor(.black)
             
             Spacer()
@@ -174,7 +172,7 @@ struct MissionCardView: View {
                         .cornerRadius(6)
                 }
                 
-                Text("Route #\(viewModel.routeNumber)")
+                Text("Route #\(viewModel.activeTrip.routeNumber)")
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.black)
@@ -188,10 +186,10 @@ struct MissionCardView: View {
             
             // Details
             VStack(alignment: .leading, spacing: 16) {
-                RouteDetailRow(label: "PICKUP", value: viewModel.pickupLocation)
-                RouteDetailRow(label: "DESTINATION", value: viewModel.destinationLocation)
+                RouteDetailRow(label: "PICKUP", value: viewModel.activeTrip.pickup.name)
+                RouteDetailRow(label: "DESTINATION", value: viewModel.activeTrip.destination.name)
                 
-                NavigationLink(destination: TripDetailView()) {
+                NavigationLink(destination: TripDetailView(trip: viewModel.activeTrip)) {
                     HStack {
                         Text("View Trip")
                     }
@@ -199,7 +197,7 @@ struct MissionCardView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(AppColors.primary)
+                    .background(Color(hex: "0a303a"))
                     .cornerRadius(12)
                 }
             }
@@ -265,7 +263,7 @@ struct VehicleCardView: View {
                             .frame(height: 8)
                         
                         Capsule()
-                            .fill(AppColors.primary)
+                            .fill(Color(hex: "0a303a"))
                             .frame(width: geo.size.width * viewModel.maintenanceProgress, height: 8)
                     }
                 }
@@ -279,30 +277,6 @@ struct VehicleCardView: View {
     }
 }
 
-struct PrimaryButton: View {
-    var title: String
-    var icon: String? = nil
-    var backgroundColor: Color = AppColors.primary
-    var textColor: Color = .white
-    var action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                if let icon = icon {
-                    Image(systemName: icon)
-                }
-                Text(title)
-            }
-            .font(.headline)
-            .foregroundColor(textColor)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(backgroundColor)
-            .cornerRadius(12)
-        }
-    }
-}
 
 struct RouteDetailRow: View {
     var label: String
@@ -315,28 +289,29 @@ struct RouteDetailRow: View {
                 .fontWeight(.bold)
                 .foregroundColor(.gray)
             
-            Text(value)
-                .font(.subheadline)
-                .foregroundColor(.black)
+            let parts = value.split(separator: ",", maxSplits: 1).map(String.init)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                // ✅ Place name (bold)
+                Text(parts.first ?? "")
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.black)
+                
+                // ✅ Remaining address (lighter)
+                if parts.count > 1 {
+                    Text(parts[1])
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
         }
     }
 }
 
 // MARK: - Navigation Destination Placeholders
 
-struct TripDetailView: View {
-    var body: some View {
-        VStack {
-            Text("Trip Real-Time Logistics")
-                .font(.title)
-                .fontWeight(.bold)
-            Text("Details loaded here...")
-                .foregroundColor(.secondary)
-        }
-        .navigationTitle("Trip Detail")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
+// TripDetailView is implemented in its own file
 
 // MARK: - Google Maps Wrapper
 
