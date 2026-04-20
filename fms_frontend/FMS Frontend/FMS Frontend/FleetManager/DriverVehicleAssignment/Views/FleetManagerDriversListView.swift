@@ -106,9 +106,6 @@ struct DriverRowView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(driver.name)
                         .font(.system(size: 15, weight: .bold))
-                    Text("ID: \(driver.id)")
-                        .font(.system(size: 11))
-                        .foregroundColor(.gray)
                 }
             }
             .frame(width: 250, alignment: .leading)
@@ -135,6 +132,7 @@ struct DriverRowView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
+            .frame(width: 96)
             .background(statusColor.opacity(0.1))
             .cornerRadius(12)
         }
