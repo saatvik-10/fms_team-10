@@ -151,6 +151,7 @@ struct DriverModalView: View {
         "LMV-NT",
         "LMV-TR",
         "LMV-GV",
+        "MCWG",
         "LPV",
         "MGV",
         "MPV",
@@ -159,6 +160,13 @@ struct DriverModalView: View {
         "HGMV",
         "HPMV",
         "HTV"
+    ]
+    
+    private static let ocrToFormClass: [String: String] = [
+        "LMV": "LMV-NT",
+        "MCWG": "MCWG",
+        "HMV": "HGV",
+        "LMVTR": "LMV-TR"
     ]
     
     @State private var fullName: String
@@ -222,8 +230,8 @@ struct DriverModalView: View {
                             VStack(alignment: .leading, spacing: 10) {
                                 ModalFormField(label: "License Number", text: $licenseNumber)
                                     .onChange(of: licenseNumber) { _, newValue in
-                                        if newValue.count != 16 && !newValue.isEmpty {
-                                            licenseError = "License number must be exactly 16 characters"
+                                        if newValue.count != 15 && !newValue.isEmpty {
+                                            licenseError = "License number must be exactly 15 characters"
                                         } else {
                                             licenseError = nil
                                         }
@@ -347,11 +355,19 @@ struct DriverModalView: View {
                 self.fullName = name
                 self.licenseNumber = id
                 self.expiryDate = date
-                // Split vehicles by comma or common separators if multiple detected
-                let detected = vehicles
-                    .components(separatedBy: CharacterSet(charactersIn: ",/&"))
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() }
-                    .filter { Self.vehicleClassOptions.contains($0) }
+                // Split vehicles by comma, slash, space, or newline if multiple detected
+                let separators = CharacterSet(charactersIn: ",/& \n\t")
+                var detected: [String] = []
+                let parts = vehicles.components(separatedBy: separators)
+                for part in parts {
+                    let trimmed = part.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+                    // Check if it's a direct match or needs mapping
+                    if Self.vehicleClassOptions.contains(trimmed) {
+                        if !detected.contains(trimmed) { detected.append(trimmed) }
+                    } else if let mapped = Self.ocrToFormClass[trimmed] {
+                        if !detected.contains(mapped) { detected.append(mapped) }
+                    }
+                }
                 self.vehicleClasses = detected.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : detected
             }
         }
