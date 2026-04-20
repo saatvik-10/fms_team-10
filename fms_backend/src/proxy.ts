@@ -1,6 +1,15 @@
 import type { Context, Next } from 'hono';
 import { jwtVerify } from './lib/jwt';
 
+export const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  MANAGER: 'MANAGER',
+  DRIVER: 'DRIVER',
+  MAINTENANCE: 'MAINTENANCE',
+} as const;
+
+export type AppRole = (typeof ROLES)[keyof typeof ROLES];
+
 export const proxyAuth = async (ctx: Context, next: Next) => {
   const authHeader = ctx.req.header('Authorization');
   const token = authHeader?.startsWith('Bearer ')
@@ -21,9 +30,9 @@ export const proxyAuth = async (ctx: Context, next: Next) => {
   }
 };
 
-export const requireRole = (...allowedRoles: string[]) => {
+export const requireRole = (...allowedRoles: AppRole[]) => {
   return async (ctx: Context, next: Next) => {
-    const role = ctx.get('role') as string;
+    const role = ctx.get('role') as AppRole | undefined;
 
     if (!role) {
       return ctx.json({ err: 'Unauthorized' }, 401);
