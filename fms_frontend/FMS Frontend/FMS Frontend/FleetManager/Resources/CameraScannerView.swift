@@ -23,9 +23,9 @@ struct CameraScannerView: UIViewControllerRepresentable {
                 // Return dummy data based on common patterns
                 self.parent.didFinishScanning(
                     "Vikram Singh Rathore",
-                    "DL-992834-TX",
+                    "DL-992834-TX-2024", // 16 chars approx for simulation
                     "12 / 24 / 2028",
-                    "CLASS A, HAZMAT"
+                    "Tata Prima 4028.S, BharatBenz 3523R"
                 )
             }
         }

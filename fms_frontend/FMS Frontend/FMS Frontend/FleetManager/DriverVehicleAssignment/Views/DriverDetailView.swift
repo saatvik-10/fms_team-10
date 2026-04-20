@@ -1,5 +1,4 @@
 import SwiftUI
-import MapKit
 
 struct DriverDetailView: View {
     let driver: Driver
@@ -7,21 +6,22 @@ struct DriverDetailView: View {
     @EnvironmentObject var dataManager: FleetDataManager
     @State private var showingEditModal = false
     @State private var showingDeleteAlert = false
+    private let infoCardHeight: CGFloat = 180
     
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 20) {
+            HStack(spacing: 16) {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(AppTheme.primary)
                 }
-                
+
                 Text(driver.name)
-                    .font(.system(size: 20, weight: .bold))
-                
+                    .font(.system(size: 20, weight: .semibold))
+
                 Spacer()
-                
+
                 Menu {
                     Button(action: { showingEditModal = true }) {
                         Label("Edit", systemImage: "pencil")
@@ -33,142 +33,112 @@ struct DriverDetailView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.gray)
                         .padding(10)
                         .background(Color.gray.opacity(0.1))
                         .clipShape(Circle())
                 }
             }
-            .padding(.horizontal, 40)
-            .padding(.vertical, 25)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
             .background(Color.white)
-            
+
             ScrollView {
-                VStack(spacing: 25) {
-                    
-                    // MARK: - Profile Section
-                    HStack(spacing: 30) {
-                        // Profile Image
+                VStack(spacing: 16) {
+                    HStack(spacing: 16) {
                         ZStack(alignment: .bottomTrailing) {
                             Circle()
-                                .fill(Color.gray.opacity(0.1))
-                                .frame(width: 120, height: 120)
+                                .fill(Color.gray.opacity(0.12))
+                                .frame(width: 88, height: 88)
                                 .overlay(
                                     Image(systemName: "person.fill")
-                                        .font(.system(size: 50))
+                                        .font(.system(size: 34))
                                         .foregroundColor(.gray)
                                 )
-                            
-                            Circle()
-                                .fill(AppTheme.activeGreen)
-                                .frame(width: 25, height: 25)
-                                .overlay(Circle().stroke(Color.white, lineWidth: 4))
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(driver.name)
-                                .font(.system(size: 38, weight: .black))
-                            
-                            Text(driver.title.uppercased())
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.gray)
-                            
 
+                            Circle()
+                                .fill(statusColor)
+                                .frame(width: 18, height: 18)
+                                .overlay(Circle().stroke(Color.white, lineWidth: 3))
                         }
-                        
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(driver.name)
+                                .font(.system(size: 26, weight: .bold))
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(statusColor)
+                                    .frame(width: 6, height: 6)
+                                Text(driver.status.rawValue)
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(statusColor)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .frame(width: 96, alignment: .center)
+                            .background(statusColor.opacity(0.1))
+                            .cornerRadius(12)
+                        }
+
                         Spacer()
-                        
-                        HStack(spacing: 40) {
-                            DetailHeaderStat(label: "STATUS", value: driver.status.rawValue, color: AppTheme.activeGreen)
-                        }
                     }
-                    .padding(30)
-                    .frame(maxWidth: .infinity)
+                    .padding(20)
                     .background(Color.white)
-                    .cornerRadius(16)
-                    
-                    // MARK: - Stats Section
-                    HStack(spacing: 25) {
+                    .cornerRadius(14)
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         MiniStatCard(label: "LICENSE NO.", value: driver.licenseNum)
                         MiniStatCard(label: "EXPIRY DATE", value: driver.licenseExp)
                         MiniStatCard(label: "TOTAL TRIPS", value: "\(driver.totalTrips)")
-                        MiniStatCard(label: "TOTAL HOURS", value: "\(driver.totalHours)")
+                        MiniStatCard(label: "VEHICLE CLASS", value: driver.vehicleClasses.isEmpty ? "N/A" : driver.vehicleClasses.joined(separator: ", "))
                     }
-                    .frame(height: 120) // Consistent height for all cards
-                    
-                    // MARK: - Current Assignment & Activity Log
-                    HStack(spacing: 25) {
-                        // Left: Map Card
-                        VStack(alignment: .leading, spacing: 15) {
-                            HStack {
-                                Text("CURRENT ASSIGNMENT")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.gray)
-                                Spacer()
-                                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                    .foregroundColor(.gray)
-                                    .font(.system(size: 12))
-                            }
-                            
-                            Text("Vehicle ID: \(driver.currentVehicleID ?? "N/A")")
-                                .font(.system(size: 16, weight: .bold))
-                            
-                            // Native Map Component
-                            MapComponentView()
-                                .frame(height: 250)
-                                .cornerRadius(12)
-                            
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("ACTIVE ROUTE")
-                                        .font(.system(size: 8, weight: .bold))
-                                        .foregroundColor(.gray)
-                                    Text(driver.activeRoute ?? "Idle")
-                                        .font(.system(size: 12, weight: .bold))
-                                }
-                                Spacer()
-                                VStack(alignment: .trailing, spacing: 4) {
-                                    Text("ETA")
-                                        .font(.system(size: 8, weight: .bold))
-                                        .foregroundColor(.gray)
-                                    Text(driver.eta ?? "--")
-                                        .font(.system(size: 12, weight: .bold))
-                                }
-                            }
-                            .padding()
-                            .background(Color.gray.opacity(0.05))
-                            .cornerRadius(8)
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("CURRENT ASSIGNMENT")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.gray)
+
+                        HStack {
+                            DetailHeaderStat(label: "VEHICLE", value: driver.currentVehicleID ?? "N/A")
+                            Spacer()
+                            DetailHeaderStat(label: "ETA", value: driver.eta ?? "--")
                         }
-                        .padding(25)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                        .background(Color.white)
-                        .cornerRadius(16)
-                        
-                        // Right: Activity Log
-                        VStack(alignment: .leading, spacing: 20) {
-                            HStack {
-                                Text("RECENT ACTIVITY LOG")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            VStack(spacing: 20) {
-                                ForEach(driver.activityLog) { event in
-                                    ActivityRow(event: event)
+
+                        DetailHeaderStat(label: "ACTIVE ROUTE", value: driver.activeRoute ?? "Idle")
+                    }
+                    .padding(20)
+                    .frame(maxWidth: .infinity, minHeight: infoCardHeight, maxHeight: infoCardHeight, alignment: .topLeading)
+                    .background(Color.white)
+                    .cornerRadius(14)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("RECENT ACTIVITY")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.gray)
+
+                        if driver.activityLog.isEmpty {
+                            Text("No recent activity")
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                                .padding(.vertical, 8)
+                        } else {
+                            ScrollView {
+                                VStack(spacing: 14) {
+                                    ForEach(driver.activityLog) { event in
+                                        ActivityRow(event: event)
+                                    }
                                 }
                             }
                         }
-                        .padding(25)
-                        .frame(width: 400)
-                        .frame(maxHeight: .infinity, alignment: .topLeading)
-                        .background(Color.white)
-                        .cornerRadius(16)
                     }
-                    
+                    .padding(20)
+                    .frame(maxWidth: .infinity, minHeight: infoCardHeight, maxHeight: infoCardHeight, alignment: .topLeading)
+                    .background(Color.white)
+                    .cornerRadius(14)
                 }
-                .padding(30)
-                .padding(.bottom, 50)
+                .padding(16)
+                .padding(.bottom, 24)
             }
             .background(AppTheme.background)
         }
@@ -186,6 +156,14 @@ struct DriverDetailView: View {
             }
         } message: {
             Text("Are you sure you want to delete this driver?")
+        }
+    }
+    
+    var statusColor: Color {
+        switch driver.status {
+        case .active, .onDuty: return AppTheme.activeGreen
+        case .onTrip: return AppTheme.maintenanceOrange
+        case .offDuty: return AppTheme.criticalRed
         }
     }
 }
@@ -281,31 +259,4 @@ struct ActivityRow: View {
         default: return "circle.fill"
         }
     }
-}
-
-// MARK: - Native Map Simulation
-struct MapComponentView: View {
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
-        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-    )
-    
-    var body: some View {
-        Map(initialPosition: .region(region)) {
-            Annotation("", coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)) {
-                Image(systemName: "truck.box.fill")
-                    .padding(8)
-                    .background(AppTheme.primary)
-                    .foregroundColor(.white)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-            }
-        }
-        .disabled(true) // Static look as per Image 3
-    }
-}
-
-struct MapPoint: Identifiable {
-    let id = UUID()
-    let coordinate: CLLocationCoordinate2D
 }
