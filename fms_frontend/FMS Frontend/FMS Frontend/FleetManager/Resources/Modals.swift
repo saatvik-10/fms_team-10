@@ -146,19 +146,35 @@ struct DriverModalView: View {
     @EnvironmentObject var dataManager: FleetDataManager
     @Environment(\.dismiss) var dismiss
     let driverToEdit: Driver?
+
+    private static let vehicleClassOptions: [String] = [
+        "LMV-NT",
+        "LMV-TR",
+        "LMV-GV",
+        "LPV",
+        "MGV",
+        "MPV",
+        "HGV",
+        "HPV",
+        "HGMV",
+        "HPMV",
+        "HTV"
+    ]
     
     @State private var fullName: String
     @State private var licenseNumber: String
     @State private var expiryDate: String
-    @State private var vehicleClasses: String
+    @State private var vehicleClasses: [String] = [Self.vehicleClassOptions.first ?? "LMV-NT"] // Support multiple classes
     @State private var showingScanner = false
+    @State private var licenseError: String? = nil
 
     init(driverToEdit: Driver? = nil) {
         self.driverToEdit = driverToEdit
+        let validExistingClasses = (driverToEdit?.vehicleClasses ?? []).filter { Self.vehicleClassOptions.contains($0) }
         _fullName = State(initialValue: driverToEdit?.name ?? "")
         _licenseNumber = State(initialValue: driverToEdit?.licenseNum ?? "")
         _expiryDate = State(initialValue: driverToEdit?.licenseExp ?? "")
-        _vehicleClasses = State(initialValue: "")
+        _vehicleClasses = State(initialValue: validExistingClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : validExistingClasses)
     }
 
     
@@ -202,12 +218,79 @@ struct DriverModalView: View {
                         
                         HStack(spacing: 20) {
                             ModalFormField(label: "Full Name", text: $fullName)
-                            ModalFormField(label: "License Number", text: $licenseNumber)
+                            
+                            VStack(alignment: .leading, spacing: 10) {
+                                ModalFormField(label: "License Number", text: $licenseNumber)
+                                    .onChange(of: licenseNumber) { _, newValue in
+                                        if newValue.count != 16 && !newValue.isEmpty {
+                                            licenseError = "License number must be exactly 16 characters"
+                                        } else {
+                                            licenseError = nil
+                                        }
+                                    }
+                                if let error = licenseError {
+                                    Text(error)
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.red)
+                                }
+                            }
                         }
                         
-                        HStack(spacing: 20) {
-                            ModalFormField(label: "Expiry Date", text: $expiryDate)
-                            ModalFormField(label: "Vehicle Classes", text: $vehicleClasses)
+                        ModalFormField(label: "Expiry Date", text: $expiryDate)
+                        
+                        VStack(alignment: .leading, spacing: 15) {
+                            HStack {
+                                Text("VEHICLE CLASSES")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                Button(action: { vehicleClasses.append(Self.vehicleClassOptions.first ?? "LMV-NT") }) {
+                                    HStack {
+                                        Image(systemName: "plus")
+                                        Text("Add Class")
+                                    }
+                                    .font(.system(size: 10, weight: .bold))
+                                }
+                            }
+                            
+                            ForEach(0..<vehicleClasses.count, id: \.self) { index in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 10) {
+                                        Text("CLASS \(index + 1)")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.gray)
+
+                                        Menu {
+                                            ForEach(Self.vehicleClassOptions, id: \.self) { vehicleClass in
+                                                Button(action: {
+                                                    vehicleClasses[index] = vehicleClass
+                                                }) {
+                                                    Text(vehicleClass)
+                                                }
+                                            }
+                                        } label: {
+                                            HStack {
+                                                Text(vehicleClasses[index])
+                                                    .font(.system(size: 15, weight: .medium))
+                                                    .foregroundColor(AppTheme.textPrimary)
+                                                Spacer()
+                                                Image(systemName: "chevron.up.chevron.down")
+                                                    .font(.system(size: 12, weight: .bold))
+                                                    .foregroundColor(.gray)
+                                            }
+                                            .padding()
+                                            .background(Color.gray.opacity(0.1))
+                                            .cornerRadius(10)
+                                        }
+                                    }
+                                    if vehicleClasses.count > 1 {
+                                        Button(action: { vehicleClasses.remove(at: index) }) {
+                                            Image(systemName: "trash")
+                                                .foregroundColor(.red)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -217,10 +300,17 @@ struct DriverModalView: View {
             // Footer Buttons
             HStack(spacing: 15) {
                 Button(action: { 
+                    let validVehicleClasses = vehicleClasses.filter { Self.vehicleClassOptions.contains($0) }
+                    let selectedVehicleClasses = validVehicleClasses.reduce(into: [String]()) { result, item in
+                        if !result.contains(item) {
+                            result.append(item)
+                        }
+                    }
+                    let finalVehicleClasses = selectedVehicleClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : selectedVehicleClasses
                     let newDriver = Driver(
-                        id: "NEW-\(Int.random(in: 1000...9999))",
+                        id: "KM-\(Int.random(in: 1000...9999))",
                         name: fullName,
-                        title: "Driver",
+                        title: "\(finalVehicleClasses.first ?? "LMV-NT") Certified Driver",
                         licenseNum: licenseNumber,
                         licenseExp: expiryDate,
                         status: .offDuty,
@@ -229,9 +319,10 @@ struct DriverModalView: View {
                         totalTrips: 0,
                         totalHours: 0,
                         activityLog: [],
-                        currentVehicleID: nil as String?,
-                        activeRoute: nil as String?,
-                        eta: nil as String?
+                        currentVehicleID: nil,
+                        vehicleClasses: finalVehicleClasses,
+                        activeRoute: nil,
+                        eta: nil
                     )
                     dataManager.addDriver(newDriver)
                     dismiss() 
@@ -252,11 +343,16 @@ struct DriverModalView: View {
         .padding(30)
         .background(Color.white)
         .sheet(isPresented: $showingScanner) {
-            CameraScannerView(isPresented: $showingScanner) { name, id, date, classes in
+            CameraScannerView(isPresented: $showingScanner) { name, id, date, vehicles in
                 self.fullName = name
                 self.licenseNumber = id
                 self.expiryDate = date
-                self.vehicleClasses = classes
+                // Split vehicles by comma or common separators if multiple detected
+                let detected = vehicles
+                    .components(separatedBy: CharacterSet(charactersIn: ",/&"))
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() }
+                    .filter { Self.vehicleClassOptions.contains($0) }
+                self.vehicleClasses = detected.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : detected
             }
         }
     }
