@@ -24,4 +24,18 @@ export class Vehicle {
 
     return c.json({ message: 'Vehicle created successfully', vehicle }, 201);
   }
+
+  async getVehicles(c: Context) {
+    const userId = c.get('userId') as string;
+
+    const vehicles = await prisma.vehicle.findMany({
+      where: {
+        createdById: userId,
+      },
+    });
+
+    return c.json({
+      vehicles,
+    });
+  }
 }
