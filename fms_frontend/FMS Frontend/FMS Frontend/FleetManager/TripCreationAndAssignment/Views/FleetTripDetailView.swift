@@ -92,82 +92,102 @@ struct FleetTripDetailView: View {
                         
                         // MARK: - Details Section
                         if let trip = vehicle.currentTrip {
-                            HStack(spacing: 15) {
-                                // Vehicle Card
-                                NavigationLink(destination: FleetManagerVehicleDetailView(vehicle: vehicle)) {
-                                    VStack(alignment: .leading, spacing: 10) {
+                            HStack(alignment: .top, spacing: 20) {
+                                // Vehicle Details Row-based Card
+                                VStack(alignment: .leading, spacing: 0) {
+                                    HStack {
+                                        Text("VEHICLE INFORMATION")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.gray)
+                                        Spacer()
+                                        Image(systemName: "truck.box.fill")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(AppColors.primary.opacity(0.5))
+                                    }
+                                    .padding(.bottom, 15)
+                                    
+                                    VStack(spacing: 0) {
+                                        FleetDetailItemRow(icon: "tag", label: "Name", value: "\(vehicle.make) \(vehicle.model)", iconColor: .blue)
+                                        Divider()
+                                        FleetDetailItemRow(icon: "number", label: "Plate", value: vehicle.plateNumber, iconColor: .orange)
+                                        Divider()
+                                        FleetDetailItemRow(icon: "doc.text", label: "Reg", value: vehicle.registrationNumber, iconColor: .purple)
+                                        Divider()
+                                        FleetDetailItemRow(icon: "car.side", label: "Year", value: vehicle.year, iconColor: .green)
+                                    }
+                                }
+                                .padding(20)
+                                .frame(maxWidth: .infinity, alignment: .topLeading)
+                                .background(Color.white)
+                                .cornerRadius(16)
+                                .modifier(AppColors.cardShadow())
+                                
+                                // Driver Details Row-based Card
+                                if let driver = vehicle.assignedDriver {
+                                    VStack(alignment: .leading, spacing: 0) {
                                         HStack {
-                                            Text("Vehicle")
-                                                .font(.system(size: 12, weight: .bold))
+                                            Text("DRIVER INFORMATION")
+                                                .font(.system(size: 10, weight: .bold))
                                                 .foregroundColor(.gray)
                                             Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .font(.system(size: 10))
-                                                .foregroundColor(.gray)
-                                        }
-                                        
-                                        Image(vehicle.imageName)
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(height: 40)
-                                        
-                                        Text(vehicle.id)
-                                            .font(.system(size: 16, weight: .bold))
-                                            .foregroundColor(AppColors.primary)
-                                    }
-                                    .padding()
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color.white)
-                                    .cornerRadius(12)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                // Driver Card
-                                if let driver = vehicle.assignedDriver {
-                                    NavigationLink(destination: DriverDetailView(driver: driver)) {
-                                        VStack(alignment: .leading, spacing: 10) {
-                                            HStack {
-                                                Text("Driver")
-                                                    .font(.system(size: 12, weight: .bold))
-                                                    .foregroundColor(.gray)
-                                                Spacer()
-                                                Image(systemName: "chevron.right")
+                                            
+                                            Button(action: { /* Message action */ }) {
+                                                Image(systemName: "message.fill")
                                                     .font(.system(size: 10))
-                                                    .foregroundColor(.gray)
+                                                    .foregroundColor(.white)
+                                                    .padding(5)
+                                                    .background(AppColors.primary)
+                                                    .clipShape(Circle())
                                             }
-                                            
-                                            Image(systemName: "person.crop.circle.fill")
-                                                .font(.system(size: 40))
-                                                .foregroundColor(AppColors.primary.opacity(0.2))
-                                            
-                                            Text(driver.name)
-                                                .font(.system(size: 16, weight: .bold))
-                                                .foregroundColor(AppColors.primary)
                                         }
-                                        .padding()
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(Color.white)
-                                        .cornerRadius(12)
+                                        .padding(.bottom, 15)
+                                        
+                                        VStack(spacing: 0) {
+                                            FleetDetailItemRow(icon: "person.fill", label: "Name", value: driver.name, iconColor: .blue)
+                                            Divider()
+                                            FleetDetailItemRow(icon: "card.fill", label: "License", value: driver.licenseNum, iconColor: .red)
+                                            Divider()
+                                            FleetDetailItemRow(icon: "phone.fill", label: "Contact", value: driver.phone, iconColor: .green)
+                                            Divider()
+                                            FleetDetailItemRow(icon: "star.fill", label: "Rating", value: String(format: "%.1f ★", driver.rating), iconColor: .yellow)
+                                        }
                                     }
-                                    .buttonStyle(PlainButtonStyle())
+                                    .padding(20)
+                                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                                    .background(Color.white)
+                                    .cornerRadius(16)
+                                    .modifier(AppColors.cardShadow())
                                 }
                             }
+                            .padding(.horizontal, 2) // Minor padding to avoid shadow clipping
                             
-                            // Route Details
-                            VStack(alignment: .leading, spacing: 15) {
-                                Text("Route Information")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(AppColors.primary)
+                            // Logistics Overview Section
+                            HStack(alignment: .top, spacing: 20) {
+                                // Route Summary Card (Ticket Style)
+                                LogisticsTicketCard(
+                                    title: "ROUTE SUMMARY",
+                                    icon: "truck.box.fill",
+                                    sourceLabel: "FROM",
+                                    sourceValue: trip.origin,
+                                    destLabel: "TO",
+                                    destValue: trip.destination,
+                                    footerLabel: "Trip Duration",
+                                    footerValue: trip.duration ?? "TBD"
+                                )
                                 
-                                VStack(spacing: 20) {
-                                    RoutePointView(title: "Source", location: trip.origin, time: "Start", image: "mappin.circle.fill", color: .green, isEditable: canEditSource, text: $source)
-                                    
-                                    RoutePointView(title: "Destination", location: trip.destination, time: trip.eta, image: "mappin.circle.fill", color: .red, isEditable: true, text: $destination)
-                                }
+                                // Load Information Card (Ticket Style)
+                                LogisticsTicketCard(
+                                    title: "LOAD INFORMATION",
+                                    icon: "shippingbox.fill",
+                                    sourceLabel: "PRODUCT",
+                                    sourceValue: trip.productType ?? "General",
+                                    destLabel: "NET WEIGHT",
+                                    destValue: trip.loadAmount ?? "TBD",
+                                    footerLabel: "Transit Category",
+                                    footerValue: (trip.productType ?? "GEN").prefix(3).uppercased()
+                                )
                             }
-                            .padding()
-                            .background(Color.white)
-                            .cornerRadius(12)
+                            .padding(.horizontal, 2)
                         }
                         
                         Spacer().frame(height: 50)
@@ -189,67 +209,143 @@ struct FleetTripDetailView: View {
         }
     }
     
-    private var canEditSource: Bool {
-        guard let trip = vehicle.currentTrip else { return false }
-        return trip.progress == 0 // Only editable if trip hasn't started
+}
+
+struct FleetDetailItemRow: View {
+    let icon: String
+    let label: String
+    let value: String
+    let iconColor: Color
+    
+    var body: some View {
+        HStack(spacing: 15) {
+            ZStack {
+                Circle()
+                    .fill(iconColor.opacity(0.1))
+                    .frame(width: 32, height: 32)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(iconColor)
+            }
+            
+            Text(label)
+                .font(.system(size: 14))
+                .foregroundColor(.gray)
+            
+            Spacer()
+            
+            Text(value)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(AppColors.primary)
+        }
+        .padding(.vertical, 12)
     }
 }
 
-struct RoutePointView: View {
+struct LogisticsTicketCard: View {
     let title: String
-    let location: String
-    let time: String
-    let image: String
-    let color: Color
-    let isEditable: Bool
-    @Binding var text: String
-    
-    @State private var isEditingLocal: Bool = false
+    let icon: String
+    let sourceLabel: String
+    let sourceValue: String
+    let destLabel: String
+    let destValue: String
+    let footerLabel: String
+    let footerValue: String
     
     var body: some View {
-        HStack(alignment: .top, spacing: 15) {
-            VStack {
-                Image(systemName: image)
-                    .foregroundColor(color)
-                    .font(.system(size: 20))
-                
-                if title == "Source" {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(width: 2, height: 40)
-                }
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text(title)
+                    .font(.system(size: 10, weight: .black))
+                    .tracking(1)
+                    .foregroundColor(.white.opacity(0.8))
+                Spacer()
+                Image(systemName: icon)
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.8))
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(AppColors.primary.opacity(0.9))
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title.uppercased())
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(.gray)
-                
-                if isEditable && isEditingLocal {
-                    TextField("Enter location", text: $text, onCommit: { isEditingLocal = false })
-                        .font(.system(size: 16, weight: .semibold))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                } else {
-                    HStack {
-                        Text(text.isEmpty ? location : text)
-                            .font(.system(size: 16, weight: .semibold))
+            // Ticket Body
+            VStack(spacing: 15) {
+                HStack(alignment: .center) {
+                    // Left Side
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(sourceLabel.uppercased())
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.gray)
+                        Text(sourceValue)
+                            .font(.system(size: 20, weight: .black))
+                            .foregroundColor(AppColors.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                    }
+                    
+                    Spacer()
+                    
+                    // Center Connector
+                    VStack(spacing: 0) {
+                        Image(systemName: icon)
+                            .font(.system(size: 14))
                             .foregroundColor(AppColors.primary)
                         
-                        if isEditable {
-                            Button(action: { isEditingLocal = true }) {
-                                Image(systemName: "pencil.circle.fill")
-                                    .foregroundColor(.blue)
-                            }
+                        HStack(spacing: 0) {
+                            Circle()
+                                .fill(AppColors.primary)
+                                .frame(width: 4, height: 4)
+                            Rectangle()
+                                .fill(AppColors.primary.opacity(0.2))
+                                .frame(height: 1)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 8, weight: .black))
+                                .foregroundColor(AppColors.primary)
                         }
+                        .frame(width: sourceValue.count > 10 ? 40 : 60)
+                        .padding(.top, 4)
+                    }
+                    
+                    Spacer()
+                    
+                    // Right Side
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(destLabel.uppercased())
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.gray)
+                        Text(destValue)
+                            .font(.system(size: 20, weight: .black))
+                            .foregroundColor(AppColors.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
                     }
                 }
                 
-                Text(time)
-                    .font(.system(size: 12))
+                Divider()
+                
+                // Footer
+                HStack {
+                    HStack(spacing: 6) {
+                        Image(systemName: title == "ROUTE SUMMARY" ? "clock.fill" : "scalemass.fill")
+                            .font(.system(size: 12))
+                        Text(footerLabel)
+                            .font(.system(size: 12))
+                    }
                     .foregroundColor(.gray)
+                    
+                    Spacer()
+                    
+                    Text(footerValue)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(AppColors.primary)
+                }
             }
-            
-            Spacer()
+            .padding(20)
+            .background(Color.white)
         }
+        .cornerRadius(16)
+        .modifier(AppColors.cardShadow())
     }
 }

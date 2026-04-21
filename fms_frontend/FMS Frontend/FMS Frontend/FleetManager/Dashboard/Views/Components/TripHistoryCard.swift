@@ -42,23 +42,35 @@ struct TripHistoryRow: View {
     let trip: VehicleTrip
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("\(trip.origin) → \(trip.destination)")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(AppColors.primary)
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(trip.origin) → \(trip.destination)")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(AppColors.primary)
+                
+                Text(trip.date ?? "Recently")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .italic()
+            }
             
-            Text(trip.date ?? "Recently")
-                .font(.system(size: 13))
-                .foregroundColor(.gray)
+            Spacer()
+            
+            // Realigned Date/Time to the right as requested
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(trip.date ?? "Recently")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppColors.primary.opacity(0.8))
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 4)
     }
 }
 
 #Preview {
     TripHistoryCard(trips: [
-        VehicleTrip(origin: "DEL", destination: "JAI", progress: 1.0, eta: "Completed", date: "Yesterday", distance: "250 KM", duration: "4h", costEstimate: "₹8,500", startTime: nil, status: .completed),
-        VehicleTrip(origin: "MUM", destination: "PUN", progress: 1.0, eta: "Completed", date: "2 days ago", distance: "150 KM", duration: "3h", costEstimate: "₹4,200", startTime: nil, status: .completed)
+        VehicleTrip(origin: "DEL", destination: "JAI", progress: 1.0, eta: "Completed", date: "Yesterday", distance: "250 KM", duration: "4h", costEstimate: "₹8,500", startTime: nil, status: .completed, productType: "Electronic Goods", loadAmount: "2.5 Tons"),
+        VehicleTrip(origin: "MUM", destination: "PUN", progress: 1.0, eta: "Completed", date: "2 days ago", distance: "150 KM", duration: "3h", costEstimate: "₹4,200", startTime: nil, status: .completed, productType: "Auto Parts", loadAmount: "5.0 Tons")
     ])
     .padding()
     .background(AppColors.secondaryBackground)

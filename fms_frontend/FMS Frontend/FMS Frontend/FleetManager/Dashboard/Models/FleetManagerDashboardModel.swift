@@ -93,6 +93,18 @@ struct EmissionData: Identifiable {
     let isCurrent: Bool
 }
 
+struct MileageData: Identifiable {
+    let id = UUID()
+    let day: String
+    let value: Double
+}
+
+struct FuelTrendData: Identifiable {
+    let id = UUID()
+    let month: String
+    let value: Double
+}
+
 // MARK: - Management (New)
 
 struct Driver: Identifiable {
@@ -113,6 +125,7 @@ struct Driver: Identifiable {
     let vehicleClasses: [String] // Format like "LMV-NT", "HGV"
     let activeRoute: String?
     let eta: String?
+    let phone: String // New field
     
     var identifier: UUID { UUID() }
 }
@@ -152,6 +165,9 @@ struct Vehicle: Identifiable {
     let history: [VehicleTrip]
     let reports: [VehicleReport]
     let assessmentReason: String? // Direct link to dashboard assessment logic
+    
+    let plateNumber: String // New field
+    let registrationNumber: String // New field
 }
 
 enum FleetTripStatus: String, Codable {
@@ -172,6 +188,10 @@ struct VehicleTrip: Identifiable {
     let costEstimate: String?
     let startTime: Date?
     var status: FleetTripStatus
+    
+    // Cargo Details (New)
+    let productType: String?
+    let loadAmount: String?
 }
 
 struct VehicleMaintenance {

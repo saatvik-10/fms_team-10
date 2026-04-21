@@ -230,21 +230,36 @@ struct MaintenancePriorityDarkCard: View {
 }
 
 // MARK: - CO2 Emissions Chart
-import Charts
-
 struct FleetOpsEmissionsChart: View {
     let data: [EmissionData]
-    var showNavigation: Bool = true
+    @State private var selectedTimeframe = "Weekly"
+    let timeframes = ["Weekly", "Monthly", "Yearly"]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 30) {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                Text("CO2 Emissions")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(AppColors.primary)
+                
+                Spacer()
+                
+                Picker("Timeframe", selection: $selectedTimeframe) {
+                    ForEach(timeframes, id: \.self) { timeframe in
+                        Text(timeframe).tag(timeframe)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 200)
+            }
+            
             Chart {
                 ForEach(data) { item in
                     BarMark(
                         x: .value("Day", item.day),
                         y: .value("Emissions", item.value)
                     )
-                    .foregroundStyle(item.isCurrent ? AppColors.primary : AppColors.secondary.opacity(0.2))
+                    .foregroundStyle(item.isCurrent ? AppColors.primary : AppColors.primary.opacity(0.1))
                     .cornerRadius(4)
                 }
             }
@@ -258,7 +273,109 @@ struct FleetOpsEmissionsChart: View {
             .chartYAxis(.hidden)
             .frame(height: 150)
         }
-        .padding(30)
+        .padding(24)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppColors.cardShadow())
+    }
+}
+
+// MARK: - Fleet Mileage Chart (Horizontal)
+struct FleetMileageChart: View {
+    let data: [MileageData]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text("Fleet Mileage (last week)")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(AppColors.primary)
+            
+            Chart {
+                ForEach(data) { item in
+                    BarMark(
+                        x: .value("Mileage", item.value),
+                        y: .value("Day", item.day)
+                    )
+                    .foregroundStyle(AppColors.statusInTransit)
+                    .cornerRadius(4)
+                    .annotation(position: .trailing) {
+                        Text("\(Int(item.value))")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .automatic) { _ in
+                    AxisValueLabel()
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.gray)
+                }
+            }
+            .chartYAxis {
+                AxisMarks(values: .automatic) { _ in
+                    AxisValueLabel()
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color.gray)
+                }
+            }
+            .frame(height: 180)
+        }
+        .padding(24)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppColors.cardShadow())
+    }
+}
+
+// MARK: - Fuel Trend Chart (Vertical + Line)
+struct FuelTrendChart: View {
+    let data: [FuelTrendData]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text("Last 3 Months Fuel Trend")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(AppColors.primary)
+            
+            Chart {
+                ForEach(data) { item in
+                    BarMark(
+                        x: .value("Month", item.month),
+                        y: .value("Fuel Burned", item.value)
+                    )
+                    .foregroundStyle(AppColors.activeGreen)
+                    .cornerRadius(4)
+                }
+                
+                // Trend Line
+                ForEach(data) { item in
+                    LineMark(
+                        x: .value("Month", item.month),
+                        y: .value("Fuel Burned", item.value - 100) // Simulated trend slightly below bars
+                    )
+                    .foregroundStyle(Color.orange)
+                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4]))
+                    .interpolationMethod(.linear)
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .automatic) { _ in
+                    AxisValueLabel()
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color.gray)
+                }
+            }
+            .chartYAxis {
+                AxisMarks(values: .automatic) { _ in
+                    AxisValueLabel()
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.gray)
+                }
+            }
+            .frame(height: 180)
+        }
+        .padding(24)
         .background(Color.white)
         .cornerRadius(16)
         .modifier(AppColors.cardShadow())

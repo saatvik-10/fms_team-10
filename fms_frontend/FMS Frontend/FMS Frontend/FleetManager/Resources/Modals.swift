@@ -164,6 +164,7 @@ struct DriverModalView: View {
     @State private var fullName: String
     @State private var licenseNumber: String
     @State private var expiryDate: String
+    @State private var phone: String
     @State private var vehicleClasses: [String] = [Self.vehicleClassOptions.first ?? "LMV-NT"] // Support multiple classes
     @State private var showingScanner = false
     @State private var licenseError: String? = nil
@@ -174,6 +175,7 @@ struct DriverModalView: View {
         _fullName = State(initialValue: driverToEdit?.name ?? "")
         _licenseNumber = State(initialValue: driverToEdit?.licenseNum ?? "")
         _expiryDate = State(initialValue: driverToEdit?.licenseExp ?? "")
+        _phone = State(initialValue: driverToEdit?.phone ?? "+91 ")
         _vehicleClasses = State(initialValue: validExistingClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : validExistingClasses)
     }
 
@@ -218,21 +220,22 @@ struct DriverModalView: View {
                         
                         HStack(spacing: 20) {
                             ModalFormField(label: "Full Name", text: $fullName)
-                            
-                            VStack(alignment: .leading, spacing: 10) {
-                                ModalFormField(label: "License Number", text: $licenseNumber)
-                                    .onChange(of: licenseNumber) { _, newValue in
-                                        if newValue.count != 16 && !newValue.isEmpty {
-                                            licenseError = "License number must be exactly 16 characters"
-                                        } else {
-                                            licenseError = nil
-                                        }
+                            ModalFormField(label: "Phone Number", text: $phone)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 10) {
+                            ModalFormField(label: "License Number", text: $licenseNumber)
+                                .onChange(of: licenseNumber) { _, newValue in
+                                    if newValue.count != 16 && !newValue.isEmpty {
+                                        licenseError = "License number must be exactly 16 characters"
+                                    } else {
+                                        licenseError = nil
                                     }
-                                if let error = licenseError {
-                                    Text(error)
-                                        .font(.system(size: 10))
-                                        .foregroundColor(.red)
                                 }
+                            if let error = licenseError {
+                                Text(error)
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.red)
                             }
                         }
                         
@@ -322,7 +325,8 @@ struct DriverModalView: View {
                         currentVehicleID: nil,
                         vehicleClasses: finalVehicleClasses,
                         activeRoute: nil,
-                        eta: nil
+                        eta: nil,
+                        phone: phone
                     )
                     dataManager.addDriver(newDriver)
                     dismiss() 
@@ -367,6 +371,7 @@ struct AddVehicleModalView: View {
     @State private var make: String
     @State private var model: String
     @State private var regNumber: String
+    @State private var plateNumber: String
     @State private var vin: String
     @State private var odometer: String
     @State private var showingScanner = false
@@ -378,7 +383,8 @@ struct AddVehicleModalView: View {
         self.vehicleToEdit = vehicleToEdit
         _make = State(initialValue: vehicleToEdit?.make ?? "")
         _model = State(initialValue: vehicleToEdit?.model ?? "")
-        _regNumber = State(initialValue: vehicleToEdit?.id ?? "")
+        _regNumber = State(initialValue: vehicleToEdit?.registrationNumber ?? "")
+        _plateNumber = State(initialValue: vehicleToEdit?.id ?? "")
         _vin = State(initialValue: "4G2BM59XYZ1234567")
         _odometer = State(initialValue: vehicleToEdit?.odometer ?? "0")
     }
@@ -428,8 +434,9 @@ struct AddVehicleModalView: View {
                         
                         HStack(spacing: 20) {
                             ModalFormField(label: "Registration Number", text: $regNumber)
-                            ModalFormField(label: "Chassis Number / VIN", text: $vin)
+                            ModalFormField(label: "License Plate", text: $plateNumber)
                         }
+                        ModalFormField(label: "Chassis Number / VIN", text: $vin)
                         
                         ModalFormField(label: "Total Odometer Run (MI)", text: $odometer)
                     }
@@ -456,7 +463,9 @@ struct AddVehicleModalView: View {
                         maintenance: VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
                         history: [],
                         reports: [],
-                        assessmentReason: nil as String?
+                        assessmentReason: nil as String?,
+                        plateNumber: plateNumber,
+                        registrationNumber: regNumber
                     )
                     dataManager.addVehicle(newVehicle)
                     dismiss() 
@@ -494,9 +503,14 @@ struct OrderModalView: View {
     @State private var fromLocation = ""
     @State private var toLocation = ""
     @State private var selectedVehicleID = ""
+    @State private var productName = ""
+    @State private var loadAmount = ""
+    @State private var loadUnit = "Tons"
     @State private var ownerName = ""
     @State private var phoneNum = ""
     @State private var showingScanner = false
+    
+    private let unitOptions = ["Tons", "KG", "Liters", "Units", "Pallets"]
 
     // Dynamic estimation logic
     private var estimatedDistance: Int {
@@ -538,6 +552,42 @@ struct OrderModalView: View {
                         HStack(spacing: 20) {
                             ModalSearchField(label: "FROM", text: $fromLocation)
                             ModalSearchField(label: "TO", text: $toLocation)
+                        }
+                        
+                        HStack(spacing: 20) {
+                            ModalFormField(label: "PRODUCT TYPE", text: $productName)
+                            
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("LOAD AMOUNT")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.gray)
+                                
+                                HStack(spacing: 0) {
+                                    TextField("0.0", text: $loadAmount)
+                                        .keyboardType(.decimalPad)
+                                        .padding(12)
+                                        .background(AppColors.secondaryBackground)
+                                        .cornerRadius(8)
+                                    
+                                    Menu {
+                                        ForEach(unitOptions, id: \.self) { unit in
+                                            Button(unit) { loadUnit = unit }
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text(loadUnit)
+                                                .font(.system(size: 12, weight: .bold))
+                                            Image(systemName: "chevron.down")
+                                                .font(.system(size: 10))
+                                        }
+                                        .foregroundColor(AppColors.primary)
+                                        .padding(.horizontal, 12)
+                                        .frame(height: 44)
+                                        .background(Color.white)
+                                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.2)))
+                                    }
+                                }
+                            }
                         }
                     }
                     
@@ -642,7 +692,20 @@ struct OrderModalView: View {
                     // Bottom Button
                     VStack(spacing: 15) {
                         Button(action: { 
-                            let trip = VehicleTrip(origin: fromLocation, destination: toLocation, progress: 0.0, eta: "TBD", date: "Now", distance: "0 mi", duration: "0 hrs", costEstimate: String(format: "₹%.2f", estimatedCost), startTime: Date(), status: .scheduled)
+                            let trip = VehicleTrip(
+                                origin: fromLocation,
+                                destination: toLocation,
+                                progress: 0.0,
+                                eta: "TBD",
+                                date: "Now",
+                                distance: "0 mi",
+                                duration: "0 hrs",
+                                costEstimate: String(format: "₹%.2f", estimatedCost),
+                                startTime: Date(),
+                                status: .scheduled,
+                                productType: productName,
+                                loadAmount: "\(loadAmount) \(loadUnit)"
+                            )
                             dataManager.addOrder(trip: trip, vehicleID: selectedVehicleID)
                             dismiss() 
                         }) {

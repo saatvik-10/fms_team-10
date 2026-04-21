@@ -9,6 +9,11 @@ struct FleetCreateTripModal: View {
     @State private var selectedVehicleID: String = ""
     @State private var selectedDriverID: String = ""
     @State private var scheduledDate: Date = Date()
+    @State private var productName: String = ""
+    @State private var loadAmount: String = ""
+    @State private var loadUnit: String = "Tons"
+    
+    private let unitOptions = ["Tons", "KG", "Liters", "Units", "Pallets"]
     
     @State private var estimatedCost: Double = 0.0
     @State private var estimatedDistance: Double = 0.0
@@ -28,6 +33,25 @@ struct FleetCreateTripModal: View {
                     
                     ModalSearchField(label: "Destination Location", text: $destination)
                         .onChange(of: destination) { _, _ in calculateCost() }
+                }
+                
+                Section(header: Text("Cargo Details")) {
+                    TextField("Product Type (e.g. Steel Coils)", text: $productName)
+                    
+                    HStack {
+                        TextField("Amount", text: $loadAmount)
+                            .keyboardType(.decimalPad)
+                        
+                        Divider()
+                            .frame(height: 20)
+                        
+                        Picker("Unit", selection: $loadUnit) {
+                            ForEach(unitOptions, id: \.self) { unit in
+                                Text(unit).tag(unit)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
                 }
                 
                 Section(header: Text("Assignment")) {
@@ -132,7 +156,9 @@ struct FleetCreateTripModal: View {
             duration: "\(Int(estimatedDuration)) HRS",
             costEstimate: "₹\(String(format: "%.2f", estimatedCost))",
             startTime: Date(),
-            status: .scheduled
+            status: .scheduled,
+            productType: productName,
+            loadAmount: "\(loadAmount) \(loadUnit)"
         )
         
         if let vIndex = dataManager.vehicles.firstIndex(where: { $0.id == selectedVehicleID }) {

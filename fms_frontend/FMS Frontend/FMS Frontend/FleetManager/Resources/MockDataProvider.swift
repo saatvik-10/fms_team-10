@@ -61,10 +61,26 @@ struct MockDataProvider {
         EmissionData(day: "SAT", value: 8.0, isCurrent: false),
         EmissionData(day: "SUN", value: 9.5, isCurrent: false)
     ]
+    
+    static let mileageData: [MileageData] = [
+        MileageData(day: "Sun", value: 881),
+        MileageData(day: "Mon", value: 786),
+        MileageData(day: "Tue", value: 824),
+        MileageData(day: "Wed", value: 1031),
+        MileageData(day: "Thu", value: 549),
+        MileageData(day: "Fri", value: 629),
+        MileageData(day: "Sat", value: 1145)
+    ]
+    
+    static let fuelTrendData: [FuelTrendData] = [
+        FuelTrendData(month: "March 2021", value: 1540),
+        FuelTrendData(month: "April 2021", value: 1100),
+        FuelTrendData(month: "May 2021", value: 870)
+    ]
 
     static let drivers: [Driver] = [
-        Driver(id: "KM-1029", name: "Rahul Sharma", title: "LMV-NT Certified Driver", licenseNum: "DL-99203381", licenseExp: "Oct 2026", status: .active, rating: 4.92, efficiency: "98.4%", totalTrips: 124, totalHours: 8420, activityLog: [], currentVehicleID: "TRK-9042", vehicleClasses: ["LMV-NT"], activeRoute: "IH-35 North bound", eta: "14:20"),
-        Driver(id: "KM-1044", name: "Priya Patel", title: "HGV Specialist", licenseNum: "DL-44810293", licenseExp: "Mar 2025", status: .onTrip, rating: 4.88, efficiency: "95.2%", totalTrips: 89, totalHours: 6200, activityLog: [], currentVehicleID: "EV-9910", vehicleClasses: ["LMV-GV", "HGV"], activeRoute: "Route B-12", eta: "1h 12m")
+        Driver(id: "KM-1029", name: "Rahul Sharma", title: "LMV-NT Certified Driver", licenseNum: "DL-99203381", licenseExp: "Oct 2026", status: .active, rating: 4.92, efficiency: "98.4%", totalTrips: 124, totalHours: 8420, activityLog: [], currentVehicleID: "TRK-9042", vehicleClasses: ["LMV-NT"], activeRoute: "IH-35 North bound", eta: "14:20", phone: "+91 98765 43210"),
+        Driver(id: "KM-1044", name: "Priya Patel", title: "HGV Specialist", licenseNum: "DL-44810293", licenseExp: "Mar 2025", status: .onTrip, rating: 4.88, efficiency: "95.2%", totalTrips: 89, totalHours: 6200, activityLog: [], currentVehicleID: "EV-9910", vehicleClasses: ["LMV-GV", "HGV"], activeRoute: "Route B-12", eta: "1h 12m", phone: "+91 91234 56789")
     ]
     
     static let vehicles: [Vehicle] = [
@@ -79,15 +95,17 @@ struct MockDataProvider {
             color: "Silver Birch Metallic",
             odometer: "42,892",
             operationalStatus: "OPERATIONAL",
-            currentTrip: VehicleTrip(origin: "DEL", destination: "JAI", progress: 0.72, eta: "4:15 PM", date: "Today", distance: "250 KM", duration: "4 HRS", costEstimate: "₹8500.00", startTime: Date(), status: .inTransit),
+            currentTrip: VehicleTrip(origin: "DEL", destination: "JAI", progress: 0.72, eta: "4:15 PM", date: "Today", distance: "250 KM", duration: "4 HRS", costEstimate: "₹8500.00", startTime: Date(), status: .inTransit, productType: "Steel Coils", loadAmount: "25 Tons"),
             assignedDriver: drivers[0],
             maintenance: VehicleMaintenance(nextService: "Oct 24, 2023", inspectionStatus: "Completed", alerts: []),
             history: [
-                VehicleTrip(origin: "MUM", destination: "PUN", progress: 1.0, eta: "Completed", date: "Apr 18, 2026", distance: "150 KM", duration: "3h", costEstimate: "₹4,200", startTime: nil, status: .completed),
-                VehicleTrip(origin: "AMD", destination: "SUR", progress: 1.0, eta: "Completed", date: "Apr 16, 2026", distance: "280 KM", duration: "5h", costEstimate: "₹7,800", startTime: nil, status: .completed)
+                VehicleTrip(origin: "MUM", destination: "PUN", progress: 1.0, eta: "Completed", date: "Apr 18, 2026", distance: "150 KM", duration: "3h", costEstimate: "₹4,200", startTime: nil, status: .completed, productType: "Pharma Supplies", loadAmount: "8 Tons"),
+                VehicleTrip(origin: "AMD", destination: "SUR", progress: 1.0, eta: "Completed", date: "Apr 16, 2026", distance: "280 KM", duration: "5h", costEstimate: "₹7,800", startTime: nil, status: .completed, productType: "Industrial Valves", loadAmount: "12 Tons")
             ],
             reports: [],
-            assessmentReason: "Route Optimized: Fuel Savings +12%"
+            assessmentReason: "Route Optimized: Fuel Savings +12%",
+            plateNumber: "DL 1C AB 9042",
+            registrationNumber: "REG-IND-442033"
         ),
         Vehicle(
             id: "EV-9910",
@@ -104,10 +122,12 @@ struct MockDataProvider {
             assignedDriver: drivers[1],
             maintenance: VehicleMaintenance(nextService: "Oct 18, 2023", inspectionStatus: "Completed", alerts: []),
             history: [
-                VehicleTrip(origin: "BLR Hub", destination: "HSR", progress: 1.0, eta: "Completed", date: "Apr 19, 2026", distance: "12 KM", duration: "45m", costEstimate: "₹250", startTime: nil, status: .completed)
+                VehicleTrip(origin: "BLR Hub", destination: "HSR", progress: 1.0, eta: "Completed", date: "Apr 19, 2026", distance: "12 KM", duration: "45m", costEstimate: "₹250", startTime: nil, status: .completed, productType: "E-commerce Parcels", loadAmount: "1.2 Tons")
             ],
             reports: [],
-            assessmentReason: nil
+            assessmentReason: nil,
+            plateNumber: "KA 01 EV 9910",
+            registrationNumber: "REG-IND-112099"
         ),
         Vehicle(
             id: "TRK-1088",
@@ -125,7 +145,9 @@ struct MockDataProvider {
             maintenance: VehicleMaintenance(nextService: "Overdue", inspectionStatus: "Pending", alerts: []),
             history: [],
             reports: [],
-            assessmentReason: nil
+            assessmentReason: nil,
+            plateNumber: "MH 12 XB 1088",
+            registrationNumber: "REG-IND-882012"
         )
     ]
 }

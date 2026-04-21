@@ -9,6 +9,8 @@ class FleetDataManager: ObservableObject {
     @Published var assessments = MockDataProvider.assessments
     @Published var maintenanceAlerts = MockDataProvider.maintenanceAlerts
     @Published var emissionData = MockDataProvider.emissionData
+    @Published var mileageData = MockDataProvider.mileageData
+    @Published var fuelTrendData = MockDataProvider.fuelTrendData
     @Published var drivers = MockDataProvider.drivers
     @Published var vehicles = MockDataProvider.vehicles
     
