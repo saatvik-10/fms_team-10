@@ -1,11 +1,20 @@
 import type { Context } from 'hono';
-import { superAdminLoginSchema, loginSchema } from '../validators/auth.validator';
+import {
+  superAdminLoginSchema,
+  loginSchema,
+  otpMailSchema,
+  verifyOtpSchema,
+} from '../validators/auth.validator';
 import { jwtAuth } from '../lib/jwt';
 import { prisma } from '../../prisma';
 import { comparePassword, hashPassword } from '../lib/hashPassword';
+import { verificationOTP } from '../services/resend';
+import {otpStore, isCooldownActive, createOtpCode, saveOtpForEmail, getNextVerifyAttempt, clearOtpState} from '../lib/lib'
 
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL;
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
+const MAX_VERIFY_ATTEMPTS = 10;
+
 
 export class Auth {
   async signin(c: Context) {
@@ -133,6 +142,71 @@ export class Auth {
         username: user.username,
       },
     });
+  }
+
+  async sendOtpMail(c: Context) {
+    const body = await c.req.json();
+    const result = otpMailSchema.safeParse(body);
+
+    if (!result.success) {
+      return c.json({ err: 'Invalid input' }, 400);
+    }
+
+    const { email } = result.data;
+    const existingOtp = otpStore.get(email);
+    const now = Date.now();
+
+    if (existingOtp && isCooldownActive(existingOtp, now)) {
+      return c.json(
+        { err: 'Please wait before requesting another OTP' },
+        429,
+      );
+    }
+
+    const otp = createOtpCode();
+    saveOtpForEmail(email, otp, now);
+
+    await verificationOTP({
+      userEmail: email,
+      otp,
+    });
+
+    return c.json({
+      message: 'Verification code sent successfully',
+    });
+  }
+
+  async verifyOtp(c: Context) {
+    const body = await c.req.json();
+    const result = verifyOtpSchema.safeParse(body);
+
+    if (!result.success) {
+      return c.json({ err: 'Invalid input' }, 400);
+    }
+
+    const { email, otp } = result.data;
+    const storedOtp = otpStore.get(email);
+    const attempts = getNextVerifyAttempt(email);
+
+    if (attempts > MAX_VERIFY_ATTEMPTS) {
+      return c.json({ message: 'Too many requests' }, 429);
+    }
+
+    if (!storedOtp) {
+      return c.json('Failure');
+    }
+
+    if (Date.now() > storedOtp.expiresAt) {
+      clearOtpState(email);
+      return c.json({ message: 'OTP expired' }, 410);
+    }
+
+    if (storedOtp.otp === otp) {
+      clearOtpState(email);
+      return c.json('Success');
+    }
+
+    return c.json('Failure');
   }
 
   async getProfile(c: Context) {
