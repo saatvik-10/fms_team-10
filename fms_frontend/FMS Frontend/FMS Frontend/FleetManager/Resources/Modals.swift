@@ -170,19 +170,28 @@ struct DriverModalView: View {
     ]
     
     @State private var fullName: String
+    @State private var email: String = ""
     @State private var licenseNumber: String
     @State private var expiryDate: String
     @State private var vehicleClasses: [String] = [Self.vehicleClassOptions.first ?? "LMV-NT"] // Support multiple classes
     @State private var showingScanner = false
     @State private var licenseError: String? = nil
+    @State private var emailError: String? = nil
 
     init(driverToEdit: Driver? = nil) {
         self.driverToEdit = driverToEdit
         let validExistingClasses = (driverToEdit?.vehicleClasses ?? []).filter { Self.vehicleClassOptions.contains($0) }
         _fullName = State(initialValue: driverToEdit?.name ?? "")
+        _email = State(initialValue: driverToEdit?.email ?? "")
         _licenseNumber = State(initialValue: driverToEdit?.licenseNum ?? "")
         _expiryDate = State(initialValue: driverToEdit?.licenseExp ?? "")
         _vehicleClasses = State(initialValue: validExistingClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : validExistingClasses)
+    }
+
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
+        return emailPred.evaluate(with: email)
     }
 
     
@@ -244,6 +253,21 @@ struct DriverModalView: View {
                             }
                         }
                         
+                        ModalFormField(label: "Email Address", text: $email)
+                            .onChange(of: email) { _, newValue in
+                                if !isValidEmail(newValue) && !newValue.isEmpty {
+                                    emailError = "Invalid email format"
+                                } else {
+                                    emailError = nil
+                                }
+                            }
+                        if let error = emailError {
+                            Text(error)
+                                .font(.system(size: 10))
+                                .foregroundColor(.red)
+                                .padding(.top, -15)
+                        }
+
                         ModalFormField(label: "Expiry Date", text: $expiryDate)
                         
                         VStack(alignment: .leading, spacing: 15) {
@@ -315,9 +339,11 @@ struct DriverModalView: View {
                         }
                     }
                     let finalVehicleClasses = selectedVehicleClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : selectedVehicleClasses
+                    let newDriverID = "KM-\(Int.random(in: 1000...9999))"
                     let newDriver = Driver(
-                        id: "KM-\(Int.random(in: 1000...9999))",
+                        id: newDriverID,
                         name: fullName,
+                        email: email,
                         title: "\(finalVehicleClasses.first ?? "LMV-NT") Certified Driver",
                         licenseNum: licenseNumber,
                         licenseExp: expiryDate,
@@ -332,6 +358,7 @@ struct DriverModalView: View {
                         activeRoute: nil,
                         eta: nil
                     )
+                    DriverEmailStore.shared.saveEmail(email, forDriverID: newDriverID)
                     dataManager.addDriver(newDriver)
                     dismiss() 
                 }) {
