@@ -21,7 +21,7 @@ struct ContentView: View {
         if userRole == .none {
             LoginView(userRole: $userRole)
         } else if userRole == .driver {
-            DashboardView()
+            DashboardView(userRole: $userRole)
         } else if userRole == .maintenance {
             MaintenanceTabView(isLoggedIn: Binding(
                 get: { userRole == .maintenance },

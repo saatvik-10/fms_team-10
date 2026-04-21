@@ -47,7 +47,8 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 }
 
 class DashboardViewModel: ObservableObject {
-    @Published var userName: String = "Rahul"
+    // Single source of truth — name comes from the shared UserProfile model
+    @Published var userName: String = UserProfile.mockDriver.name
     @Published var activeTrip: Trip = Trip.mockTrip
     @Published var vehicleName: String = "Tata Prima 4028.S"
     @Published var vehiclePlate: String = "MH 43 AB 1234"
@@ -59,10 +60,12 @@ class DashboardViewModel: ObservableObject {
 // MARK: - Main Tab View
 
 struct DashboardView: View {
+    @Binding var userRole: UserRole
+
     var body: some View {
         TabView {
             NavigationStack {
-                DashboardHomeView()
+                DashboardHomeView(userRole: $userRole)
             }
             .tabItem {
                 Label("Home", systemImage: "house.fill")
@@ -71,13 +74,6 @@ struct DashboardView: View {
             TripsView()
             .tabItem {
                 Label("Trips", systemImage: "map.fill")
-            }
-            
-            NavigationStack {
-                DriverProfileView()
-            }
-            .tabItem {
-                Label("Profile", systemImage: "person.crop.circle.fill")
             }
         }
         .accentColor(AppColors.primary)
@@ -89,6 +85,8 @@ struct DashboardView: View {
 struct DashboardHomeView: View {
     @StateObject private var viewModel = DashboardViewModel()
     @StateObject private var locationManager = LocationManager()
+    @State private var showProfile = false
+    @Binding var userRole: UserRole
     
     var body: some View {
         ScrollView {
@@ -118,15 +116,13 @@ struct DashboardHomeView: View {
         }
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
         .navigationBarHidden(true)
+        .navigationDestination(isPresented: $showProfile) {
+            DriverProfileView(onLogout: { userRole = .none })
+        }
     }
     
     private var headerView: some View {
         HStack(spacing: 16) {
-            Image(systemName: "person.circle.fill")
-                .resizable()
-                .frame(width: 48, height: 48)
-                .foregroundColor(Color.gray.opacity(0.8))
-            
             Text("Hi, \(viewModel.userName)")
                 .font(.system(.title2, design: .default, weight: .bold))
                 .foregroundColor(.black)
@@ -135,6 +131,16 @@ struct DashboardHomeView: View {
             
             Button(action: {}) {
                 Image(systemName: "bell.fill")
+                    .font(.title3)
+                    .foregroundColor(.black)
+                    .padding(12)
+                    .background(Color.white)
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+            }
+            
+            Button(action: { showProfile = true }) {
+                Image(systemName: "person.crop.circle.fill")
                     .font(.title3)
                     .foregroundColor(.black)
                     .padding(12)
@@ -337,12 +343,13 @@ struct GoogleMapView: UIViewRepresentable {
 
 struct DashboardView_Previews: PreviewProvider {
     static var previews: some View {
-        DashboardView()
+        DashboardView(userRole: .constant(.driver))
     }
 }
 
 struct DriverProfileView: View {
     let profile = UserProfile.mockDriver
+    var onLogout: (() -> Void)? = nil
     
     var body: some View {
         List {
@@ -377,7 +384,7 @@ struct DriverProfileView: View {
             }
             
             Section {
-                Button(action: {}) {
+                Button(action: { onLogout?() }) {
                     Text("Logout")
                         .foregroundColor(.red)
                         .frame(maxWidth: .infinity)

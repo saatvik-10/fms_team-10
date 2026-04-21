@@ -92,19 +92,7 @@ struct TripDetailView: View {
                     .padding(.horizontal, horizontalPadding)
                     .shadow(color: AppColors.shadow, radius: 8, x: 0, y: 4)
                 
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("ROUTE PROGRESS")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppColors.secondaryText)
-                        .padding(.bottom, 16)
-                    TimelineView(trip: trip)
-                }
-                .padding()
-                .background(AppColors.cardBackground)
-                .cornerRadius(16)
-                .padding(.horizontal, horizontalPadding)
-                .shadow(color: AppColors.shadow, radius: 10, x: 0, y: 4)
+                // ROUTE PROGRESS card removed (UI only) — TimelineView & stop data unchanged
                 
                 VStack(alignment: .leading, spacing: 16) {
                     RouteDetailRow(label: "PICKUP", value: trip.pickup.name)
@@ -350,7 +338,7 @@ struct TimelineView: View {
     let trip: Trip
     
     var allStops: [TripStop] {
-        return [trip.pickup] + trip.stops + [trip.destination]
+        return [trip.pickup, trip.destination]
     }
     
     var body: some View {
@@ -460,10 +448,8 @@ struct GoogleTripMapView: UIViewRepresentable {
     func updateUIView(_ uiView: GMSMapView, context: Context) {
         uiView.clear()
 
-        // Show only the active stop as the destination marker (not all stops)
-        let activeStop = ([trip.pickup] + trip.stops + [trip.destination])
-            .first(where: { $0.status == .active })
-            ?? trip.destination
+        // Destination marker — route goes directly to trip.destination
+        let activeStop = trip.destination
 
         let destMarker = GMSMarker(position: activeStop.coordinate)
         destMarker.title = activeStop.name

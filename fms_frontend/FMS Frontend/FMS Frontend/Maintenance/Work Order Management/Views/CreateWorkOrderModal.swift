@@ -15,6 +15,15 @@ struct CreateWorkOrderModal: View {
     @State private var priority: WorkOrderPriority = .medium
     @State private var taskDetails = ""
     @State private var scheduledDate = Date()
+    @State private var technicianId = "Arjun Mehra (Lead)"
+
+    let technicians = [
+        "Arjun Mehra (Lead)",
+        "Suresh Kumar (Senior)",
+        "Vikram Singh (Junior)",
+        "Rahul Sharma (Trainee)",
+        "Amit Patel (Specialist)"
+    ]
 
     let vehicles = [
         "Mercedes-Benz Actros (Truck)",
@@ -84,6 +93,15 @@ struct CreateWorkOrderModal: View {
                                 .labelsHidden()
                         }
 
+                        FormGroup(title: "ASSIGN TECHNICIAN") {
+                            Picker("Technician", selection: $technicianId) {
+                                ForEach(technicians, id: \.self) {
+                                    Text($0).tag($0)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        }
+
                         Spacer(minLength: 40)
                     }
                     .padding()
@@ -109,7 +127,7 @@ struct CreateWorkOrderModal: View {
                             status: .pending,
                             taskDetails: taskDetails,
                             scheduledDate: scheduledDate,
-                            technicianId: "TECH-01"
+                            technicianId: technicianId
                         )
                         store.addWorkOrder(newOrder)
                         dismiss()

@@ -20,7 +20,6 @@ struct Trip {
     var tripDate: String
     var pickup: TripStop
     var destination: TripStop
-    var stops: [TripStop]
     var cargoWeight: String
     var cargoUnits: String
 }
@@ -41,26 +40,6 @@ extension Trip {
                 time: "01:30 PM",
                 status: .upcoming
             ),
-            stops: [
-                TripStop(
-                    name: "Mandya",
-                    coordinate: CLLocationCoordinate2D(latitude: 12.5218, longitude: 76.8950),
-                    time: "09:30 AM",
-                    status: .upcoming
-                ),
-                TripStop(
-                    name: "Ramanagara",
-                    coordinate: CLLocationCoordinate2D(latitude: 12.7218, longitude: 77.2811),
-                    time: "11:00 AM",
-                    status: .upcoming
-                ),
-                TripStop(
-                    name: "Yelahanka",
-                    coordinate: CLLocationCoordinate2D(latitude: 13.1007, longitude: 77.5963),
-                    time: "12:45 PM",
-                    status: .upcoming
-                )
-            ],
             cargoWeight: "12.0t",
             cargoUnits: "Industrial Goods (18)"
         )
