@@ -11,9 +11,54 @@ import Combine
 class MaintenanceStore: ObservableObject {
     @Published var workOrders: [WorkOrder] = []
     @Published var inspections: [TripInspection] = []
+    @Published var inventoryParts: [InventoryPart] = []
     
     init() {
         loadMockData()
+        loadInventory()
+    }
+    
+    // MARK: - Persistence
+    private let inventoryKey = "fms_inventory_data"
+    
+    func saveInventory() {
+        if let encoded = try? JSONEncoder().encode(inventoryParts) {
+            UserDefaults.standard.set(encoded, forKey: inventoryKey)
+        }
+    }
+    
+    func loadInventory() {
+        if let data = UserDefaults.standard.data(forKey: inventoryKey),
+           let decoded = try? JSONDecoder().decode([InventoryPart].self, from: data) {
+            self.inventoryParts = decoded
+        }
+    }
+    
+    func updateInventoryThreshold(for sku: String, newThreshold: Int) {
+        if let index = inventoryParts.firstIndex(where: { $0.sku == sku }) {
+            inventoryParts[index].reorderThreshold = newThreshold
+            saveInventory()
+        }
+    }
+    
+    func importInventory(_ newParts: [InventoryPart]) {
+        // Keep existing thresholds if SKU matches
+        var mergedParts = newParts
+        for i in 0..<mergedParts.count {
+            if let existing = inventoryParts.firstIndex(where: { $0.sku == mergedParts[i].sku }) {
+                mergedParts[i].reorderThreshold = inventoryParts[existing].reorderThreshold
+            }
+        }
+        self.inventoryParts = mergedParts
+        saveInventory()
+    }
+
+    var lowStockCount: Int {
+        inventoryParts.filter { $0.isLowStock }.count
+    }
+    
+    var totalInventoryValue: Double {
+        inventoryParts.reduce(0) { $0 + $1.totalValue }
     }
     
     func loadMockData() {

@@ -28,6 +28,14 @@ struct MaintenanceTabView: View {
             .tabItem {
                 Label("Inspections", systemImage: "clipboard.fill")
             }
+
+            // Tab 3: Inventory
+            NavigationStack {
+                InventoryView(isLoggedIn: $isLoggedIn)
+            }
+            .tabItem {
+                Label("Inventory", systemImage: "shippingbox.fill")
+            }
         }
         .environmentObject(store)
         .accentColor(AppColors.primary)
