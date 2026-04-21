@@ -1,39 +1,42 @@
 import SwiftUI
 import Charts
 
+// MARK: - Fleet Status Metrics Grid (Full Width)
+struct FleetStatusMetricsGrid: View {
+    let active: Int
+    let idle: Int
+    let maintenance: Int
+    let scheduled: Int
+    
+    var body: some View {
+        HStack(spacing: 20) {
+            FleetOpsMetricItem(title: "In Transit", value: active, color: AppColors.statusInTransit)
+            FleetOpsMetricItem(title: "Scheduled", value: scheduled, color: AppColors.statusInTransit.opacity(0.5))
+            FleetOpsMetricItem(title: "Idle", value: idle, color: AppColors.statusIdle)
+            FleetOpsMetricItem(title: "Maintenance", value: maintenance, color: AppColors.statusMaintenance)
+        }
+        .padding(24)
+        .background(AppColors.cardBackground)
+        .cornerRadius(AppColors.defaultCornerRadius)
+        .modifier(AppColors.cardShadow())
+    }
+}
+
 // MARK: - FleetOps Metric Item (Active, Maintenance, etc.)
 struct FleetOpsMetricItem: View {
     let title: String
     let value: Int
-    let trend: String?
     let color: Color
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
                 .font(.system(size: 10, weight: .bold))
-                .foregroundColor(AppTheme.textSecondary)
+                .foregroundColor(AppColors.textSecondary)
             
-            HStack(alignment: .lastTextBaseline, spacing: 4) {
-                Text(String(format: "%02d", value))
-                    .font(.system(size: 32, weight: .bold))
-                
-                if let trend = trend {
-                    Text(trend)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(AppTheme.activeGreen)
-                }
-            }
-            
-            ZStack(alignment: .leading) {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.1))
-                    .frame(height: 4)
-                
-                Rectangle()
-                    .fill(color)
-                    .frame(width: 40, height: 4) // Fixed width progress line like in image
-            }
+            Text(String(format: "%02d", value))
+                .font(.system(size: 32, weight: .bold))
+                .foregroundColor(AppColors.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -73,7 +76,7 @@ struct FleetOpsAssessmentCard: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("ROUTE")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(AppTheme.textSecondary)
+                            .foregroundColor(AppColors.textSecondary)
                         Text("\(assessment.routeFrom) →")
                             .font(.system(size: 11, weight: .medium))
                         Text(assessment.routeTo)
@@ -83,13 +86,13 @@ struct FleetOpsAssessmentCard: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text("ETA")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(AppTheme.textSecondary)
+                            .foregroundColor(AppColors.textSecondary)
                         Text(assessment.etaTime)
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(assessment.etaTime == "Delayed" ? AppTheme.criticalRed : AppTheme.textPrimary)
+                            .foregroundColor(assessment.etaTime == "Delayed" ? AppColors.criticalRed : AppColors.textPrimary)
                         Text(assessment.etaDay)
                             .font(.system(size: 11))
-                            .foregroundColor(AppTheme.textSecondary)
+                            .foregroundColor(AppColors.textSecondary)
                     }
                 }
                 
@@ -113,16 +116,16 @@ struct FleetOpsAssessmentCard: View {
         .padding(12)
         .background(Color.white)
         .cornerRadius(16)
-        .modifier(AppTheme.cardShadow())
+        .modifier(AppColors.cardShadow())
         .frame(width: 260)
     }
     
     var statusColor: Color {
         switch assessment.status {
-        case .inTransit: return AppTheme.activeGreen
-        case .alertReceived: return AppTheme.alertRed
-        case .restStop: return AppTheme.statusBlue
-        case .scheduled: return AppTheme.statusBlue
+        case .inTransit: return AppColors.activeGreen
+        case .alertReceived: return AppColors.alertRed
+        case .restStop: return AppColors.statusBlue
+        case .scheduled: return AppColors.statusBlue
         }
     }
     
@@ -140,7 +143,7 @@ struct FleetOpsAssessmentCard: View {
 struct MaintenancePriorityDarkCard: View {
     let summary: String
     let criticalMass: Double
-    let alerts: [MaintenanceAlert]
+    let alerts: [FleetMaintenanceAlert]
     
     var body: some View {
         HStack(spacing: 30) {
@@ -153,7 +156,7 @@ struct MaintenancePriorityDarkCard: View {
                     ForEach(alerts) { alert in
                         HStack(spacing: 15) {
                             Rectangle()
-                                .fill(alert.status == "Urgent" ? AppTheme.criticalRed : Color.white.opacity(0.2))
+                                .fill(alert.status == "Urgent" ? AppColors.criticalRed : Color.white.opacity(0.2))
                                 .frame(width: 3, height: 40)
                             
                             Image(systemName: alert.iconName)
@@ -187,7 +190,7 @@ struct MaintenancePriorityDarkCard: View {
                         .stroke(Color.white.opacity(0.1), lineWidth: 12)
                     Circle()
                         .trim(from: 0, to: criticalMass)
-                        .stroke(AppTheme.criticalRed, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                        .stroke(AppColors.criticalRed, style: StrokeStyle(lineWidth: 12, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                     
                     VStack(spacing: 0) {
@@ -205,7 +208,7 @@ struct MaintenancePriorityDarkCard: View {
                     Label {
                         Text("04 URGENT").font(.system(size: 10, weight: .bold))
                     } icon: {
-                        Circle().fill(AppTheme.criticalRed).frame(width: 6, height: 6)
+                        Circle().fill(AppColors.criticalRed).frame(width: 6, height: 6)
                     }
                     Label {
                         Text("14 SCHEDULED").font(.system(size: 10, weight: .bold))
@@ -218,7 +221,7 @@ struct MaintenancePriorityDarkCard: View {
             .padding(.trailing, 20)
         }
         .padding(30)
-        .background(AppTheme.darkCardBackground)
+        .background(AppColors.darkCardBackground)
         .cornerRadius(16)
     }
 }
@@ -238,7 +241,7 @@ struct FleetOpsEmissionsChart: View {
                         x: .value("Day", item.day),
                         y: .value("Emissions", item.value)
                     )
-                    .foregroundStyle(item.isCurrent ? AppTheme.primary : AppTheme.secondary.opacity(0.2))
+                    .foregroundStyle(item.isCurrent ? AppColors.primary : AppColors.secondary.opacity(0.2))
                     .cornerRadius(4)
                 }
             }
@@ -251,17 +254,11 @@ struct FleetOpsEmissionsChart: View {
             }
             .chartYAxis(.hidden)
             .frame(height: 150)
-            
-            // Fleet Stats at the Bottom (Updated to 2 items with dynamic bars)
-            HStack(spacing: 20) {
-                FleetCategoryStatItem(icon: "truck.box.fill", title: "TRUCK FLEET", value: "34%", progress: 0.34, color: Color(red: 13/255, green: 43/255, blue: 50/255))
-                FleetCategoryStatItem(icon: "bus.fill", title: "VAN FLEET", value: "28%", progress: 0.28, color: Color.blue)
-            }
         }
         .padding(30)
         .background(Color.white)
         .cornerRadius(16)
-        .modifier(AppTheme.cardShadow())
+        .modifier(AppColors.cardShadow())
     }
 }
 
@@ -322,12 +319,12 @@ struct FleetOpsActionButton: View {
                 Text(title.uppercased())
                     .font(.system(size: 10, weight: .bold))
             }
-            .foregroundColor(AppTheme.primary)
+            .foregroundColor(AppColors.primary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 20)
             .background(Color.white)
             .cornerRadius(12)
-            .modifier(AppTheme.cardShadow())
+            .modifier(AppColors.cardShadow())
         }
     }
 }

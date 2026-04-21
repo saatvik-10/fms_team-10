@@ -6,7 +6,7 @@ class FleetManagerDashboardViewModel: ObservableObject {
     @Published var shipments: [ShipmentActivity] = MockDataProvider.shipments
     @Published var fleetStatus: FleetVehicleStatus = MockDataProvider.fleetStatus
     @Published var assessments: [SmartFleetAssessment] = MockDataProvider.assessments
-    @Published var maintenanceAlerts: [MaintenanceAlert] = MockDataProvider.maintenanceAlerts
+    @Published var maintenanceAlerts: [FleetMaintenanceAlert] = MockDataProvider.maintenanceAlerts
     @Published var emissionData: [EmissionData] = MockDataProvider.emissionData
     
     @Published var selectedTimeframe: String = "Dec 2022"

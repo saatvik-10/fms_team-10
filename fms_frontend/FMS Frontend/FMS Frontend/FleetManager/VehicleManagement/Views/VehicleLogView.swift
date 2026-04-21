@@ -15,7 +15,7 @@ struct VehicleLogView: View {
                         Text("Back")
                             .font(.system(size: 16))
                     }
-                    .foregroundColor(AppTheme.primary)
+                    .foregroundColor(AppColors.primary)
                 }
                 
                 Spacer()
@@ -27,7 +27,7 @@ struct VehicleLogView: View {
                 
                 // Placeholder for Export
                 Image(systemName: "square.and.arrow.up")
-                    .foregroundColor(AppTheme.primary)
+                    .foregroundColor(AppColors.primary)
             }
             .padding(.horizontal, 25)
             .padding(.vertical, 20)
@@ -55,19 +55,19 @@ struct VehicleLogView: View {
                                     Spacer()
                                     Text("COMPLETED")
                                         .font(.system(size: 10, weight: .bold))
-                                        .foregroundColor(AppTheme.activeGreen)
+                                        .foregroundColor(AppColors.activeGreen)
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 4)
-                                        .background(AppTheme.activeGreen.opacity(0.1))
+                                        .background(AppColors.activeGreen.opacity(0.1))
                                         .cornerRadius(6)
                                 }
                                 
                                 HStack(spacing: 20) {
                                     HStack(spacing: 12) {
                                         Circle()
-                                            .fill(AppTheme.primary.opacity(0.05))
+                                            .fill(AppColors.primary.opacity(0.05))
                                             .frame(width: 40, height: 40)
-                                            .overlay(Image(systemName: "arrow.up.right").foregroundColor(AppTheme.primary))
+                                            .overlay(Image(systemName: "arrow.up.right").foregroundColor(AppColors.primary))
                                         
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text("ORIGIN")
@@ -83,7 +83,7 @@ struct VehicleLogView: View {
                                     
                                     HStack(spacing: 12) {
                                         Circle()
-                                            .fill(AppTheme.primary.opacity(0.05))
+                                            .fill(AppColors.primary.opacity(0.05))
                                             .frame(width: 40, height: 40)
                                             .overlay(Image(systemName: "mappin.and.ellipse").foregroundColor(.gray))
                                         
@@ -110,14 +110,14 @@ struct VehicleLogView: View {
                             .padding(25)
                             .background(Color.white)
                             .cornerRadius(16)
-                            .modifier(AppTheme.cardShadow())
+                            .modifier(AppColors.cardShadow())
                         }
                     }
                     .padding(.horizontal, 30)
                 }
                 .padding(.bottom, 50)
             }
-            .background(AppTheme.background)
+            .background(AppColors.background)
         }
         .navigationBarHidden(true)
     }

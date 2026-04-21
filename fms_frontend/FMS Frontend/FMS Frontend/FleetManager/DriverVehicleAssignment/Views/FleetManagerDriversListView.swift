@@ -37,7 +37,7 @@ struct FleetManagerDriversListView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 10)
-                        .background(AppTheme.primary)
+                        .background(AppColors.primary)
                         .cornerRadius(8)
                     }
                 }
@@ -73,7 +73,7 @@ struct FleetManagerDriversListView: View {
                 }
                 .padding(.bottom, 100)
             }
-            .background(AppTheme.background)
+            .background(AppColors.background)
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingAddDriver) { DriverModalView() }
@@ -145,9 +145,9 @@ struct DriverRowView: View {
     
     var statusColor: Color {
         switch driver.status {
-        case .active, .onDuty: return AppTheme.activeGreen
-        case .onTrip: return AppTheme.maintenanceOrange
-        case .offDuty: return AppTheme.criticalRed
+        case .active, .onDuty: return AppColors.activeGreen
+        case .onTrip: return AppColors.maintenanceOrange
+        case .offDuty: return AppColors.criticalRed
         }
     }
 }

@@ -48,6 +48,7 @@ struct AppColors {
     
     // Primary
     static let primary = Color(red: 0.04, green: 0.19, blue: 0.23) // #0a303a
+    static let accent = Color(red: 0.04, green: 0.19, blue: 0.23)
     
     // Backgrounds
     static let secondaryBackground = Color(hex: "F2F5F8")
@@ -59,19 +60,48 @@ struct AppColors {
     static let secondaryText = Color.gray
     
     // Status
-    static let success = Color(red: 0.2, green: 0.8, blue: 0.4)
-    static let warning = Color.orange
-    static let error = Color(red: 0.98, green: 0.45, blue: 0.38)
+    static let statusInTransit = Color.blue
+    static let statusIdle = Color.gray
+    static let statusMaintenance = Color.orange
+    static let statusCritical = Color.red
     
-    // Priorities
-    static let priorityCritical = Color(red: 0.9, green: 0.3, blue: 0.3)
-    static let priorityHigh = Color(red: 0.98, green: 0.45, blue: 0.38)
-    static let priorityMedium = Color(red: 0.3, green: 0.6, blue: 0.9)
+    static let success = Color.green
+    static let warning = Color.orange
+    static let error = Color.red
+    
+    // Priority Colors
+    static let priorityCritical = Color.red
+    static let priorityHigh = Color.orange
+    static let priorityMedium = Color.blue
     static let priorityLow = Color.gray
     
-    // UI Elements
-    static let divider = Color.gray.opacity(0.1)
+    // UI Constants
+    static let defaultCornerRadius: CGFloat = 12
     static let shadow = Color.black.opacity(0.05)
+    static let divider = Color.gray.opacity(0.2)
     
-    static let cornerRadius: CGFloat = 12
+    // Legacy Aliases (for backward compatibility with AppTheme)
+    static let activeGreen = success
+    static let criticalRed = statusCritical
+    static let maintenanceOrange = statusMaintenance
+    static let alertRed = Color.red
+    static let statusBlue = Color.blue
+    static let accentBlue = Color(red: 0.44, green: 0.66, blue: 0.86)
+    static let background = screenBackground
+    static let secondary = secondaryText
+    static let textPrimary = primaryText
+    static let textSecondary = secondaryText
+    static let textInverted = Color.white
+    static let darkCardBackground = primary
+    
+    static func cardShadow() -> some ViewModifier {
+        CardShadowModifier()
+    }
+}
+
+struct CardShadowModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .shadow(color: AppColors.shadow, radius: 8, x: 0, y: 2)
+    }
 }

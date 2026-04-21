@@ -9,7 +9,7 @@ struct FleetManagerVehicleDetailView: View {
     
     var body: some View {
         ZStack {
-            AppTheme.background.ignoresSafeArea()
+            AppColors.background.ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // MARK: - Header
@@ -17,7 +17,7 @@ struct FleetManagerVehicleDetailView: View {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(AppTheme.primary)
+                            .foregroundColor(AppColors.primary)
                     }
                     
                     Text(vehicle.id)
@@ -109,8 +109,8 @@ struct FleetManagerVehicleDetailView: View {
                                     Text(vehicle.status == .inTransit ? "IN TRANSIT" : 
                                          vehicle.status == .idle ? "IDLE" : "MAINTENANCE")
                                         .font(.system(size: 16, weight: .bold))
-                                        .foregroundColor(vehicle.status == .inTransit ? AppTheme.activeGreen : 
-                                                        vehicle.status == .maintenance ? AppTheme.criticalRed : .gray)
+                                        .foregroundColor(vehicle.status == .inTransit ? AppColors.activeGreen : 
+                                                        vehicle.status == .maintenance ? AppColors.criticalRed : .gray)
                                 }
                                 .padding(30)
                                 .frame(width: 280, alignment: .leading)
@@ -128,7 +128,7 @@ struct FleetManagerVehicleDetailView: View {
                                 
                                 HStack(spacing: 15) {
                                     Circle()
-                                        .fill(AppTheme.primary)
+                                        .fill(AppColors.primary)
                                         .frame(width: 40, height: 40)
                                         .overlay(Image(systemName: "sparkles").foregroundColor(.white))
                                     
@@ -138,7 +138,7 @@ struct FleetManagerVehicleDetailView: View {
                             }
                             .padding(40)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(AppTheme.primary.opacity(0.03))
+                            .background(AppColors.primary.opacity(0.03))
                             .cornerRadius(20)
                         }
 
@@ -181,7 +181,7 @@ struct FleetManagerVehicleDetailView: View {
                                         VStack(spacing: 8) {
                                             Text("\(Int(trip.progress * 100))%")
                                                 .font(.system(size: 14, weight: .bold))
-                                                .foregroundColor(AppTheme.primary)
+                                                .foregroundColor(AppColors.primary)
                                             
                                             GeometryReader { geo in
                                                 ZStack(alignment: .leading) {
@@ -190,7 +190,7 @@ struct FleetManagerVehicleDetailView: View {
                                                         .frame(height: 8)
                                                     
                                                     Capsule()
-                                                        .fill(AppTheme.primary)
+                                                        .fill(AppColors.primary)
                                                         .frame(width: geo.size.width * CGFloat(trip.progress), height: 8)
                                                 }
                                             }
@@ -250,7 +250,7 @@ struct FleetManagerVehicleDetailView: View {
                                         Button(action: { }) {
                                             Label("Call Driver", systemImage: "phone.fill")
                                                 .font(.system(size: 14, weight: .bold))
-                                                .foregroundColor(AppTheme.primary)
+                                                .foregroundColor(AppColors.primary)
                                                 .frame(maxWidth: .infinity)
                                                 .padding(.vertical, 15)
                                                 .background(Color.gray.opacity(0.05))
@@ -260,7 +260,7 @@ struct FleetManagerVehicleDetailView: View {
                                         Button(action: { }) {
                                             Label("Message", systemImage: "envelope.fill")
                                                 .font(.system(size: 14, weight: .bold))
-                                                .foregroundColor(AppTheme.primary)
+                                                .foregroundColor(AppColors.primary)
                                                 .frame(maxWidth: .infinity)
                                                 .padding(.vertical, 15)
                                                 .background(Color.gray.opacity(0.05))
@@ -289,7 +289,7 @@ struct FleetManagerVehicleDetailView: View {
                                 VStack(alignment: .leading, spacing: 20) {
                                     HStack(spacing: 20) {
                                         Image(systemName: "calendar.badge.checkmark")
-                                            .foregroundColor(AppTheme.primary)
+                                            .foregroundColor(AppColors.primary)
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text("NEXT SERVICE")
                                                 .font(.system(size: 8, weight: .bold))
@@ -301,25 +301,25 @@ struct FleetManagerVehicleDetailView: View {
                                     
                                     HStack(spacing: 20) {
                                         Image(systemName: "checklist")
-                                            .foregroundColor(AppTheme.primary)
+                                            .foregroundColor(AppColors.primary)
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text("PRE-TRIP INSPECTION")
                                                 .font(.system(size: 8, weight: .bold))
                                                 .foregroundColor(.gray)
                                             Text(vehicle.maintenance.inspectionStatus)
                                                 .font(.system(size: 14, weight: .bold))
-                                                .foregroundColor(AppTheme.activeGreen)
+                                                .foregroundColor(AppColors.activeGreen)
                                         }
                                     }
                                     
                                     if let alert = vehicle.maintenance.alerts.first {
                                         HStack(spacing: 15) {
                                             Image(systemName: "exclamationmark.triangle.fill")
-                                                .foregroundColor(AppTheme.criticalRed)
+                                                .foregroundColor(AppColors.criticalRed)
                                             VStack(alignment: .leading, spacing: 4) {
                                                 Text(alert.title)
                                                     .font(.system(size: 14, weight: .bold))
-                                                    .foregroundColor(AppTheme.criticalRed)
+                                                    .foregroundColor(AppColors.criticalRed)
                                                 Text(alert.detail)
                                                     .font(.system(size: 10, weight: .medium))
                                                     .foregroundColor(.gray)
@@ -327,7 +327,7 @@ struct FleetManagerVehicleDetailView: View {
                                         }
                                         .padding(20)
                                         .frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(AppTheme.criticalRed.opacity(0.05))
+                                        .background(AppColors.criticalRed.opacity(0.05))
                                         .cornerRadius(12)
                                     }
                                 }
@@ -383,7 +383,7 @@ struct FleetManagerVehicleDetailView: View {
                                 NavigationLink(destination: VehicleLogView(vehicle: vehicle)) {
                                     Text("VIEW FULL LOG")
                                         .font(.system(size: 10, weight: .bold))
-                                        .foregroundColor(AppTheme.primary)
+                                        .foregroundColor(AppColors.primary)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 15)
                                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2)))
@@ -411,10 +411,10 @@ struct FleetManagerVehicleDetailView: View {
                                 ForEach(vehicle.reports) { report in
                                     HStack(spacing: 15) {
                                         ZStack {
-                                            RoundedRectangle(cornerRadius: 8).fill(AppTheme.criticalRed.opacity(0.1))
+                                            RoundedRectangle(cornerRadius: 8).fill(AppColors.criticalRed.opacity(0.1))
                                                 .frame(width: 45, height: 45)
                                             Image(systemName: "doc.fill")
-                                                .foregroundColor(AppTheme.criticalRed)
+                                                .foregroundColor(AppColors.criticalRed)
                                         }
                                         
                                         VStack(alignment: .leading, spacing: 4) {
@@ -440,7 +440,7 @@ struct FleetManagerVehicleDetailView: View {
                             NavigationLink(destination: ArchiveListView(vehicle: vehicle)) {
                                 Text("VIEW ARCHIVE")
                                     .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(AppTheme.primary)
+                                    .foregroundColor(AppColors.primary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 15)
                                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2)))

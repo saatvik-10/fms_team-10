@@ -14,7 +14,7 @@ struct DriverDetailView: View {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(AppTheme.primary)
+                        .foregroundColor(AppColors.primary)
                 }
 
                 Text(driver.name)
@@ -140,7 +140,7 @@ struct DriverDetailView: View {
                 .padding(16)
                 .padding(.bottom, 24)
             }
-            .background(AppTheme.background)
+            .background(AppColors.background)
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingEditModal) {
@@ -161,9 +161,9 @@ struct DriverDetailView: View {
     
     var statusColor: Color {
         switch driver.status {
-        case .active, .onDuty: return AppTheme.activeGreen
-        case .onTrip: return AppTheme.maintenanceOrange
-        case .offDuty: return AppTheme.criticalRed
+        case .active, .onDuty: return AppColors.activeGreen
+        case .onTrip: return AppColors.maintenanceOrange
+        case .offDuty: return AppColors.criticalRed
         }
     }
 }
@@ -245,7 +245,7 @@ struct ActivityRow: View {
             if let val = event.value {
                 Text(val)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(event.type == "incident" ? AppTheme.criticalRed : .gray)
+                    .foregroundColor(event.type == "incident" ? AppColors.criticalRed : .gray)
             }
         }
     }

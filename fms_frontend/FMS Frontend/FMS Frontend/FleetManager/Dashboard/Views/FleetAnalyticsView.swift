@@ -47,7 +47,7 @@ struct FleetAnalyticsView: View {
                                     .font(.system(size: 28, weight: .black))
                                 Text("-12.4% from last period")
                                     .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(AppTheme.activeGreen)
+                                    .foregroundColor(AppColors.activeGreen)
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 8) {
@@ -72,7 +72,7 @@ struct FleetAnalyticsView: View {
                                             .frame(height: 250)
                                         
                                         RoundedRectangle(cornerRadius: 8)
-                                            .fill(item.isCurrent ? AppTheme.primary : AppTheme.statusBlue.opacity(0.3))
+                                            .fill(item.isCurrent ? AppColors.primary : AppColors.statusBlue.opacity(0.3))
                                             .frame(height: CGFloat(item.value * 12))
                                             .overlay(
                                                 Text(String(format: "%.1f", item.value))
@@ -99,15 +99,15 @@ struct FleetAnalyticsView: View {
                     
                     // Efficiency Row
                     HStack(spacing: 30) {
-                        EfficiencySectorCard(title: "Truck Fleet", value: "82%", icon: "truck.box.fill", color: AppTheme.primary)
-                        EfficiencySectorCard(title: "Van Fleet", value: "94%", icon: "bus.fill", color: AppTheme.statusBlue)
-                        EfficiencySectorCard(title: "EV Units", value: "98%", icon: "bolt.car.fill", color: AppTheme.activeGreen)
+                        EfficiencySectorCard(title: "Truck Fleet", value: "82%", icon: "truck.box.fill", color: AppColors.primary)
+                        EfficiencySectorCard(title: "Van Fleet", value: "94%", icon: "bus.fill", color: AppColors.statusBlue)
+                        EfficiencySectorCard(title: "EV Units", value: "98%", icon: "bolt.car.fill", color: AppColors.activeGreen)
                     }
                     .padding(.horizontal, 30)
                 }
                 .padding(.bottom, 50)
             }
-            .background(AppTheme.background)
+            .background(AppColors.background)
         }
         .navigationTitle("Fleet Analytics")
         .navigationBarTitleDisplayMode(.inline)
@@ -145,7 +145,7 @@ struct EfficiencySectorCard: View {
         .padding(25)
         .background(Color.white)
         .cornerRadius(16)
-        .modifier(AppTheme.cardShadow())
+        .modifier(AppColors.cardShadow())
         .frame(maxWidth: .infinity)
     }
 }

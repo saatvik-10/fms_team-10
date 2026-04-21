@@ -12,11 +12,30 @@ class FleetDataManager: ObservableObject {
     @Published var drivers = MockDataProvider.drivers
     @Published var vehicles = MockDataProvider.vehicles
     
+    // Computed Metrics
+    var activeCount: Int {
+        vehicles.filter { $0.status == .inTransit }.count
+    }
+    
+    var idleCount: Int {
+        vehicles.filter { $0.status == .idle }.count
+    }
+    
+    var maintenanceCount: Int {
+        vehicles.filter { $0.status == .maintenance }.count
+    }
+    
+    var scheduledCount: Int {
+        vehicles.filter { $0.currentTrip?.status == .scheduled }.count
+    }
+    
+    var allHistory: [VehicleTrip] {
+        vehicles.flatMap { $0.history }.sorted { ($0.date ?? "") > ($1.date ?? "") }
+    }
+    
     // Actions
     func addVehicle(_ vehicle: Vehicle) {
         vehicles.append(vehicle)
-        // Update stats if needed
-        fleetStatus.idle += 1
     }
     
     func addDriver(_ driver: Driver) {
@@ -27,11 +46,11 @@ class FleetDataManager: ObservableObject {
         // Simple logic to assign a trip to a vehicle
         if let index = vehicles.firstIndex(where: { $0.id == vehicleID }) {
             vehicles[index].currentTrip = trip
-            vehicles[index].status = .inTransit
-            
-            // Adjust stats mock
-            fleetStatus.active += 1
-            if fleetStatus.idle > 0 { fleetStatus.idle -= 1 }
+            // Note: If trip status is .scheduled, vehicle status might still be .idle
+            // until the trip is started. For this demo, we auto-start if inTransit.
+            if trip.status == .inTransit {
+                vehicles[index].status = .inTransit
+            }
         }
     }
 }

@@ -13,7 +13,7 @@ struct ArchiveListView: View {
                     Image(systemName: "chevron.left")
                     Text("Back")
                 }
-                .foregroundColor(AppTheme.primary)
+                .foregroundColor(AppColors.primary)
                 Spacer()
                 Text("REPORTS ARCHIVE")
                     .font(.system(size: 14, weight: .bold))
@@ -47,11 +47,11 @@ struct ArchiveListView: View {
                                 NavigationLink(destination: MaintenanceReportDetailView(report: report, vehicle: vehicle)) {
                                     HStack(spacing: 20) {
                                         ZStack {
-                                            RoundedRectangle(cornerRadius: 12).fill(AppTheme.criticalRed.opacity(0.1))
+                                            RoundedRectangle(cornerRadius: 12).fill(AppColors.criticalRed.opacity(0.1))
                                                 .frame(width: 55, height: 55)
                                             Image(systemName: "doc.text.fill")
                                                 .font(.system(size: 24))
-                                                .foregroundColor(AppTheme.criticalRed)
+                                                .foregroundColor(AppColors.criticalRed)
                                         }
                                         
                                         VStack(alignment: .leading, spacing: 4) {
@@ -70,7 +70,7 @@ struct ArchiveListView: View {
                                     .padding(20)
                                     .background(Color.white)
                                     .cornerRadius(16)
-                                    .modifier(AppTheme.cardShadow())
+                                    .modifier(AppColors.cardShadow())
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -79,7 +79,7 @@ struct ArchiveListView: View {
                     .padding(.horizontal, 30)
                 }
             }
-            .background(AppTheme.background)
+            .background(AppColors.background)
         }
         .navigationBarHidden(true)
     }
@@ -105,11 +105,11 @@ struct MaintenanceRequestsListView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                AppTheme.background.ignoresSafeArea()
+                AppColors.background.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     HStack {
-                        Button("Close") { presentationMode.wrappedValue.dismiss() }.foregroundColor(AppTheme.primary)
+                        Button("Close") { presentationMode.wrappedValue.dismiss() }.foregroundColor(AppColors.primary)
                         Spacer()
                         Text("MAINTENANCE REQUESTS").font(.system(size: 14, weight: .bold))
                         Spacer()
@@ -134,10 +134,10 @@ struct MaintenanceRequestsListView: View {
                                         NavigationLink(destination: MaintenanceReportDetailView(report: report, vehicle: vehicle)) {
                                             Text("View Assessment")
                                                 .font(.system(size: 12, weight: .bold))
-                                                .foregroundColor(AppTheme.primary)
+                                                .foregroundColor(AppColors.primary)
                                                 .padding(.horizontal, 15)
                                                 .padding(.vertical, 8)
-                                                .background(AppTheme.primary.opacity(0.1))
+                                                .background(AppColors.primary.opacity(0.1))
                                                 .cornerRadius(20)
                                         }
                                     }
@@ -158,7 +158,7 @@ struct MaintenanceRequestsListView: View {
                                                     .frame(maxWidth: .infinity)
                                                     .padding(.vertical, 12)
                                                     .foregroundColor(.white)
-                                                    .background(AppTheme.criticalRed)
+                                                    .background(AppColors.criticalRed)
                                                     .cornerRadius(8)
                                             }
                                             Button(action: { actionedRequests.insert(report.id) }) {
@@ -167,7 +167,7 @@ struct MaintenanceRequestsListView: View {
                                                     .frame(maxWidth: .infinity)
                                                     .padding(.vertical, 12)
                                                     .foregroundColor(.white)
-                                                    .background(AppTheme.activeGreen)
+                                                    .background(AppColors.activeGreen)
                                                     .cornerRadius(8)
                                             }
                                         }
@@ -176,7 +176,7 @@ struct MaintenanceRequestsListView: View {
                                 .padding(20)
                                 .background(Color.white)
                                 .cornerRadius(12)
-                                .modifier(AppTheme.cardShadow())
+                                .modifier(AppColors.cardShadow())
                             }
                         }
                         .padding(30)
@@ -242,7 +242,7 @@ struct MaintenanceReportDetailView: View {
                         }
                         .padding(30)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(red: 0.04, green: 0.19, blue: 0.23)) // #0a303a AppTheme.primary
+                        .background(Color(red: 0.04, green: 0.19, blue: 0.23)) // #0a303a AppColors.primary
                         
                         VStack(alignment: .leading, spacing: 25) {
                             
@@ -281,11 +281,11 @@ struct MaintenanceReportDetailView: View {
                                 HStack {
                                     Text("✓ PASS")
                                         .font(.system(size: 14, weight: .bold))
-                                        .foregroundColor(AppTheme.activeGreen)
+                                        .foregroundColor(AppColors.activeGreen)
                                 }
                                 .padding()
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(AppTheme.activeGreen.opacity(0.1))
+                                .background(AppColors.activeGreen.opacity(0.1))
                             }
                             
                             Spacer().frame(height: 50)
@@ -343,7 +343,7 @@ struct MaintenanceReportDetailView: View {
                     }
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 1))
-                    .modifier(AppTheme.cardShadow())
+                    .modifier(AppColors.cardShadow())
                     .padding(20)
                 }
             }
@@ -403,7 +403,7 @@ struct PdfChecklistRow: View {
             
             Text(result)
                 .font(.system(size: 12, weight: .bold))
-                .foregroundColor(isGood ? AppTheme.activeGreen : .gray)
+                .foregroundColor(isGood ? AppColors.activeGreen : .gray)
                 .frame(width: 80, alignment: .leading)
                 
             Text("-")

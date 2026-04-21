@@ -14,7 +14,7 @@ struct OCRUploadArea: View {
         VStack(spacing: 15) {
             Image(systemName: "doc.text.viewfinder")
                 .font(.system(size: 40))
-                .foregroundColor(AppTheme.primary)
+                .foregroundColor(AppColors.primary)
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(12)
@@ -36,7 +36,7 @@ struct OCRUploadArea: View {
                 .foregroundColor(.white)
                 .padding(.horizontal, 40)
                 .padding(.vertical, 12)
-                .background(AppTheme.primary)
+                .background(AppColors.primary)
                 .cornerRadius(8)
             }
         }
@@ -117,7 +117,7 @@ struct ModalSearchField: View {
                                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                                 }) {
                                     VStack(alignment: .leading) {
-                                        Text(completion.title).font(.system(size: 14, weight: .bold)).foregroundColor(AppTheme.textPrimary)
+                                        Text(completion.title).font(.system(size: 14, weight: .bold)).foregroundColor(AppColors.textPrimary)
                                         if !completion.subtitle.isEmpty {
                                             Text(completion.subtitle).font(.system(size: 12)).foregroundColor(.gray)
                                         }
@@ -132,7 +132,7 @@ struct ModalSearchField: View {
                     .frame(maxHeight: 150)
                     .background(Color.white)
                     .cornerRadius(10)
-                    .modifier(AppTheme.cardShadow())
+                    .modifier(AppColors.cardShadow())
                     .offset(y: 5)
                 }
             }
@@ -272,7 +272,7 @@ struct DriverModalView: View {
                                             HStack {
                                                 Text(vehicleClasses[index])
                                                     .font(.system(size: 15, weight: .medium))
-                                                    .foregroundColor(AppTheme.textPrimary)
+                                                    .foregroundColor(AppColors.textPrimary)
                                                 Spacer()
                                                 Image(systemName: "chevron.up.chevron.down")
                                                     .font(.system(size: 12, weight: .bold))
@@ -334,7 +334,7 @@ struct DriverModalView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(AppTheme.primary)
+                    .background(AppColors.primary)
                     .cornerRadius(12)
                 }
 
@@ -468,7 +468,7 @@ struct AddVehicleModalView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(AppTheme.primary)
+                    .background(AppColors.primary)
                     .cornerRadius(12)
                 }
 
@@ -524,7 +524,7 @@ struct OrderModalView: View {
                 }
             }
             .padding(25)
-            .foregroundColor(AppTheme.primary)
+            .foregroundColor(AppColors.primary)
             .background(Color.white)
             
             ScrollView {
@@ -562,14 +562,14 @@ struct OrderModalView: View {
                             HStack {
                                 Image(systemName: "truck.box.fill")
                                     .padding()
-                                    .background(AppTheme.primary)
+                                    .background(AppColors.primary)
                                     .foregroundColor(.white)
                                     .cornerRadius(8)
                                 
                                 VStack(alignment: .leading) {
                                     Text(selectedVehicleID.isEmpty ? "Tap to select vehicle" : selectedVehicleID)
                                         .font(.system(size: 16, weight: .bold))
-                                        .foregroundColor(selectedVehicleID.isEmpty ? .gray : AppTheme.textPrimary)
+                                        .foregroundColor(selectedVehicleID.isEmpty ? .gray : AppColors.textPrimary)
                                     Text("Available for dispatch")
                                         .font(.system(size: 12))
                                         .foregroundColor(.gray)
@@ -642,7 +642,7 @@ struct OrderModalView: View {
                     // Bottom Button
                     VStack(spacing: 15) {
                         Button(action: { 
-                            let trip = VehicleTrip(origin: fromLocation, destination: toLocation, progress: 0.0, eta: "TBD", date: "Now", distance: "0 mi", duration: "0 hrs")
+                            let trip = VehicleTrip(origin: fromLocation, destination: toLocation, progress: 0.0, eta: "TBD", date: "Now", distance: "0 mi", duration: "0 hrs", costEstimate: String(format: "₹%.2f", estimatedCost), startTime: Date(), status: .scheduled)
                             dataManager.addOrder(trip: trip, vehicleID: selectedVehicleID)
                             dismiss() 
                         }) {
@@ -653,7 +653,7 @@ struct OrderModalView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 20)
-                            .background(fromLocation.isEmpty || selectedVehicleID.isEmpty ? Color.gray : AppTheme.primary)
+                            .background(fromLocation.isEmpty || selectedVehicleID.isEmpty ? Color.gray : AppColors.primary)
                             .cornerRadius(12)
                         }
                         .disabled(fromLocation.isEmpty || selectedVehicleID.isEmpty)

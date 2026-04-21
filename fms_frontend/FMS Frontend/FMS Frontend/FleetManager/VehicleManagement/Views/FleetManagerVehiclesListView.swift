@@ -39,7 +39,7 @@ struct FleetManagerVehiclesListView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
-                    .background(AppTheme.primary)
+                    .background(AppColors.primary)
                     .cornerRadius(8)
                 }
             }
@@ -85,7 +85,7 @@ struct FleetManagerVehiclesListView: View {
                 }
                 .padding(30)
             }
-            .background(AppTheme.background)
+            .background(AppColors.background)
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingAddVehicle) { AddVehicleModalView() }
@@ -141,14 +141,14 @@ struct VehicleGridCard: View {
         .padding(15)
         .background(Color.white)
         .cornerRadius(16)
-        .modifier(AppTheme.cardShadow())
+        .modifier(AppColors.cardShadow())
     }
     
     var statusColor: Color {
         switch vehicle.status {
-        case .inTransit: return AppTheme.primary
+        case .inTransit: return AppColors.primary
         case .idle: return Color.gray.opacity(0.5)
-        case .maintenance: return AppTheme.criticalRed
+        case .maintenance: return AppColors.criticalRed
         }
     }
 }
