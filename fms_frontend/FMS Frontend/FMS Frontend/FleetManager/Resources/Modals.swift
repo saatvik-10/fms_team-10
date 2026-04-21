@@ -469,7 +469,7 @@ struct AddVehicleModalView: View {
                             .foregroundColor(.gray)
                         
                         HStack(spacing: 20) {
-                            ModalFormField(label: "Vehicle Make", text: $make)
+                            ModalFormField(label: "Vehicle Owner", text: $make)
                             ModalFormField(label: "Vehicle Model", text: $model)
                         }
                         
