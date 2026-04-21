@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import { loginSchema, managerLoginSchema } from '../validators/auth.validator';
+import { superAdminLoginSchema, loginSchema } from '../validators/auth.validator';
 import { jwtAuth } from '../lib/jwt';
 import { prisma } from '../../prisma';
 import { comparePassword, hashPassword } from '../lib/hashPassword';
@@ -10,7 +10,7 @@ const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
 export class Auth {
   async signin(c: Context) {
     const body = await c.req.json();
-    const result = loginSchema.safeParse(body);
+    const result = superAdminLoginSchema.safeParse(body);
 
     if (!result.success) {
       return c.json({ err: 'Invalid input' }, 400);
@@ -55,16 +55,9 @@ export class Auth {
     return c.json({ token });
   }
 
-  async getMe(c: Context) {
-    return c.json({
-      userId: c.get('userId'),
-      role: c.get('role'),
-    });
-  }
-
-  async managerSignin(c: Context) {
+  async userSignin(c: Context) {
     const body = await c.req.json();
-    const result = managerLoginSchema.safeParse(body);
+    const result = loginSchema.safeParse(body);
 
     if (!result.success) {
       return c.json({ err: 'Invalid input' }, 400);
@@ -74,9 +67,14 @@ export class Auth {
 
     const user = await prisma.user.findUnique({
       where: { username },
+      include: {
+        manager: true,
+        driver: true,
+        maintenance: true,
+      },
     });
 
-    if (!user || user.role !== 'MANAGER') {
+    if (!user) {
       return c.json({ err: 'Invalid credentials' }, 401);
     }
 
@@ -85,16 +83,112 @@ export class Auth {
       return c.json({ err: 'Invalid credentials' }, 401);
     }
 
+    // Prevent SUPER_ADMIN from using this endpoint
+    if (user.role === 'SUPER_ADMIN') {
+      return c.json({ err: 'Invalid credentials' }, 401);
+    }
+
     const token = await jwtAuth({
       userId: user.id,
       role: user.role,
     });
 
+    // Return role-specific profile based on role
+    let profileData: Record<string, any> = { id: user.id, email: user.email };
+
+    if (user.role === 'MANAGER' && user.manager) {
+      profileData = {
+        ...profileData,
+        name: user.manager.name,
+        phone: user.manager.phone,
+        address: user.manager.address,
+      };
+    } else if (user.role === 'DRIVER' && user.driver) {
+      profileData = {
+        ...profileData,
+        name: user.driver.name,
+        phone: user.driver.phone,
+        address: user.driver.address,
+        licenceNumber: user.driver.licenceNumber,
+        expiryDate: user.driver.expiryDate,
+        classes: user.driver.classes,
+      };
+    } else if (user.role === 'MAINTENANCE' && user.maintenance) {
+      profileData = {
+        ...profileData,
+        name: user.maintenance.name,
+        phone: user.maintenance.phone,
+        address: user.maintenance.address,
+        certification: user.maintenance.certification,
+      };
+    } else {
+      return c.json({ err: 'Invalid credentials' }, 401);
+    }
+
     return c.json({
       token,
-      manager: {
-        id: user.id,
-        name: user.name,
+      user: {
+        ...profileData,
+        role: user.role,
+        username: user.username,
+      },
+    });
+  }
+
+  async getProfile(c: Context) {
+    const userId = c.get('userId') as string;
+    const role = c.get('role') as string;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        manager: true,
+        driver: true,
+        maintenance: true,
+      },
+    });
+
+    if (!user) {
+      return c.json({ err: 'User not found' }, 404);
+    }
+
+    let profileData: Record<string, any> = { id: user.id, email: user.email };
+
+    if (role === 'MANAGER' && user.manager) {
+      profileData = {
+        ...profileData,
+        name: user.manager.name,
+        phone: user.manager.phone,
+        address: user.manager.address,
+      };
+    } else if (role === 'DRIVER' && user.driver) {
+      profileData = {
+        ...profileData,
+        name: user.driver.name,
+        phone: user.driver.phone,
+        address: user.driver.address,
+        licenceNumber: user.driver.licenceNumber,
+        expiryDate: user.driver.expiryDate,
+        classes: user.driver.classes,
+      };
+    } else if (role === 'MAINTENANCE' && user.maintenance) {
+      profileData = {
+        ...profileData,
+        name: user.maintenance.name,
+        phone: user.maintenance.phone,
+        address: user.maintenance.address,
+        certification: user.maintenance.certification,
+      };
+    } else {
+      return c.json({ err: 'Invalid user' }, 400);
+    }
+
+    return c.json({
+      profile: {
+        ...profileData,
+        role: user.role,
+        username: user.username,
+        createdAt: user.createdAt,
       },
     });
   }
