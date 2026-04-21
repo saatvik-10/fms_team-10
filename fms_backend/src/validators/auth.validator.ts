@@ -10,5 +10,14 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+export const otpMailSchema = z.object({
+  email: z.string().email('Email is required'),
+});
+
+export const verifyOtpSchema = z.object({
+  email: z.string().email('Email is required'),
+  otp: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits'),
+});
+
 export type LoginInput = z.infer<typeof superAdminLoginSchema>;
 export type ManagerLoginInput = z.infer<typeof loginSchema>;
