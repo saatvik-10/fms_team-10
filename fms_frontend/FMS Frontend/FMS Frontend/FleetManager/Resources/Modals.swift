@@ -426,7 +426,7 @@ struct AddVehicleModalView: View {
         _make = State(initialValue: vehicleToEdit?.make ?? "")
         _model = State(initialValue: vehicleToEdit?.model ?? "")
         _regNumber = State(initialValue: vehicleToEdit?.id ?? "")
-        _vin = State(initialValue: "4G2BM59XYZ1234567")
+        _vin = State(initialValue: "")
         _odometer = State(initialValue: vehicleToEdit?.odometer ?? "0")
     }
     
