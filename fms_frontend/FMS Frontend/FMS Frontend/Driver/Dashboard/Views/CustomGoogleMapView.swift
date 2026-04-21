@@ -48,23 +48,21 @@ struct CustomGoogleMapViewRepresentable: UIViewRepresentable {
             }
         }
 
-        // 2. Next-stop marker — redraw only when destination changes
-        let newDestKey = viewModel.nextStopCoordinate
-            .map { "\($0.latitude),\($0.longitude)" } ?? ""
+        // 2. Destination marker — redraw only when destination changes
+        let newDestKey = "\(viewModel.trip.destination.coordinate.latitude),\(viewModel.trip.destination.coordinate.longitude)"
         if newDestKey != context.coordinator.lastDestinationKey {
             context.coordinator.lastDestinationKey = newDestKey
             context.coordinator.destinationMarker?.map = nil
             context.coordinator.destinationMarker = nil
 
-            if let dest = viewModel.nextStopCoordinate {
-                let marker = GMSMarker(position: dest)
-                marker.title = "Next Stop"
-                marker.icon = GMSMarker.markerImage(
-                    with: UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1)
-                )
-                marker.map = uiView
-                context.coordinator.destinationMarker = marker
-            }
+            let dest = viewModel.trip.destination.coordinate
+            let marker = GMSMarker(position: dest)
+            marker.title = "Destination"
+            marker.icon = GMSMarker.markerImage(
+                with: UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1)
+            )
+            marker.map = uiView
+            context.coordinator.destinationMarker = marker
         }
 
         // 3. Camera follows user — unconditional, with bearing

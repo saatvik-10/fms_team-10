@@ -57,14 +57,14 @@ extension LifecycleTrip {
                 time: "10:00 PM",
                 status: .upcoming
             ),
-            stops: [
-                TripStop(
-                    name: "Transit Checkpoint",
-                    coordinate: CLLocationCoordinate2D(latitude: 22.3072, longitude: 73.1812),
-                    time: "02:30 PM",
-                    status: .upcoming
-                )
-            ],
+//            stops: [
+//                TripStop(
+//                    name: "Transit Checkpoint",
+//                    coordinate: CLLocationCoordinate2D(latitude: 22.3072, longitude: 73.1812),
+//                    time: "02:30 PM",
+//                    status: .upcoming
+//                )
+//            ],
             cargoWeight: "18.4t",
             cargoUnits: self.loadInfo
         )
