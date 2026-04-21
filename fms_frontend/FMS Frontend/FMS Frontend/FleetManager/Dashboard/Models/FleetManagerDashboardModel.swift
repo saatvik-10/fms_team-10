@@ -80,6 +80,7 @@ struct EmissionData: Identifiable {
 struct Driver: Identifiable {
     let id: String
     let name: String
+    let email: String // New field for manual entry
     let title: String
     let licenseNum: String
     let licenseExp: String
