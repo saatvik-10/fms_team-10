@@ -6,226 +6,140 @@
 import SwiftUI
 
 struct MaintenanceDashboardView: View {
-    @Binding var isLoggedIn: Bool
     @EnvironmentObject var store: MaintenanceStore
-    @State private var showingCreateInspection = false
-    @State private var showingEmergencyInspection = false
-    @State private var showingCreateWorkOrder = false
-    
-    private var criticalAlertsCount: Int {
-        let criticalWorkOrders = store.workOrders.filter { $0.priority == .critical && $0.status != .completed }.count
-        let emergencyInspections = store.inspections.filter { $0.isEmergency && $0.status == .pending }.count
-        return criticalWorkOrders + emergencyInspections
-    }
-    
-    private var pendingWorkOrdersCount: Int {
-        return store.workOrders.filter { $0.status == .pending }.count
-    }
+    @Binding var isLoggedIn: Bool
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                // Summary Cards
-                HStack(spacing: 16) {
-                    SummaryCard(
-                        title: "Critical Alerts",
-                        count: "\(criticalAlertsCount)",
-                        icon: "exclamationmark.shield.fill",
-                        color: AppColors.error
+            VStack(spacing: 24) {
+                // Header / Greetings
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Fleet Overview")
+                        .font(.system(size: 28, weight: .black))
+                    Text("Real-time maintenance analytics")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.top, 20)
+
+                // KPI Grid
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                    KPICard(
+                        title: "PENDING ORDERS",
+                        value: "\(store.workOrders.filter { $0.status == .pending }.count)",
+                        icon: "clock.badge.exclamationmark",
+                        color: .blue
                     )
                     
-                    SummaryCard(
-                        title: "Pending Orders",
-                        count: "\(pendingWorkOrdersCount)",
-                        icon: "clock.fill",
-                        color: AppColors.primary
+                    KPICard(
+                        title: "CRITICAL ALERTS",
+                        value: "\(store.workOrders.filter { $0.priority == .critical }.count)",
+                        icon: "exclamationmark.triangle.fill",
+                        color: .red
+                    )
+                    
+                    KPICard(
+                        title: "LOW STOCK",
+                        value: "\(store.lowStockCount)",
+                        icon: "shippingbox.fill",
+                        color: .orange
+                    )
+                    
+                    KPICard(
+                        title: "COMPLIANCE",
+                        value: "\(Int(store.complianceScore))%",
+                        icon: "checkmark.seal.fill",
+                        color: .green
                     )
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                
-                // Work Orders Section
+                .padding(.horizontal)
+
+                // Recent Activity / Shortcuts
                 VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        Text("Work Orders")
-                            .font(.title2.bold())
-
-                        Spacer()
-
-                        NavigationLink(destination: WorkOrderManagementView()) {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(Color(.systemGray3))
-                        }
-                    }
-                    .padding(.horizontal, 20)
-
-                    VStack(spacing: 16) {
-                        let sortedOrders = store.workOrders.sorted {
-                        if $0.status == .completed && $1.status != .completed { return false }
-                        if $0.status != .completed && $1.status == .completed { return true }
-                        return $0.priority.sortingOrder < $1.priority.sortingOrder
-                    }
-                        ForEach(sortedOrders.prefix(5)) { order in
-                            NavigationLink(destination: WorkOrderDetailsView(workOrder: order)) {
-                                WorkOrderTaskCard(order: order)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    withAnimation {
-                                        store.deleteWorkOrder(order)
-                                    }
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                    Text("RECENT WORK ORDERS")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                    
+                    VStack(spacing: 0) {
+                        ForEach(store.workOrders.prefix(3)) { order in
+                            HStack(spacing: 16) {
+                                Circle()
+                                    .fill(order.priority == .critical ? Color.red.opacity(0.1) : Color.blue.opacity(0.1))
+                                    .frame(width: 40, height: 40)
+                                    .overlay(
+                                        Image(systemName: order.priority == .critical ? "bolt.fill" : "wrench.and.screwdriver.fill")
+                                            .foregroundColor(order.priority == .critical ? .red : .blue)
+                                            .font(.system(size: 14))
+                                    )
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(order.title)
+                                        .font(.system(size: 15, weight: .bold))
+                                    Text(order.vehicleName)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.secondary)
                                 }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding()
+                            
+                            if order.id != store.workOrders.prefix(3).last?.id {
+                                Divider().padding(.leading, 72)
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .background(Color.white)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+                    .padding(.horizontal)
                 }
                 
-                Spacer(minLength: 30)
+                Spacer(minLength: 40)
             }
-            .padding(.top)
         }
-        .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("Dashboard")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
-                    Image(systemName: "person.circle")
-                        .font(.system(size: 22))
-                }
-            }
-        }
-        .sheet(isPresented: $showingCreateInspection) {
-            CreateInspectionModal(isEmergency: false)
-        }
-        .sheet(isPresented: $showingEmergencyInspection) {
-            CreateInspectionModal(isEmergency: true)
-        }
-        .sheet(isPresented: $showingCreateWorkOrder) {
-            CreateWorkOrderModal()
-        }
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-struct SummaryCard: View {
+private struct KPICard: View {
     let title: String
-    let count: String
+    let value: String
     let icon: String
     let color: Color
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(color)
-                    .frame(width: 44, height: 44)
-                    .background(color.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.1))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: icon)
+                        .foregroundColor(color)
+                        .font(.system(size: 14, weight: .bold))
+                }
                 Spacer()
             }
             
-            VStack(alignment: .leading, spacing: 0) {
-                Text(count)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
-                
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(AppColors.primaryText.opacity(0.8))
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-        )
-    }
-}
-
-struct AlertCard: View {
-    let alert: MaintenanceDashboardViewModel.MaintenanceAlert
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Circle()
-                .fill((alert.type == .inspection ? AppColors.primary : .orange).opacity(0.1))
-                .frame(width: 44, height: 44)
-                .overlay(
-                    Image(systemName: alert.type == .inspection ? "checkmark.shield.fill" : "exclamationmark.triangle.fill")
-                        .foregroundColor(alert.type == .inspection ? AppColors.primary : .orange)
-                        .font(.system(size: 18, weight: .bold))
-                )
-            
             VStack(alignment: .leading, spacing: 4) {
-                Text(alert.title)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
-                Text(alert.message)
-                    .font(.system(size: 13))
-                    .foregroundColor(AppColors.secondaryText)
-                    .lineLimit(2)
-            }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(alert.time)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(AppColors.secondaryText)
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(AppColors.secondaryText.opacity(0.3))
+                Text(value)
+                    .font(.system(size: 24, weight: .black))
+                Text(title)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.secondary)
             }
         }
         .padding(16)
         .background(Color.white)
         .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
-        .padding(.horizontal, 20)
-    }
-}
-
-struct QuickActionRow: View {
-    let title: String
-    let icon: String
-    let isLast: Bool
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundColor(AppColors.primary)
-                .frame(width: 24)
-            
-            Text(title)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(AppColors.primaryText)
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(AppColors.secondaryText.opacity(0.5))
-        }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 16)
-    }
-}
-
-struct MaintenanceDashboardView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationStack {
-            MaintenanceDashboardView(isLoggedIn: .constant(true))
-        }
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
     }
 }
