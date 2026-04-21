@@ -35,7 +35,6 @@ export class Driver {
     const password = nanoid();
     const passwordHash = await hashPassword(password);
 
-    // Create User and Driver in transaction
     const user = await prisma.user.create({
       data: {
         email,
@@ -101,5 +100,35 @@ export class Driver {
       },
       201,
     );
+  }
+
+  async getDrivers(c: Context) {
+    const userId = c.get('userId') as string;
+
+    const drivers = await prisma.driver.findMany({
+      where: {
+        user: {
+          createdById: userId,
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    return c.json({
+      drivers: drivers.map((driver) => ({
+        id: driver.id,
+        name: driver.name,
+        email: driver.email,
+        username: driver.user.username,
+        phone: driver.phone,
+        address: driver.address,
+        licenceNumber: driver.licenceNumber,
+        expiryDate: driver.expiryDate,
+        classes: driver.classes,
+        createdAt: driver.createdAt,
+      })),
+    });
   }
 }

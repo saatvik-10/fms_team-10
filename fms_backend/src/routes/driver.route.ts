@@ -13,5 +13,6 @@ driverRoute.post(
   authRole,
   controller.createDriver,
 );
+driverRoute.get('/get-drivers', proxyAuth, authRole, controller.getDrivers);
 
 export default driverRoute;
