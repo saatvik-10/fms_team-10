@@ -9,10 +9,13 @@ struct FleetStatusMetricsGrid: View {
     let scheduled: Int
     
     var body: some View {
-        HStack(spacing: 20) {
+        HStack(spacing: 0) {
             FleetOpsMetricItem(title: "In Transit", value: active, color: AppColors.statusInTransit)
+            Divider().frame(height: 40).padding(.horizontal, 15)
             FleetOpsMetricItem(title: "Scheduled", value: scheduled, color: AppColors.statusInTransit.opacity(0.5))
+            Divider().frame(height: 40).padding(.horizontal, 15)
             FleetOpsMetricItem(title: "Idle", value: idle, color: AppColors.statusIdle)
+            Divider().frame(height: 40).padding(.horizontal, 15)
             FleetOpsMetricItem(title: "Maintenance", value: maintenance, color: AppColors.statusMaintenance)
         }
         .padding(24)

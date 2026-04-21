@@ -119,17 +119,28 @@ struct FleetManagerDashboardView: View {
                         }
                         
                         // MARK: - Row 4: Emission Analytics (Moved to End)
-                        VStack(alignment: .leading, spacing: 15) {
-                            Text("CO2 Emissions")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(AppColors.primary)
-                            
-                            FleetOpsEmissionsChart(data: dataManager.emissionData, showNavigation: false)
+                        NavigationLink(destination: FleetAnalyticsView().environmentObject(dataManager)) {
+                            VStack(alignment: .leading, spacing: 15) {
+                                HStack {
+                                    Text("CO2 Emissions")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(AppColors.primary)
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.gray.opacity(0.3))
+                                }
+                                
+                                FleetOpsEmissionsChart(data: dataManager.emissionData, showNavigation: false)
+                            }
+                            .padding(24)
+                            .background(AppColors.cardBackground)
+                            .cornerRadius(AppColors.defaultCornerRadius)
+                            .modifier(AppColors.cardShadow())
                         }
-                        .padding(24)
-                        .background(AppColors.cardBackground)
-                        .cornerRadius(AppColors.defaultCornerRadius)
-                        .modifier(AppColors.cardShadow())
+                        .buttonStyle(PlainButtonStyle())
                         
                         // spacer for bottom tab bar
                         Spacer().frame(height: 100)

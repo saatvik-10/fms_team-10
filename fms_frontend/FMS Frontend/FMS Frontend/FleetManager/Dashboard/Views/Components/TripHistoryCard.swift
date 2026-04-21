@@ -42,31 +42,16 @@ struct TripHistoryRow: View {
     let trip: VehicleTrip
     
     var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.activeGreen.opacity(0.1))
-                    .frame(width: 32, height: 32)
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(AppColors.activeGreen)
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(trip.origin) → \(trip.destination)")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(AppColors.primary)
-                Text(trip.date ?? "Recently")
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
-            }
-            
-            Spacer()
-            
-            Text(trip.costEstimate ?? "")
-                .font(.system(size: 13, weight: .semibold))
+        VStack(alignment: .leading, spacing: 8) {
+            Text("\(trip.origin) → \(trip.destination)")
+                .font(.system(size: 16, weight: .bold))
                 .foregroundColor(AppColors.primary)
+            
+            Text(trip.date ?? "Recently")
+                .font(.system(size: 13))
+                .foregroundColor(.gray)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
