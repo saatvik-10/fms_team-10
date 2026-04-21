@@ -18,6 +18,22 @@ class MaintenanceStore: ObservableObject {
     
     func loadMockData() {
         self.workOrders = [
+            WorkOrder(
+                title: "Hydraulic Leak Repair",
+                vehicleName: "JCB 3DX",
+                vehicleVIN: "JCB123456789",
+                serviceType: "Emergency",
+                priority: .critical,
+                status: .pending,
+                taskDetails: "Major hydraulic fluid leak detected in the main boom cylinder.",
+                scheduledDate: Date(),
+                technicianId: "Arjun-M",
+                technicianNotes: "Need to replace seals.",
+                partsNeeded: [
+                    Part(name: "Hydraulic Seal Kit", description: "Standard seal kit", iconName: "wrench.and.screwdriver.fill")
+                ],
+                imageAsset: "engine_part"
+            ),
             WorkOrder.mock,
             WorkOrder(
                 title: "Tire Calibration",
@@ -38,6 +54,21 @@ class MaintenanceStore: ObservableObject {
         ]
         
         self.inspections = [
+            TripInspection(
+                title: "Emergency Brake Failure",
+                vehicleId: "V-901",
+                unitName: "Eicher Pro 6037",
+                unitVIN: "9VWCP1192BM99",
+                driverId: "DRV-Suresh",
+                timestamp: Date(),
+                type: .preTrip,
+                vehicleType: .truck,
+                status: .pending,
+                items: TripInspection.mockItems(for: .truck),
+                maintenanceStaffId: "Arjun-S",
+                isEmergency: true,
+                imageAsset: "brake_part"
+            ),
             TripInspection(
                 title: "Pre-Trip Audit",
                 vehicleId: "V-842",

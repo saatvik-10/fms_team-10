@@ -12,9 +12,38 @@ struct MaintenanceDashboardView: View {
     @State private var showingEmergencyInspection = false
     @State private var showingCreateWorkOrder = false
     
+    private var criticalAlertsCount: Int {
+        let criticalWorkOrders = store.workOrders.filter { $0.priority == .critical && $0.status != .completed }.count
+        let emergencyInspections = store.inspections.filter { $0.isEmergency && $0.status == .pending }.count
+        return criticalWorkOrders + emergencyInspections
+    }
+    
+    private var pendingWorkOrdersCount: Int {
+        return store.workOrders.filter { $0.status == .pending }.count
+    }
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                // Summary Cards
+                HStack(spacing: 16) {
+                    SummaryCard(
+                        title: "Critical Alerts",
+                        count: "\(criticalAlertsCount)",
+                        icon: "exclamationmark.shield.fill",
+                        color: AppColors.error
+                    )
+                    
+                    SummaryCard(
+                        title: "Pending Orders",
+                        count: "\(pendingWorkOrdersCount)",
+                        icon: "clock.fill",
+                        color: AppColors.primary
+                    )
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                
                 // Work Orders Section
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
@@ -90,34 +119,35 @@ struct SummaryCard: View {
     let color: Color
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Circle()
-                    .fill(color.opacity(0.1))
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Image(systemName: icon)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(color)
-                    )
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(color)
+                    .frame(width: 44, height: 44)
+                    .background(color.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                
                 Spacer()
             }
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(count)
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundColor(AppColors.primaryText)
-                Text(title.uppercased())
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(AppColors.secondaryText)
-                    .tracking(1.0)
+                
+                Text(title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.primaryText.opacity(0.8))
             }
         }
-        .padding(20)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+        )
     }
 }
 

@@ -73,9 +73,15 @@ struct WorkOrderDetailsView: View {
                                 StatusBadge(text: workOrder.status.rawValue, color: .blue)
                                 PriorityBadge(priority: workOrder.priority.rawValue)
                                 Spacer()
-                                HStack(spacing: 4) {
-                                    Image(systemName: "calendar")
-                                    Text(workOrder.scheduledDate.formatted(date: .abbreviated, time: .omitted))
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "person.fill")
+                                        Text(workOrder.technicianId)
+                                    }
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "calendar")
+                                        Text(workOrder.scheduledDate.formatted(date: .abbreviated, time: .omitted))
+                                    }
                                 }
                                 .font(.caption.bold())
                                 .foregroundColor(.secondary)
