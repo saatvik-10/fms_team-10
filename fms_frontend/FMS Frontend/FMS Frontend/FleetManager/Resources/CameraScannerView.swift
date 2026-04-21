@@ -178,7 +178,7 @@ struct CameraScannerView: View {
             "DATE OF BIRTH", "DOB", "BIRTH DATE"
         ]) ?? allMatches(#"\d{2}[/\-\.]\d{2}[/\-\.]\d{4}"#, in: full).first
         
-        let classKeywords = ["MCWG", "LMV", "HMV", "LMVTR", "MGV", "HPV", "HGMV", "HPMV", "HTV", "LPV", "MPV"]
+        let classKeywords = ["MCWG", "LMV", "HMV", "LMVTR", "MGV", "HPV", "HGMV", "HPMV", "HTV", "LPV", "MPV", "TR", "TRANS"]
         var found: [String] = []
         let fullText = norm.joined(separator: " ")
         

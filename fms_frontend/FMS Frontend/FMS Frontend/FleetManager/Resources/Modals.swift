@@ -152,6 +152,7 @@ struct DriverModalView: View {
         "LMV-TR",
         "LMV-GV",
         "MCWG",
+        "TRANS",
         "LPV",
         "MGV",
         "MPV",
@@ -166,7 +167,10 @@ struct DriverModalView: View {
         "LMV": "LMV-NT",
         "MCWG": "MCWG",
         "HMV": "HGV",
-        "LMVTR": "LMV-TR"
+        "LMVTR": "LMV-TR",
+        "TR": "LMV-TR",
+        "TRANS": "TRANS",
+        "LMVTRANS": "LMV-TR"
     ]
     
     @State private var fullName: String
