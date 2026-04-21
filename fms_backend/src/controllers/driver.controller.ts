@@ -1,67 +1,105 @@
 import type { Context } from 'hono';
-
-const notImplemented = (resource: string, action: string, id?: string) => {
-  return { resource, action, ...(id ? { id } : {}) };
-};
+import { sendCredentialsMail } from '../services/resend';
+import { createDriverSchema } from '../validators/driver.validator';
+import { nanoid } from 'nanoid';
+import { prisma } from '../../prisma';
+import { hashPassword } from '../lib/hashPassword';
 
 export class Driver {
-  async getDashboard(c: Context) {
-    return c.json(notImplemented('driver-dashboard', 'get'), 501);
-  }
+  async createDriver(c: Context) {
+    const body = await c.req.json();
+    const result = createDriverSchema.safeParse(body);
 
-  async listTracking(c: Context) {
-    return c.json(notImplemented('driver-tracking', 'list'), 501);
-  }
+    if (!result.success) {
+      return c.json(
+        { err: 'Invalid input', details: result.error.flatten() },
+        400,
+      );
+    }
 
-  async updateTracking(c: Context) {
-    return c.json(notImplemented('driver-tracking', 'update', c.req.param('id')), 501);
-  }
+    const { fullName, email, licenseNumber, expiryDate, classes, phone, address } = result.data;
+    const managerId = c.get('userId') as string;
 
-  async listGeofences(c: Context) {
-    return c.json(notImplemented('geofences', 'list'), 501);
-  }
+    const existingEmailUser = await prisma.user.findUnique({ where: { email } });
+    if (existingEmailUser) {
+      return c.json({ err: 'Email already in use' }, 409);
+    }
 
-  async getGeofence(c: Context) {
-    return c.json(notImplemented('geofences', 'get', c.req.param('id')), 501);
-  }
+    const existingDriver = await prisma.driver.findUnique({ where: { phone } });
+    if (existingDriver) {
+      return c.json({ err: 'Phone already in use' }, 409);
+    }
 
-  async listIssues(c: Context) {
-    return c.json(notImplemented('issues', 'list'), 501);
-  }
+    const firstName = fullName.split(' ')[0]!.toLowerCase();
+    const username = `${firstName}_${nanoid(3)}`;
+    const password = nanoid();
+    const passwordHash = await hashPassword(password);
 
-  async createIssue(c: Context) {
-    return c.json(notImplemented('issues', 'create'), 501);
-  }
+    // Create User and Driver in transaction
+    const user = await prisma.user.create({
+      data: {
+        email,
+        username,
+        passwordHash,
+        role: 'DRIVER',
+        createdById: managerId,
+        driver: {
+          create: {
+            name: fullName,
+            email,
+            phone,
+            address,
+            licenceNumber: licenseNumber,
+            expiryDate,
+            classes,
+          },
+        },
+      },
+      include: {
+        driver: true,
+      },
+    });
 
-  async updateIssue(c: Context) {
-    return c.json(notImplemented('issues', 'update', c.req.param('id')), 501);
-  }
+    let mailStatus: { sent: boolean; details?: string } = { sent: true };
 
-  async listTrips(c: Context) {
-    return c.json(notImplemented('trips', 'list'), 501);
-  }
+    try {
+      await sendCredentialsMail({
+        userEmail: email,
+        role: 'Driver',
+        username,
+        password,
+        senderRole: 'Manager',
+      });
+    } catch (error) {
+      console.error('Failed to send driver credentials email', error);
+      mailStatus = {
+        sent: false,
+        details: error instanceof Error ? error.message : 'Unknown mail error',
+      };
+    }
 
-  async getTrip(c: Context) {
-    return c.json(notImplemented('trips', 'get', c.req.param('id')), 501);
-  }
-
-  async updateTrip(c: Context) {
-    return c.json(notImplemented('trips', 'update', c.req.param('id')), 501);
-  }
-
-  async listNotifications(c: Context) {
-    return c.json(notImplemented('notifications', 'list'), 501);
-  }
-
-  async updateNotification(c: Context) {
-    return c.json(notImplemented('notifications', 'update', c.req.param('id')), 501);
-  }
-
-  async listReports(c: Context) {
-    return c.json(notImplemented('reports', 'list'), 501);
-  }
-
-  async getReport(c: Context) {
-    return c.json(notImplemented('reports', 'get', c.req.param('id')), 501);
+    return c.json(
+      {
+        message: 'Driver created successfully',
+        credentials: {
+          username,
+          password,
+        },
+        mail: mailStatus,
+        driver: {
+          id: user.driver?.id,
+          name: user.driver?.name,
+          email: user.driver?.email,
+          username: user.username,
+          phone: user.driver?.phone,
+          address: user.driver?.address,
+          licenceNumber: user.driver?.licenceNumber,
+          expiryDate: user.driver?.expiryDate,
+          classes: user.driver?.classes,
+          createdAt: user.driver?.createdAt,
+        },
+      },
+      201,
+    );
   }
 }
