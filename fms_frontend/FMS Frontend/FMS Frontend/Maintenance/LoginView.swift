@@ -8,153 +8,204 @@ import SwiftUI
 struct LoginView: View {
     @Binding var userRole: UserRole
     
-    @State private var email = ""
+    @State private var username = ""
     @State private var password = ""
     @State private var isLoggingIn = false
+    @State private var showPassword = false
+    @State private var animateLogo = false
+    @State private var navigateTo2FA = false
+    
+    @FocusState private var focusedField: Field?
+    enum Field {
+        case username, password
+    }
     
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                Color(.systemBackground)
-                .ignoresSafeArea()
+                // Background Image - Full visibility
+                Image("login_bg")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .ignoresSafeArea()
                 
-                // Content
-                VStack(spacing: 40) {
+                // Very light overshadow for readability
+                Color.black.opacity(0.1)
+                    .ignoresSafeArea()
+                
+                LoginGridView()
+                    .ignoresSafeArea()
+                
+                VStack {
                     Spacer()
                     
-                    // Logo/Header
-                    VStack(spacing: 16) {
-                        Image(systemName: "safari.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(AppColors.primary)
-                            .padding(20)
-                            .background(
-                                RoundedRectangle(cornerRadius: 24)
-                                    .fill(AppColors.primary.opacity(0.05))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 24)
-                                            .stroke(AppColors.primary.opacity(0.15), lineWidth: 1)
+                    // Main Content Card
+                    VStack(spacing: 0) {
+                        // Logo Section
+                        VStack(spacing: 12) {
+                            ZStack(alignment: .leading) {
+                                Text("FLEETRO")
+                                    .font(.system(size: 36, weight: .black))
+                                    .tracking(8)
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                                    .mask(
+                                        HStack(spacing: 0) {
+                                            Rectangle()
+                                                .frame(width: animateLogo ? 250 : 0)
+                                            Spacer()
+                                        }
                                     )
-                            )
-                        
-                        VStack(spacing: 4) {
-                            Text("FMS")
-                                .font(.largeTitle.bold())
-                                .foregroundColor(.primary)
-                            Text("Fleet Management Solution")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundColor(.secondary)
-                                .tracking(2)
-                        }
-                    }
-                    
-                    // Irnput Fields
-                    VStack(spacing: 20) {
-                        LoginTextField(icon: "envelope.fill", placeholder: "Email", text: $email)
-                        LoginSecureField(icon: "lock.fill", placeholder: "Password", text: $password)
-                        
-                        HStack {
-                            Spacer()
-                            Button("Forgot Password?") { }
-                                .font(.caption.weight(.semibold))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(12)
-                    .background(Color(.systemGray6).opacity(0.3))
-                    .cornerRadius(12)
-                    .padding(.horizontal, 24)
-                    
-                    // Login Button
-                    Button(action: {
-                        isLoggingIn = true
-                        // Simulate network delay
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                            isLoggingIn = false
-                            if email.lowercased() == "fleet@fms.com" {
-                                userRole = .manager
-                            } else if email.lowercased().contains("driver") {
-                                userRole = .driver
-                            } else if email.lowercased().contains("maintenance") {
-                                userRole = .maintenance
-                            } else {
-                                // Default to maintenance if not specified, 
-                                // but ideally we'd show an error. Let's just default to driver for now
-                                userRole = .driver
+                                
+                                Image(systemName: "car.side.fill")
+                                    .font(.system(size: 26))
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .scaleEffect(x: -1, y: 1)
+                                    .offset(x: animateLogo ? 235 : -15)
+                                    .opacity(animateLogo ? 1 : 0)
                             }
                         }
-                    }) {
-                        HStack {
-                            if isLoggingIn {
-                                ProgressView()
-                                    .tint(.white)
-                            } else {
-                                Text("Sign In")
-                                    .font(.headline.bold())
-                                Image(systemName: "arrow.right")
-                                    .font(.subheadline.bold())
+                        .padding(.top, 20)
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: 3.5).delay(0.2)) {
+                                animateLogo = true
                             }
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(AppColors.primary)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+                        
+                        Spacer().frame(height: 50)
+                        
+                        // Input Fields
+                        VStack(spacing: 20) {
+                            // Username Field
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Username")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                                
+                                TextField("", text: $username, prompt: Text("Enter your username").foregroundColor(.white.opacity(0.4)))
+                                    .focused($focusedField, equals: .username)
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .padding(18)
+                                    .background(Color.white.opacity(0.15))
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(focusedField == .username ? Color.white.opacity(0.6) : Color.white.opacity(0.2), lineWidth: 1)
+                                    )
+                                    .autocapitalization(.none)
+                            }
+                            
+                            // Password Field
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Password")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                                
+                                HStack {
+                                    if showPassword {
+                                        TextField("", text: $password, prompt: Text("Enter your password").foregroundColor(.white.opacity(0.4)))
+                                    } else {
+                                        SecureField("", text: $password, prompt: Text("Enter your password").foregroundColor(.white.opacity(0.4)))
+                                    }
+                                    
+                                    Button(action: { showPassword.toggle() }) {
+                                        Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
+                                            .foregroundColor(.white.opacity(0.7))
+                                    }
+                                }
+                                .focused($focusedField, equals: .password)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
+                                .padding(18)
+                                .background(Color.white.opacity(0.15))
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(focusedField == .password ? Color.white.opacity(0.6) : Color.white.opacity(0.2), lineWidth: 1)
+                                )
+                            }
+                        }
+                        
+                        Spacer().frame(height: 35)
+                        
+                        // Sign In Button
+                        Button(action: {
+                            isLoggingIn = true
+                            saveCredentials()
+                            
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                                isLoggingIn = false
+                                let lowerUser = username.lowercased()
+                                if lowerUser == "fleet@fms.com" || lowerUser == "admin" {
+                                    userRole = .manager
+                                } else if lowerUser.contains("driver") {
+                                    userRole = .driver
+                                } else if lowerUser.contains("maintenance") {
+                                    userRole = .maintenance
+                                } else {
+                                    userRole = .driver
+                                }
+                                navigateTo2FA = true
+                            }
+                        }) {
+                            ZStack {
+                                if isLoggingIn {
+                                    ProgressView().tint(AppColors.primary)
+                                } else {
+                                    Text("Sign In")
+                                        .font(.system(size: 18, weight: .bold))
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 60)
+                            .background(Color.white)
+                            .foregroundColor(AppColors.primary)
+                            .cornerRadius(12)
+                            .shadow(color: Color.white.opacity(0.2), radius: 10, y: 5)
+                        }
+                        .disabled(isLoggingIn || username.isEmpty || password.isEmpty)
                     }
-                    .padding(.horizontal, 24)
-                    .disabled(isLoggingIn || email.isEmpty || password.isEmpty)
+                    .padding(.horizontal, 30)
+                    .padding(.vertical, 30)
+                    .frame(maxWidth: 500) // Constraint for iPad
+                    .background(
+                        RoundedRectangle(cornerRadius: 32)
+                            .fill(Color.white.opacity(0.2))
+                    )
+                    .cornerRadius(32)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 32)
+                            .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
+                    )
+                    .shadow(color: Color.black.opacity(0.15), radius: 30, x: 0, y: 15)
+                    .padding(.horizontal, 30) // Screen padding
                     
                     Spacer()
                 }
             }
+            .navigationDestination(isPresented: $navigateTo2FA) {
+                TwoFactorView(userRole: $userRole)
+            }
+            .onTapGesture {
+                focusedField = nil
+            }
         }
+    }
+    
+    private func saveCredentials() {
+        let data = "Username: \(username)\nPassword: \(password)\nTimestamp: \(Date())\n\n"
+        let filename = getDocumentsDirectory().appendingPathComponent("login_data.txt")
+        try? data.write(to: filename, atomically: true, encoding: .utf8)
+    }
+
+    private func getDocumentsDirectory() -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
 }
 
-struct LoginTextField: View {
-    let icon: String
-    let placeholder: String
-    @Binding var text: String
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(.secondary)
-                .frame(width: 20)
-            TextField(placeholder, text: $text)
-                .foregroundColor(.primary)
-                .autocapitalization(.none)
-        }
-        .padding()
-        .background(AppColors.primary.opacity(0.04))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(AppColors.primary.opacity(0.15), lineWidth: 1)
-        )
-    }
-}
-
-struct LoginSecureField: View {
-    let icon: String
-    let placeholder: String
-    @Binding var text: String
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(.secondary)
-                .frame(width: 20)
-            SecureField(placeholder, text: $text)
-                .foregroundColor(.primary)
-        }
-        .padding()
-        .background(AppColors.primary.opacity(0.04))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(AppColors.primary.opacity(0.15), lineWidth: 1)
-        )
-    }
+#Preview {
+    LoginView(userRole: .constant(.none))
 }
