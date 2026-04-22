@@ -171,6 +171,39 @@ class MaintenanceStore: ObservableObject {
                 imageAsset: "truck_main",
                 imagesData: [UIImage(named: "engine_part")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemRed.image().jpegData(compressionQuality: 0.1)!],
                 imageAnalyses: ["Analysis: Manifold signature uniform."]
+            ),
+            TripInspection(
+                title: "Hydraulic System Audit",
+                vehicleId: "V-902",
+                unitName: "JCB 3DX",
+                unitVIN: "JCB123456789",
+                driverId: "DRV-Suresh",
+                timestamp: Date(),
+                type: .maintenance,
+                vehicleType: .truck,
+                status: .pending,
+                priority: .high,
+                items: [
+                    InspectionItem(name: "Brake System", verificationCriteria: "Pad thickness and rotor condition", result: .good, isImageRequired: true),
+                    InspectionItem(name: "Tire Condition", verificationCriteria: "Tread depth and pressure", result: .pending, isImageRequired: true),
+                    InspectionItem(name: "Fluid Levels", verificationCriteria: "Oil, coolant, and brake fluid", result: .pending, isImageRequired: false)
+                ],
+                maintenanceStaffId: "Arjun-M",
+                imageAsset: "engine_part"
+            ),
+            TripInspection(
+                title: "Chassis Integrity Check",
+                vehicleId: "V-903",
+                unitName: "JCB 3DX",
+                unitVIN: "JCB123456789",
+                driverId: "DRV-Suresh",
+                timestamp: Date().addingTimeInterval(3600),
+                type: .maintenance,
+                vehicleType: .truck,
+                status: .pending,
+                priority: .medium,
+                items: TripInspection.mockItems(for: .truck),
+                maintenanceStaffId: "Arjun-M"
             )
         ]
     }

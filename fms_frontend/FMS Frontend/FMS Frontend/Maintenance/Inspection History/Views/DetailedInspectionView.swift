@@ -69,35 +69,7 @@ struct DetailedInspectionView: View {
                         Spacer()
                     }
 
-                    if inspection.status == .completed {
-                        Button(action: {
-                            isGenerating = true
-                            DispatchQueue.global(qos: .userInitiated).async {
-                                let url = PDFService.shared.generateInspectionReport(inspection: inspection)
-                                DispatchQueue.main.async {
-                                    isGenerating = false
-                                    reportURL = url
-                                    showingPDFPreview = url != nil
-                                }
-                            }
-                        }) {
-                            HStack {
-                                if isGenerating {
-                                    ProgressView().tint(.white)
-                                } else {
-                                    Image(systemName: "doc.text.fill")
-                                }
-                                Text("View Full PDF Report")
-                                    .font(.system(size: 14, weight: .bold))
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(AppColors.primary)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                        }
-                        .disabled(isGenerating)
-                    }
+
 
                     Divider()
 
@@ -168,8 +140,8 @@ struct DetailedInspectionView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if inspection.status != .completed {
                     Button(action: { showingDoneAlert = true }) {
-                        Text("Finish")
-                            .font(.system(size: 16, weight: .bold))
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundColor(AppColors.primary)
                     }
                 }

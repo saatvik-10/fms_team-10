@@ -32,8 +32,8 @@ struct VehicleInspectionsListView: View {
 
     private var filteredInspections: [TripInspection] {
         inspections.filter { inspection in
-            // Filter by segment - Inspection segment only shows completed as per request
-            if selectedSegment == 0 {
+            // Filter by segment
+            if selectedSegment == 1 {
                 guard inspection.status == .completed else { return false }
             }
             
@@ -71,13 +71,13 @@ struct VehicleInspectionsListView: View {
 
             ScrollView {
                 if selectedSegment == 0 {
-                    // INSPECTION SEGMENT
+                    // INSPECTION SEGMENT (Pending)
                     LazyVStack(spacing: 12) {
                         if filteredInspections.isEmpty {
                             EmptyStateView(
                                 icon: "doc.text.magnifyingglass",
-                                title: "No \(filter.rawValue) Audits",
-                                message: "There are no completed inspection records."
+                                title: "No Pending Audits",
+                                message: "All scheduled inspections for this unit are complete."
                             )
                             .padding(.top, 60)
                         } else {
@@ -86,30 +86,38 @@ struct VehicleInspectionsListView: View {
                                     InspectionTaskCard(inspection: inspection, showUnitName: false)
                                 }
                                 .buttonStyle(PlainButtonStyle())
-                                .contextMenu {
-                                    Button(role: .destructive) {
-                                        withAnimation {
-                                            store.deleteInspection(inspection)
-                                        }
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
                             }
                         }
                     }
                     .padding(16)
                 } else {
-                    // HISTORY SEGMENT (Separate Cards)
+                    // HISTORY SEGMENT (Archived - Old List Style)
                     LazyVStack(spacing: 12) {
-                        if filteredHistory.isEmpty {
+                        let completedFromStore = store.inspections.filter { $0.unitName == unitName && $0.status == .completed }
+                        
+                        if filteredHistory.isEmpty && completedFromStore.isEmpty {
                             EmptyStateView(
-                                icon: "doc.text.magnifyingglass",
+                                icon: "archivebox",
                                 title: "No History Records",
                                 message: "No archived reports found for this vehicle."
                             )
                             .padding(.top, 60)
                         } else {
+                            // Show Completed Store Inspections First
+                            ForEach(completedFromStore.sorted(by: { $0.timestamp > $1.timestamp })) { inspection in
+                                Button(action: {
+                                    if let url = PDFService.shared.generateInspectionReport(inspection: inspection) {
+                                        selectedPDFURL = url
+                                        selectedReportTitle = inspection.title.isEmpty ? inspection.type.rawValue : inspection.title
+                                        showPDF = true
+                                    }
+                                }) {
+                                    historyRow(title: inspection.title.isEmpty ? inspection.type.rawValue : inspection.title, date: inspection.timestamp)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                            
+                            // Then Show Mock History Entries
                             ForEach(filteredHistory) { entry in
                                 Button(action: {
                                     if let url = PDFService.shared.generateInspectionReport(inspection: entry.inspection) {
@@ -118,36 +126,7 @@ struct VehicleInspectionsListView: View {
                                         showPDF = true
                                     }
                                 }) {
-                                    HStack(spacing: 16) {
-                                        ZStack {
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(AppColors.primary.opacity(0.1))
-                                                .frame(width: 48, height: 48)
-                                            Image(systemName: "doc.fill")
-                                                .font(.system(size: 20))
-                                                .foregroundColor(AppColors.primary)
-                                        }
-                                        
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(entry.title)
-                                                .font(.system(size: 16, weight: .bold))
-                                                .foregroundColor(.primary)
-                                            
-                                            Text(entry.inspection.timestamp.formatted(date: .abbreviated, time: .shortened))
-                                                .font(.system(size: 13))
-                                                .foregroundColor(.secondary)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        Image(systemName: "chevron.right")
-                                            .font(.system(size: 14, weight: .bold))
-                                            .foregroundColor(Color(.systemGray4))
-                                    }
-                                    .padding(16)
-                                    .background(Color(.secondarySystemGroupedBackground))
-                                    .cornerRadius(16)
-                                    .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
+                                    historyRow(title: entry.title, date: entry.inspection.timestamp)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -177,6 +156,40 @@ struct VehicleInspectionsListView: View {
                 PDFPreviewView(url: url, title: selectedReportTitle)
             }
         }
+    }
+
+    @ViewBuilder
+    private func historyRow(title: String, date: Date) -> some View {
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(AppColors.primary.opacity(0.1))
+                    .frame(width: 48, height: 48)
+                Image(systemName: "doc.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(AppColors.primary)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.primary)
+                
+                Text(date.formatted(date: .abbreviated, time: .shortened))
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(Color(.systemGray4))
+        }
+        .padding(16)
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
     }
     
     // History Entry with real inspection data
