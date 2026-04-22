@@ -9,12 +9,18 @@ import { jwtAuth } from '../lib/jwt';
 import { prisma } from '../../prisma';
 import { comparePassword, hashPassword } from '../lib/hashPassword';
 import { verificationOTP } from '../services/resend.service';
-import {otpStore, isCooldownActive, createOtpCode, saveOtpForEmail, getNextVerifyAttempt, clearOtpState} from '../lib/lib'
+import {
+  otpStore,
+  isCooldownActive,
+  createOtpCode,
+  saveOtpForEmail,
+  getNextVerifyAttempt,
+  clearOtpState,
+} from '../lib/otp';
 
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL;
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
 const MAX_VERIFY_ATTEMPTS = 10;
-
 
 export class Auth {
   async signin(c: Context) {
@@ -127,8 +133,8 @@ export class Auth {
         ...profileData,
         name: user.maintenance.name,
         phone: user.maintenance.phone,
-        address: user.maintenance.address,
-        certification: user.maintenance.certification,
+        email: user.maintenance.email,
+        dob: user.maintenance.dob,
       };
     } else {
       return c.json({ err: 'Invalid credentials' }, 401);
@@ -157,10 +163,7 @@ export class Auth {
     const now = Date.now();
 
     if (existingOtp && isCooldownActive(existingOtp, now)) {
-      return c.json(
-        { err: 'Please wait before requesting another OTP' },
-        429,
-      );
+      return c.json({ err: 'Please wait before requesting another OTP' }, 429);
     }
 
     const otp = createOtpCode();
@@ -250,8 +253,8 @@ export class Auth {
         ...profileData,
         name: user.maintenance.name,
         phone: user.maintenance.phone,
-        address: user.maintenance.address,
-        certification: user.maintenance.certification,
+        email: user.maintenance.email,
+        dob: user.maintenance.dob,
       };
     } else {
       return c.json({ err: 'Invalid user' }, 400);
