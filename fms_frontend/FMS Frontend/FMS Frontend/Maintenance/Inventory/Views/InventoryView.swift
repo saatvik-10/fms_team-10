@@ -34,13 +34,12 @@ struct InventoryView: View {
                     if !store.inventoryParts.isEmpty {
                         Button(action: { showingFileImporter = true }) {
                             Image(systemName: "plus.app")
-                                .font(.system(size: 22))
+                                .font(.title3)
                         }
                     }
                     NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
                         Image(systemName: "person.circle")
-                            .font(.system(size: 22))
-                            .foregroundColor(AppColors.primary)
+                            .font(.title2)
                     }
                 }
             }
@@ -122,54 +121,12 @@ struct InventoryView: View {
             }
             .padding(.top, 16)
 
-            Button(action: loadSampleData) {
-                Text("Load Sample Data")
+            Button(action: { store.loadInitialInventory() }) {
+                Text("Load Default Inventory")
                     .font(.subheadline.bold())
                     .foregroundColor(AppColors.primary)
                     .padding(.top, 8)
             }
-        }
-    }
-    
-    private func loadSampleData() {
-        let sampleCSV = """
-Name,SKU,Description,Category,No Of Stock,Unit cost,Usage Last 30 Days,Vendor Name,Vendor Phone,Vendor Email,Average Lead Time Days
-Wireless Mouse,ELE-5863,Professional grade wireless mouse for retail.,Electronics,22,321.23,25,TechNova Solutions,+1-555-010-2345,sales@technova.com,10
-Mechanical Keyboard,ELE-7792,Professional grade mechanical keyboard for retail.,Electronics,70,80.84,71,TechNova Solutions,+1-555-010-2345,sales@technova.com,9
-USB-C Hub,ELE-8859,Professional grade usb-c hub for retail.,Electronics,184,393.78,62,TechNova Solutions,+1-555-010-2345,sales@technova.com,15
-Noise Cancelling Headphones,ELE-4731,Professional grade noise cancelling headphones for retail.,Electronics,221,253.51,16,TechNova Solutions,+1-555-010-2345,sales@technova.com,3
-Webcam 1080p,ELE-1863,Professional grade webcam 1080p for retail.,Electronics,195,24.01,16,TechNova Solutions,+1-555-010-2345,sales@technova.com,9
-Ergonomic Chair,OFF-8873,Professional grade ergonomic chair for retail.,Office Supplies,88,395.74,58,Global Office Supplies,+1-555-022-8899,orders@globaloffice.com,9
-Standing Desk,OFF-7716,Professional grade standing desk for retail.,Office Supplies,186,364.91,37,Global Office Supplies,+1-555-022-8899,orders@globaloffice.com,12
-Notebook Set,OFF-4249,Professional grade notebook set for retail.,Office Supplies,243,67.9,48,Global Office Supplies,+1-555-022-8899,orders@globaloffice.com,14
-Gel Pens (12 pack),OFF-7581,Professional grade gel pens (12 pack) for retail.,Office Supplies,183,157.99,21,Global Office Supplies,+1-555-022-8899,orders@globaloffice.com,8
-Desk Organizer,OFF-3474,Professional grade desk organizer for retail.,Office Supplies,213,398.59,59,Global Office Supplies,+1-555-022-8899,orders@globaloffice.com,12
-Air Fryer,KIT-6593,Professional grade air fryer for retail.,Kitchenware,21,107.99,49,Culina Gear Ltd.,+44-20-7946-0123,contact@culinagear.co.uk,14
-Electric Kettle,KIT-9125,Professional grade electric kettle for retail.,Kitchenware,131,276.13,85,Culina Gear Ltd.,+44-20-7946-0123,contact@culinagear.co.uk,11
-Chef's Knife,KIT-9527,Professional grade chef's knife for retail.,Kitchenware,99,123.14,50,Culina Gear Ltd.,+44-20-7946-0123,contact@culinagear.co.uk,13
-Cast Iron Skillet,KIT-1149,Professional grade cast iron skillet for retail.,Kitchenware,144,256.21,100,Culina Gear Ltd.,+44-20-7946-0123,contact@culinagear.co.uk,8
-Blender,KIT-8299,Professional grade blender for retail.,Kitchenware,39,487.13,95,Culina Gear Ltd.,+44-20-7946-0123,contact@culinagear.co.uk,7
-Yoga Mat,FIT-8647,Professional grade yoga mat for retail.,Fitness,244,254.81,17,Peak Performance Fitness,+1-555-045-6712,wholesale@peakfit.com,4
-Dumbbell Set,FIT-3264,Professional grade dumbbell set for retail.,Fitness,149,224.01,57,Peak Performance Fitness,+1-555-045-6712,wholesale@peakfit.com,3
-Resistance Bands,FIT-4820,Professional grade resistance bands for retail.,Fitness,165,203.89,68,Peak Performance Fitness,+1-555-045-6712,wholesale@peakfit.com,15
-Foam Roller,FIT-4023,Professional grade foam roller for retail.,Fitness,237,33.45,87,Peak Performance Fitness,+1-555-045-6712,wholesale@peakfit.com,12
-Jump Rope,FIT-4213,Professional grade jump rope for retail.,Fitness,197,305.3,68,Peak Performance Fitness,+1-555-045-6712,wholesale@peakfit.com,7
-Bookshelf,FUR-7074,Professional grade bookshelf for retail.,Furniture,58,168.24,78,Urban Living Furniture,+1-555-099-4433,support@urbanliving.com,4
-Side Table,FUR-3253,Professional grade side table for retail.,Furniture,95,381.43,70,Urban Living Furniture,+1-555-099-4433,support@urbanliving.com,11
-Floor Lamp,FUR-6228,Professional grade floor lamp for retail.,Furniture,221,129.8,31,Urban Living Furniture,+1-555-099-4433,support@urbanliving.com,9
-Bean Bag,FUR-4379,Professional grade bean bag for retail.,Furniture,115,175.79,48,Urban Living Furniture,+1-555-099-4433,support@urbanliving.com,5
-Ottoman,FUR-2128,Professional grade ottoman for retail.,Furniture,196,121.26,62,Urban Living Furniture,+1-555-099-4433,support@urbanliving.com,7
-"""
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("sample_inventory.csv")
-        try? sampleCSV.write(to: tempURL, atomically: true, encoding: .utf8)
-        
-        let (parts, errors) = InventoryCSVImportService.shared.parseCSV(at: tempURL)
-        if !parts.isEmpty {
-            store.importInventory(parts)
-        }
-        if !errors.isEmpty {
-            self.importErrors = errors
-            self.showingErrorAlert = true
         }
     }
     
@@ -270,12 +227,12 @@ struct InventoryPartCard: View {
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(part.name)
+                        Text(part.partName)
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(AppColors.primaryText)
 
                         HStack(spacing: 8) {
-                            Text(part.sku)
+                            Text(part.partId)
                                 .font(.system(size: 11, weight: .medium, design: .monospaced))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -291,7 +248,7 @@ struct InventoryPartCard: View {
                     Spacer()
 
                     VStack(alignment: .trailing, spacing: 4) {
-                        Text("Stock: \(part.stockCount)")
+                        Text("Stock: \(part.stockQty)")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundColor(part.isLowStock ? .orange : AppColors.primaryText)
 
@@ -326,8 +283,8 @@ struct InventoryPartCard: View {
                         .foregroundColor(AppColors.secondaryText)
                     
                     TextField("0", value: Binding(
-                        get: { part.reorderThreshold },
-                        set: { store.updateInventoryThreshold(for: part.sku, newThreshold: $0) }
+                        get: { part.minStock },
+                        set: { store.updateInventoryThreshold(for: part.partId, newThreshold: $0) }
                     ), format: .number)
                     .keyboardType(.numberPad)
                     .font(.system(size: 14, weight: .bold))
@@ -365,29 +322,23 @@ struct InventoryPartCard: View {
 
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("USAGE STATISTICS")
+                        Text("LOCATION INFO")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(AppColors.secondaryText)
-                        Text("Used in last 30 days: \(part.usageLast30Days) units")
+                        Text("Stored at: \(part.location)")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(AppColors.primaryText)
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("SUPPLY INFO")
+                        Text("SUPPLY & COMPATIBILITY")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(AppColors.secondaryText)
 
-                        Text("Vendor: \(part.vendorName)")
+                        Text("Supplier: \(part.supplier)")
                             .font(.system(size: 13))
                             .foregroundColor(AppColors.primaryText)
-                        Text("Phone: \(part.vendorPhone)")
-                            .font(.system(size: 13))
-                            .foregroundColor(AppColors.primaryText)
-                        Text("Email: \(part.vendorEmail)")
-                            .font(.system(size: 13))
-                            .foregroundColor(AppColors.primaryText)
-                        Text("Lead Time: \(part.averageLeadTimeDays) days")
+                        Text("Vehicle Type: \(part.vehicleType)")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(AppColors.primaryText)
                     }

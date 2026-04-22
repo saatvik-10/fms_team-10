@@ -30,6 +30,9 @@ class MaintenanceStore: ObservableObject {
     init() {
         loadMockData()
         loadInventory()
+        if inventoryParts.isEmpty {
+            loadInitialInventory()
+        }
     }
     
     // MARK: - Persistence
@@ -48,9 +51,22 @@ class MaintenanceStore: ObservableObject {
         }
     }
     
-    func updateInventoryThreshold(for sku: String, newThreshold: Int) {
-        if let index = inventoryParts.firstIndex(where: { $0.sku == sku }) {
-            inventoryParts[index].reorderThreshold = newThreshold
+    func loadInitialInventory() {
+        if let url = Bundle.main.url(forResource: "fleet_inventory_dataset", withExtension: "csv") {
+            let (parts, errors) = InventoryCSVImportService.shared.parseCSV(at: url)
+            if !parts.isEmpty {
+                self.inventoryParts = parts
+                saveInventory()
+            }
+            if !errors.isEmpty {
+                print("Encountered \(errors.count) errors loading initial inventory from CSV.")
+            }
+        }
+    }
+    
+    func updateInventoryThreshold(for partId: String, newThreshold: Int) {
+        if let index = inventoryParts.firstIndex(where: { $0.partId == partId }) {
+            inventoryParts[index].minStock = newThreshold
             saveInventory()
         }
     }
@@ -58,8 +74,8 @@ class MaintenanceStore: ObservableObject {
     func importInventory(_ newParts: [InventoryPart]) {
         var mergedParts = newParts
         for i in 0..<mergedParts.count {
-            if let existing = inventoryParts.firstIndex(where: { $0.sku == mergedParts[i].sku }) {
-                mergedParts[i].reorderThreshold = inventoryParts[existing].reorderThreshold
+            if let existing = inventoryParts.firstIndex(where: { $0.partId == mergedParts[i].partId }) {
+                mergedParts[i].minStock = inventoryParts[existing].minStock
             }
         }
         self.inventoryParts = mergedParts
@@ -150,42 +166,6 @@ class MaintenanceStore: ObservableObject {
                 imageAsset: "truck_main",
                 imagesData: [UIImage(named: "engine_part")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemRed.image().jpegData(compressionQuality: 0.1)!],
                 imageAnalyses: ["Analysis: Manifold signature uniform."]
-            )
-        ]
-        
-        self.inventoryParts = [
-            InventoryPart(
-                name: "Ceramic Brake Pads",
-                sku: "BP-CER-001",
-                description: "Heavy-duty ceramic pads for Actros/Prima.",
-                category: "Brakes",
-                stockCount: 12,
-                unitCost: 150.0,
-                reorderThreshold: 5,
-                vendorName: "Global Parts Corp",
-                averageLeadTimeDays: 3
-            ),
-            InventoryPart(
-                name: "Hydraulic Seal Kit",
-                sku: "SK-HYD-099",
-                description: "Seal kit for boom cylinders.",
-                category: "Hydraulics",
-                stockCount: 2,
-                unitCost: 45.0,
-                reorderThreshold: 3,
-                vendorName: "HydraForce",
-                averageLeadTimeDays: 5
-            ),
-            InventoryPart(
-                name: "DOT 4 Fluid",
-                sku: "FL-DOT4-01",
-                description: "High-boiling point brake fluid.",
-                category: "Fluids",
-                stockCount: 25,
-                unitCost: 12.0,
-                reorderThreshold: 10,
-                vendorName: "Shell Lubricants",
-                averageLeadTimeDays: 2
             )
         ]
     }

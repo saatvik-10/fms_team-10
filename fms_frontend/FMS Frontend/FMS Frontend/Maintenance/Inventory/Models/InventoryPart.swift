@@ -9,54 +9,45 @@ import Foundation
 
 struct InventoryPart: Identifiable, Codable {
     let id: UUID
-    let name: String
-    let sku: String
-    let description: String
+    let partName: String
+    let partId: String
     let category: String
-    let stockCount: Int
-    let unitCost: Double
-    var reorderThreshold: Int
-    let usageLast30Days: Int
-    let vendorName: String
-    let vendorPhone: String
-    let vendorEmail: String
-    let averageLeadTimeDays: Int
+    let stockQty: Int
+    var minStock: Int
+    let unitPriceInr: Double
+    let supplier: String
+    let vehicleType: String
+    let location: String
     
     init(
         id: UUID = UUID(),
-        name: String,
-        sku: String,
-        description: String,
+        partName: String,
+        partId: String,
         category: String,
-        stockCount: Int,
-        unitCost: Double,
-        reorderThreshold: Int = 10,
-        usageLast30Days: Int = 0,
-        vendorName: String = "N/A",
-        vendorPhone: String = "N/A",
-        vendorEmail: String = "N/A",
-        averageLeadTimeDays: Int = 0
+        stockQty: Int,
+        minStock: Int = 10,
+        unitPriceInr: Double,
+        supplier: String = "N/A",
+        vehicleType: String = "N/A",
+        location: String = "N/A"
     ) {
         self.id = id
-        self.name = name
-        self.sku = sku
-        self.description = description
+        self.partName = partName
+        self.partId = partId
         self.category = category
-        self.stockCount = stockCount
-        self.unitCost = unitCost
-        self.reorderThreshold = reorderThreshold
-        self.usageLast30Days = usageLast30Days
-        self.vendorName = vendorName
-        self.vendorPhone = vendorPhone
-        self.vendorEmail = vendorEmail
-        self.averageLeadTimeDays = averageLeadTimeDays
+        self.stockQty = stockQty
+        self.minStock = minStock
+        self.unitPriceInr = unitPriceInr
+        self.supplier = supplier
+        self.vehicleType = vehicleType
+        self.location = location
     }
     
     var totalValue: Double {
-        return Double(stockCount) * unitCost
+        return Double(stockQty) * unitPriceInr
     }
     
     var isLowStock: Bool {
-        return stockCount <= reorderThreshold
+        return stockQty <= minStock
     }
 }

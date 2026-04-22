@@ -38,23 +38,21 @@ class InventoryCSVImportService {
             
             let headers = lines[0].components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
             
-            // Required: Name, SKU, Description, Category, No of Stock, Unit Cost
-            let nameIdx = headers.firstIndex(of: "name")
-            let skuIdx = headers.firstIndex(of: "sku")
-            let descIdx = headers.firstIndex(of: "description")
-            let catIdx = headers.firstIndex(of: "category")
-            let stockIdx = headers.firstIndex(where: { $0.contains("stock") || $0.contains("no of stock") })
-            let costIdx = headers.firstIndex(where: { $0.contains("cost") || $0.contains("unit cost") })
+            // Required: Name, SKU, Category, No of Stock, Unit Cost
+            let nameIdx = headers.firstIndex(where: { $0 == "name" || $0 == "part_name" })
+            let skuIdx = headers.firstIndex(where: { $0 == "sku" || $0 == "part_id" })
+            let catIdx = headers.firstIndex(where: { $0 == "category" })
+            let stockIdx = headers.firstIndex(where: { $0.contains("stock") || $0.contains("qty") })
+            let costIdx = headers.firstIndex(where: { $0.contains("cost") || $0.contains("price") })
 
-            // Optional: Usage + Vendor + Lead time
-            let usageIdx = headers.firstIndex(where: { $0.contains("usage last 30 days") || $0.contains("usage") })
-            let vendorNameIdx = headers.firstIndex(where: { $0.contains("vendor name") })
-            let vendorPhoneIdx = headers.firstIndex(where: { $0.contains("vendor phone") })
-            let vendorEmailIdx = headers.firstIndex(where: { $0.contains("vendor email") })
-            let leadTimeIdx = headers.firstIndex(where: { $0.contains("average lead time days") || $0.contains("lead time") })
+            // Optional: Supplier, Vehicle Type, Location, Min Stock
+            let supplierIdx = headers.firstIndex(where: { $0.contains("vendor name") || $0 == "supplier" })
+            let vehicleTypeIdx = headers.firstIndex(where: { $0 == "vehicle_type" || $0 == "vehicle type" })
+            let locationIdx = headers.firstIndex(where: { $0 == "location" })
+            let reorderThresholdIdx = headers.firstIndex(where: { $0.contains("min_stock") || $0.contains("reorder") })
             
-            guard let ni = nameIdx, let si = skuIdx, let di = descIdx, let ci = catIdx, let sti = stockIdx, let coi = costIdx else {
-                errors.append(ImportError(row: 1, reason: "Missing required headers. Ensure Name, SKU, Description, Category, No of Stock, and Unit Cost are present."))
+            guard let ni = nameIdx, let si = skuIdx, let ci = catIdx, let sti = stockIdx, let coi = costIdx else {
+                errors.append(ImportError(row: 1, reason: "Missing required headers. Ensure Name, SKU, Category, Stock, and Cost are present."))
                 return (parts, errors)
             }
             
@@ -64,14 +62,13 @@ class InventoryCSVImportService {
                 let columns = parseCSVRow(line)
                 let rowNum = index + 1
                 
-                if columns.count <= max(ni, si, di, ci, sti, coi) {
+                if columns.count <= max(ni, si, ci, sti, coi) {
                     errors.append(ImportError(row: rowNum, reason: "Incomplete row data."))
                     continue
                 }
                 
                 let name = columns[ni].trimmingCharacters(in: .whitespaces)
                 let sku = columns[si].trimmingCharacters(in: .whitespaces)
-                let description = columns[di].trimmingCharacters(in: .whitespaces)
                 let category = columns[ci].trimmingCharacters(in: .whitespaces)
                 
                 let stockString = columns[sti].trimmingCharacters(in: .whitespaces)
@@ -82,7 +79,7 @@ class InventoryCSVImportService {
                     continue
                 }
                 
-                guard let cost = Double(costString), cost >= 0 else {
+                guard let stockCost = Double(costString), stockCost >= 0 else {
                     errors.append(ImportError(row: rowNum, reason: "Invalid unit cost: '\(costString)'."))
                     continue
                 }
@@ -92,25 +89,22 @@ class InventoryCSVImportService {
                     continue
                 }
                 
-                let usageLast30Days = parseOptionalInt(at: usageIdx, from: columns) ?? 0
-                let vendorName = parseOptionalText(at: vendorNameIdx, from: columns) ?? "N/A"
-                let vendorPhone = parseOptionalText(at: vendorPhoneIdx, from: columns) ?? "N/A"
-                let vendorEmail = parseOptionalText(at: vendorEmailIdx, from: columns) ?? "N/A"
-                let averageLeadTimeDays = parseOptionalInt(at: leadTimeIdx, from: columns) ?? 0
+                let supplier = parseOptionalText(at: supplierIdx, from: columns) ?? "N/A"
+                let vehicleType = parseOptionalText(at: vehicleTypeIdx, from: columns) ?? "N/A"
+                let location = parseOptionalText(at: locationIdx, from: columns) ?? "N/A"
+                let reorderThreshold = parseOptionalInt(at: reorderThresholdIdx, from: columns) ?? 10
 
                 parts.append(
                     InventoryPart(
-                        name: name,
-                        sku: sku,
-                        description: description,
+                        partName: name,
+                        partId: sku,
                         category: category,
-                        stockCount: stock,
-                        unitCost: cost,
-                        usageLast30Days: max(0, usageLast30Days),
-                        vendorName: vendorName,
-                        vendorPhone: vendorPhone,
-                        vendorEmail: vendorEmail,
-                        averageLeadTimeDays: max(0, averageLeadTimeDays)
+                        stockQty: stock,
+                        minStock: reorderThreshold,
+                        unitPriceInr: stockCost,
+                        supplier: supplier,
+                        vehicleType: vehicleType,
+                        location: location
                     )
                 )
             }

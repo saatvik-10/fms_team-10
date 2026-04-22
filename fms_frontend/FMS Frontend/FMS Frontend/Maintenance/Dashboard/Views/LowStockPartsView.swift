@@ -45,18 +45,18 @@ struct LowStockPartsView: View {
                 ForEach(filteredParts) { part in
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(part.name)
+                            Text(part.partName)
                                 .font(.headline)
-                            Text(part.sku)
+                            Text(part.partId)
                                 .font(.caption.monospaced())
                                 .foregroundColor(.secondary)
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 4) {
-                            Text("Stock: \(part.stockCount)")
+                            Text("Stock: \(part.stockQty)")
                                 .font(.subheadline.bold())
                                 .foregroundColor(part.isLowStock ? .orange : AppColors.primaryText)
-                            Text("Min: \(part.reorderThreshold)")
+                            Text("Min: \(part.minStock)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
