@@ -128,7 +128,7 @@ final class TripReportGenerator {
             ("VEHICLE",  data.vehicleNumber),
             ("DRIVER",   data.driverName),
             ("DATE",     shortDate(data.startDateTime)),
-            ("STATUS",   "COMPLETED ✓")
+            ("STATUS",   "COMPLETED")
         ]
         let colW = sectionW / CGFloat(items.count)
         for (i, (label, value)) in items.enumerated() {

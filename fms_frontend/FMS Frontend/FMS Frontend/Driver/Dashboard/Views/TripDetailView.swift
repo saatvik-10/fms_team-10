@@ -20,6 +20,9 @@ struct TripDetailView: View {
     // Keeps the Home tab's "Continue Navigation" button completely unchanged.
     var showTripControls: Bool = false
 
+    // Passed from TripsView so ReportIssueView gets the full LifecycleTrip model.
+    var lifecycleTrip: LifecycleTrip? = nil
+
     @State private var estimatedArrival: String = "Loading..."
     @State private var routePolyline: String = ""
     @State private var isLoadingEta: Bool = true
@@ -53,7 +56,8 @@ struct TripDetailView: View {
     // Extracted shared padding for precise alignment
     @State private var showMap = false
     @State private var showNavigationMap = false
-    
+    @State private var showReportIssue = false
+
     private let horizontalPadding: CGFloat = 20
     
 //    private var isNavigationEnabled: Bool {
@@ -111,24 +115,28 @@ struct TripDetailView: View {
                     tripActionButtons
                 } else {
                     // ── HOME TAB: Original "Continue Navigation" (unchanged) ──
-                    ZStack {
-                        PrimaryButton(
-                            title: "Continue Navigation",
-                            icon: "location.fill",
-                            backgroundColor: Color(hex: "0a303a"),
-                            textColor: .white
-                        ) {
-                            showNavigationMap = true
-                        }
-                        .allowsHitTesting(isNavigationEnabled)
+                    VStack(spacing: 16) {
+                        ZStack {
+                            PrimaryButton(
+                                title: "Continue Navigation",
+                                icon: "location.fill",
+                                backgroundColor: Color(hex: "0a303a"),
+                                textColor: .white
+                            ) {
+                                showNavigationMap = true
+                            }
+                            .allowsHitTesting(isNavigationEnabled)
 
-                        if !isNavigationEnabled {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(UIColor.systemBackground).opacity(0.45))
-                                .allowsHitTesting(false)
+                            if !isNavigationEnabled {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(UIColor.systemBackground).opacity(0.45))
+                                    .allowsHitTesting(false)
+                            }
                         }
+                        .opacity(isNavigationEnabled ? 1.0 : 0.5)
+
+                        reportIssueButton
                     }
-                    .opacity(isNavigationEnabled ? 1.0 : 0.5)
                     .padding(.horizontal, horizontalPadding)
                     .padding(.bottom, 32)
                 }
@@ -140,6 +148,26 @@ struct TripDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showNavigationMap) {
             CustomNavigationView(trip: trip)
+        }
+        // ── Report Issue push navigation ──────────────────────────────────
+        .navigationDestination(isPresented: $showReportIssue) {
+            if let lt = lifecycleTrip {
+                ReportIssueView(trip: lt)
+            } else {
+                // Synthesize a LifecycleTrip if navigating from the Home tab
+                ReportIssueView(trip: LifecycleTrip(
+                    id: trip.routeNumber,
+                    source: trip.pickup.name,
+                    destination: trip.destination.name,
+                    status: .scheduled,
+                    dateValue: trip.tripDate,
+                    timeLabel: "Start",
+                    timeValue: trip.pickup.time,
+                    loadInfo: "N/A",
+                    distance: 0.0,
+                    vehicleNumber: nil
+                ))
+            }
         }
         .task {
             do {
@@ -246,6 +274,9 @@ struct TripDetailView: View {
                 .background(AppColors.success.opacity(0.12))
                 .cornerRadius(12)
             }
+            
+            // NOTE: Extracted outside switch for testing so it's always accessible
+            reportIssueButton
         }
         .padding(.horizontal, horizontalPadding)
         .padding(.bottom, 32)
@@ -292,6 +323,28 @@ struct TripDetailView: View {
             }
         }
         .opacity(enabled ? 1.0 : 0.45)
+    }
+
+    // MARK: - Report Issue Button
+
+    /// Visible in all trip states for testing, now including the Home tab.
+    private var reportIssueButton: some View {
+        Button {
+            showReportIssue = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.bubble.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                Text("Report Issue")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .foregroundColor(Color(UIColor.label))
+            .background(Color(UIColor.systemGray6))
+            .cornerRadius(12)
+        }
     }
 }
 
