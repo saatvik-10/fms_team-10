@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MaintenanceDashboardView: View {
     @Binding var isLoggedIn: Bool
@@ -16,7 +17,9 @@ struct MaintenanceDashboardView: View {
     @State private var showingCreateInspection   = false
     @State private var showingEmergencyInspection = false
     @State private var showingCreateWorkOrder    = false
-    @State private var showingUpdateInventory    = false
+    @State private var showingFileImporter       = false
+    @State private var importErrors: [InventoryCSVImportService.ImportError] = []
+    @State private var showingImportAlert        = false
 
     var body: some View {
         ScrollView {
@@ -68,9 +71,31 @@ struct MaintenanceDashboardView: View {
         .sheet(isPresented: $showingCreateInspection)    { CreateInspectionModal(isEmergency: false) }
         .sheet(isPresented: $showingEmergencyInspection) { CreateInspectionModal(isEmergency: true)  }
         .sheet(isPresented: $showingCreateWorkOrder)     { CreateWorkOrderModal() }
-        .sheet(isPresented: $showingUpdateInventory)     { 
-            NavigationStack {
-                InventoryView(isLoggedIn: $isLoggedIn) 
+        .fileImporter(
+            isPresented: $showingFileImporter,
+            allowedContentTypes: [.commaSeparatedText, .text],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                let (parts, errors) = InventoryCSVImportService.shared.parseCSV(at: url)
+                if !parts.isEmpty {
+                    store.importInventory(parts)
+                }
+                self.importErrors = errors
+                self.showingImportAlert = true
+            case .failure(let error):
+                print("Import failed: \(error.localizedDescription)")
+            }
+        }
+        .alert("Import Status", isPresented: $showingImportAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            if importErrors.count > 0 {
+                Text("Encountered \(importErrors.count) issues during import. Check your CSV format.")
+            } else {
+                Text("Inventory imported successfully.")
             }
         }
     }
@@ -128,7 +153,7 @@ struct MaintenanceDashboardView: View {
                     title: "Update Inventory",
                     icon: "shippingbox.fill",
                     color: .orange,
-                    action: { showingUpdateInventory = true }
+                    action: { showingFileImporter = true }
                 )
             }
             .padding(.horizontal, 20)
