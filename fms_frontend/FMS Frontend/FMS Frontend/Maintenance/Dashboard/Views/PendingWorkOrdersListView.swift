@@ -94,7 +94,7 @@ struct PendingWorkOrdersListView: View {
             }
         }
         .listStyle(InsetGroupedListStyle())
-        .navigationTitle("Pending Work Orders")
+        .navigationTitle("Pending Orders")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {

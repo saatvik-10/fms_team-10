@@ -13,40 +13,34 @@ import SwiftUI
 struct FleetAnalysisCard: View {
     let title: String
     let count: String
-    let icon: String
     let color: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(color)
-                    .frame(width: 32, height: 32)
-                    .background(color.opacity(0.12))
-                    .clipShape(Circle())
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(Color(.systemGray4))
-            }
+        VStack(alignment: .leading, spacing: 4) {
+            Text(count)
+                .font(.system(size: 38, weight: .bold, design: .rounded))
+                .foregroundColor(AppColors.primaryText)
             
-            VStack(alignment: .leading, spacing: 2) {
-                Text(count)
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
-                Text(title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
+            Text(title)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .multilineTextAlignment(.leading)
         }
         .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color(UIColor.secondarySystemGroupedBackground))
                 .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
+        )
+        .overlay(
+            Image(systemName: "chevron.right")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(Color(.systemGray4))
+                .padding(16),
+            alignment: .topTrailing
         )
     }
 }

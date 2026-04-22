@@ -113,7 +113,6 @@ struct MaintenanceDashboardView: View {
                     FleetAnalysisCard(
                         title: "Pending Orders",
                         count: "\(viewModel.pendingOrdersCount)",
-                        icon: "clock.fill",
                         color: AppColors.primary
                     )
                 }
@@ -123,7 +122,6 @@ struct MaintenanceDashboardView: View {
                     FleetAnalysisCard(
                         title: "Restock Alerts",
                         count: "\(viewModel.lowStockPartsCount)",
-                        icon: "archivebox.fill",
                         color: .orange
                     )
                 }
@@ -144,7 +142,7 @@ struct MaintenanceDashboardView: View {
             HStack(spacing: 12) {
                 QuickActionButton(
                     title: "Create Work Order",
-                    icon: "plus.circle.fill",
+                    icon: "plus",
                     color: AppColors.primary,
                     action: { showingCreateWorkOrder = true }
                 )
