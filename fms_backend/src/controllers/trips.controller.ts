@@ -6,6 +6,7 @@ export class Trip {
     async createTrip(c: Context) {
         const body = await c.req.json();
         const result = createTripSchema.safeParse(body);
+        const userId = c.get('userId') as string;
 
         if (!result.success) {
             return c.json(
@@ -26,6 +27,7 @@ export class Trip {
                 vehicle: data.vehicle,
                 driver: data.driver,
                 departureTime: data.departureTime,
+                createdById: userId,
             },
         });
 
@@ -34,14 +36,16 @@ export class Trip {
 
     async getTrip(c: Context) {
         const tripId = c.req.query('id');
+        const userId = c.get('userId') as string;
 
         if (!tripId) {
             return c.json({ err: 'Trip id is required as query param: ?id=' }, 400);
         }
 
-        const trip = await prisma.trips.findUnique({
+        const trip = await prisma.trips.findFirst({
             where: {
                 id: tripId,
+                createdById: userId,
             },
         });
 
@@ -53,7 +57,11 @@ export class Trip {
     }
 
     async getTrips(c: Context) {
+        const userId = c.get('userId') as string;
         const trips = await prisma.trips.findMany({
+            where: {
+                createdById: userId,
+            },
             orderBy: {
                 createdAt: 'desc',
             },
