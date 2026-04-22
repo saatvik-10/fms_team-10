@@ -98,7 +98,8 @@ class MaintenanceStore: ObservableObject {
                 partsNeeded: [
                     Part(name: "Hydraulic Seal Kit", description: "Standard seal kit", iconName: "wrench.and.screwdriver.fill")
                 ],
-                imageAsset: "engine_part"
+                imageAsset: "engine_part",
+                checklist: WorkOrder.standardChecklist
             ),
             WorkOrder.mock,
             WorkOrder(
@@ -115,7 +116,8 @@ class MaintenanceStore: ObservableObject {
                 partsNeeded: [
                     Part(name: "Air Valve Caps", description: "Replacement", iconName: "gearshape.fill", imageAsset: "tire_part")
                 ],
-                imageAsset: "tire_part"
+                imageAsset: "tire_part",
+                checklist: WorkOrder.standardChecklist
             )
         ]
         
@@ -129,7 +131,8 @@ class MaintenanceStore: ObservableObject {
                 timestamp: Date(),
                 type: .preTrip,
                 vehicleType: .truck,
-                status: .pending,
+                status: .completed,
+                priority: .critical,
                 items: TripInspection.mockItems(for: .truck),
                 maintenanceStaffId: "Arjun-S",
                 isEmergency: true,
@@ -144,7 +147,8 @@ class MaintenanceStore: ObservableObject {
                 timestamp: Date(),
                 type: .preTrip,
                 vehicleType: .truck,
-                status: .pending,
+                status: .completed,
+                priority: .high,
                 items: TripInspection.mockItems(for: .truck),
                 maintenanceStaffId: "Arjun-S",
                 imageAsset: "truck_main",
@@ -160,7 +164,8 @@ class MaintenanceStore: ObservableObject {
                 timestamp: Date(),
                 type: .preTrip,
                 vehicleType: .truck,
-                status: .pending,
+                status: .completed,
+                priority: .medium,
                 items: TripInspection.mockItems(for: .truck),
                 maintenanceStaffId: "Arjun-S",
                 imageAsset: "truck_main",
@@ -202,6 +207,7 @@ class MaintenanceStore: ObservableObject {
             type: .maintenance,
             vehicleType: order.vehicleName.contains("Bus") ? .car : .truck,
             status: .completed,
+            priority: order.priority,
             items: checklistItems,
             notes: "Maintenance completed by \(order.technicianId). Notes: \(order.technicianNotes)",
             maintenanceStaffId: order.technicianId

@@ -58,6 +58,16 @@ struct WorkOrder: Identifiable, Codable {
     var proofOfWorkImages: [Data] = []
     var checklist: [InspectionItem] = []
     
+    static var standardChecklist: [InspectionItem] {
+        [
+            InspectionItem(name: "Brake System", verificationCriteria: "Pad thickness and rotor condition", isImageRequired: true),
+            InspectionItem(name: "Tire Condition", verificationCriteria: "Tread depth and pressure", isImageRequired: false),
+            InspectionItem(name: "Fluid Levels", verificationCriteria: "Oil, coolant, and brake fluid", isImageRequired: false),
+            InspectionItem(name: "Lighting & Electrical", verificationCriteria: "Headlights, signals, and battery", isImageRequired: false),
+            InspectionItem(name: "Suspension & Steering", verificationCriteria: "Joints, shocks, and alignment", isImageRequired: true)
+        ]
+    }
+
     static var mock: WorkOrder {
         WorkOrder(
             title: "Brake Pad Replacement",
@@ -76,7 +86,8 @@ struct WorkOrder: Identifiable, Codable {
                 Part(name: "Front Rotors (2)", description: "Potential replacement for scoring", iconName: "circle.circle.fill")
             ],
             imageAsset: "brake_part",
-            voiceTranscript: "Hey, it started happening around mile marker 40. Every time I hit the brakes, there's this high-pitched metal-on-metal sound. The stopping distance feels a bit longer than usual, especially when I'm fully loaded. Sending some photos of the wheel area now."
+            voiceTranscript: "Hey, it started happening around mile marker 40. Every time I hit the brakes, there's this high-pitched metal-on-metal sound. The stopping distance feels a bit longer than usual, especially when I'm fully loaded. Sending some photos of the wheel area now.",
+            checklist: WorkOrder.standardChecklist
         )
     }
 }

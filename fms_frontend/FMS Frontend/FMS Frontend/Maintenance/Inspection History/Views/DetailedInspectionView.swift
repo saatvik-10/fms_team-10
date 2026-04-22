@@ -18,6 +18,19 @@ struct DetailedInspectionView: View {
 
     @State private var showingDoneAlert = false
 
+    private var reportTitle: String {
+        let initials = inspection.unitName.components(separatedBy: " ")
+            .compactMap { $0.first }
+            .map { String($0) }
+            .joined()
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yy"
+        let dateStr = formatter.string(from: Date())
+        
+        return "\(initials) - \(dateStr)"
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -39,11 +52,51 @@ struct DetailedInspectionView: View {
                             Text("VIN: \(inspection.unitVIN)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text(inspection.type.rawValue)
-                                .font(.caption.bold())
-                                .foregroundColor(AppColors.primary)
+                            
+                            HStack {
+                                Text(inspection.type.rawValue)
+                                    .font(.caption.bold())
+                                    .foregroundColor(AppColors.primary)
+                                
+                                Text("•")
+                                    .foregroundColor(.secondary)
+                                
+                                Text(inspection.status.rawValue.uppercased())
+                                    .font(.system(size: 10, weight: .black))
+                                    .foregroundColor(inspection.status == .completed ? .green : .blue)
+                            }
                         }
                         Spacer()
+                    }
+
+                    if inspection.status == .completed {
+                        Button(action: {
+                            isGenerating = true
+                            DispatchQueue.global(qos: .userInitiated).async {
+                                let url = PDFService.shared.generateInspectionReport(inspection: inspection)
+                                DispatchQueue.main.async {
+                                    isGenerating = false
+                                    reportURL = url
+                                    showingPDFPreview = url != nil
+                                }
+                            }
+                        }) {
+                            HStack {
+                                if isGenerating {
+                                    ProgressView().tint(.white)
+                                } else {
+                                    Image(systemName: "doc.text.fill")
+                                }
+                                Text("View Full PDF Report")
+                                    .font(.system(size: 14, weight: .bold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(AppColors.primary)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                        }
+                        .disabled(isGenerating)
                     }
 
                     Divider()
@@ -57,42 +110,46 @@ struct DetailedInspectionView: View {
                 .padding()
                 .background(Color(.secondarySystemGroupedBackground))
                 .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.05), lineWidth: 1))
 
                 VStack(alignment: .leading, spacing: 20) {
-                    SectionHeader(title: "SYSTEM CHECKLIST", icon: "checklist")
+                    SectionHeader(title: "AUDIT RESULTS", icon: "checklist")
                         .padding(.horizontal)
 
                     VStack(spacing: 0) {
                         ForEach($inspection.items, id: \.id) { $item in
                             InspectionListItem(item: $item)
                                 .padding()
+                                .disabled(inspection.status == .completed)
                                 .background(Color(.secondarySystemGroupedBackground))
 
                             if item.id != inspection.items.last?.id {
                                 Divider().padding(.leading, 16)
                             }
                         }
-                        // Add Other
-                        Button(action: {
-                            let newItem = InspectionItem(
-                                name: "Custom Observation",
-                                verificationCriteria: "User-defined criteria",
-                                isImageRequired: false
-                            )
-                            inspection.items.append(newItem)
-                        }) {
-                            HStack {
-                                Image(systemName: "plus.circle.fill")
-                                Text("Add Observation")
+                        
+                        if inspection.status != .completed {
+                            Button(action: {
+                                let newItem = InspectionItem(
+                                    name: "Custom Observation",
+                                    verificationCriteria: "User-defined criteria",
+                                    isImageRequired: false
+                                )
+                                inspection.items.append(newItem)
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                    Text("Add Observation")
+                                }
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(AppColors.primary)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(12)
+                                .padding()
                             }
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(AppColors.primary)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                            .padding()
                         }
                     }
                     .background(Color(.secondarySystemGroupedBackground))
@@ -105,23 +162,16 @@ struct DetailedInspectionView: View {
             .padding()
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle(inspection.title.isEmpty ? "Inspection" : inspection.title)
+        .navigationTitle("Inspection Details")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(AppColors.primary)
-                }
-            }
-            
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingDoneAlert = true }) {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(AppColors.primary)
+                if inspection.status != .completed {
+                    Button(action: { showingDoneAlert = true }) {
+                        Text("Finish")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(AppColors.primary)
+                    }
                 }
             }
         }
@@ -133,24 +183,11 @@ struct DetailedInspectionView: View {
         }
         .fullScreenCover(isPresented: $showingPDFPreview) {
             if let url = reportURL {
-                PDFPreviewView(url: url, title: getReportTitle())
+                PDFPreviewView(url: url, title: reportTitle)
             } else {
                 EmptyView()
             }
         }
-    }
-
-    private func getReportTitle() -> String {
-        let initials = inspection.unitName.components(separatedBy: " ")
-            .compactMap { $0.first }
-            .map { String($0) }
-            .joined()
-        
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM/yy"
-        let dateStr = formatter.string(from: Date())
-        
-        return "\(initials) - \(dateStr)"
     }
 
     private func submitAndGeneratePDF() {

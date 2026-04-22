@@ -28,7 +28,7 @@ enum InspectionResult: String, Codable {
     case pending = "PENDING"
 }
 
-struct InspectionItem: Identifiable, Codable {
+struct InspectionItem: Identifiable, Codable, Equatable {
     var id = UUID()
     let name: String
     let verificationCriteria: String
@@ -49,6 +49,7 @@ struct TripInspection: Identifiable, Codable {
     let type: InspectionType
     let vehicleType: VehicleType
     var status: InspectionStatus
+    var priority: WorkOrderPriority = .medium
     var items: [InspectionItem]
     var notes: String?
     var maintenanceStaffId: String

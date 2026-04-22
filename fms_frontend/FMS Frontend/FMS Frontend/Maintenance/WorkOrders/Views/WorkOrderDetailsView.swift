@@ -18,6 +18,13 @@ struct WorkOrderDetailsView: View {
     @State private var showingProofSource = false
     @State private var newNoteText: String = ""
     
+    private var taskPoints: [String] {
+        workOrder.taskDetails.components(separatedBy: ".")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .map { "\($0)." }
+    }
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
@@ -64,7 +71,7 @@ struct WorkOrderDetailsView: View {
                                 
                                 Spacer()
                             }
-
+                            
                             Text(workOrder.vehicleName)
                                 .font(.largeTitle.weight(.heavy))
                                 .foregroundColor(.primary)
@@ -130,9 +137,8 @@ struct WorkOrderDetailsView: View {
                             SectionHeader(title: "TASK DETAILS", icon: "doc.text.fill")
                             
                             VStack(alignment: .leading, spacing: 12) {
-                                let points = workOrder.taskDetails.components(separatedBy: ".").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-                                ForEach(points, id: \.self) { point in
-                                    Text(point + ".")
+                                ForEach(taskPoints, id: \.self) { point in
+                                    Text(point)
                                         .font(.body)
                                         .foregroundColor(.primary)
                                 }
@@ -147,112 +153,22 @@ struct WorkOrderDetailsView: View {
                         // Driver Notes Card
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "DRIVER NOTES", icon: "person.wave.2.fill")
-                            
-                            VStack(alignment: .leading, spacing: 16) {
-                                if let transcript = workOrder.voiceTranscript, !transcript.isEmpty {
-                                    VStack(alignment: .leading, spacing: 12) {
-                                        HStack {
-                                            Image(systemName: "waveform")
-                                                .foregroundColor(AppColors.primary)
-                                            Text("VOICE TRANSCRIPT")
-                                                .font(.caption.weight(.black))
-                                                .foregroundColor(AppColors.primary)
-                                        }
-                                        
-                                        Text("\"\(transcript)\"")
-                                            .font(.subheadline.italic())
-                                            .foregroundColor(.secondary)
-                                            .lineSpacing(4)
-                                    }
-                                    .padding(16)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color(.systemGray6).opacity(0.5))
-                                    .cornerRadius(12)
-                                } else {
-                                    Text("No driver notes available.")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                        .padding(.vertical, 4)
-                                }
-                            }
-                            .padding(20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white)
-                            .cornerRadius(16)
-                            .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+                            driverNotesContent
                         }
                         
                         // System Checklist
                         VStack(alignment: .leading, spacing: 20) {
                             SectionHeader(title: "SYSTEM CHECKLIST", icon: "checklist")
                                 .padding(.horizontal)
-
-                            VStack(spacing: 0) {
-                                ForEach($workOrder.checklist, id: \.id) { $item in
-                                    InspectionListItem(item: $item)
-                                        .padding()
-                                        .background(Color(.secondarySystemGroupedBackground))
-
-                                    if item.id != workOrder.checklist.last?.id {
-                                        Divider().padding(.leading, 16)
-                                    }
-                                }
-                            }
-                            .background(Color.white)
-                            .cornerRadius(16)
-                            .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+                            checklistContent
                         }
                         
                         // Technician Notes
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "TECHNICIAN NOTES", icon: "wrench.and.screwdriver.fill")
-                            
-                            VStack(alignment: .leading, spacing: 8) {
-                                let notesPoints = workOrder.technicianNotes.components(separatedBy: "\n").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-                                
-                                if notesPoints.isEmpty {
-                                    Text("No technician notes yet.")
-                                        .font(.body)
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    ForEach(notesPoints, id: \.self) { point in
-                                        Text(point)
-                                            .font(.body)
-                                            .foregroundColor(.primary)
-                                    }
-                                }
-                                
-                                Divider().padding(.vertical, 4)
-
-                                HStack(alignment: .top, spacing: 10) {
-                                    TextField("Add a new note...", text: $newNoteText, axis: .vertical)
-                                        .font(.body)
-                                        .textFieldStyle(.plain)
-                                        .lineLimit(1...5)
-                                    
-                                    Button(action: {
-                                        let trimmed = newNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        if !trimmed.isEmpty {
-                                            let newNotes = workOrder.technicianNotes.isEmpty ? trimmed : workOrder.technicianNotes + "\n" + trimmed
-                                            workOrder.technicianNotes = newNotes
-                                            store.updateWorkOrder(workOrder)
-                                            newNoteText = ""
-                                        }
-                                    }) {
-                                        Image(systemName: "plus.circle.fill")
-                                            .font(.title3)
-                                            .foregroundColor(newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : AppColors.primary)
-                                    }
-                                    .disabled(newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                                }
-                            }
-                            .padding(20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white)
-                            .cornerRadius(16)
-                            .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+                            technicianNotesContent
                         }
-
+                        
                         // Resource Link: Parts Consumed
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "PARTS CONSUMED", icon: "shippingbox.fill")
@@ -294,7 +210,7 @@ struct WorkOrderDetailsView: View {
                             .cornerRadius(16)
                             .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
                         }
-
+                        
                         // Service Media Gallery
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "MEDIA", icon: "camera.fill")
@@ -343,7 +259,7 @@ struct WorkOrderDetailsView: View {
                                     .cornerRadius(14)
                                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.1), lineWidth: 1))
                             }
-
+                            
                             Button(action: {
                                 var updated = workOrder
                                 updated.status = .completed
@@ -368,31 +284,30 @@ struct WorkOrderDetailsView: View {
                     .padding(.top, 24)
                 }
             }
-            .background(Color(.systemGroupedBackground))
-            .confirmationDialog("Proof of Work", isPresented: $showingProofSource) {
-                Button("Camera") { showingCamera = true }
-                Button("Photo Library") { showingImagePicker = true }
-                Button("Cancel", role: .cancel) { }
-            }
-            .sheet(isPresented: $showingImagePicker) {
-                PhotoPicker(images: Binding(
-                    get: { [] },
-                    set: { images in
-                        workOrder.proofOfWorkImages.append(contentsOf: images.compactMap { $0.jpegData(compressionQuality: 0.7) })
-                        store.updateWorkOrder(workOrder)
-                    }
-                ))
-            }
-            .sheet(isPresented: $showingCamera) {
-                CameraPicker(image: Binding(
-                    get: { nil },
-                    set: { if let img = $0 { 
-                        workOrder.proofOfWorkImages.append(img.jpegData(compressionQuality: 0.7)!)
-                        store.updateWorkOrder(workOrder)
-                    } }
-                ))
-            }
-            
+        }
+        .background(Color(.systemGroupedBackground))
+        .confirmationDialog("Proof of Work", isPresented: $showingProofSource) {
+            Button("Camera") { showingCamera = true }
+            Button("Photo Library") { showingImagePicker = true }
+            Button("Cancel", role: .cancel) { }
+        }
+        .sheet(isPresented: $showingImagePicker) {
+            PhotoPicker(images: Binding(
+                get: { [] },
+                set: { images in
+                    workOrder.proofOfWorkImages.append(contentsOf: images.compactMap { $0.jpegData(compressionQuality: 0.7) })
+                    store.updateWorkOrder(workOrder)
+                }
+            ))
+        }
+        .sheet(isPresented: $showingCamera) {
+            CameraPicker(image: Binding(
+                get: { nil },
+                set: { if let img = $0 {
+                    workOrder.proofOfWorkImages.append(img.jpegData(compressionQuality: 0.7)!)
+                    store.updateWorkOrder(workOrder)
+                } }
+            ))
         }
         .sheet(isPresented: $showingDatePicker) {
             NavigationStack {
@@ -448,22 +363,109 @@ struct WorkOrderDetailsView: View {
             }
         }
     }
-}
-
-// Reusable Sub-component for Section Headers
-struct SectionHeader: View {
-    let title: String
-    let icon: String
     
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.subheadline.weight(.semibold))
-            Text(title.uppercased())
-                .font(.subheadline.weight(.semibold))
+    @ViewBuilder
+    private var driverNotesContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if let transcript = workOrder.voiceTranscript, !transcript.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "waveform")
+                            .foregroundColor(AppColors.primary)
+                        Text("VOICE TRANSCRIPT")
+                            .font(.caption.weight(.black))
+                            .foregroundColor(AppColors.primary)
+                    }
+                    
+                    Text("\"\(transcript)\"")
+                        .font(.subheadline.italic())
+                        .foregroundColor(.secondary)
+                        .lineSpacing(4)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(.systemGray6).opacity(0.5))
+                .cornerRadius(12)
+            } else {
+                Text("No driver notes available.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .padding(.vertical, 4)
+            }
         }
-        .foregroundColor(.secondary)
-        .padding(.leading, 4)
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private var checklistContent: some View {
+        VStack(spacing: 0) {
+            ForEach($workOrder.checklist, id: \.id) { $item in
+                InspectionListItem(item: $item)
+                    .padding()
+                    .background(Color(.secondarySystemGroupedBackground))
+                
+                if item.id != workOrder.checklist.last?.id {
+                    Divider().padding(.leading, 16)
+                }
+            }
+        }
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+        .onChange(of: workOrder.checklist) { _ in
+            store.updateWorkOrder(workOrder)
+        }
+    }
+
+    @ViewBuilder
+    private var technicianNotesContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            let notesPoints = workOrder.technicianNotes.components(separatedBy: "\n").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            
+            if notesPoints.isEmpty {
+                Text("No technician notes yet.")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(notesPoints, id: \.self) { point in
+                    Text(point)
+                        .font(.body)
+                        .foregroundColor(.primary)
+                }
+            }
+            
+            Divider().padding(.vertical, 4)
+            
+            HStack(alignment: .top, spacing: 10) {
+                TextField("Add a new note...", text: $newNoteText, axis: .vertical)
+                    .font(.body)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...5)
+                
+                Button(action: {
+                    let trimmed = newNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !trimmed.isEmpty {
+                        let newNotes = workOrder.technicianNotes.isEmpty ? trimmed : workOrder.technicianNotes + "\n" + trimmed
+                        workOrder.technicianNotes = newNotes
+                        store.updateWorkOrder(workOrder)
+                        newNoteText = ""
+                    }
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .secondary : AppColors.primary)
+                }
+                .disabled(newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
     }
 }
-

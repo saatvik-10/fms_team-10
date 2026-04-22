@@ -282,21 +282,14 @@ struct InspectionTaskCard: View {
         VStack(spacing: 0) {
             // Main Content Area
             HStack(spacing: 20) {
-                // Left: Icon with Subtle indicator
-                ZStack(alignment: .topTrailing) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(Color(.systemGray6))
-                            .frame(width: 48, height: 48)
-                        Image(systemName: "clipboard.fill")
-                            .foregroundColor(AppColors.primary)
-                            .font(.system(size: 20))
-                    }
-                    
-                    Circle()
-                        .fill(inspection.type == .preTrip ? Color.blue : Color.purple)
-                        .frame(width: 10, height: 10)
-                        .offset(x: 3, y: -3)
+                // Left: Icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color(.systemGray6))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: "clipboard.fill")
+                        .foregroundColor(AppColors.primary)
+                        .font(.system(size: 20))
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -336,14 +329,14 @@ struct InspectionTaskCard: View {
                 
                 Divider().frame(height: 16)
                 
-                // Status Section (Rightmost)
+                // Priority Section (Rightmost)
                 HStack(spacing: 6) {
-                    Text(inspection.status.rawValue.uppercased())
+                    Text(inspection.priority.rawValue.uppercased())
                         .font(.system(size: 8, weight: .black))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
-                        .background(inspection.status == .completed ? Color.green.opacity(0.1) : Color.blue.opacity(0.1))
-                        .foregroundColor(inspection.status == .completed ? .green : .blue)
+                        .background(priorityColor(inspection.priority).opacity(0.12))
+                        .foregroundColor(priorityColor(inspection.priority))
                         .cornerRadius(5)
                 }
                 .frame(maxWidth: .infinity)
@@ -352,12 +345,20 @@ struct InspectionTaskCard: View {
             .background(Color(.systemGray6).opacity(0.2))
         }
         .background(Color.white)
-        .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.primary.opacity(0.04), lineWidth: 1)
         )
+    }
+
+    private func priorityColor(_ priority: WorkOrderPriority) -> Color {
+        switch priority {
+        case .critical: return .red
+        case .high:     return .orange
+        case .medium:   return .blue
+        case .low:      return .gray
+        }
     }
     
     private func tagColor(for type: InspectionType) -> Color {
@@ -634,5 +635,22 @@ struct InspectionListItem: View {
         case .alert: return .red
         case .pending: return .blue
         }
+    }
+}
+
+/// A standard uppercase header with an icon for detailed maintenance views.
+struct SectionHeader: View {
+    let title: String
+    let icon: String
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.subheadline.weight(.semibold))
+            Text(title.uppercased())
+                .font(.subheadline.weight(.semibold))
+        }
+        .foregroundColor(.secondary)
+        .padding(.leading, 4)
     }
 }
