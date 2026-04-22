@@ -123,8 +123,8 @@ struct DashboardHomeView: View {
     
     private var headerView: some View {
         HStack(spacing: 16) {
-            Text("Hi, \(viewModel.userName)")
-                .font(.system(.title2, design: .default, weight: .bold))
+            Text("Home")
+                .font(.system(.title, design: .default, weight: .bold))
                 .foregroundColor(.black)
             
             Spacer()
