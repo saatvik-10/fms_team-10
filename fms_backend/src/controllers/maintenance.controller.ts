@@ -3,7 +3,7 @@ import { createMaintenanceSchema } from '../validators/maintenance.validator';
 import { nanoid } from 'nanoid';
 import { prisma } from '../../prisma';
 import { hashPassword } from '../lib/hashPassword';
-import { sendCredentialsMail } from '../services/resend';
+import { sendCredentialsMail } from '../services/resend.service';
 
 const notImplemented = (resource: string, action: string, id?: string) => {
   return { resource, action, ...(id ? { id } : {}) };

@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import { sendCredentialsMail } from '../services/resend';
+import { sendCredentialsMail } from '../services/resend.service';
 import { createDriverSchema } from '../validators/driver.validator';
 import { nanoid } from 'nanoid';
 import { prisma } from '../../prisma';
