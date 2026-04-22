@@ -13,77 +13,118 @@ datasource db {
 }
 
 model User {
-  id              String          @id @default(cuid())
-  username        String?         @unique
-  email           String?         @unique
-  passwordHash    String?
-  role            Role
-  
+  id           String  @id @default(cuid())
+  username     String? @unique
+  email        String? @unique
+  passwordHash String?
+  role         Role
+
   // Role-specific relationships
-  manager         Manager?
-  driver          Driver?
-  maintenance     Maintenance?
-  
+  manager     Manager?
+  driver      Driver?
+  maintenance Maintenance?
+
   // Audit trail
-  createdUsers    User[]          @relation("UserCreatedUsers")
+  createdUsers    User[]    @relation("UserCreatedUsers")
   createdById     String?
-  createdBy       User?           @relation("UserCreatedUsers", fields: [createdById], references: [id])
-  createdVehicles Vehicle[]       @relation("UserCreatedVehicles")
-  
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdBy       User?     @relation("UserCreatedUsers", fields: [createdById], references: [id])
+  createdVehicles Vehicle[] @relation("UserCreatedVehicles")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Manager {
-  id              String          @id @default(cuid())
-  name            String
-  phone           String?         @unique
-  address         String?
-  userId          String          @unique
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?  @unique
+  address   String?
+
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Driver {
-  id              String          @id @default(cuid())
-  name            String
-  phone           String?         @unique
-  address         String?
-  email           String?         @unique
-  licenceNumber   String?         @unique
-  expiryDate      String?
-  classes         String[]
-  userId          String          @unique
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  phone         String?  @unique
+  address       String?
+  email         String?  @unique
+  licenceNumber String?  @unique
+  expiryDate    String?
+  classes       String[]
+
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Maintenance {
-  id              String          @id @default(cuid())
-  name            String
-  phone           String?         @unique
-  address         String?
-  email           String?         @unique
-  certification   String?
-  userId          String          @unique
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  dob           DateTime
+  phone         String?  @unique
+  email         String?  @unique
+
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Vehicle {
-  id              String    @id @default(cuid())
+  id              String @id @default(cuid())
   ownerName       String
   vehicleModel    String
-  registrationNum String    @unique
-  chassisNum      String    @unique
+  registrationNum String @unique
+  chassisNum      String @unique
   odometerReading String
-  createdById     String?
-  createdBy       User?     @relation("UserCreatedVehicles", fields: [createdById], references: [id])
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+
+  vehicleInfo VehicleInfo?
+
+  createdById String?
+  createdBy   User?    @relation("UserCreatedVehicles", fields: [createdById], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model VehicleInfo {
+  id        String  @id @default(cuid())
+  vehicleId String  @unique
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  distance           Int
+  brakeEvents        Int
+  sharpTurns         Int
+  cargoWeight        Float
+  weatherTemperature Float
+  humidity           Float
+  label              String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Trips {
+  id                  String   @id @default(cuid())
+  sourceLocation      String
+  destinationLocation String
+  productType         String
+  unit                String
+  amount              Int
+  vehicle             String
+  driver              String
+  departureTime       String
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 enum Role {
@@ -91,10 +132,4 @@ enum Role {
   MANAGER
   DRIVER
   MAINTENANCE
-}
-
-enum VehiclesAllowed {
-  MCWG
-  LMV
-  MVSD
 }
