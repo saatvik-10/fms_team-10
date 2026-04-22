@@ -29,7 +29,7 @@ struct MaintenanceTabView: View {
 
             // Tab 3: Inventory
             NavigationStack {
-                InventoryManagementView()
+                InventoryView(isLoggedIn: $isLoggedIn)
             }
             .tabItem {
                 Label("Inventory", systemImage: "box.truck.fill")

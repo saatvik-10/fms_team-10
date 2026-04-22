@@ -2,144 +2,192 @@
 //  MaintenanceDashboardView.swift
 //  FMS Frontend
 //
+//  Tab 1 – Dashboard
+//  Displays aggregated KPIs, Priority Feed, Compliance Score, and Active Staff.
+//
 
 import SwiftUI
 
 struct MaintenanceDashboardView: View {
-    @EnvironmentObject var store: MaintenanceStore
     @Binding var isLoggedIn: Bool
-    
+    @EnvironmentObject var store: MaintenanceStore
+    @StateObject private var viewModel = MaintenanceDashboardViewModel()
+
+    @State private var showingCreateInspection   = false
+    @State private var showingEmergencyInspection = false
+    @State private var showingCreateWorkOrder    = false
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
-                // Header / Greetings
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Fleet Overview")
-                        .font(.system(size: 28, weight: .black))
-                    Text("Real-time maintenance analytics")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal)
-                .padding(.top, 20)
+            VStack(alignment: .leading, spacing: 0) {
 
-                // KPI Grid
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    KPICard(
-                        title: "PENDING ORDERS",
-                        value: "\(store.workOrders.filter { $0.status == .pending }.count)",
-                        icon: "clock.badge.exclamationmark",
-                        color: .blue
-                    )
-                    
-                    KPICard(
-                        title: "CRITICAL ALERTS",
-                        value: "\(store.workOrders.filter { $0.priority == .critical }.count)",
-                        icon: "exclamationmark.triangle.fill",
-                        color: .red
-                    )
-                    
-                    KPICard(
-                        title: "LOW STOCK",
-                        value: "\(store.lowStockCount)",
-                        icon: "shippingbox.fill",
-                        color: .orange
-                    )
-                    
-                    KPICard(
-                        title: "COMPLIANCE",
-                        value: "\(Int(store.complianceScore))%",
-                        icon: "checkmark.seal.fill",
-                        color: .green
-                    )
-                }
-                .padding(.horizontal)
+                // ── Section 1: System Status KPIs ──────────────────────────
+                systemStatusSection
+                    .padding(.top, 8)
 
-                // Recent Activity / Shortcuts
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("RECENT WORK ORDERS")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal)
-                    
-                    VStack(spacing: 0) {
-                        ForEach(store.workOrders.prefix(3)) { order in
-                            HStack(spacing: 16) {
-                                Circle()
-                                    .fill(order.priority == .critical ? Color.red.opacity(0.1) : Color.blue.opacity(0.1))
-                                    .frame(width: 40, height: 40)
-                                    .overlay(
-                                        Image(systemName: order.priority == .critical ? "bolt.fill" : "wrench.and.screwdriver.fill")
-                                            .foregroundColor(order.priority == .critical ? .red : .blue)
-                                            .font(.system(size: 14))
-                                    )
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(order.title)
-                                        .font(.system(size: 15, weight: .bold))
-                                    Text(order.vehicleName)
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.secondary)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding()
-                            
-                            if order.id != store.workOrders.prefix(3).last?.id {
-                                Divider().padding(.leading, 72)
-                            }
+                // ── Section 2: Priority Feed ────────────────────────────────
+                priorityFeedSection
+                    .padding(.top, 28)
+
+                // ── Section 4: Active Staff ─────────────────────────────────
+                activeStaffSection
+                    .padding(.top, 28)
+
+                Spacer(minLength: 48)
+            }
+            .padding(.top, 4)
+        }
+        .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle("Dashboard")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                // Critical Alerts Button
+                NavigationLink(destination: WorkOrderManagementView(maintenanceStore: store)) {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "exclamationmark.shield.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(viewModel.criticalAlertsCount > 0 ? AppColors.error : .secondary)
+                        
+                        if viewModel.criticalAlertsCount > 0 {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 8, height: 8)
+                                .offset(x: 2, y: -2)
                         }
                     }
-                    .background(Color.white)
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-                    .padding(.horizontal)
                 }
-                
-                Spacer(minLength: 40)
+                // Profile Section
+                NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
+                    Image(systemName: "person.circle")
+                        .font(.system(size: 22))
+                        .foregroundColor(AppColors.primary)
+                }
             }
         }
-        .background(Color(.systemGroupedBackground))
-        .navigationTitle("Dashboard")
-        .navigationBarTitleDisplayMode(.inline)
+        // ── Reactive updates from MaintenanceStore ──────────────────────────
+        .onAppear {
+            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections)
+        }
+        .onReceive(store.$workOrders) { orders in
+            viewModel.refresh(workOrders: orders, inspections: store.inspections)
+        }
+        .onReceive(store.$inspections) { inspections in
+            viewModel.refresh(workOrders: store.workOrders, inspections: inspections)
+        }
+        // ── Modals ──────────────────────────────────────────────────────────
+        .sheet(isPresented: $showingCreateInspection)    { CreateInspectionModal(isEmergency: false) }
+        .sheet(isPresented: $showingEmergencyInspection) { CreateInspectionModal(isEmergency: true)  }
+        .sheet(isPresented: $showingCreateWorkOrder)     { CreateWorkOrderModal() }
+    }
+
+    // MARK: - Section 1: System Status
+
+    private var systemStatusSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Row 1 – Pending Work Orders | Compliance Score
+            HStack(spacing: 12) {
+                NavigationLink(destination: WorkOrderManagementView(maintenanceStore: store)) {
+                    SummaryCard(
+                        title: "Pending Work Orders",
+                        count: "\(viewModel.pendingOrdersCount)",
+                        icon:  "clock.fill",
+                        color: AppColors.primary
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                NavigationLink(destination: TodayInspectionsView()) {
+                    InspectionSummaryCard(
+                        completed: viewModel.completedInspectionsToday,
+                        total: viewModel.totalInspectionsToday
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+
+            // Row 2 – Low Stock Parts (full-width warning banner)
+            NavigationLink(destination: LowStockPartsView()) {
+                LowStockCard(count: viewModel.lowStockPartsCount)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.horizontal, 20)
+    }
+
+    // MARK: - Section 2: Priority Feed
+
+    private var priorityFeedSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            MaintenanceSectionHeader(title: "Priority Feed", destination: WorkOrderManagementView(maintenanceStore: store))
+                .padding(.horizontal, 20)
+
+            if viewModel.topCriticalWorkOrders.isEmpty {
+                MaintenanceEmptyCard(message: "No active work orders", icon: "checkmark.circle.fill")
+                    .padding(.horizontal, 20)
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(viewModel.topCriticalWorkOrders) { item in
+                        let match = store.workOrders.first { $0.id == item.id }
+                        NavigationLink(
+                            destination: Group {
+                                if let order = match {
+                                    WorkOrderDetailsView(workOrder: order)
+                                } else {
+                                    WorkOrderManagementView(maintenanceStore: store)
+                                }
+                            }
+                        ) {
+                            PriorityFeedCard(item: item)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+
+    // MARK: - Section 4: Active Staff
+
+    private var activeStaffSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Active Technicians")
+                .font(.title2.bold())
+                .padding(.horizontal, 20)
+
+            if viewModel.activeStaff.isEmpty {
+                MaintenanceEmptyCard(
+                    message: "No technicians currently active",
+                    icon:    "person.fill"
+                )
+                .padding(.horizontal, 20)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(viewModel.activeStaff.enumerated()), id: \.element.id) { index, staff in
+                        ActiveStaffRow(staff: staff)
+                        if index < viewModel.activeStaff.count - 1 {
+                            Divider()
+                                .padding(.horizontal, 16)
+                        }
+                    }
+                }
+                .background(Color(UIColor.secondarySystemGroupedBackground))
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+                .padding(.horizontal, 20)
+            }
+        }
     }
 }
 
-private struct KPICard: View {
-    let title: String
-    let value: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                ZStack {
-                    Circle()
-                        .fill(color.opacity(0.1))
-                        .frame(width: 32, height: 32)
-                    Image(systemName: icon)
-                        .foregroundColor(color)
-                        .font(.system(size: 14, weight: .bold))
-                }
-                Spacer()
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(value)
-                    .font(.system(size: 24, weight: .black))
-                Text(title)
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(.secondary)
-            }
+// MARK: - Preview
+
+struct MaintenanceDashboardView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationStack {
+            MaintenanceDashboardView(isLoggedIn: .constant(true))
+                .environmentObject(MaintenanceStore())
         }
-        .padding(16)
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
     }
 }

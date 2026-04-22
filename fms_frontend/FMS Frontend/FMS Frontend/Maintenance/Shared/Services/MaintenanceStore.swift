@@ -11,11 +11,15 @@ import Combine
 class MaintenanceStore: ObservableObject {
     @Published var workOrders: [WorkOrder] = []
     @Published var inspections: [TripInspection] = []
-    @Published var inventory: [InventoryItem] = []
+    @Published var inventoryParts: [InventoryPart] = []
     
     // Dashboard Metrics
     var lowStockCount: Int {
-        inventory.filter { $0.currentQuantity <= $0.minThreshold }.count
+        inventoryParts.filter { $0.isLowStock }.count
+    }
+    
+    var totalInventoryValue: Double {
+        inventoryParts.reduce(0) { $0 + $1.totalValue }
     }
     
     var complianceScore: Double {
@@ -25,6 +29,41 @@ class MaintenanceStore: ObservableObject {
     
     init() {
         loadMockData()
+        loadInventory()
+    }
+    
+    // MARK: - Persistence
+    private let inventoryKey = "fms_inventory_data"
+    
+    func saveInventory() {
+        if let encoded = try? JSONEncoder().encode(inventoryParts) {
+            UserDefaults.standard.set(encoded, forKey: inventoryKey)
+        }
+    }
+    
+    func loadInventory() {
+        if let data = UserDefaults.standard.data(forKey: inventoryKey),
+           let decoded = try? JSONDecoder().decode([InventoryPart].self, from: data) {
+            self.inventoryParts = decoded
+        }
+    }
+    
+    func updateInventoryThreshold(for sku: String, newThreshold: Int) {
+        if let index = inventoryParts.firstIndex(where: { $0.sku == sku }) {
+            inventoryParts[index].reorderThreshold = newThreshold
+            saveInventory()
+        }
+    }
+    
+    func importInventory(_ newParts: [InventoryPart]) {
+        var mergedParts = newParts
+        for i in 0..<mergedParts.count {
+            if let existing = inventoryParts.firstIndex(where: { $0.sku == mergedParts[i].sku }) {
+                mergedParts[i].reorderThreshold = inventoryParts[existing].reorderThreshold
+            }
+        }
+        self.inventoryParts = mergedParts
+        saveInventory()
     }
     
     func loadMockData() {
@@ -114,45 +153,39 @@ class MaintenanceStore: ObservableObject {
             )
         ]
         
-        self.inventory = [
-            InventoryItem(
+        self.inventoryParts = [
+            InventoryPart(
                 name: "Ceramic Brake Pads",
                 sku: "BP-CER-001",
                 description: "Heavy-duty ceramic pads for Actros/Prima.",
                 category: "Brakes",
-                currentQuantity: 12,
-                minThreshold: 5,
-                location: "A1-S2-B1",
+                stockCount: 12,
                 unitCost: 150.0,
-                vendorInfo: "Global Parts Corp",
-                leadTimeDays: 3,
-                imageAsset: "brake_part"
+                reorderThreshold: 5,
+                vendorName: "Global Parts Corp",
+                averageLeadTimeDays: 3
             ),
-            InventoryItem(
+            InventoryPart(
                 name: "Hydraulic Seal Kit",
                 sku: "SK-HYD-099",
                 description: "Seal kit for boom cylinders.",
                 category: "Hydraulics",
-                currentQuantity: 2,
-                minThreshold: 3,
-                location: "B2-S1-B4",
+                stockCount: 2,
                 unitCost: 45.0,
-                vendorInfo: "HydraForce",
-                leadTimeDays: 5,
-                imageAsset: "engine_part"
+                reorderThreshold: 3,
+                vendorName: "HydraForce",
+                averageLeadTimeDays: 5
             ),
-            InventoryItem(
+            InventoryPart(
                 name: "DOT 4 Fluid",
                 sku: "FL-DOT4-01",
                 description: "High-boiling point brake fluid.",
                 category: "Fluids",
-                currentQuantity: 25,
-                minThreshold: 10,
-                location: "C1-S3-B2",
+                stockCount: 25,
                 unitCost: 12.0,
-                vendorInfo: "Shell Lubricants",
-                leadTimeDays: 2,
-                imageAsset: "drop.fill"
+                reorderThreshold: 10,
+                vendorName: "Shell Lubricants",
+                averageLeadTimeDays: 2
             )
         ]
     }

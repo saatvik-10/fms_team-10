@@ -8,11 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		2C2ACB4A2F90C20B005FC85A /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = 2C2ACB492F90C20B005FC85A /* GoogleMaps */; };
-		2CC1CC7C2F92590800FB9453 /* map_style.json in Resources */ = {isa = PBXBuildFile; fileRef = 2CC1CC7B2F92590800FB9453 /* map_style.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		2CC1CC7B2F92590800FB9453 /* map_style.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = map_style.json; sourceTree = "<group>"; };
 		BF4D0FB62F90972D00D2DCFD /* FMS Frontend.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FMS Frontend.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -37,7 +35,6 @@
 		BF4D0FAD2F90972D00D2DCFD = {
 			isa = PBXGroup;
 			children = (
-				2CC1CC7B2F92590800FB9453 /* map_style.json */,
 				BF4D0FB82F90972D00D2DCFD /* FMS Frontend */,
 				BF4D0FB72F90972D00D2DCFD /* Products */,
 			);
@@ -116,7 +113,6 @@
 		BF4D0FB42F90972D00D2DCFD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
-				2CC1CC7C2F92590800FB9453 /* map_style.json in Resources */,
 			);
 		};
 /* End PBXResourcesBuildPhase section */
