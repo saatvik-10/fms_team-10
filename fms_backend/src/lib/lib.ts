@@ -6,7 +6,7 @@ type StoredOtp = {
   sentAt: number;
 };
 
-const OTP_TTL_MS = 10 * 60 * 1000;
+const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_SEND_COOLDOWN_MS = 60 * 1000;
 
 export const otpStore = new Map<string, StoredOtp>();
