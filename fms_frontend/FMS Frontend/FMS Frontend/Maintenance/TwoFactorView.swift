@@ -7,10 +7,14 @@ import SwiftUI
 import Combine
 
 struct TwoFactorView: View {
-    @Binding var userRole: UserRole
+    @Binding var userRole: AppUserRole
+    let otpEmail: String
+    let roleToSet: AppUserRole
     @State private var otpDigits: [String] = Array(repeating: "", count: 6)
     @FocusState private var focusedIndex: Int?
     @State private var isVerifying = false
+    @State private var isResending = false
+    @State private var otpError: String?
     @State private var showSuccessPopup = false
     @State private var timeRemaining = 60
     @State private var canResend = false
@@ -57,6 +61,10 @@ struct TwoFactorView: View {
                             .foregroundColor(.white.opacity(0.8))
                             .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
                             .multilineTextAlignment(.center)
+
+                        Text(otpEmail)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.9))
                     }
                     
                     // OTP Input Boxes
@@ -65,10 +73,19 @@ struct TwoFactorView: View {
                             otpBox(index: index)
                         }
                     }
+
+                    if let otpError {
+                        Text(otpError)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.red.opacity(0.9))
+                            .multilineTextAlignment(.center)
+                    }
                     
                     // Verify Button
                     Button(action: {
-                        verifyOTP()
+                        Task {
+                            await verifyOTP()
+                        }
                     }) {
                         ZStack {
                             if isVerifying {
@@ -85,7 +102,7 @@ struct TwoFactorView: View {
                         .cornerRadius(12)
                         .shadow(color: isVerifyEnabled ? Color.white.opacity(0.2) : .clear, radius: 10, y: 5)
                     }
-                    .disabled(!isVerifyEnabled || isVerifying)
+                    .disabled(!isVerifyEnabled || isVerifying || isResending)
                     
                     VStack(spacing: 12) {
                         if !canResend {
@@ -95,16 +112,16 @@ struct TwoFactorView: View {
                         }
                         
                         Button(action: {
-                            timeRemaining = 60
-                            canResend = false
-                            // Add resend logic here
+                            Task {
+                                await resendOTP()
+                            }
                         }) {
-                            Text("Resend OTP")
+                            Text(isResending ? "Sending..." : "Resend OTP")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(canResend ? .white : .white.opacity(0.3))
                                 .underline(canResend)
                         }
-                        .disabled(!canResend)
+                        .disabled(!canResend || isVerifying || isResending)
                     }
                     .onReceive(timer) { _ in
                         if timeRemaining > 0 {
@@ -215,17 +232,57 @@ struct TwoFactorView: View {
             }
     }
     
-    private func verifyOTP() {
+    @MainActor
+    private func verifyOTP() async {
+        otpError = nil
         isVerifying = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+
+        defer {
             isVerifying = false
+        }
+
+        let otp = otpDigits.joined()
+
+        do {
+            let response = try await AuthAPI.shared.verifyOTP(email: otpEmail, otp: otp)
+            guard response.value.lowercased() == "success" else {
+                otpError = "Invalid OTP. Please try again."
+                return
+            }
+
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 showSuccessPopup = true
             }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+                userRole = roleToSet
+            }
+        } catch {
+            otpError = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func resendOTP() async {
+        otpError = nil
+        isResending = true
+
+        defer {
+            isResending = false
+        }
+
+        do {
+            _ = try await AuthAPI.shared.sendOTP(email: otpEmail)
+            timeRemaining = 60
+            canResend = false
+            otpDigits = Array(repeating: "", count: 6)
+            focusedIndex = 0
+        } catch {
+            otpError = error.localizedDescription
         }
     }
 }
 
 #Preview {
-    TwoFactorView(userRole: .constant(.manager))
+    TwoFactorView(userRole: .constant(.manager), otpEmail: "demo@fms.com", roleToSet: .manager)
 }

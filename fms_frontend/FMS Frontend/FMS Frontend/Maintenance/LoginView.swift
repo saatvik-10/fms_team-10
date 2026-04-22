@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct LoginView: View {
-    @Binding var userRole: UserRole
+    @Binding var userRole: AppUserRole
     
     @State private var username = ""
     @State private var password = ""
@@ -14,6 +14,9 @@ struct LoginView: View {
     @State private var showPassword = false
     @State private var animateLogo = false
     @State private var navigateTo2FA = false
+    @State private var loginError: String?
+    @State private var pendingEmail = ""
+    @State private var pendingRole: AppUserRole = .none
     
     @FocusState private var focusedField: Field?
     enum Field {
@@ -128,27 +131,21 @@ struct LoginView: View {
                                 )
                             }
                         }
+
+                        if let loginError {
+                            Text(loginError)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.red.opacity(0.9))
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 12)
+                        }
                         
                         Spacer().frame(height: 35)
                         
                         // Sign In Button
                         Button(action: {
-                            isLoggingIn = true
-                            saveCredentials()
-                            
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                                isLoggingIn = false
-                                let lowerUser = username.lowercased()
-                                if lowerUser == "fleet@fms.com" || lowerUser == "admin" {
-                                    userRole = .manager
-                                } else if lowerUser.contains("driver") {
-                                    userRole = .driver
-                                } else if lowerUser.contains("maintenance") {
-                                    userRole = .maintenance
-                                } else {
-                                    userRole = .driver
-                                }
-                                navigateTo2FA = true
+                            Task {
+                                await signInAndSendOTP()
                             }
                         }) {
                             ZStack {
@@ -187,22 +184,69 @@ struct LoginView: View {
                 }
             }
             .navigationDestination(isPresented: $navigateTo2FA) {
-                TwoFactorView(userRole: $userRole)
+                TwoFactorView(
+                    userRole: $userRole,
+                    otpEmail: pendingEmail,
+                    roleToSet: pendingRole
+                )
             }
             .onTapGesture {
                 focusedField = nil
             }
         }
     }
-    
-    private func saveCredentials() {
-        let data = "Username: \(username)\nPassword: \(password)\nTimestamp: \(Date())\n\n"
-        let filename = getDocumentsDirectory().appendingPathComponent("login_data.txt")
-        try? data.write(to: filename, atomically: true, encoding: .utf8)
+
+    @MainActor
+    private func signInAndSendOTP() async {
+        let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedUsername.isEmpty, !trimmedPassword.isEmpty else {
+            loginError = "Please enter both username and password."
+            return
+        }
+
+        isLoggingIn = true
+        loginError = nil
+
+        defer {
+            isLoggingIn = false
+        }
+
+        do {
+            let response = try await AuthAPI.shared.userSignin(username: trimmedUsername, password: trimmedPassword)
+            guard let email = response.user.email, !email.isEmpty else {
+                loginError = "No email found for this account."
+                return
+            }
+
+            let mappedRole = mapBackendRole(response.user.role.rawValue)
+            guard mappedRole != .none else {
+                loginError = "Unsupported user role."
+                return
+            }
+
+            _ = try await AuthAPI.shared.sendOTP(email: email)
+
+            pendingEmail = email
+            pendingRole = mappedRole
+            navigateTo2FA = true
+        } catch {
+            loginError = error.localizedDescription
+        }
     }
 
-    private func getDocumentsDirectory() -> URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    private func mapBackendRole(_ role: String) -> AppUserRole {
+        switch role {
+        case "MANAGER":
+            return .manager
+        case "DRIVER":
+            return .driver
+        case "MAINTENANCE":
+            return .maintenance
+        default:
+            return .none
+        }
     }
 }
 
