@@ -10,5 +10,13 @@
 	<array>
 		<string>comgooglemaps</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>FMS needs microphone access to record your voice description of the issue.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>FMS uses speech recognition to transcribe your issue description in real time.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>FMS needs camera access to capture photos of the reported issue.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FMS needs photo library access to attach images to your issue report.</string>
 </dict>
 </plist>
