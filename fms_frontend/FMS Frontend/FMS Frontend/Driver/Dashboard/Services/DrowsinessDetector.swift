@@ -22,6 +22,7 @@ class DrowsinessDetector: NSObject, ObservableObject {
     private var drowsyFrameCount = 0
     private let drowsyFrameThreshold = 20
     private var frameSkipCounter = 0
+    private var alertSoundTimer: Timer?
     
     // MARK: - Start Detection
     func startDetection() {
@@ -37,6 +38,7 @@ class DrowsinessDetector: NSObject, ObservableObject {
     // MARK: - Stop Detection
     func stopDetection() {
         captureSession?.stopRunning()
+        stopAlert()
         captureSession = nil
         isDetecting = false
         drowsyFrameCount = 0
@@ -103,13 +105,13 @@ class DrowsinessDetector: NSObject, ObservableObject {
             print("[Drowsy] Face found but NO eye landmarks detected")
             return
         }
-
+        
         let leftEAR  = eyeAspectRatio(points: leftEye.normalizedPoints)
         let rightEAR = eyeAspectRatio(points: rightEye.normalizedPoints)
         let avgEAR   = (leftEAR + rightEAR) / 2.0
-
+        
         print("[Drowsy] EAR: left=\(String(format: "%.3f", leftEAR)) right=\(String(format: "%.3f", rightEAR)) avg=\(String(format: "%.3f", avgEAR)) frames=\(drowsyFrameCount)")
-
+        
         DispatchQueue.main.async {
             if avgEAR < 0.22 {
                 self.drowsyFrameCount += 1
@@ -127,14 +129,33 @@ class DrowsinessDetector: NSObject, ObservableObject {
     }
     
     // MARK: - Trigger Alert
+    // MARK: - Trigger Alert
     private func triggerAlert() {
-        // Vibration
-        AudioServicesPlayAlertSoundWithCompletion(SystemSoundID(kSystemSoundID_Vibrate)) {
-            AudioServicesPlayAlertSoundWithCompletion(SystemSoundID(kSystemSoundID_Vibrate)) { }
+        stopAlert()
+        playAlertCycle()
+    }
+
+    private func playAlertCycle() {
+        guard isDrowsy else { return }  // stops automatically when isDrowsy is false
+        AudioServicesPlayAlertSoundWithCompletion(SystemSoundID(kSystemSoundID_Vibrate)) { }
+        AudioServicesPlayAlertSound(1005)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self = self, self.isDrowsy else { return }
+            self.playAlertCycle()
         }
-        
-        // Loud alert sound as backup
-        AudioServicesPlayAlertSound(1005) // Standard iOS alert sound
+    }
+
+    private func stopAlert() {
+        alertSoundTimer?.invalidate()
+        alertSoundTimer = nil
+    }
+    
+    func dismissAlert() {
+        stopAlert()
+        DispatchQueue.main.async {
+            self.isDrowsy = false
+            self.drowsyFrameCount = 0
+        }
     }
 }
 

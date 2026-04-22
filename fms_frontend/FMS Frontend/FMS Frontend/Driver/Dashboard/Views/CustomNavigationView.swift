@@ -141,8 +141,6 @@ struct CustomNavigationView: View {
 
             // Top overlay
             VStack(spacing: 10) {
-
-                // Dismiss button row
                 HStack {
                     Button {
                         dismiss()
@@ -159,7 +157,6 @@ struct CustomNavigationView: View {
                 }
                 .padding(.horizontal, 16)
 
-                // Navigation instruction banner
                 NavigationBannerView(
                     currentInstruction: viewModel.currentInstruction,
                     nextInstruction: viewModel.nextInstruction
@@ -189,26 +186,22 @@ struct CustomNavigationView: View {
                 .zIndex(98)
             }
 
-            // Drowsiness alert overlay
-            if drowsinessDetector.isDrowsy {
-                DrowsinessAlertView {
-                    drowsinessDetector.isDrowsy = false
-                }
-                .transition(.opacity)
-                .zIndex(99)
+        } // end of ZStack
+        .animation(.easeInOut, value: showCameraNotice)
+        .fullScreenCover(isPresented: $drowsinessDetector.isDrowsy) {
+            DrowsinessAlertView {
+                drowsinessDetector.dismissAlert()
             }
         }
-        .animation(.easeInOut, value: showCameraNotice)
-        .animation(.easeInOut, value: drowsinessDetector.isDrowsy)
-
         .safeAreaInset(edge: .bottom) {
-            BottomTrackingCard(
-                etaText: viewModel.etaText,
-                distanceRemaining: viewModel.distanceRemaining
-            )
-            .background(Color.black)
+            if !drowsinessDetector.isDrowsy {
+                BottomTrackingCard(
+                    etaText: viewModel.etaText,
+                    distanceRemaining: viewModel.distanceRemaining
+                )
+                .background(Color.black)
+            }
         }
-
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
