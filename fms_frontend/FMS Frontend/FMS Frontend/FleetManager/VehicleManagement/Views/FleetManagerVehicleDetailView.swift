@@ -21,7 +21,7 @@ struct FleetManagerVehicleDetailView: View {
                     }
                     
                     Text(vehicle.id)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(AppFonts.title3)
                     Spacer()
                     
                     Menu {
@@ -67,9 +67,10 @@ struct FleetManagerVehicleDetailView: View {
                                     
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(vehicle.id)
-                                            .font(.system(size: 32, weight: .black))
+                                            .font(AppFonts.largeTitle)
+                                            .fontWeight(.black)
                                         Text("\(vehicle.year) \(vehicle.make) \(vehicle.model) • \(vehicle.color)")
-                                            .font(.system(size: 14, weight: .medium))
+                                            .font(AppFonts.subheadline)
                                             .foregroundColor(.gray)
                                     }
                                 }
@@ -81,7 +82,8 @@ struct FleetManagerVehicleDetailView: View {
                                 VStack(alignment: .leading, spacing: 15) {
                                     HStack {
                                         Text("ODOMETER")
-                                            .font(.system(size: 10, weight: .bold))
+                                            .font(AppFonts.caption2)
+                                            .fontWeight(.bold)
                                             .foregroundColor(.gray)
                                         Spacer()
                                         Image(systemName: "gauge.with.dots.needle.bottom.100percent")
@@ -90,9 +92,11 @@ struct FleetManagerVehicleDetailView: View {
                                     
                                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                                         Text(vehicle.odometer)
-                                            .font(.system(size: 42, weight: .black))
+                                            .font(AppFonts.largeTitle)
+                                            .fontWeight(.black)
                                         Text("MILES")
-                                            .font(.system(size: 12, weight: .bold))
+                                            .font(AppFonts.caption2)
+                                            .fontWeight(.bold)
                                             .foregroundColor(.gray)
                                     }
                                 }
@@ -103,12 +107,14 @@ struct FleetManagerVehicleDetailView: View {
                                 
                                 VStack(alignment: .leading, spacing: 15) {
                                     Text("STATUS")
-                                        .font(.system(size: 10, weight: .bold))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                         .foregroundColor(.gray)
                                     
                                     Text(vehicle.status == .inTransit ? "IN TRANSIT" : 
                                          vehicle.status == .idle ? "IDLE" : "MAINTENANCE")
-                                        .font(.system(size: 16, weight: .bold))
+                                        .font(AppFonts.callout)
+                                        .fontWeight(.bold)
                                         .foregroundColor(vehicle.status == .inTransit ? AppColors.activeGreen : 
                                                         vehicle.status == .maintenance ? AppColors.criticalRed : .gray)
                                 }
@@ -123,7 +129,8 @@ struct FleetManagerVehicleDetailView: View {
                         if let reason = vehicle.assessmentReason {
                             VStack(alignment: .leading, spacing: 15) {
                                 Text("ASSESSMENT INSIGHT")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
                                 
                                 HStack(spacing: 15) {
@@ -133,7 +140,8 @@ struct FleetManagerVehicleDetailView: View {
                                         .overlay(Image(systemName: "sparkles").foregroundColor(.white))
                                     
                                     Text(reason)
-                                        .font(.system(size: 20, weight: .black))
+                                        .font(AppFonts.title3)
+                                        .fontWeight(.black)
                                 }
                             }
                             .padding(40)
@@ -149,10 +157,12 @@ struct FleetManagerVehicleDetailView: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("CURRENT TRANSIT")
-                                            .font(.system(size: 10, weight: .bold))
+                                            .font(AppFonts.caption2)
+                                            .fontWeight(.bold)
                                             .foregroundColor(.gray)
                                         Text(vehicle.currentTrip != nil ? "Active Trip" : "No Active Journey")
-                                            .font(.system(size: 24, weight: .bold))
+                                            .font(AppFonts.title2)
+                                            .fontWeight(.bold)
                                     }
                                     Spacer()
                                     if let trip = vehicle.currentTrip {
@@ -239,9 +249,10 @@ struct FleetManagerVehicleDetailView: View {
                                         
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(driver.name)
-                                                .font(.system(size: 20, weight: .bold))
+                                                .font(AppFonts.title3)
+                                                .fontWeight(.bold)
                                             Text("\(driver.id) • \(driver.title.uppercased())")
-                                                .font(.system(size: 12))
+                                                .font(AppFonts.caption1)
                                                 .foregroundColor(.gray)
                                         }
                                     }
@@ -281,7 +292,8 @@ struct FleetManagerVehicleDetailView: View {
                             VStack(alignment: .leading, spacing: 25) {
                                 HStack {
                                     Text("MAINTENANCE STATUS")
-                                        .font(.system(size: 10, weight: .bold))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                         .foregroundColor(.gray)
                                     Spacer()
                                 }
@@ -292,10 +304,11 @@ struct FleetManagerVehicleDetailView: View {
                                             .foregroundColor(AppColors.primary)
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text("NEXT SERVICE")
-                                                .font(.system(size: 8, weight: .bold))
+                                                .font(AppFonts.caption2)
+                                                .fontWeight(.bold)
                                                 .foregroundColor(.gray)
                                             Text(vehicle.maintenance.nextService)
-                                                .font(.system(size: 14, weight: .bold))
+                                                .font(AppFonts.headline)
                                         }
                                     }
                                     
@@ -304,10 +317,11 @@ struct FleetManagerVehicleDetailView: View {
                                             .foregroundColor(AppColors.primary)
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text("PRE-TRIP INSPECTION")
-                                                .font(.system(size: 8, weight: .bold))
+                                                .font(AppFonts.caption2)
+                                                .fontWeight(.bold)
                                                 .foregroundColor(.gray)
                                             Text(vehicle.maintenance.inspectionStatus)
-                                                .font(.system(size: 14, weight: .bold))
+                                                .font(AppFonts.headline)
                                                 .foregroundColor(AppColors.activeGreen)
                                         }
                                     }
@@ -318,10 +332,11 @@ struct FleetManagerVehicleDetailView: View {
                                                 .foregroundColor(AppColors.criticalRed)
                                             VStack(alignment: .leading, spacing: 4) {
                                                 Text(alert.title)
-                                                    .font(.system(size: 14, weight: .bold))
+                                                    .font(AppFonts.headline)
                                                     .foregroundColor(AppColors.criticalRed)
                                                 Text(alert.detail)
-                                                    .font(.system(size: 10, weight: .medium))
+                                                    .font(AppFonts.caption2)
+                                                    .fontWeight(.medium)
                                                     .foregroundColor(.gray)
                                             }
                                         }
@@ -340,7 +355,8 @@ struct FleetManagerVehicleDetailView: View {
                             // Recent History
                             VStack(alignment: .leading, spacing: 25) {
                                 Text("RECENT HISTORY")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
                                 
                                 VStack(spacing: 0) {
@@ -354,15 +370,16 @@ struct FleetManagerVehicleDetailView: View {
                                         HStack {
                                             VStack(alignment: .leading, spacing: 8) {
                                                 Text(trip.date ?? "")
-                                                    .font(.system(size: 10, weight: .bold))
+                                                    .font(AppFonts.caption2)
+                                                    .fontWeight(.bold)
                                                     .foregroundColor(.gray)
                                                 
                                                 VStack(alignment: .leading, spacing: 4) {
                                                     Text("\(trip.origin) → \(trip.destination)")
-                                                        .font(.system(size: 14, weight: .bold))
+                                                        .font(AppFonts.headline)
                                                         .fixedSize(horizontal: false, vertical: true)
                                                     Text("\(trip.distance ?? "") • \(trip.duration ?? "")")
-                                                        .font(.system(size: 11))
+                                                        .font(AppFonts.caption1)
                                                         .foregroundColor(.gray)
                                                 }
                                             }
@@ -382,7 +399,8 @@ struct FleetManagerVehicleDetailView: View {
                                 
                                 NavigationLink(destination: VehicleLogView(vehicle: vehicle)) {
                                     Text("VIEW FULL LOG")
-                                        .font(.system(size: 10, weight: .bold))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                         .foregroundColor(AppColors.primary)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 15)
@@ -398,7 +416,8 @@ struct FleetManagerVehicleDetailView: View {
                         // MARK: - Past Reports
                         VStack(alignment: .leading, spacing: 25) {
                             Text("PAST REPORTS")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(AppFonts.caption2)
+                                .fontWeight(.bold)
                                 .foregroundColor(.gray)
                             
                             if vehicle.reports.isEmpty {
@@ -419,9 +438,9 @@ struct FleetManagerVehicleDetailView: View {
                                         
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(report.title)
-                                                .font(.system(size: 14, weight: .bold))
+                                                .font(AppFonts.headline)
                                             Text(report.subtitle)
-                                                .font(.system(size: 10))
+                                                .font(AppFonts.caption2)
                                                 .foregroundColor(.gray)
                                         }
                                         Spacer()
@@ -439,7 +458,8 @@ struct FleetManagerVehicleDetailView: View {
                             
                             NavigationLink(destination: ArchiveListView(vehicle: vehicle)) {
                                 Text("VIEW ARCHIVE")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(AppColors.primary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 15)

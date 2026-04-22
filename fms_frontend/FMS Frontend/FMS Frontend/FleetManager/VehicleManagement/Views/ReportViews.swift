@@ -16,7 +16,8 @@ struct ArchiveListView: View {
                 .foregroundColor(AppColors.primary)
                 Spacer()
                 Text("REPORTS ARCHIVE")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFonts.caption2)
+                    .fontWeight(.bold)
                 Spacer()
                 Image(systemName: "magnifyingglass")
             }
@@ -27,10 +28,12 @@ struct ArchiveListView: View {
                 VStack(alignment: .leading, spacing: 25) {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("\(vehicle.id) RECORDS")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         Text("Past Reports Archive")
-                            .font(.system(size: 32, weight: .black))
+                            .font(AppFonts.largeTitle)
+                            .fontWeight(.black)
                     }
                     .padding(.horizontal, 30)
                     .padding(.top, 20)
@@ -38,7 +41,7 @@ struct ArchiveListView: View {
                     VStack(alignment: .leading, spacing: 15) {
                         if vehicle.reports.isEmpty {
                             Text("No history yet")
-                                .font(.system(size: 16))
+                                .font(AppFonts.body)
                                 .foregroundColor(.gray)
                                 .padding(.top, 40)
                                 .frame(maxWidth: .infinity, alignment: .center)
@@ -56,9 +59,9 @@ struct ArchiveListView: View {
                                         
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(report.title)
-                                                .font(.system(size: 18, weight: .bold))
+                                                .font(AppFonts.headline)
                                             Text(report.subtitle)
-                                                .font(.system(size: 12))
+                                                .font(AppFonts.caption2)
                                                 .foregroundColor(.gray)
                                         }
                                         
@@ -111,7 +114,7 @@ struct MaintenanceRequestsListView: View {
                     HStack {
                         Button("Close") { presentationMode.wrappedValue.dismiss() }.foregroundColor(AppColors.primary)
                         Spacer()
-                        Text("MAINTENANCE REQUESTS").font(.system(size: 14, weight: .bold))
+                        Text("MAINTENANCE REQUESTS").font(AppFonts.caption2).fontWeight(.bold)
                         Spacer()
                         
                     }
@@ -127,13 +130,14 @@ struct MaintenanceRequestsListView: View {
                                 VStack(spacing: 20) {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 5) {
-                                            Text(vehicle.id).font(.system(size: 18, weight: .black))
-                                            Text(report.date).font(.system(size: 12)).foregroundColor(.gray)
+                                            Text(vehicle.id).font(AppFonts.headline).fontWeight(.black)
+                                            Text(report.date).font(AppFonts.caption2).foregroundColor(.gray)
                                         }
                                         Spacer()
                                         NavigationLink(destination: MaintenanceReportDetailView(report: report, vehicle: vehicle)) {
                                             Text("View Assessment")
-                                                .font(.system(size: 12, weight: .bold))
+                                                .font(AppFonts.caption2)
+                                                .fontWeight(.bold)
                                                 .foregroundColor(AppColors.primary)
                                                 .padding(.horizontal, 15)
                                                 .padding(.vertical, 8)
@@ -146,7 +150,7 @@ struct MaintenanceRequestsListView: View {
                                         HStack {
                                             Spacer()
                                             Text("Processed")
-                                                .font(.system(size: 14, weight: .bold))
+                                                .font(AppFonts.headline)
                                                 .foregroundColor(.gray)
                                             Spacer()
                                         }
@@ -154,7 +158,7 @@ struct MaintenanceRequestsListView: View {
                                         HStack(spacing: 15) {
                                             Button(action: { actionedRequests.insert(report.id) }) {
                                                 Text("Disapprove")
-                                                    .font(.system(size: 14, weight: .bold))
+                                                    .font(AppFonts.button)
                                                     .frame(maxWidth: .infinity)
                                                     .padding(.vertical, 12)
                                                     .foregroundColor(.white)
@@ -163,7 +167,7 @@ struct MaintenanceRequestsListView: View {
                                             }
                                             Button(action: { actionedRequests.insert(report.id) }) {
                                                 Text("Approve")
-                                                    .font(.system(size: 14, weight: .bold))
+                                                    .font(AppFonts.button)
                                                     .frame(maxWidth: .infinity)
                                                     .padding(.vertical, 12)
                                                     .foregroundColor(.white)
@@ -202,7 +206,7 @@ struct MaintenanceReportDetailView: View {
                 Button(action: { presentationMode.wrappedValue.dismiss() }) {
                     Image(systemName: "chevron.left")
                     Text("InspectionReport_\(vehicle.id)")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(AppFonts.headline)
                 }
                 .foregroundColor(.black)
                 Spacer()
@@ -219,10 +223,10 @@ struct MaintenanceReportDetailView: View {
                     // Page Indicator header
                     HStack {
                         Text("Fleet Management System — Confidential")
-                            .font(.system(size: 10))
+                            .font(AppFonts.caption2)
                         Spacer()
                         Text("Page 1")
-                            .font(.system(size: 10))
+                            .font(AppFonts.caption2)
                     }
                     .foregroundColor(.gray)
                     .padding(.horizontal, 40)
@@ -234,10 +238,11 @@ struct MaintenanceReportDetailView: View {
                         // Dark Blue Top Title
                         VStack(alignment: .leading, spacing: 8) {
                             Text("FLEET MANAGEMENT SYSTEM")
-                                .font(.system(size: 16, weight: .black))
+                                .font(AppFonts.callout)
+                                .fontWeight(.black)
                                 .foregroundColor(.white)
                             Text("Vehicle Inspection Report")
-                                .font(.system(size: 12))
+                                .font(AppFonts.caption1)
                                 .foregroundColor(.white.opacity(0.8))
                         }
                         .padding(30)
@@ -280,7 +285,7 @@ struct MaintenanceReportDetailView: View {
                                 
                                 HStack {
                                     Text("✓ PASS")
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(AppFonts.headline)
                                         .foregroundColor(AppColors.activeGreen)
                                 }
                                 .padding()
@@ -292,7 +297,8 @@ struct MaintenanceReportDetailView: View {
                             
                             // Segment 2: Checklist Header
                             Text("INSPECTION CHECKLIST")
-                                .font(.system(size: 18, weight: .black))
+                                .font(AppFonts.title3)
+                                .fontWeight(.black)
                             
                             // Checklist Table Headers
                             HStack {
@@ -325,13 +331,13 @@ struct MaintenanceReportDetailView: View {
                             HStack {
                                 HStack {
                                     Text("Inspector Signature:")
-                                        .font(.system(size: 10))
+                                        .font(AppFonts.caption2)
                                     Rectangle().frame(width: 100, height: 1).padding(.bottom, -5).foregroundColor(.black)
                                 }
                                 Spacer()
                                 HStack {
                                     Text("Date:")
-                                        .font(.system(size: 10))
+                                        .font(AppFonts.caption2)
                                     Rectangle().frame(width: 80, height: 1).padding(.bottom, -5).foregroundColor(.black)
                                 }
                             }
@@ -358,7 +364,8 @@ struct PdfSectionHeader: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.system(size: 10, weight: .bold))
+                .font(AppFonts.caption2)
+                .fontWeight(.bold)
             Spacer()
         }
         .padding(.vertical, 6)
@@ -374,11 +381,12 @@ struct PdfRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(.system(size: 12, weight: .bold))
+                .font(AppFonts.caption2)
+                .fontWeight(.bold)
                 .foregroundColor(.black)
                 .frame(width: 150, alignment: .leading)
             Text(value)
-                .font(.system(size: 12))
+                .font(AppFonts.caption1)
                 .foregroundColor(.black)
             Spacer()
         }
@@ -398,16 +406,17 @@ struct PdfChecklistRow: View {
     var body: some View {
         HStack {
             Text(item)
-                .font(.system(size: 12, weight: .bold))
+                .font(AppFonts.headline)
                 .frame(width: 180, alignment: .leading)
             
             Text(result)
-                .font(.system(size: 12, weight: .bold))
+                .font(AppFonts.caption1)
+                .fontWeight(.bold)
                 .foregroundColor(isGood ? AppColors.activeGreen : .gray)
                 .frame(width: 80, alignment: .leading)
                 
             Text("-")
-                .font(.system(size: 12))
+                .font(AppFonts.caption1)
                 .frame(width: 80, alignment: .leading)
                 
             if hasPhoto {
@@ -416,7 +425,7 @@ struct PdfChecklistRow: View {
                     .frame(width: 80, alignment: .leading)
             } else {
                 Text("-")
-                    .font(.system(size: 12))
+                    .font(AppFonts.caption1)
                     .frame(width: 80, alignment: .leading)
             }
         }

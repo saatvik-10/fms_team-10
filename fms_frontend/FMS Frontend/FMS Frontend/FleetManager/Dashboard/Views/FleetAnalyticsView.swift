@@ -18,10 +18,11 @@ struct FleetAnalyticsView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 5) {
                             Text("ENVIRONMENTAL IMPACT")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(AppFonts.caption2)
+                                .fontWeight(.bold)
                                 .foregroundColor(.gray)
                             Text("CO2 Emission Analytics")
-                                .font(.system(size: 32, weight: .black))
+                                .font(AppFonts.largeTitle)
                         }
                         Spacer()
                         
@@ -41,23 +42,26 @@ struct FleetAnalyticsView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("AVERAGE EMISSIONS")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
                                 Text("14.2 kg/mi")
-                                    .font(.system(size: 28, weight: .black))
+                                    .font(AppFonts.title1)
                                 Text("-12.4% from last period")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.medium)
                                     .foregroundColor(AppColors.activeGreen)
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 8) {
                                 Text("PEAK DAY")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
                                 Text("Thursday")
-                                    .font(.system(size: 18, weight: .bold))
+                                    .font(AppFonts.title3)
                                 Text("18.2 kg/mi")
-                                    .font(.system(size: 12))
+                                    .font(AppFonts.caption1)
                                     .foregroundColor(.gray)
                             }
                         }
@@ -84,7 +88,8 @@ struct FleetAnalyticsView: View {
                                     }
                                     
                                     Text(item.day)
-                                        .font(.system(size: 12, weight: .black))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.black)
                                         .foregroundColor(.gray)
                                 }
                                 .frame(maxWidth: .infinity)
@@ -129,12 +134,13 @@ struct EfficiencySectorCard: View {
                     .foregroundColor(color)
                 Spacer()
                 Text(value)
-                    .font(.system(size: 24, weight: .black))
+                    .font(AppFonts.title2)
             }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title.uppercased())
-                    .font(.system(size: 10, weight: .bold))
+                    .font(AppFonts.caption2)
+                    .fontWeight(.bold)
                     .foregroundColor(.gray)
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.gray.opacity(0.1)).frame(height: 4)

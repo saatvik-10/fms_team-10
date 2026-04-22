@@ -21,9 +21,9 @@ struct OCRUploadArea: View {
             
             VStack(spacing: 4) {
                 Text(title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFonts.headline)
                 Text(subtitle)
-                    .font(.system(size: 12))
+                    .font(AppFonts.caption1)
                     .foregroundColor(.gray)
             }
             
@@ -32,7 +32,7 @@ struct OCRUploadArea: View {
                     Image(systemName: "plus")
                     Text(buttonTitle)
                 }
-                .font(.system(size: 14, weight: .bold))
+                .font(AppFonts.button)
                 .foregroundColor(.white)
                 .padding(.horizontal, 40)
                 .padding(.vertical, 12)
@@ -57,12 +57,13 @@ struct ModalFormField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(label.uppercased())
-                .font(.system(size: 10, weight: .bold))
+                .font(AppFonts.caption2)
+                .fontWeight(.bold)
                 .foregroundColor(.gray)
             
             HStack {
                 TextField("", text: $text)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFonts.subheadline)
                     .minimumScaleFactor(0.5)
                 Spacer()
                 Image(systemName: "pencil")
@@ -85,7 +86,8 @@ struct ModalSearchField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(label.uppercased())
-                .font(.system(size: 10, weight: .bold))
+                .font(AppFonts.caption2)
+                .fontWeight(.bold)
                 .foregroundColor(.gray)
             
             VStack(spacing: 0) {
@@ -99,7 +101,8 @@ struct ModalSearchField: View {
                     .onChange(of: text) { _, newValue in
                         completer.searchQuery = newValue
                     }
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFonts.subheadline)
+                    .fontWeight(.medium)
                     Spacer()
                 }
                 .padding()
@@ -117,9 +120,9 @@ struct ModalSearchField: View {
                                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                                 }) {
                                     VStack(alignment: .leading) {
-                                        Text(completion.title).font(.system(size: 14, weight: .bold)).foregroundColor(AppColors.textPrimary)
+                                        Text(completion.title).font(AppFonts.headline).foregroundColor(AppColors.textPrimary)
                                         if !completion.subtitle.isEmpty {
-                                            Text(completion.subtitle).font(.system(size: 12)).foregroundColor(.gray)
+                                            Text(completion.subtitle).font(AppFonts.caption1).foregroundColor(.gray)
                                         }
                                         Divider()
                                     }
@@ -185,12 +188,12 @@ struct DriverModalView: View {
             // Header
             HStack {
                 Text(driverToEdit == nil ? "Add Driver" : "Update Driver")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(AppFonts.title1)
                 Spacer()
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .foregroundColor(.gray)
-                        .font(.system(size: 20))
+                        .font(AppFonts.title3)
                 }
             }
             .padding(.top, 10)
@@ -201,7 +204,8 @@ struct DriverModalView: View {
                     // Section 1: License Verification
                     VStack(alignment: .leading, spacing: 15) {
                         Text("LICENSE VERIFICATION")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         
                         OCRUploadArea(
@@ -215,7 +219,8 @@ struct DriverModalView: View {
                     // Section 2: Review Details
                     VStack(alignment: .leading, spacing: 20) {
                         Text("REVIEW DRIVER DETAILS")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         
                         HStack(spacing: 20) {
@@ -234,7 +239,7 @@ struct DriverModalView: View {
                                 }
                             if let error = licenseError {
                                 Text(error)
-                                    .font(.system(size: 10))
+                                    .font(AppFonts.caption2)
                                     .foregroundColor(.red)
                             }
                         }
@@ -244,7 +249,8 @@ struct DriverModalView: View {
                         VStack(alignment: .leading, spacing: 15) {
                             HStack {
                                 Text("VEHICLE CLASSES")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
                                 Spacer()
                                 Button(action: { vehicleClasses.append(Self.vehicleClassOptions.first ?? "LMV-NT") }) {
@@ -252,7 +258,8 @@ struct DriverModalView: View {
                                         Image(systemName: "plus")
                                         Text("Add Class")
                                     }
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                 }
                             }
                             
@@ -260,7 +267,8 @@ struct DriverModalView: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 10) {
                                         Text("CLASS \(index + 1)")
-                                            .font(.system(size: 10, weight: .bold))
+                                            .font(AppFonts.caption2)
+                                            .fontWeight(.bold)
                                             .foregroundColor(.gray)
 
                                         Menu {
@@ -274,11 +282,12 @@ struct DriverModalView: View {
                                         } label: {
                                             HStack {
                                                 Text(vehicleClasses[index])
-                                                    .font(.system(size: 15, weight: .medium))
+                                                    .font(AppFonts.subheadline)
                                                     .foregroundColor(AppColors.textPrimary)
                                                 Spacer()
                                                 Image(systemName: "chevron.up.chevron.down")
-                                                    .font(.system(size: 12, weight: .bold))
+                                                    .font(AppFonts.caption2)
+                                                    .fontWeight(.bold)
                                                     .foregroundColor(.gray)
                                             }
                                             .padding()
@@ -334,7 +343,7 @@ struct DriverModalView: View {
                     HStack {
                         Text("Save Driver")
                     }
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFonts.button)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
@@ -394,12 +403,12 @@ struct AddVehicleModalView: View {
             // Header
             HStack {
                 Text(vehicleToEdit == nil ? "Add Vehicle" : "Update Vehicle")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(AppFonts.title1)
                 Spacer()
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .foregroundColor(.gray)
-                        .font(.system(size: 20))
+                        .font(AppFonts.title3)
                 }
             }
             .padding(.top, 10)
@@ -410,7 +419,8 @@ struct AddVehicleModalView: View {
                     // Section 1: RC Verification
                     VStack(alignment: .leading, spacing: 15) {
                         Text("VEHICLE REGISTRATION (RC) VERIFICATION")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         
                         OCRUploadArea(
@@ -424,7 +434,8 @@ struct AddVehicleModalView: View {
                     // Section 2: Review Details
                     VStack(alignment: .leading, spacing: 20) {
                         Text("REVIEW VEHICLE DETAILS")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         
                         HStack(spacing: 20) {
@@ -473,7 +484,7 @@ struct AddVehicleModalView: View {
                     HStack {
                         Text("Save Vehicle")
                     }
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFonts.button)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
@@ -529,12 +540,12 @@ struct OrderModalView: View {
             // Header
             HStack {
                 Text("New Order")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(AppFonts.title1)
                 Spacer()
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .foregroundColor(.gray)
-                        .font(.system(size: 20))
+                        .font(AppFonts.title3)
                 }
             }
             .padding(25)
@@ -547,7 +558,8 @@ struct OrderModalView: View {
                     // 1. Route Details
                     VStack(alignment: .leading, spacing: 15) {
                         Label("ROUTE DETAILS", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                         
                         HStack(spacing: 20) {
                             ModalSearchField(label: "FROM", text: $fromLocation)
@@ -559,7 +571,8 @@ struct OrderModalView: View {
                             
                             VStack(alignment: .leading, spacing: 5) {
                                 Text("LOAD AMOUNT")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
                                 
                                 HStack(spacing: 0) {
@@ -576,9 +589,10 @@ struct OrderModalView: View {
                                     } label: {
                                         HStack {
                                             Text(loadUnit)
-                                                .font(.system(size: 12, weight: .bold))
+                                                .font(AppFonts.caption2)
+                                                .fontWeight(.bold)
                                             Image(systemName: "chevron.down")
-                                                .font(.system(size: 10))
+                                                .font(AppFonts.caption2)
                                         }
                                         .foregroundColor(AppColors.primary)
                                         .padding(.horizontal, 12)
@@ -594,10 +608,12 @@ struct OrderModalView: View {
                     // 2. Vehicle Assignment
                     VStack(alignment: .leading, spacing: 15) {
                         Label("VEHICLE ASSIGNMENT", systemImage: "truck.box.fill")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                         
                         Text("SELECTED VEHICLE")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         
                         Menu {
@@ -618,16 +634,17 @@ struct OrderModalView: View {
                                 
                                 VStack(alignment: .leading) {
                                     Text(selectedVehicleID.isEmpty ? "Tap to select vehicle" : selectedVehicleID)
-                                        .font(.system(size: 16, weight: .bold))
+                                        .font(AppFonts.headline)
                                         .foregroundColor(selectedVehicleID.isEmpty ? .gray : AppColors.textPrimary)
                                     Text("Available for dispatch")
-                                        .font(.system(size: 12))
+                                        .font(AppFonts.caption1)
                                         .foregroundColor(.gray)
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.up.chevron.down")
                                     .foregroundColor(.gray)
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                             }
                             .padding()
                             .background(Color.gray.opacity(0.1))
@@ -638,7 +655,8 @@ struct OrderModalView: View {
                     // 3. Contact Details
                     VStack(alignment: .leading, spacing: 15) {
                         Label("CONTACT DETAILS", systemImage: "person.crop.circle.badge.checkmark")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(AppFonts.headline)
+                            .fontWeight(.bold)
                         
                         ModalFormField(label: "PHONE NUMBER", text: $phoneNum)
                     }
@@ -649,15 +667,17 @@ struct OrderModalView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("ESTIMATED FUEL COST")
-                                        .font(.system(size: 10, weight: .bold))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                         .foregroundColor(.gray)
                                     Text(String(format: "$%.2f", estimatedCost))
-                                        .font(.system(size: 38, weight: .black))
+                                        .font(AppFonts.largeTitle)
+                                        .fontWeight(.black)
                                 }
                                 Spacer()
                                 VStack(alignment: .trailing, spacing: 8) {
                                     Text("Dist: 120mi • 8mpg • ₹3.50/gal")
-                                        .font(.system(size: 10))
+                                        .font(AppFonts.footnote)
                                         .foregroundColor(.gray)
                                 }
                             }
@@ -667,18 +687,21 @@ struct OrderModalView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("CO2 IMPACT")
-                                        .font(.system(size: 8, weight: .bold))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                         .foregroundColor(.gray)
                                     Text("0.42 Tons")
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(AppFonts.subheadline)
+                                        .fontWeight(.bold)
                                 }
                                 Spacer()
                                 VStack(alignment: .trailing, spacing: 4) {
                                     Text("ETA")
-                                        .font(.system(size: 8, weight: .bold))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                         .foregroundColor(.gray)
                                     Text("2h 45m")
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(AppFonts.headline)
                                 }
                             }
                         }
@@ -693,6 +716,7 @@ struct OrderModalView: View {
                     VStack(spacing: 15) {
                         Button(action: { 
                             let trip = VehicleTrip(
+                                vehicleID: selectedVehicleID,
                                 origin: fromLocation,
                                 destination: toLocation,
                                 progress: 0.0,
@@ -712,7 +736,7 @@ struct OrderModalView: View {
                             HStack {
                                 Text("Create Order")
                             }
-                            .font(.system(size: 18, weight: .bold))
+                            .font(AppFonts.button)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 20)
@@ -722,7 +746,7 @@ struct OrderModalView: View {
                         .disabled(fromLocation.isEmpty || selectedVehicleID.isEmpty)
                         
                         Text("Complete all mandatory fields to finalize dispatch")
-                            .font(.system(size: 10))
+                            .font(AppFonts.caption2)
                             .foregroundColor(.gray)
                             .frame(maxWidth: .infinity)
                     }

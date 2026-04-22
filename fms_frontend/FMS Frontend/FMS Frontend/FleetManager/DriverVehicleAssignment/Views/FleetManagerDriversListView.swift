@@ -10,14 +10,14 @@ struct FleetManagerDriversListView: View {
             // MARK: - Header
             HStack(spacing: 20) {
                 Text("Drivers Management")
-                    .font(.system(size: 20, weight: .black))
+                    .font(AppFonts.title3)
                 
                 // Search Bar
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.gray)
                     TextField("Search by name, license or status...", text: $searchText)
-                        .font(.system(size: 14))
+                        .font(AppFonts.body)
                 }
                 .padding(.horizontal, 15)
                 .padding(.vertical, 10)
@@ -33,7 +33,7 @@ struct FleetManagerDriversListView: View {
                             Image(systemName: "plus")
                             Text("Add Driver")
                         }
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFonts.button)
                         .foregroundColor(.white)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 10)
@@ -57,7 +57,8 @@ struct FleetManagerDriversListView: View {
                         Spacer()
                         Text("STATUS")
                     }
-                    .font(.system(size: 12, weight: .bold))
+                    .font(AppFonts.caption2)
+                    .fontWeight(.bold)
                     .foregroundColor(.gray)
                     .padding(.horizontal, 70)
                     .padding(.vertical, 20)
@@ -105,7 +106,7 @@ struct DriverRowView: View {
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(driver.name)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(AppFonts.headline)
                 }
             }
             .frame(width: 250, alignment: .leading)
@@ -113,9 +114,9 @@ struct DriverRowView: View {
             // License
             VStack(alignment: .leading, spacing: 2) {
                 Text(driver.licenseNum)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFonts.subheadline)
                 Text("Exp: \(driver.licenseExp)")
-                    .font(.system(size: 11))
+                    .font(AppFonts.caption2)
                     .foregroundColor(.gray)
             }
             .frame(width: 200, alignment: .leading)
@@ -127,7 +128,8 @@ struct DriverRowView: View {
                     .fill(statusColor)
                     .frame(width: 6, height: 6)
                 Text(driver.status.rawValue.uppercased())
-                    .font(.system(size: 10, weight: .bold))
+                    .font(AppFonts.caption2)
+                    .fontWeight(.bold)
                     .foregroundColor(statusColor)
             }
             .padding(.horizontal, 12)
@@ -160,10 +162,11 @@ struct FooterStat: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.system(size: 10, weight: .bold))
+                .font(AppFonts.caption2)
+                .fontWeight(.bold)
                 .foregroundColor(.gray)
             Text(value)
-                .font(.system(size: 16, weight: .black))
+                .font(AppFonts.headline)
                 .foregroundColor(valueColor)
         }
     }

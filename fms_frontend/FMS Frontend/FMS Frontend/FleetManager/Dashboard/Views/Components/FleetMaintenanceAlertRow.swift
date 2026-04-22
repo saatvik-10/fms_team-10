@@ -16,10 +16,10 @@ struct FleetMaintenanceAlertRow: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(alert.title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFonts.headline)
                     .foregroundColor(AppColors.primary)
                 Text(alert.detail)
-                    .font(.system(size: 13))
+                    .font(AppFonts.footnote)
                     .foregroundColor(.gray)
                     .lineLimit(1)
             }

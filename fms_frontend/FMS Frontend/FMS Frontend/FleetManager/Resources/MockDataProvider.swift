@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct MockDataProvider {
     static let dashboardStats = FleetManagerDashboardStats(
@@ -77,10 +78,47 @@ struct MockDataProvider {
         FuelTrendData(month: "April 2021", value: 1100),
         FuelTrendData(month: "May 2021", value: 870)
     ]
+    
+    // Performance Trends (7-Day Sparklines)
+    static let utilizationTrend: [HistoricalPoint] = [
+        HistoricalPoint(label: "Mon", value: 65),
+        HistoricalPoint(label: "Tue", value: 72),
+        HistoricalPoint(label: "Wed", value: 68),
+        HistoricalPoint(label: "Thu", value: 85),
+        HistoricalPoint(label: "Fri", value: 78),
+        HistoricalPoint(label: "Sat", value: 45),
+        HistoricalPoint(label: "Sun", value: 40)
+    ]
+    
+    static let efficiencyTrend: [HistoricalPoint] = [
+        HistoricalPoint(label: "Mon", value: 42.5),
+        HistoricalPoint(label: "Tue", value: 44.0),
+        HistoricalPoint(label: "Wed", value: 41.2),
+        HistoricalPoint(label: "Thu", value: 46.8),
+        HistoricalPoint(label: "Fri", value: 45.1),
+        HistoricalPoint(label: "Sat", value: 48.2),
+        HistoricalPoint(label: "Sun", value: 47.5)
+    ]
+    
+    static let costTrend: [HistoricalPoint] = [
+        HistoricalPoint(label: "Mon", value: 34.2),
+        HistoricalPoint(label: "Tue", value: 33.5),
+        HistoricalPoint(label: "Wed", value: 35.8),
+        HistoricalPoint(label: "Thu", value: 32.1),
+        HistoricalPoint(label: "Fri", value: 31.5),
+        HistoricalPoint(label: "Sat", value: 30.2),
+        HistoricalPoint(label: "Sun", value: 29.8)
+    ]
+    
+    static let idleTrend: [HistoricalPoint] = [
+        HistoricalPoint(label: "Active", value: 72, color: Color.blue),
+        HistoricalPoint(label: "Idle", value: 28, color: Color.gray.opacity(0.3))
+    ]
 
     static let drivers: [Driver] = [
         Driver(id: "KM-1029", name: "Rahul Sharma", title: "LMV-NT Certified Driver", licenseNum: "DL-99203381", licenseExp: "Oct 2026", status: .active, rating: 4.92, efficiency: "98.4%", totalTrips: 124, totalHours: 8420, activityLog: [], currentVehicleID: "TRK-9042", vehicleClasses: ["LMV-NT"], activeRoute: "IH-35 North bound", eta: "14:20", phone: "+91 98765 43210"),
-        Driver(id: "KM-1044", name: "Priya Patel", title: "HGV Specialist", licenseNum: "DL-44810293", licenseExp: "Mar 2025", status: .onTrip, rating: 4.88, efficiency: "95.2%", totalTrips: 89, totalHours: 6200, activityLog: [], currentVehicleID: "EV-9910", vehicleClasses: ["LMV-GV", "HGV"], activeRoute: "Route B-12", eta: "1h 12m", phone: "+91 91234 56789")
+        Driver(id: "KM-1044", name: "Priya Patel", title: "HGV Specialist", licenseNum: "DL-44810293", licenseExp: "Mar 2025", status: .onTrip, rating: 4.88, efficiency: "95.2%", totalTrips: 89, totalHours: 6200, activityLog: [], currentVehicleID: "EV-9910", vehicleClasses: ["LMV-GV", "HGV"], activeRoute: "Route B-12", eta: "1h 12m", phone: "+91 91234 56789"),
+        Driver(id: "KM-1088", name: "Amit Singh", title: "Heavy Truck Expert", licenseNum: "DL-11882233", licenseExp: "Dec 2027", status: .active, rating: 4.75, efficiency: "92.1%", totalTrips: 210, totalHours: 12000, activityLog: [], currentVehicleID: "TRK-1088", vehicleClasses: ["HGV"], activeRoute: nil, eta: nil, phone: "+91 99887 76655")
     ]
     
     static let vehicles: [Vehicle] = [
@@ -95,12 +133,13 @@ struct MockDataProvider {
             color: "Silver Birch Metallic",
             odometer: "42,892",
             operationalStatus: "OPERATIONAL",
-            currentTrip: VehicleTrip(origin: "DEL", destination: "JAI", progress: 0.72, eta: "4:15 PM", date: "Today", distance: "250 KM", duration: "4 HRS", costEstimate: "₹8500.00", startTime: Date(), status: .inTransit, productType: "Steel Coils", loadAmount: "25 Tons"),
+            currentTrip: VehicleTrip(vehicleID: "TRK-9042", origin: "DEL", destination: "JAI", progress: 0.72, eta: "4:15 PM", date: "Today", distance: "250 KM", duration: "4 HRS", costEstimate: "₹8500.00", startTime: Date(), status: .inTransit, productType: "Steel Coils", loadAmount: "25 Tons"),
             assignedDriver: drivers[0],
             maintenance: VehicleMaintenance(nextService: "Oct 24, 2023", inspectionStatus: "Completed", alerts: []),
             history: [
-                VehicleTrip(origin: "MUM", destination: "PUN", progress: 1.0, eta: "Completed", date: "Apr 18, 2026", distance: "150 KM", duration: "3h", costEstimate: "₹4,200", startTime: nil, status: .completed, productType: "Pharma Supplies", loadAmount: "8 Tons"),
-                VehicleTrip(origin: "AMD", destination: "SUR", progress: 1.0, eta: "Completed", date: "Apr 16, 2026", distance: "280 KM", duration: "5h", costEstimate: "₹7,800", startTime: nil, status: .completed, productType: "Industrial Valves", loadAmount: "12 Tons")
+                VehicleTrip(vehicleID: "TRK-9042", origin: "MUM", destination: "PUN", progress: 1.0, eta: "Completed", date: "Apr 18, 2026", distance: "150 KM", duration: "3h", costEstimate: "₹4,200", startTime: nil, status: .completed, productType: "Pharma Supplies", loadAmount: "8 Tons"),
+                VehicleTrip(vehicleID: "TRK-9042", origin: "AMD", destination: "SUR", progress: 1.0, eta: "Completed", date: "Apr 16, 2026", distance: "280 KM", duration: "5h", costEstimate: "₹7,800", startTime: nil, status: .completed, productType: "Industrial Valves", loadAmount: "12 Tons"),
+                VehicleTrip(vehicleID: "TRK-9042", origin: "DEL", destination: "AGR", progress: 1.0, eta: "Completed", date: "Apr 14, 2026", distance: "210 KM", duration: "4h", costEstimate: "₹6,100", startTime: nil, status: .completed, productType: "Textiles", loadAmount: "10 Tons")
             ],
             reports: [],
             assessmentReason: "Route Optimized: Fuel Savings +12%",
@@ -122,7 +161,8 @@ struct MockDataProvider {
             assignedDriver: drivers[1],
             maintenance: VehicleMaintenance(nextService: "Oct 18, 2023", inspectionStatus: "Completed", alerts: []),
             history: [
-                VehicleTrip(origin: "BLR Hub", destination: "HSR", progress: 1.0, eta: "Completed", date: "Apr 19, 2026", distance: "12 KM", duration: "45m", costEstimate: "₹250", startTime: nil, status: .completed, productType: "E-commerce Parcels", loadAmount: "1.2 Tons")
+                VehicleTrip(vehicleID: "EV-9910", origin: "BLR Hub", destination: "HSR", progress: 1.0, eta: "Completed", date: "Apr 19, 2026", distance: "12 KM", duration: "45m", costEstimate: "₹250", startTime: nil, status: .completed, productType: "E-commerce Parcels", loadAmount: "1.2 Tons"),
+                VehicleTrip(vehicleID: "EV-9910", origin: "KOR", destination: "IND", progress: 1.0, eta: "Completed", date: "Apr 17, 2026", distance: "15 KM", duration: "1h", costEstimate: "₹300", startTime: nil, status: .completed, productType: "Fresh Produce", loadAmount: "0.8 Tons")
             ],
             reports: [],
             assessmentReason: nil,
@@ -141,9 +181,12 @@ struct MockDataProvider {
             odometer: "89,120",
             operationalStatus: "MAINTENANCE",
             currentTrip: nil,
-            assignedDriver: nil,
+            assignedDriver: drivers[2],
             maintenance: VehicleMaintenance(nextService: "Overdue", inspectionStatus: "Pending", alerts: []),
-            history: [],
+            history: [
+                VehicleTrip(vehicleID: "TRK-1088", origin: "HYD", destination: "BLR", progress: 1.0, eta: "Completed", date: "Apr 15, 2026", distance: "570 KM", duration: "12h", costEstimate: "₹18,500", startTime: nil, status: .completed, productType: "General Freight", loadAmount: "18 Tons"),
+                VehicleTrip(vehicleID: "TRK-1088", origin: "MAA", destination: "BLR", progress: 1.0, eta: "Completed", date: "Apr 12, 2026", distance: "340 KM", duration: "7h", costEstimate: "₹12,400", startTime: nil, status: .completed, productType: "Auto Parts", loadAmount: "15 Tons")
+            ],
             reports: [],
             assessmentReason: nil,
             plateNumber: "MH 12 XB 1088",

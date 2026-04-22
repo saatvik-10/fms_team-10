@@ -13,7 +13,7 @@ struct VehicleLogView: View {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 18, weight: .bold))
                         Text("Back")
-                            .font(.system(size: 16))
+                            .font(AppFonts.body)
                     }
                     .foregroundColor(AppColors.primary)
                 }
@@ -21,7 +21,7 @@ struct VehicleLogView: View {
                 Spacer()
                 
                 Text(vehicle.id)
-                    .font(.system(size: 18, weight: .bold))
+                    .font(AppFonts.headline)
                 
                 Spacer()
                 
@@ -38,10 +38,12 @@ struct VehicleLogView: View {
                     
                     VStack(alignment: .leading, spacing: 5) {
                         Text("TRIP LOGS")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         Text("Deployment History")
-                            .font(.system(size: 32, weight: .black))
+                            .font(AppFonts.largeTitle)
+                            .fontWeight(.black)
                     }
                     .padding(.horizontal, 30)
                     .padding(.top, 20)
@@ -51,10 +53,11 @@ struct VehicleLogView: View {
                             VStack(alignment: .leading, spacing: 20) {
                                 HStack {
                                     Text(trip.date ?? "Unknown Date")
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(AppFonts.headline)
                                     Spacer()
                                     Text("COMPLETED")
-                                        .font(.system(size: 10, weight: .bold))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                         .foregroundColor(AppColors.activeGreen)
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 4)
@@ -71,10 +74,11 @@ struct VehicleLogView: View {
                                         
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text("ORIGIN")
-                                                .font(.system(size: 10, weight: .bold))
+                                                .font(AppFonts.caption2)
+                                                .fontWeight(.bold)
                                                 .foregroundColor(.gray)
                                             Text(trip.origin)
-                                                .font(.system(size: 18, weight: .bold))
+                                                .font(AppFonts.headline)
                                         }
                                     }
                                     
@@ -89,10 +93,11 @@ struct VehicleLogView: View {
                                         
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text("DESTINATION")
-                                                .font(.system(size: 10, weight: .bold))
+                                                .font(AppFonts.caption2)
+                                                .fontWeight(.bold)
                                                 .foregroundColor(.gray)
                                             Text(trip.destination)
-                                                .font(.system(size: 18, weight: .bold))
+                                                .font(AppFonts.headline)
                                         }
                                     }
                                     
@@ -100,9 +105,9 @@ struct VehicleLogView: View {
                                     
                                     VStack(alignment: .trailing, spacing: 4) {
                                         Text(trip.distance ?? "")
-                                            .font(.system(size: 16, weight: .bold))
+                                            .font(AppFonts.headline)
                                         Text(trip.duration ?? "")
-                                            .font(.system(size: 12))
+                                            .font(AppFonts.caption1)
                                             .foregroundColor(.gray)
                                     }
                                 }

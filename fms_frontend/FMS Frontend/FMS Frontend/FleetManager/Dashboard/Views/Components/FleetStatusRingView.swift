@@ -27,10 +27,11 @@ struct FleetStatusRingView: View {
                 
                 VStack(spacing: -1) {
                     Text("\(total)")
-                        .font(.system(size: 34, weight: .bold))
+                        .font(AppFonts.title1)
                         .foregroundColor(AppColors.primary)
                     Text("VEHICLES")
-                        .font(.system(size: 9, weight: .black))
+                        .font(AppFonts.caption2)
+                        .fontWeight(.black)
                         .foregroundColor(.gray)
                 }
             }
@@ -62,14 +63,14 @@ struct LegendItem: View {
                 .frame(width: 8, height: 8)
             
             Text(label)
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFonts.subheadline)
                 .foregroundColor(.gray)
                 .lineLimit(1)
             
             Spacer()
             
             Text("\(count)")
-                .font(.system(size: 14, weight: .bold))
+                .font(AppFonts.headline)
                 .foregroundColor(AppColors.primary)
         }
     }

@@ -66,10 +66,16 @@ struct AppColors {
     static let statusCritical = Color.red
     
     static let success = Color.green
-    static let warning = Color.orange
-    static let error = Color.red
+    static let activeGreen = Color(hex: "34C759")
+    static let alertRed = Color(hex: "FF3B30")
+    static let error = alertRed
     
-    // Priority Colors
+    // Sea Green Spectrum
+    static let lightSeaGreen = Color(hex: "C1C9CB") // R193 G201 B203
+    static let mediumSeaGreen = Color(hex: "3D535C") // R61 G83 B92
+    static let deepSeaGreen = Color(hex: "20333D") // R32 G51 B61
+    
+    // Status Colors
     static let priorityCritical = Color.red
     static let priorityHigh = Color.orange
     static let priorityMedium = Color.blue
@@ -81,10 +87,8 @@ struct AppColors {
     static let divider = Color.gray.opacity(0.2)
     
     // Legacy Aliases (for backward compatibility with AppTheme)
-    static let activeGreen = success
     static let criticalRed = statusCritical
     static let maintenanceOrange = statusMaintenance
-    static let alertRed = Color.red
     static let statusBlue = Color.blue
     static let accentBlue = Color(red: 0.44, green: 0.66, blue: 0.86)
     static let background = screenBackground
@@ -96,6 +100,49 @@ struct AppColors {
     
     static func cardShadow() -> some ViewModifier {
         CardShadowModifier()
+    }
+}
+
+// MARK: - App Typography System
+struct AppFonts {
+    // Large Title: 34pt (Default page titles, typically semibold)
+    static let largeTitle = Font.system(size: 34, weight: .semibold)
+    
+    // Title 1: 28pt
+    static let title1 = Font.system(size: 28, weight: .bold)
+    
+    // Title 2: 22pt
+    static let title2 = Font.system(size: 22, weight: .bold)
+    
+    // Title 3: 20pt
+    static let title3 = Font.system(size: 20, weight: .bold)
+    
+    // Headline: 17pt (Semibold, used for headers, table cells)
+    static let headline = Font.system(size: 17, weight: .semibold)
+    
+    // Body Content: 17pt (Regular)
+    static let body = Font.system(size: 17, weight: .regular)
+    
+    // Callout: 16pt
+    static let callout = Font.system(size: 16, weight: .regular)
+    
+    // Subheadline: 15pt
+    static let subheadline = Font.system(size: 15, weight: .regular)
+    
+    // Footnote: 13pt
+    static let footnote = Font.system(size: 13, weight: .regular)
+    
+    // Caption 1: 12pt
+    static let caption1 = Font.system(size: 12, weight: .regular)
+    
+    // Caption 2/Buttons: 11pt - 13pt
+    static let caption2 = Font.system(size: 11, weight: .regular)
+    static let button = Font.system(size: 13, weight: .bold)
+}
+
+extension View {
+    func appFont(_ font: Font) -> some View {
+        self.font(font)
     }
 }
 

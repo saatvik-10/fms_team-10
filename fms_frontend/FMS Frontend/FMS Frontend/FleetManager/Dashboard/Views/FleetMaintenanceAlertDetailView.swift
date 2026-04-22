@@ -12,10 +12,10 @@ struct FleetMaintenanceAlertDetailView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(alert.title)
-                            .font(.system(size: 24, weight: .bold))
+                            .font(AppFonts.title2)
                             .foregroundColor(AppColors.primary)
                         Text(alert.detail)
-                            .font(.system(size: 16))
+                            .font(AppFonts.callout)
                             .foregroundColor(.gray)
                     }
                     .padding(.vertical, 8)
@@ -23,7 +23,7 @@ struct FleetMaintenanceAlertDetailView: View {
                 .listRowSeparator(.hidden)
                 
                 // Vehicle & Driver Details (Compact Redesign)
-                Section(header: Text("Involved Assets").font(.system(size: 14, weight: .bold))) {
+                Section(header: Text("Involved Assets").font(AppFonts.caption2)) {
                     if let vehicle = dataManager.vehicles.first(where: { $0.id == alert.vehicleID }) {
                         VStack(spacing: 12) {
                             // Vehicle Card
@@ -40,10 +40,10 @@ struct FleetMaintenanceAlertDetailView: View {
                                 
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(vehicle.id)
-                                        .font(.system(size: 15, weight: .bold))
+                                        .font(AppFonts.headline)
                                         .foregroundColor(AppColors.primary)
                                     Text("\(vehicle.make) \(vehicle.model)")
-                                        .font(.system(size: 12))
+                                        .font(AppFonts.caption1)
                                         .foregroundColor(.gray)
                                 }
                                 Spacer()
@@ -70,10 +70,10 @@ struct FleetMaintenanceAlertDetailView: View {
                                     
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(driver.name)
-                                            .font(.system(size: 15, weight: .bold))
+                                            .font(AppFonts.headline)
                                             .foregroundColor(AppColors.primary)
                                         Text(driver.title)
-                                            .font(.system(size: 12))
+                                            .font(AppFonts.caption1)
                                             .foregroundColor(.gray)
                                     }
                                     Spacer()
@@ -145,7 +145,7 @@ struct FleetMaintenanceAlertDetailView: View {
                         acceptAlert()
                     }) {
                         Text("Accept & Send to Maintenance")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(AppFonts.button)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)

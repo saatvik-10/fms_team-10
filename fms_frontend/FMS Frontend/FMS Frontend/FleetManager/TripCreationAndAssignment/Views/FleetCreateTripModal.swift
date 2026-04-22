@@ -79,18 +79,18 @@ struct FleetCreateTripModal: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Total Estimated Cost")
-                                    .font(.system(size: 14))
+                                    .font(AppFonts.caption1)
                                     .foregroundColor(.gray)
                                 Text("₹\(String(format: "%.2f", estimatedCost))")
-                                    .font(.system(size: 24, weight: .black))
+                                    .font(AppFonts.headline)
                                     .foregroundColor(AppColors.primary)
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 4) {
                                 Text("\(Int(estimatedDistance)) km")
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(AppFonts.headline)
                                 Text("Est. \(Int(estimatedDuration)) hrs")
-                                    .font(.system(size: 12))
+                                    .font(AppFonts.caption1)
                                     .foregroundColor(.gray)
                             }
                         }
@@ -103,7 +103,7 @@ struct FleetCreateTripModal: View {
                         createTrip()
                     }) {
                         Text("Create Trip")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(AppFonts.button)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
@@ -147,6 +147,7 @@ struct FleetCreateTripModal: View {
         formatter.dateFormat = "h:mm a"
         
         let newTrip = VehicleTrip(
+            vehicleID: selectedVehicleID,
             origin: source,
             destination: destination,
             progress: 0.0,

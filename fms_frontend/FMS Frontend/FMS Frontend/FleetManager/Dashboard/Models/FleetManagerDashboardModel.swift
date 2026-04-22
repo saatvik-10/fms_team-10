@@ -105,6 +105,19 @@ struct FuelTrendData: Identifiable {
     let value: Double
 }
 
+struct HistoricalPoint: Identifiable {
+    let id = UUID()
+    let label: String
+    let value: Double
+    let color: Color?
+    
+    init(label: String, value: Double, color: Color? = nil) {
+        self.label = label
+        self.value = value
+        self.color = color
+    }
+}
+
 // MARK: - Management (New)
 
 struct Driver: Identifiable {
@@ -178,6 +191,7 @@ enum FleetTripStatus: String, Codable {
 
 struct VehicleTrip: Identifiable {
     let id = UUID()
+    let vehicleID: String // Link to the owning vehicle
     let origin: String
     let destination: String
     let progress: Double

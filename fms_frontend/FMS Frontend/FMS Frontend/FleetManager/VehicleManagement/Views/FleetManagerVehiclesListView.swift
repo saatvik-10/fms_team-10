@@ -13,14 +13,14 @@ struct FleetManagerVehiclesListView: View {
             // MARK: - Header
             HStack(spacing: 20) {
                 Text("Vehicles Management")
-                    .font(.system(size: 20, weight: .black))
+                    .font(AppFonts.title3)
                 
                 // Search Bar
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.gray)
                     TextField("Search unique ID, driver, or VIN...", text: $searchText)
-                        .font(.system(size: 14))
+                        .font(AppFonts.body)
                 }
                 .padding(.horizontal, 15)
                 .padding(.vertical, 10)
@@ -35,7 +35,7 @@ struct FleetManagerVehiclesListView: View {
                         Image(systemName: "plus")
                         Text("Add Vehicle")
                     }
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFonts.button)
                     .foregroundColor(.white)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
@@ -52,7 +52,8 @@ struct FleetManagerVehiclesListView: View {
                     ForEach(filters, id: \.self) { filter in
                         Button(action: { selectedFilter = filter }) {
                             Text(filter)
-                                .font(.system(size: 12, weight: .bold))
+                                .font(AppFonts.caption2)
+                                .fontWeight(.bold)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 8)
                                 .background(selectedFilter == filter ? Color.white : Color.clear)
@@ -119,7 +120,8 @@ struct VehicleGridCard: View {
                 
                 // Status Overlay
                 Text(vehicle.status.rawValue)
-                    .font(.system(size: 10, weight: .black))
+                    .font(AppFonts.caption2)
+                    .fontWeight(.black)
                     .foregroundColor(.white)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -131,9 +133,10 @@ struct VehicleGridCard: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(vehicle.id)
-                    .font(.system(size: 18, weight: .black))
+                    .font(AppFonts.title3)
                 Text("\(vehicle.model) • \(vehicle.make)".uppercased())
-                    .font(.system(size: 10, weight: .bold))
+                    .font(AppFonts.caption2)
+                    .fontWeight(.bold)
                     .foregroundColor(.gray)
             }
             .padding(.horizontal, 5)

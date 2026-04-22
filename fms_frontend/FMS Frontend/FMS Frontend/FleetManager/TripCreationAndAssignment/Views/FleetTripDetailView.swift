@@ -3,6 +3,8 @@ import MapKit
 
 struct FleetTripDetailView: View {
     @Binding var vehicle: Vehicle
+    var tripOverride: VehicleTrip? = nil // New: Allow showing a specific past trip
+    
     @Environment(\.dismiss) var dismiss
     @State private var showingDeleteAlert = false
     @State private var isEditing = false
@@ -16,6 +18,11 @@ struct FleetTripDetailView: View {
         center: CLLocationCoordinate2D(latitude: 28.6139, longitude: 77.2090), // Delhi
         span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
     )
+    
+    // Effective trip to display
+    private var displayTrip: VehicleTrip? {
+        tripOverride ?? vehicle.currentTrip
+    }
     
     var body: some View {
         ZStack {
@@ -32,32 +39,36 @@ struct FleetTripDetailView: View {
                     
                     Spacer()
                     
-                    Text("Trip Details")
-                        .font(.system(size: 17, weight: .bold))
+                    Text(tripOverride != nil ? "Past Trip Details" : "Trip Details")
+                        .font(AppFonts.headline)
                         .foregroundColor(AppColors.primary)
                     
                     Spacer()
                     
-                    Menu {
-                        Button(action: { 
-                            isEditing = true
-                            source = vehicle.currentTrip?.origin ?? ""
-                            destination = vehicle.currentTrip?.destination ?? ""
-                        }) {
-                            Label("Edit Trip", systemImage: "pencil")
+                    if tripOverride == nil {
+                        Menu {
+                            Button(action: { 
+                                isEditing = true
+                                source = vehicle.currentTrip?.origin ?? ""
+                                destination = vehicle.currentTrip?.destination ?? ""
+                            }) {
+                                Label("Edit Trip", systemImage: "pencil")
+                            }
+                            Button(role: .destructive, action: {
+                                showingDeleteAlert = true
+                            }) {
+                                Label("Delete Trip", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundColor(AppColors.primary)
+                                .padding(8)
+                                .background(Color.white)
+                                .clipShape(Circle())
                         }
-                        Button(role: .destructive, action: {
-                            showingDeleteAlert = true
-                        }) {
-                            Label("Delete Trip", systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(AppColors.primary)
-                            .padding(8)
-                            .background(Color.white)
-                            .clipShape(Circle())
+                    } else {
+                        Spacer().frame(width: 40) // Balance the chevron to center title
                     }
                 }
                 .padding(.horizontal, 20)
@@ -66,7 +77,7 @@ struct FleetTripDetailView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         
-                        // MARK: - Map View
+                        // MARK: - Map View (Static/History view doesn't show live location in same way)
                         Map(coordinateRegion: $region)
                             .frame(height: 300)
                             .cornerRadius(16)
@@ -74,13 +85,14 @@ struct FleetTripDetailView: View {
                                 VStack {
                                     Spacer()
                                     HStack {
-                                        Image(systemName: "location.fill")
+                                        Image(systemName: tripOverride != nil ? "clock.fill" : "location.fill")
                                             .foregroundColor(.white)
                                             .padding(8)
-                                            .background(AppColors.primary)
+                                            .background(tripOverride != nil ? Color.gray : AppColors.primary)
                                             .clipShape(Circle())
-                                        Text("TRK-9042 is on Highway 44")
-                                            .font(.system(size: 12, weight: .bold))
+                                        Text(tripOverride != nil ? "Trip Completed on \(tripOverride?.date ?? "Past")" : "\(vehicle.id) is on Highway 44")
+                                            .font(AppFonts.caption2)
+                                            .fontWeight(.bold)
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 6)
                                             .background(Color.white)
@@ -91,13 +103,13 @@ struct FleetTripDetailView: View {
                             )
                         
                         // MARK: - Details Section
-                        if let trip = vehicle.currentTrip {
+                        if let trip = displayTrip {
                             HStack(alignment: .top, spacing: 20) {
                                 // Vehicle Details Row-based Card
                                 VStack(alignment: .leading, spacing: 0) {
                                     HStack {
                                         Text("VEHICLE INFORMATION")
-                                            .font(.system(size: 10, weight: .bold))
+                                            .font(AppFonts.caption2)
                                             .foregroundColor(.gray)
                                         Spacer()
                                         Image(systemName: "truck.box.fill")
@@ -127,7 +139,7 @@ struct FleetTripDetailView: View {
                                     VStack(alignment: .leading, spacing: 0) {
                                         HStack {
                                             Text("DRIVER INFORMATION")
-                                                .font(.system(size: 10, weight: .bold))
+                                                .font(AppFonts.caption2)
                                                 .foregroundColor(.gray)
                                             Spacer()
                                             
@@ -159,7 +171,7 @@ struct FleetTripDetailView: View {
                                     .modifier(AppColors.cardShadow())
                                 }
                             }
-                            .padding(.horizontal, 2) // Minor padding to avoid shadow clipping
+                            .padding(.horizontal, 2)
                             
                             // Logistics Overview Section
                             HStack(alignment: .top, spacing: 20) {
@@ -188,6 +200,16 @@ struct FleetTripDetailView: View {
                                 )
                             }
                             .padding(.horizontal, 2)
+                        } else {
+                            VStack(spacing: 15) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.orange)
+                                Text("No trip data available")
+                                    .font(AppFonts.headline)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 50)
                         }
                         
                         Spacer().frame(height: 50)
@@ -208,7 +230,6 @@ struct FleetTripDetailView: View {
             Text("Are you sure you want to end this trip? The vehicle will be marked as idle.")
         }
     }
-    
 }
 
 struct FleetDetailItemRow: View {
@@ -230,13 +251,13 @@ struct FleetDetailItemRow: View {
             }
             
             Text(label)
-                .font(.system(size: 14))
+                .font(AppFonts.body)
                 .foregroundColor(.gray)
             
             Spacer()
             
             Text(value)
-                .font(.system(size: 14, weight: .bold))
+                .font(AppFonts.headline)
                 .foregroundColor(AppColors.primary)
         }
         .padding(.vertical, 12)
@@ -258,7 +279,7 @@ struct LogisticsTicketCard: View {
             // Header
             HStack {
                 Text(title)
-                    .font(.system(size: 10, weight: .black))
+                    .font(AppFonts.caption2)
                     .tracking(1)
                     .foregroundColor(.white.opacity(0.8))
                 Spacer()
@@ -276,10 +297,10 @@ struct LogisticsTicketCard: View {
                     // Left Side
                     VStack(alignment: .leading, spacing: 4) {
                         Text(sourceLabel.uppercased())
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(AppFonts.caption2)
                             .foregroundColor(.gray)
                         Text(sourceValue)
-                            .font(.system(size: 20, weight: .black))
+                            .font(AppFonts.title3)
                             .foregroundColor(AppColors.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)
@@ -313,10 +334,12 @@ struct LogisticsTicketCard: View {
                     // Right Side
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(destLabel.uppercased())
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         Text(destValue)
-                            .font(.system(size: 20, weight: .black))
+                            .font(AppFonts.title2)
+                            .fontWeight(.black)
                             .foregroundColor(AppColors.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)
@@ -329,16 +352,17 @@ struct LogisticsTicketCard: View {
                 HStack {
                     HStack(spacing: 6) {
                         Image(systemName: title == "ROUTE SUMMARY" ? "clock.fill" : "scalemass.fill")
-                            .font(.system(size: 12))
+                            .font(AppFonts.caption2)
                         Text(footerLabel)
-                            .font(.system(size: 12))
+                            .font(AppFonts.caption2)
                     }
                     .foregroundColor(.gray)
                     
                     Spacer()
                     
                     Text(footerValue)
-                        .font(.system(size: 12, weight: .bold))
+                        .font(AppFonts.caption2)
+                        .fontWeight(.bold)
                         .foregroundColor(AppColors.primary)
                 }
             }

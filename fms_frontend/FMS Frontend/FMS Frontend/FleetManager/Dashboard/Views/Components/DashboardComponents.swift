@@ -34,11 +34,11 @@ struct FleetOpsMetricItem: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
-                .font(.system(size: 10, weight: .bold))
+                .font(AppFonts.caption2)
                 .foregroundColor(AppColors.textSecondary)
             
             Text(String(format: "%02d", value))
-                .font(.system(size: 32, weight: .bold))
+                .font(AppFonts.title1)
                 .foregroundColor(AppColors.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -65,10 +65,10 @@ struct FleetOpsAssessmentCard: View {
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(assessment.truckName)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(AppFonts.headline)
                         .foregroundColor(.white)
                     Text(assessment.truckID)
-                        .font(.system(size: 12))
+                        .font(AppFonts.caption1)
                         .foregroundColor(.white.opacity(0.8))
                 }
                 .padding(12)
@@ -78,23 +78,23 @@ struct FleetOpsAssessmentCard: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("ROUTE")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(AppFonts.caption2)
                             .foregroundColor(AppColors.textSecondary)
                         Text("\(assessment.routeFrom) →")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFonts.footnote)
                         Text(assessment.routeTo)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFonts.footnote)
                     }
                     Spacer()
                     VStack(alignment: .trailing, spacing: 4) {
                         Text("ETA")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(AppFonts.caption2)
                             .foregroundColor(AppColors.textSecondary)
                         Text(assessment.etaTime)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFonts.footnote)
                             .foregroundColor(assessment.etaTime == "Delayed" ? AppColors.criticalRed : AppColors.textPrimary)
                         Text(assessment.etaDay)
-                            .font(.system(size: 11))
+                            .font(AppFonts.caption1)
                             .foregroundColor(AppColors.textSecondary)
                     }
                 }
@@ -102,7 +102,7 @@ struct FleetOpsAssessmentCard: View {
                 // Status Pill
                 HStack {
                     Text(statusText.uppercased())
-                        .font(.system(size: 10, weight: .bold))
+                        .font(AppFonts.caption2)
                         .foregroundColor(statusColor)
                     Spacer()
                     Circle()
@@ -152,7 +152,7 @@ struct MaintenancePriorityDarkCard: View {
         HStack(spacing: 30) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(summary)
-                    .font(.system(size: 13))
+                    .font(AppFonts.body)
                     .foregroundColor(.white.opacity(0.6))
                 
                 VStack(spacing: 12) {
@@ -167,10 +167,10 @@ struct MaintenancePriorityDarkCard: View {
                             
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(alert.title)
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(AppFonts.headline)
                                     .foregroundColor(.white)
                                 Text(alert.detail)
-                                    .font(.system(size: 12))
+                                    .font(AppFonts.caption1)
                                     .foregroundColor(.white.opacity(0.5))
                             }
                             Spacer()
@@ -198,10 +198,10 @@ struct MaintenancePriorityDarkCard: View {
                     
                     VStack(spacing: 0) {
                         Text("\(Int(criticalMass * 100))%")
-                            .font(.system(size: 32, weight: .bold))
+                            .font(AppFonts.title1)
                             .foregroundColor(.white)
                         Text("CRITICAL MASS")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(AppFonts.caption2)
                             .foregroundColor(.white.opacity(0.6))
                     }
                 }
@@ -209,12 +209,12 @@ struct MaintenancePriorityDarkCard: View {
                 
                 HStack(spacing: 30) {
                     Label {
-                        Text("04 URGENT").font(.system(size: 10, weight: .bold))
+                        Text("04 URGENT").font(AppFonts.caption2)
                     } icon: {
                         Circle().fill(AppColors.criticalRed).frame(width: 6, height: 6)
                     }
                     Label {
-                        Text("14 SCHEDULED").font(.system(size: 10, weight: .bold))
+                        Text("14 SCHEDULED").font(AppFonts.caption2)
                     } icon: {
                         Circle().fill(Color.white.opacity(0.4)).frame(width: 6, height: 6)
                     }
@@ -239,7 +239,7 @@ struct FleetOpsEmissionsChart: View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
                 Text("CO2 Emissions")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(AppFonts.title3)
                     .foregroundColor(AppColors.primary)
                 
                 Spacer()
@@ -264,10 +264,14 @@ struct FleetOpsEmissionsChart: View {
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .automatic) { _ in
-                    AxisValueLabel()
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(Color.gray)
+                AxisMarks(values: .automatic) { value in
+                    AxisValueLabel {
+                        if let day = value.as(String.self) {
+                            Text(day)
+                                .font(AppFonts.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
                 }
             }
             .chartYAxis(.hidden)
@@ -287,7 +291,7 @@ struct FleetMileageChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("Fleet Mileage (last week)")
-                .font(.system(size: 16, weight: .bold))
+                .font(AppFonts.title3)
                 .foregroundColor(AppColors.primary)
             
             Chart {
@@ -296,27 +300,35 @@ struct FleetMileageChart: View {
                         x: .value("Mileage", item.value),
                         y: .value("Day", item.day)
                     )
-                    .foregroundStyle(AppColors.statusInTransit)
+                    .foregroundStyle(AppColors.primary)
                     .cornerRadius(4)
                     .annotation(position: .trailing) {
                         Text("\(Int(item.value))")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(AppFonts.caption2)
                             .foregroundColor(.gray)
                     }
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .automatic) { _ in
-                    AxisValueLabel()
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.gray)
+                AxisMarks(values: .automatic) { value in
+                    AxisValueLabel {
+                        if let mileage = value.as(Double.self) {
+                            Text("\(Int(mileage))")
+                                .font(AppFonts.caption1)
+                                .foregroundColor(.gray)
+                        }
+                    }
                 }
             }
             .chartYAxis {
-                AxisMarks(values: .automatic) { _ in
-                    AxisValueLabel()
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(Color.gray)
+                AxisMarks(values: .automatic) { value in
+                    AxisValueLabel {
+                        if let day = value.as(String.self) {
+                            Text(day)
+                                .font(AppFonts.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
                 }
             }
             .frame(height: 180)
@@ -335,7 +347,7 @@ struct FuelTrendChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("Last 3 Months Fuel Trend")
-                .font(.system(size: 16, weight: .bold))
+                .font(AppFonts.title3)
                 .foregroundColor(AppColors.primary)
             
             Chart {
@@ -344,7 +356,7 @@ struct FuelTrendChart: View {
                         x: .value("Month", item.month),
                         y: .value("Fuel Burned", item.value)
                     )
-                    .foregroundStyle(AppColors.activeGreen)
+                    .foregroundStyle(AppColors.primary)
                     .cornerRadius(4)
                 }
                 
@@ -354,23 +366,31 @@ struct FuelTrendChart: View {
                         x: .value("Month", item.month),
                         y: .value("Fuel Burned", item.value - 100) // Simulated trend slightly below bars
                     )
-                    .foregroundStyle(Color.orange)
+                    .foregroundStyle(AppColors.primary.opacity(0.6))
                     .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4]))
                     .interpolationMethod(.linear)
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .automatic) { _ in
-                    AxisValueLabel()
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(Color.gray)
+                AxisMarks(values: .automatic) { value in
+                    AxisValueLabel {
+                        if let month = value.as(String.self) {
+                            Text(month)
+                                .font(AppFonts.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
                 }
             }
             .chartYAxis {
-                AxisMarks(values: .automatic) { _ in
-                    AxisValueLabel()
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.gray)
+                AxisMarks(values: .automatic) { value in
+                    AxisValueLabel {
+                        if let burn = value.as(Double.self) {
+                            Text("\(Int(burn))")
+                                .font(AppFonts.caption1)
+                                .foregroundColor(.gray)
+                        }
+                    }
                 }
             }
             .frame(height: 180)
@@ -397,12 +417,12 @@ struct FleetCategoryStatItem: View {
                     .foregroundColor(Color(white: 0.2))
                 Spacer()
                 Text(value)
-                    .font(.system(size: 20, weight: .black))
+                    .font(AppFonts.title2)
                     .foregroundColor(.black)
             }
             
             Text(title)
-                .font(.system(size: 8, weight: .bold))
+                .font(AppFonts.caption2)
                 .foregroundColor(.gray)
             
             GeometryReader { geometry in
@@ -425,26 +445,633 @@ struct FleetCategoryStatItem: View {
     }
 }
 
-// MARK: - Action Button
-struct FleetOpsActionButton: View {
+// MARK: - Visual Metric Card (Premium)
+enum MetricChartType: Equatable {
+    case distribution // SectorMark / donut for proportional data
+    case sparkline    // Area+Line for continuous 7-day trends
+    case bars         // Bar chart for discrete daily values
+}
+
+struct VisualMetricCard: View {
     let title: String
-    let iconName: String
-    let action: () -> Void
+    let value: String
+    let unit: String
+    let subtitle: String
+    let trend: String
+    let icon: String
+    let color: Color
+    let chartType: MetricChartType
+    let chartData: [HistoricalPoint]
+
+    @State private var appeared = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+
+            // ── Header row ──────────────────────────────────────────
+            HStack(alignment: .center) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(color.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(color)
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title.uppercased())
+                        .font(AppFonts.caption2)
+                        .foregroundColor(.gray)
+                        .tracking(1.2)
+                    Text(subtitle)
+                        .font(AppFonts.caption1)
+                        .foregroundColor(.gray.opacity(0.7))
+                }
+                Spacer()
+                TrendBadge(trend: trend)
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 18)
+
+            // ── Hero value ──────────────────────────────────────────
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
+                Text(value)
+                    .font(AppFonts.title1)
+                    .foregroundColor(AppColors.primary)
+                Text(unit)
+                    .font(AppFonts.footnote)
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 10)
+            .padding(.bottom, 14)
+
+            // ── Chart ────────────────────────────────────────────────
+            Group {
+                switch chartType {
+                case .distribution:
+                    distributionChart
+                case .sparkline:
+                    sparklineChart
+                case .bars:
+                    barsChart
+                }
+            }
+            .frame(height: 90)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 14)
+        }
+        .background(Color.white)
+        .cornerRadius(18)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(color.opacity(0.15), lineWidth: 1)
+        )
+        .modifier(AppColors.cardShadow())
+        .onAppear { withAnimation(.easeOut(duration: 0.6)) { appeared = true } }
+    }
+
+    // Donut chart — proportional breakdown
+    private var distributionChart: some View {
+        HStack(spacing: 12) {
+            Chart(chartData) { point in
+                SectorMark(
+                    angle: .value("Value", appeared ? point.value : 0),
+                    innerRadius: .ratio(0.62),
+                    angularInset: 2
+                )
+                .foregroundStyle(AppColors.primary.opacity(Double(point.value) / 100.0 + 0.2))
+                .cornerRadius(4)
+            }
+            .chartXAxis(.hidden)
+
+            // Legend
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(chartData) { point in
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(AppColors.primary.opacity(Double(point.value) / 100.0 + 0.2))
+                            .frame(width: 7, height: 7)
+                        Text(point.label)
+                            .font(AppFonts.caption2)
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Text("\(Int(point.value))%")
+                            .font(AppFonts.caption2)
+                            .foregroundColor(AppColors.primary)
+                    }
+                }
+            }
+            .frame(width: 90)
+        }
+        .padding(.horizontal, 6)
+    }
+
+    // Area + Line sparkline — continuous 7-day trend
+    private var sparklineChart: some View {
+        Chart(chartData) { point in
+            AreaMark(
+                x: .value("Day", point.label),
+                y: .value("Val", appeared ? point.value : chartData.map(\.value).min() ?? 0)
+            )
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [AppColors.primary.opacity(0.25), AppColors.primary.opacity(0.02)],
+                    startPoint: .top, endPoint: .bottom
+                )
+            )
+            .interpolationMethod(.catmullRom)
+
+            LineMark(
+                x: .value("Day", point.label),
+                y: .value("Val", appeared ? point.value : chartData.map(\.value).min() ?? 0)
+            )
+            .foregroundStyle(AppColors.primary)
+            .lineStyle(StrokeStyle(lineWidth: 2.5))
+            .interpolationMethod(.catmullRom)
+
+            PointMark(
+                x: .value("Day", point.label),
+                y: .value("Val", appeared ? point.value : chartData.map(\.value).min() ?? 0)
+            )
+            .foregroundStyle(AppColors.primary)
+            .symbolSize(16)
+        }
+        .chartXAxis {
+            AxisMarks(values: .automatic) { value in
+                AxisValueLabel {
+                    if let label = value.as(String.self) {
+                        Text(label)
+                            .font(AppFonts.caption2)
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+        }
+        .chartYAxis(.hidden)
+    }
+
+    // Bar chart — discrete daily bars
+    private var barsChart: some View {
+        Chart(chartData) { point in
+            BarMark(
+                x: .value("Day", point.label),
+                y: .value("Val", appeared ? point.value : 0)
+            )
+            .foregroundStyle(AppColors.primary.gradient)
+            .cornerRadius(4)
+        }
+        .chartXAxis {
+            AxisMarks(values: .automatic) { value in
+                AxisValueLabel {
+                    if let label = value.as(String.self) {
+                        Text(label)
+                            .font(AppFonts.caption2)
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+        }
+        .chartYAxis(.hidden)
+        .animation(.easeOut(duration: 0.5), value: appeared)
+    }
+}
+
+// MARK: - Trend Badge (upgraded)
+struct TrendBadge: View {
+    let trend: String
+    private var isPositive: Bool { trend.hasPrefix("+") }
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: isPositive ? "arrow.up.right" : "arrow.down.right")
+                .font(.system(size: 9, weight: .black))
+            Text(trend)
+                .font(AppFonts.caption2)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(isPositive ? AppColors.activeGreen.opacity(0.12) : Color.gray.opacity(0.1))
+        .foregroundColor(isPositive ? AppColors.activeGreen : .gray)
+        .cornerRadius(20)
+    }
+}
+
+
+// MARK: - Insight Anomaly Card
+struct InsightAnomalyCard: View {
+    let insight: FleetDataManager.FleetInsight
     
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 12) {
+        HStack(spacing: 15) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(bgColor.opacity(0.1))
+                    .frame(width: 44, height: 44)
                 Image(systemName: iconName)
-                    .font(.system(size: 20))
-                Text(title.uppercased())
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 18))
+                    .foregroundColor(bgColor)
             }
-            .foregroundColor(AppColors.primary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
-            .background(Color.white)
-            .cornerRadius(12)
-            .modifier(AppColors.cardShadow())
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(insight.title)
+                    .font(AppFonts.headline)
+                    .foregroundColor(AppColors.primary)
+                Text(insight.description)
+                    .font(AppFonts.caption1)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "arrow.right.circle.fill")
+                .foregroundColor(AppColors.primary.opacity(0.2))
         }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(12)
+        .modifier(AppColors.cardShadow())
+    }
+    
+    private var bgColor: Color {
+        switch insight.type {
+        case .utilization: return .orange
+        case .efficiency: return AppColors.primary
+        case .maintenance: return AppColors.primary
+        }
+    }
+    
+    private var iconName: String {
+        switch insight.type {
+        case .utilization: return "chart.pie.fill"
+        case .efficiency: return "bolt.fill"
+        case .maintenance: return "wrench.and.screwdriver.fill"
+        }
+    }
+}
+
+// MARK: - CO2 Emissions Bar Graph
+struct FleetCO2EmissionsBarGraph: View {
+    let data: [EmissionData]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top) { 
+                Text("CO2 Emissions Trends")
+                    .font(AppFonts.title3)
+                    .foregroundColor(AppColors.primary)
+                Spacer()
+                Text("KG CO2")
+                    .font(AppFonts.caption2)
+                    .fontWeight(.bold)
+                    .foregroundColor(AppColors.primary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(AppColors.primary.opacity(0.1))
+                    .cornerRadius(20)
+            }
+            
+            Chart {
+                ForEach(data) { item in
+                    BarMark(
+                        x: .value("Day", item.day),
+                        y: .value("Emissions", item.value)
+                    )
+                    .foregroundStyle(item.isCurrent ? AppColors.primary.gradient : AppColors.primary.opacity(0.15).gradient)
+                    .cornerRadius(4)
+                }
+                
+                RuleMark(y: .value("Average", 12))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                    .foregroundStyle(AppColors.primary.opacity(0.3))
+                    .annotation(position: .top, alignment: .trailing) {
+                        Text("Target: 12kg")
+                            .font(AppFonts.caption2)
+                            .foregroundColor(.gray)
+                    }
+            }
+            .chartXAxis {
+                AxisMarks(values: .automatic) { value in
+                    AxisValueLabel {
+                        if let label = value.as(String.self) {
+                            Text(label)
+                                .font(AppFonts.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+            }
+            .chartYAxis {
+                AxisMarks(values: .automatic) { value in
+                    AxisValueLabel {
+                        if let val = value.as(Double.self) {
+                            Text("\(Int(val))")
+                                .font(AppFonts.caption1)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+            }
+            .frame(height: 180)
+        }
+        .padding(24)
+        .frame(height: 300)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppColors.cardShadow())
+    }
+}
+
+// MARK: - Driver Behavior Ranked List
+struct DriverBehaviorRankedList: View {
+    let rankings: [FleetDataManager.DriverPerformanceData]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Top 3 Driver Efficiency")
+                .font(AppFonts.title3)
+                .foregroundColor(AppColors.primary)
+            
+            Chart(rankings.prefix(3)) { driver in
+                BarMark(
+                    x: .value("Score", driver.efficiencyScore),
+                    y: .value("Driver", driver.name)
+                )
+                .foregroundStyle(AppColors.primary.gradient)
+                .cornerRadius(4)
+                .annotation(position: .trailing) {
+                    Text("\(Int(driver.efficiencyScore))%")
+                        .font(AppFonts.caption1)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.primary)
+                }
+            }
+            .chartXAxis(.hidden)
+            .chartYAxis {
+                AxisMarks { value in
+                    AxisValueLabel {
+                        if let name = value.as(String.self) {
+                            Text(name)
+                                .font(AppFonts.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+            }
+            .frame(height: 180)
+            
+            Spacer(minLength: 0)
+        }
+        .padding(24)
+        .frame(height: 300)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppColors.cardShadow())
+    }
+}
+
+// MARK: - Operational Cost Chart (Area)
+struct OperationalCostChart: View {
+    let trend: [HistoricalPoint]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Operational Cost Trend")
+                .font(AppFonts.title3)
+                .foregroundColor(AppColors.primary)
+            
+            Chart(trend) { point in
+                AreaMark(
+                    x: .value("Day", point.label),
+                    y: .value("Cost", point.value)
+                )
+                .foregroundStyle(LinearGradient(colors: [AppColors.primary.opacity(0.3), AppColors.primary.opacity(0)], startPoint: .top, endPoint: .bottom))
+                .interpolationMethod(.catmullRom)
+                
+                LineMark(
+                    x: .value("Day", point.label),
+                    y: .value("Cost", point.value)
+                )
+                .foregroundStyle(AppColors.primary)
+                .lineStyle(StrokeStyle(lineWidth: 3))
+                .interpolationMethod(.catmullRom)
+            }
+            .chartXAxis {
+                AxisMarks { value in
+                    AxisValueLabel {
+                        if let label = value.as(String.self) {
+                            Text(label).font(AppFonts.caption2).foregroundColor(.gray)
+                        }
+                    }
+                }
+            }
+            .chartYAxis(.hidden)
+            .frame(height: 180)
+            
+            Spacer(minLength: 0)
+        }
+        .padding(24)
+        .frame(height: 300)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppColors.cardShadow())
+    }
+}
+
+// MARK: - Fuel Performance Comparison
+struct FuelPerformanceChart: View {
+    let data: [(vehicleID: String, efficiency: Double)]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Fuel Efficiency (L/100km)")
+                .font(AppFonts.title3)
+                .foregroundColor(AppColors.primary)
+            
+            Chart(data, id: \.vehicleID) { item in
+                BarMark(
+                    x: .value("Vehicle", item.vehicleID),
+                    y: .value("Efficiency", item.efficiency)
+                )
+                .foregroundStyle(AppColors.primary.gradient)
+                .cornerRadius(4)
+            }
+            .chartXAxis {
+                AxisMarks { value in
+                    AxisValueLabel {
+                        if let id = value.as(String.self) {
+                            Text(id).font(AppFonts.caption2).foregroundColor(.gray)
+                        }
+                    }
+                }
+            }
+            .frame(height: 180)
+            
+            Text("Lower is better • Peer average: 18.2L")
+                .font(AppFonts.caption2)
+                .foregroundColor(.gray)
+        }
+        .padding(24)
+        .frame(height: 300)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppColors.cardShadow())
+    }
+}
+
+// MARK: - Fleet Health Status Stacked Bar
+struct FleetHealthStatusStackedBar: View {
+    let healthy: Int
+    let warning: Int
+    let critical: Int
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text("Fleet Health Index")
+                .font(AppFonts.title3)
+                .foregroundColor(AppColors.primary)
+            
+            Chart {
+                BarMark(x: .value("Status", healthy))
+                    .foregroundStyle(AppColors.deepSeaGreen)
+                BarMark(x: .value("Status", warning))
+                    .foregroundStyle(AppColors.mediumSeaGreen)
+                BarMark(x: .value("Status", critical))
+                    .foregroundStyle(AppColors.lightSeaGreen)
+            }
+            .frame(height: 48)
+            .chartXAxis(.hidden)
+            .cornerRadius(10)
+            
+            HStack(spacing: 20) {
+                HStack(spacing: 6) {
+                    Circle().fill(AppColors.deepSeaGreen).frame(width: 8, height: 8)
+                    Text("Healthy: \(healthy)")
+                        .font(AppFonts.caption2)
+                        .foregroundColor(.gray)
+                }
+                HStack(spacing: 6) {
+                    Circle().fill(AppColors.mediumSeaGreen).frame(width: 8, height: 8)
+                    Text("Warning: \(warning)")
+                        .font(AppFonts.caption2)
+                        .foregroundColor(.gray)
+                }
+                HStack(spacing: 6) {
+                    Circle().fill(AppColors.lightSeaGreen).frame(width: 8, height: 8)
+                    Text("Critical: \(critical)")
+                        .font(AppFonts.caption2)
+                        .foregroundColor(.gray)
+                }
+            }
+        }
+        .padding(24)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppColors.cardShadow())
+    }
+}
+
+// MARK: - Trip Status Breakdown (Donut)
+struct TripStatusDonutChart: View {
+    let active: Int
+    let scheduled: Int
+    let maintenance: Int
+    
+    private var data: [(status: String, count: Int, color: Color)] {
+        [
+            ("In Transit", active, AppColors.primary),
+            ("Scheduled", scheduled, AppColors.primary.opacity(0.6)),
+            ("Maintenance", maintenance, AppColors.primary.opacity(0.3))
+        ]
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Trip Status Overview")
+                .font(AppFonts.title3)
+                .foregroundColor(AppColors.primary)
+            
+            ZStack {
+                Chart(data, id: \.status) { item in
+                    SectorMark(
+                        angle: .value("Count", item.count),
+                        innerRadius: .ratio(0.65),
+                        angularInset: 2
+                    )
+                    .foregroundStyle(item.color)
+                    .cornerRadius(5)
+                }
+                .frame(height: 160)
+                
+                VStack(spacing: 0) {
+                    Text("\(active + scheduled + maintenance)")
+                        .font(AppFonts.title1)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.primary)
+                    Text("TOTAL")
+                        .font(AppFonts.caption2)
+                        .foregroundColor(.gray)
+                }
+            }
+            
+            VStack(spacing: 8) {
+                ForEach(data, id: \.status) { item in
+                    HStack {
+                        Circle().fill(item.color).frame(width: 8, height: 8)
+                        Text(item.status).font(AppFonts.caption2).foregroundColor(.gray)
+                        Spacer()
+                        Text("\(item.count)").font(AppFonts.caption2).fontWeight(.bold)
+                    }
+                }
+            }
+        }
+        .padding(24)
+        .frame(height: 350)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppColors.cardShadow())
+    }
+}
+
+// MARK: - Maintenance Alert Card
+struct MaintenanceAlertCard: View {
+    let alerts: [FleetMaintenanceAlert]
+    let onSelect: (FleetMaintenanceAlert) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text("Maintenance Alert")
+                .font(AppFonts.title3)
+                .foregroundColor(AppColors.primary)
+            
+            if alerts.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 30))
+                        .foregroundColor(AppColors.lightSeaGreen.opacity(0.3))
+                    Text("No pending alerts")
+                        .font(AppFonts.body)
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        ForEach(alerts) { alert in
+                            Button(action: { onSelect(alert) }) {
+                                FleetMaintenanceAlertRow(alert: alert)
+                            }
+                            if alert.id != alerts.last?.id {
+                                Divider().padding(.vertical, 8)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(AppColors.cardBackground)
+        .cornerRadius(AppColors.defaultCornerRadius)
+        .modifier(AppColors.cardShadow())
     }
 }

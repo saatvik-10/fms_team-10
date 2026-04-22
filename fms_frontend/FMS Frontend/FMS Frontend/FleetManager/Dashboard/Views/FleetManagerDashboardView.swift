@@ -7,6 +7,8 @@ struct FleetManagerDashboardView: View {
     @State private var showingManagerProfile = false
     @State private var showingAlertDetail = false
     @State private var selectedAlert: FleetMaintenanceAlert?
+    @State private var selectedHistoryTrip: VehicleTrip?
+    @State private var showingAllTrips = false // New: Navigation to full history
     
     var body: some View {
         ZStack {
@@ -17,21 +19,34 @@ struct FleetManagerDashboardView: View {
                 FleetDashboardHeaderView(showingProfile: $showingManagerProfile)
                 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 25) {
+                    VStack(alignment: .leading, spacing: 35) {
                         
-                        // MARK: - Row 1: Fleet Status Metrics (Full Width)
-                        FleetStatusMetricsGrid(
-                            active: dataManager.activeCount,
-                            idle: dataManager.idleCount,
-                            maintenance: dataManager.maintenanceCount,
-                            scheduled: dataManager.scheduledCount
-                        )
+                        // MARK: - Section 1: Command Center (High-Level Pulse)
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("Command Center")
+                                .font(AppFonts.title2)
+                                .foregroundColor(AppColors.primary)
+                            
+                            FleetStatusMetricsGrid(
+                                active: dataManager.activeCount,
+                                idle: dataManager.idleCount,
+                                maintenance: dataManager.maintenanceCount,
+                                scheduled: dataManager.scheduledCount
+                            )
+                            
+                            FleetHealthStatusStackedBar(
+                                healthy: dataManager.healthyCount,
+                                warning: dataManager.warningCount,
+                                critical: dataManager.criticalCount
+                            )
+                                .frame(maxWidth: .infinity)
+                        }
                         
-                        // MARK: - Row 2: Trips Section (Moved Up)
+                        // MARK: - Section 2: Active Logistics (Prioritized Operations)
                         VStack(alignment: .leading, spacing: 15) {
                             HStack {
-                                Text("Trips")
-                                    .font(.system(size: 22, weight: .bold))
+                                Text("Active Logistics")
+                                    .font(AppFonts.title2)
                                     .foregroundColor(AppColors.primary)
                                 
                                 Spacer()
@@ -41,20 +56,18 @@ struct FleetManagerDashboardView: View {
                                         Image(systemName: "plus.circle.fill")
                                         Text("Create Trip")
                                     }
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(AppFonts.button)
                                     .foregroundColor(.white)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
                                     .background(AppColors.primary)
                                     .clipShape(Capsule())
                                 }
                             }
                             
                             if dataManager.vehicles.compactMap({ $0.currentTrip }).isEmpty {
-                                // Empty State
                                 FleetDashboardEmptyTripsView(action: { showingAddOrder = true })
                             } else {
-                                // Trips Grid (3 per line)
                                 LazyVGrid(columns: [
                                     GridItem(.flexible(), spacing: 15),
                                     GridItem(.flexible(), spacing: 15),
@@ -72,75 +85,53 @@ struct FleetManagerDashboardView: View {
                             }
                         }
                         
-                        // MARK: - Row 3: Insights (Side-by-Side)
-                        HStack(spacing: 20) {
-                            // Maintenance Alerts Card
-                            VStack(alignment: .leading, spacing: 15) {
-                                Text("Maintenance Alert")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(AppColors.primary)
-                                
-                                if dataManager.maintenanceAlerts.isEmpty {
-                                    VStack(spacing: 12) {
-                                        Image(systemName: "checkmark.seal.fill")
-                                            .font(.system(size: 30))
-                                            .foregroundColor(AppColors.activeGreen.opacity(0.3))
-                                        Text("No pending alerts")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.gray)
-                                    }
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                } else {
-                                    ScrollView {
-                                        VStack(spacing: 0) {
-                                            ForEach(dataManager.maintenanceAlerts) { alert in
-                                                Button(action: {
-                                                    selectedAlert = alert
-                                                    showingAlertDetail = true
-                                                }) {
-                                                    FleetMaintenanceAlertRow(alert: alert)
-                                                }
-                                                if alert.id != dataManager.maintenanceAlerts.last?.id {
-                                                    Divider().padding(.vertical, 4)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            .padding(24)
-                            .frame(maxWidth: .infinity, minHeight: 240, alignment: .topLeading)
-                            .background(AppColors.cardBackground)
-                            .cornerRadius(AppColors.defaultCornerRadius)
-                            .modifier(AppColors.cardShadow())
+                        // MARK: - Section 3: Performance Analytics (Deep Intelligence)
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("Performance Analytics")
+                                .font(AppFonts.title2)
+                                .foregroundColor(AppColors.primary)
                             
-                            // Trip History Card
-                            TripHistoryCard(trips: dataManager.allHistory)
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)], spacing: 20) {
+                                DriverBehaviorRankedList(rankings: dataManager.driverRankings)
+                                OperationalCostChart(trend: dataManager.costTrend)
+                                FuelPerformanceChart(data: dataManager.fuelEfficiencyData)
+                                FleetCO2EmissionsBarGraph(data: dataManager.emissionData)
+                            }
                         }
                         
-                        // MARK: - Row 4: Operational Analytics
-                        VStack(spacing: 25) {
-                            // CO2 Emissions (Interactive)
-                            FleetOpsEmissionsChart(data: dataManager.emissionData)
+                        // MARK: - Section 4: Maintenance & History
+                        HStack(spacing: 20) {
+                            MaintenanceAlertCard(alerts: dataManager.maintenanceAlerts, onSelect: { alert in
+                                selectedAlert = alert
+                                showingAlertDetail = true
+                            })
+                            .frame(height: 380) // Enforce consistent height parity
                             
-                            HStack(spacing: 20) {
-                                // Fleet Mileage (Horizontal)
-                                FleetMileageChart(data: dataManager.mileageData)
-                                
-                                // Fuel Trend (Vertical + Trend Line)
-                                FuelTrendChart(data: dataManager.fuelTrendData)
-                            }
+                            TripHistoryCard(trips: dataManager.allHistory, onSelect: { trip in
+                                selectedHistoryTrip = trip
+                            }, onViewAll: {
+                                showingAllTrips = true
+                            })
+                            .frame(height: 380) // Match maintenance card height
                         }
                         
                         // spacer for bottom tab bar
                         Spacer().frame(height: 100)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    .padding(.horizontal, 25)
+                    .padding(.top, 25)
                 }
             }
         }
         .navigationBarHidden(true)
+        .fullScreenCover(item: $selectedHistoryTrip) { trip in
+            // Find the vehicle associated with this trip to pass as a binding
+            // Note: Since we only need the binding to satisfy the detail view's signature,
+            // we find the index in our live dataManager array.
+            if let index = dataManager.vehicles.firstIndex(where: { $0.id == trip.vehicleID }) {
+                FleetTripDetailView(vehicle: $dataManager.vehicles[index], tripOverride: trip)
+            }
+        }
         .sheet(isPresented: $showingAddOrder) { 
             FleetCreateTripModal(isPresented: $showingAddOrder)
         }
@@ -149,6 +140,9 @@ struct FleetManagerDashboardView: View {
         }
         .sheet(item: $selectedAlert) { alert in
             FleetMaintenanceAlertDetailView(alert: alert)
+        }
+        .fullScreenCover(isPresented: $showingAllTrips) {
+            AllTripsView()
         }
     }
 }
@@ -160,7 +154,7 @@ struct FleetDashboardHeaderView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Dashboard")
-                    .font(.system(size: 34, weight: .black))
+                    .font(AppFonts.largeTitle)
                     .foregroundColor(AppColors.primary)
             }
             Spacer()
@@ -171,7 +165,7 @@ struct FleetDashboardHeaderView: View {
                         .fill(AppColors.primary)
                         .frame(width: 44, height: 44)
                     Text("VR")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(AppFonts.button)
                         .foregroundColor(.white)
                 }
                 .modifier(AppColors.cardShadow())
@@ -196,9 +190,9 @@ struct FleetDashboardEmptyTripsView: View {
             
             VStack(spacing: 8) {
                 Text("No Active Trips")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(AppFonts.title3)
                 Text("Start your first trip to track vehicle movements and delivery status.")
-                    .font(.system(size: 14))
+                    .font(AppFonts.body)
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
@@ -241,10 +235,11 @@ struct FleetTripCardView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(vehicle.id)
-                            .font(.system(size: 16, weight: .black))
+                            .font(AppFonts.headline)
+                            .fontWeight(.black)
                             .foregroundColor(AppColors.primary)
                         Text(vehicle.model)
-                            .font(.system(size: 11))
+                            .font(AppFonts.caption2)
                             .foregroundColor(.gray)
                     }
                     Spacer()
@@ -260,7 +255,8 @@ struct FleetTripCardView: View {
                         .fill(statusColor)
                         .frame(width: 6, height: 6)
                     Text(trip.status.rawValue.uppercased())
-                        .font(.system(size: 9, weight: .bold))
+                        .font(AppFonts.caption2)
+                        .fontWeight(.bold)
                         .foregroundColor(statusColor)
                 }
                 .padding(.horizontal, 8)
@@ -291,52 +287,152 @@ struct ManagerProfileView: View {
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        NavigationView {
-            List {
-                Section(header: Text("Manager Information")) {
-                    HStack {
-                        ZStack {
-                            Circle()
-                                .fill(AppColors.primary)
-                                .frame(width: 60, height: 60)
-                            Text("VR")
-                                .font(.title)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                        }
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Vikram S. Rathore")
-                                .font(.headline)
-                            Text("Fleet Operations Manager")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.leading, 10)
-                    }
-                    .padding(.vertical, 8)
-                }
-                
-                Section(header: Text("Account Settings")) {
-                    Label("Notifications", systemImage: "bell.fill")
-                    Label("Privacy & Security", systemImage: "lock.fill")
-                    Label("Help & Support", systemImage: "questionmark.circle.fill")
-                }
-                
-                Section {
-                    Button(role: .destructive, action: { 
-                        // Logout logic
-                    }) {
-                        Label("Sign Out", systemImage: "arrow.right.square")
+        ZStack {
+            AppColors.secondaryBackground.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Manager Profile")
+                        .font(AppFonts.title2)
+                        .foregroundColor(AppColors.primary)
+                    Spacer()
+                    Button(action: { dismiss() }) {
+                        Text("Done")
+                            .font(AppFonts.headline)
+                            .foregroundColor(AppColors.primary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(AppColors.primary.opacity(0.1))
+                            .cornerRadius(12)
                     }
                 }
-            }
-            .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
+                .padding(25)
+                .background(Color.white)
+                
+                ScrollView {
+                    VStack(spacing: 25) {
+                        // 1. Manager Identity Card
+                        VStack(spacing: 20) {
+                            HStack(spacing: 20) {
+                                ZStack {
+                                    Circle()
+                                        .fill(LinearGradient(colors: [AppColors.primary, AppColors.deepSeaGreen], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                        .frame(width: 80, height: 80)
+                                    Text("VR")
+                                        .font(.system(size: 32, weight: .black))
+                                        .foregroundColor(.white)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Vikram S. Rathore")
+                                        .font(AppFonts.title3)
+                                        .foregroundColor(AppColors.primary)
+                                    Text("Fleet Operations Manager")
+                                        .font(AppFonts.subheadline)
+                                        .foregroundColor(.gray)
+                                    
+                                    HStack {
+                                        Text("ID: FMS-2026-089")
+                                            .font(AppFonts.caption2)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 2)
+                                            .background(AppColors.primary.opacity(0.05))
+                                            .cornerRadius(4)
+                                        Spacer()
+                                    }
+                                    .padding(.top, 4)
+                                }
+                            }
+                            
+                            Divider()
+                            
+                            VStack(spacing: 15) {
+                                ProfileInfoRow(icon: "envelope.fill", label: "Email", value: "vikram.rathore@fms.com")
+                                ProfileInfoRow(icon: "phone.fill", label: "Work Phone", value: "+91 98765 43210")
+                                ProfileInfoRow(icon: "building.2.fill", label: "Department", value: "Logistics Optimization")
+                            }
+                        }
+                        .padding(24)
+                        .background(Color.white)
+                        .cornerRadius(20)
+                        .modifier(AppColors.cardShadow())
+                        
+                        // Action Section
+                        Button(action: { dismiss() }) {
+                            HStack {
+                                Image(systemName: "arrow.right.square.fill")
+                                Text("Sign Out of Session")
+                                    .fontWeight(.bold)
+                            }
+                            .font(AppFonts.body)
+                            .foregroundColor(.red)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(Color.red.opacity(0.05))
+                            .cornerRadius(16)
+                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.red.opacity(0.1), lineWidth: 1))
+                        }
+                    }
+                    .padding(25)
                 }
             }
         }
+    }
+}
+
+struct ProfileInfoRow: View {
+    let icon: String
+    let label: String
+    let value: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(AppColors.primary.opacity(0.4))
+                .frame(width: 24)
+            
+            Text(label)
+                .font(AppFonts.caption1)
+                .foregroundColor(.gray)
+            
+            Spacer()
+            
+            Text(value)
+                .font(AppFonts.body)
+                .foregroundColor(AppColors.primary)
+        }
+    }
+}
+
+struct ProfileActionRow: View {
+    let icon: String
+    let title: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 15) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(color.opacity(0.1))
+                    .frame(width: 32, height: 32)
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(color)
+            }
+            
+            Text(title)
+                .font(AppFonts.body)
+                .foregroundColor(AppColors.primary)
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.gray.opacity(0.3))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 }
