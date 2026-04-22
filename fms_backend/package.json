@@ -16,6 +16,9 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1034.0",
+    "@aws-sdk/lib-storage": "^3.1034.0",
+    "@aws-sdk/s3-request-presigner": "^3.1034.0",
     "@hono/node-server": "^1.19.14",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
