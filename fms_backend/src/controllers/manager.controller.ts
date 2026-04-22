@@ -71,6 +71,24 @@ export class Manager {
       },
     });
 
+    let mailStatus: { sent: boolean; details?: string } = { sent: true };
+
+    try {
+      await sendCredentialsMail({
+        userEmail: email,
+        role: 'Manager',
+        username,
+        password,
+        senderRole: 'Super Admin',
+      });
+    } catch (error) {
+      console.error('Failed to send manager credentials email', error);
+      mailStatus = {
+        sent: false,
+        details: error instanceof Error ? error.message : 'Unknown mail error',
+      };
+    }
+
     return c.json(
       {
         message: 'Manager created successfully',
@@ -78,6 +96,7 @@ export class Manager {
           username,
           password,
         },
+        mail: mailStatus,
         manager: {
           id: user.manager?.id,
           name: user.manager?.name,
