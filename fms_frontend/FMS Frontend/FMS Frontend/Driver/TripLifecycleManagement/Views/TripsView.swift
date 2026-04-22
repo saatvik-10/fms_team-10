@@ -64,7 +64,11 @@ struct TripsView: View {
                 set: { if !$0 { tripToNavigate = nil } }
             )) {
                 if let selected = tripToNavigate {
-                    TripDetailView(trip: selected.toTripModel(), showTripControls: true)
+                    TripDetailView(
+                        trip: selected.toTripModel(),
+                        showTripControls: true,
+                        lifecycleTrip: selected          // forwarded to ReportIssueView
+                    )
                 }
             }
 
