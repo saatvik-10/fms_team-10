@@ -48,7 +48,7 @@ struct APIConfig {
 			 !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
 			return value
 		}
-		return "http://localhost:3000"
+		return "http://localhost:8080"
 	}()
 }
 
@@ -69,7 +69,7 @@ private struct APIErrorResponse: Decodable {
 	let message: String?
 }
 
-struct EmptyResponse: Decodable {}
+struct EmptyResponse: Encodable {}
 
 struct MailStatus: Decodable {
 	let sent: Bool
@@ -313,21 +313,6 @@ struct UserSigninResponse: Decodable {
 
 struct UserProfileResponse: Decodable {
 	let profile: UserProfile
-}
-
-struct UserProfile: Decodable {
-	let id: String?
-	let email: String?
-	let username: String?
-	let role: UserRole
-	let name: String?
-	let phone: String?
-	let address: String?
-	let licenceNumber: String?
-	let expiryDate: String?
-	let classes: [String]?
-	let dob: Date?
-	let createdAt: Date?
 }
 
 struct OTPVerifyResponse: Decodable {
