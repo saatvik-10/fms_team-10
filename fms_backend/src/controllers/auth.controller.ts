@@ -8,7 +8,7 @@ import {
 import { jwtAuth } from '../lib/jwt';
 import { prisma } from '../../prisma';
 import { comparePassword, hashPassword } from '../lib/hashPassword';
-import { verificationOTP } from '../services/resend';
+import { verificationOTP } from '../services/resend.service';
 import {otpStore, isCooldownActive, createOtpCode, saveOtpForEmail, getNextVerifyAttempt, clearOtpState} from '../lib/lib'
 
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL;
