@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum UserRole {
+enum AppUserRole {
     case none
     case driver
     case maintenance
@@ -15,7 +15,7 @@ enum UserRole {
 }
 
 struct ContentView: View {
-    @State private var userRole: UserRole = .none
+    @State private var userRole: AppUserRole = .none
 
     var body: some View {
         if userRole == .none {

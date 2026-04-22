@@ -26,7 +26,7 @@ struct MaintenanceItem: Decodable {
 struct CreateMaintenanceResponse: Decodable {
   let message: String
   let credentials: MaintenanceCredentials
-  let mail: DriverMailStatus
+  let mail: MailStatus
   let maintenance: MaintenanceItem
 }
 

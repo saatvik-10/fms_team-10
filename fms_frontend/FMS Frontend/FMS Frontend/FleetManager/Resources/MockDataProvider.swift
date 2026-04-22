@@ -50,6 +50,13 @@ struct MockDataProvider {
         EmissionData(day: "SUN", value: 9.5, isCurrent: false)
     ]
 
+    static let mockActivityLog: [ActivityEvent] = [
+        ActivityEvent(title: "Cargo Delivery Completed", detail: "Drop-off: WH-B12", time: "2h ago", type: "completed", value: "+₹2400.00"),
+        ActivityEvent(title: "Refueling Stopped", detail: "IOCL #429", time: "5h ago", type: "refueling", value: "14.2 L"),
+        ActivityEvent(title: "Shift Started", detail: "Main Dpt", time: "8h ago", type: "started", value: "SYSTEM"),
+        ActivityEvent(title: "Hard Braking Incident", detail: "Rt A-1", time: "Yesterday", type: "incident", value: "FLAGGED")
+    ]
+
     // MARK: - Drivers Dataset (from Image 1 & 3)
     static let drivers: [Driver] = [
         Driver(id: "KM-1029", name: "Rahul Sharma", email: "rahul.s@fms.com", title: "Class A CDL Expert", licenseNum: "DL-99203381", licenseExp: "Oct 2026", status: .active, rating: 4.92, efficiency: "98.4%", totalTrips: 124, totalHours: 8420, activityLog: mockActivityLog, currentVehicleID: "VX-7702", vehicleClasses: ["Class A"], activeRoute: "IH-35 North bound", eta: "14:20 (22 mins)"),
@@ -57,13 +64,6 @@ struct MockDataProvider {
         Driver(id: "KM-1011", name: "Amit Kumar", email: "amit.k@fms.com", title: "Regional Dispatcher", licenseNum: "DL-88293310", licenseExp: "Jan 2027", status: .offDuty, rating: 4.95, efficiency: "99.1%", totalTrips: 156, totalHours: 9800, activityLog: [], currentVehicleID: nil, vehicleClasses: ["Class B"], activeRoute: nil, eta: nil),
         Driver(id: "KM-1052", name: "Sneha Rao", email: "sneha.r@fms.com", title: "Long Haul Driver", licenseNum: "DL-11029384", licenseExp: "Aug 2025", status: .active, rating: 4.76, efficiency: "94.8%", totalTrips: 72, totalHours: 5100, activityLog: [], currentVehicleID: "EV-9910", vehicleClasses: ["Class A"], activeRoute: "Sector 4", eta: "45m"),
         Driver(id: "KM-1008", name: "Vikram Singh", email: "vikram.s@fms.com", title: "Safety Protocol Lead", licenseNum: "DL-77382291", licenseExp: "Dec 2024", status: .onTrip, rating: 4.99, efficiency: "99.9%", totalTrips: 210, totalHours: 12400, activityLog: [], currentVehicleID: "VX-8812", vehicleClasses: ["Class A", "Class D"], activeRoute: "North Route", eta: "10m")
-    ]
-    
-    static let mockActivityLog: [ActivityEvent] = [
-        ActivityEvent(title: "Cargo Delivery Completed", detail: "Drop-off: WH-B12", time: "2h ago", type: "completed", value: "+₹2400.00"),
-        ActivityEvent(title: "Refueling Stopped", detail: "IOCL #429", time: "5h ago", type: "refueling", value: "14.2 L"),
-        ActivityEvent(title: "Shift Started", detail: "Main Dpt", time: "8h ago", type: "started", value: "SYSTEM"),
-        ActivityEvent(title: "Hard Braking Incident", detail: "Rt A-1", time: "Yesterday", type: "incident", value: "FLAGGED")
     ]
 
     // MARK: - Vehicles Dataset (Expanded)

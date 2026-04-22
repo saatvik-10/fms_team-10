@@ -60,7 +60,7 @@ class DashboardViewModel: ObservableObject {
 // MARK: - Main Tab View
 
 struct DashboardView: View {
-    @Binding var userRole: UserRole
+    @Binding var userRole: AppUserRole
 
     var body: some View {
         TabView {
@@ -86,7 +86,7 @@ struct DashboardHomeView: View {
     @StateObject private var viewModel = DashboardViewModel()
     @StateObject private var locationManager = LocationManager()
     @State private var showProfile = false
-    @Binding var userRole: UserRole
+    @Binding var userRole: AppUserRole
     
     var body: some View {
         ScrollView {
