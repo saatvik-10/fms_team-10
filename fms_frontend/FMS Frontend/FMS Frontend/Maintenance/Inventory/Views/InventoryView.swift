@@ -120,13 +120,6 @@ struct InventoryView: View {
                 .shadow(color: AppColors.primary.opacity(0.3), radius: 10, x: 0, y: 5)
             }
             .padding(.top, 16)
-
-            Button(action: { store.loadInitialInventory() }) {
-                Text("Load Default Inventory")
-                    .font(.subheadline.bold())
-                    .foregroundColor(AppColors.primary)
-                    .padding(.top, 8)
-            }
         }
     }
     
