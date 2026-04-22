@@ -1,5 +1,6 @@
 import SwiftUI
-import MapKit
+import GoogleMaps
+import CoreLocation
 
 struct FleetTripDetailView: View {
     @Binding var vehicle: Vehicle
@@ -9,15 +10,18 @@ struct FleetTripDetailView: View {
     @State private var showingDeleteAlert = false
     @State private var isEditing = false
     
-    // For editable fields
-    @State private var source: String = ""
-    @State private var destination: String = ""
+    @StateObject private var locationManager = FleetLocationManager()
     
-    // Mock Map data
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 28.6139, longitude: 77.2090), // Delhi
-        span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
-    )
+    // Google Maps / Directions State
+    @State private var encodedPolyline: String = ""
+    @State private var apiEta: String = "Loading..."
+    @State private var apiDistance: String = "..."
+    @State private var originCoord: CLLocationCoordinate2D? = nil
+    @State private var destCoord: CLLocationCoordinate2D? = nil
+    @State private var routeError: String? = nil
+    @State private var isLoadingRoute: Bool = false
+    @State private var originName: String = ""
+    @State private var destName: String = ""
     
     // Effective trip to display
     private var displayTrip: VehicleTrip? {
@@ -49,8 +53,6 @@ struct FleetTripDetailView: View {
                         Menu {
                             Button(action: { 
                                 isEditing = true
-                                source = vehicle.currentTrip?.origin ?? ""
-                                destination = vehicle.currentTrip?.destination ?? ""
                             }) {
                                 Label("Edit Trip", systemImage: "pencil")
                             }
@@ -77,30 +79,50 @@ struct FleetTripDetailView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         
-                        // MARK: - Map View (Static/History view doesn't show live location in same way)
-                        Map(coordinateRegion: $region)
+                        // MARK: - Map View
+                        ZStack {
+                            FleetGoogleMapView(
+                                encodedPolyline: encodedPolyline,
+                                originCoord: originCoord,
+                                destCoord: destCoord,
+                                originLabel: displayTrip?.origin ?? "Origin",
+                                destLabel: displayTrip?.destination ?? "Destination"
+                            )
                             .frame(height: 300)
                             .cornerRadius(16)
-                            .overlay(
+                            
+                            if let error = routeError {
+                                Color.black.opacity(0.4)
+                                    .cornerRadius(16)
                                 VStack {
-                                    Spacer()
-                                    HStack {
-                                        Image(systemName: tripOverride != nil ? "clock.fill" : "location.fill")
-                                            .foregroundColor(.white)
-                                            .padding(8)
-                                            .background(tripOverride != nil ? Color.gray : AppColors.primary)
-                                            .clipShape(Circle())
-                                        Text(tripOverride != nil ? "Trip Completed on \(tripOverride?.date ?? "Past")" : "\(vehicle.id) is on Highway 44")
-                                            .font(AppFonts.caption2)
-                                            .fontWeight(.bold)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(Color.white)
-                                            .cornerRadius(20)
-                                    }
-                                    .padding(.bottom, 20)
+                                    Image(systemName: "exclamationmark.map.fill")
+                                        .font(.title)
+                                        .foregroundColor(.white)
+                                    Text(error)
+                                        .font(AppFonts.caption1)
+                                        .foregroundColor(.white)
                                 }
-                            )
+                            }
+                            
+                            VStack {
+                                Spacer()
+                                HStack {
+                                    Image(systemName: tripOverride != nil ? "clock.fill" : "location.fill")
+                                        .foregroundColor(.white)
+                                        .padding(8)
+                                        .background(tripOverride != nil ? Color.gray : AppColors.primary)
+                                        .clipShape(Circle())
+                                    Text(tripStatusText)
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(Color.white)
+                                        .cornerRadius(20)
+                                }
+                                .padding(.bottom, 20)
+                            }
+                        }
                         
                         // MARK: - Details Section
                         if let trip = displayTrip {
@@ -175,16 +197,15 @@ struct FleetTripDetailView: View {
                             
                             // Logistics Overview Section
                             HStack(alignment: .top, spacing: 20) {
-                                // Route Summary Card (Ticket Style)
                                 LogisticsTicketCard(
                                     title: "ROUTE SUMMARY",
                                     icon: "truck.box.fill",
                                     sourceLabel: "FROM",
-                                    sourceValue: trip.origin,
+                                    sourceValue: originName.isEmpty ? trip.origin : originName,
                                     destLabel: "TO",
-                                    destValue: trip.destination,
+                                    destValue: destName.isEmpty ? trip.destination : destName,
                                     footerLabel: "Trip Duration",
-                                    footerValue: trip.duration ?? "TBD"
+                                    footerValue: routeError != nil ? (trip.duration ?? "TBD") : apiEta
                                 )
                                 
                                 // Load Information Card (Ticket Style)
@@ -228,6 +249,66 @@ struct FleetTripDetailView: View {
             }
         } message: {
             Text("Are you sure you want to end this trip? The vehicle will be marked as idle.")
+        }
+        .task {
+            locationManager.requestPermission()
+            await loadRouteData()
+        }
+        .onChange(of: locationManager.lastLocation?.latitude) { _ in
+            // Re-fetch route if current location significantly changes and it is an active trip
+            if tripOverride == nil {
+                Task { await loadRouteData() }
+            }
+        }
+    }
+    
+    private var tripStatusText: String {
+        if let trip = tripOverride {
+            return "Trip Completed on \(trip.date ?? "Past")"
+        }
+        return "\(vehicle.id) is on Highway 44"
+    }
+    
+    private func loadRouteData() async {
+        guard let trip = displayTrip, !isLoadingRoute else { return }
+        
+        isLoadingRoute = true
+        routeError = nil
+        
+        do {
+            let result: FleetDirectionsResult
+            
+            // DEMO MODE: If active trip, show a route from Bangalore to Coorg with user as waypoint
+            if tripOverride == nil {
+                result = try await FleetDirectionsService.shared.fetchDirections(
+                    origin: "Bangalore",
+                    destination: "Coorg",
+                    waypointCoord: locationManager.lastLocation
+                )
+            } else {
+                // Otherwise use the trip's defined origin and destination
+                result = try await FleetDirectionsService.shared.fetchDirections(
+                    origin: trip.origin,
+                    destination: trip.destination
+                )
+            }
+            
+            await MainActor.run {
+                self.encodedPolyline = result.polyline
+                self.apiEta = result.eta
+                self.apiDistance = result.distance
+                self.originCoord = result.originCoord
+                self.destCoord = result.destCoord
+                self.originName = result.originName
+                self.destName = result.destName
+                self.isLoadingRoute = false
+            }
+        } catch {
+            await MainActor.run {
+                self.routeError = "Route unavailable: \(error.localizedDescription)"
+                self.isLoadingRoute = false
+                print("Route fetch error: \(error.localizedDescription)")
+            }
         }
     }
 }
