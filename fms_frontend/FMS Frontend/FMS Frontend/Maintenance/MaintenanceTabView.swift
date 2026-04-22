@@ -2,8 +2,6 @@
 //  MaintenanceTabView.swift
 //  FMS Frontend
 //
-//  Created by Antigravity on 16/04/26.
-//
 
 import SwiftUI
 
@@ -21,9 +19,25 @@ struct MaintenanceTabView: View {
                 Label("Dashboard", systemImage: "square.grid.2x2.fill")
             }
 
-            // Tab 2: Inspections
+            // Tab 2: Work Orders
             NavigationStack {
-                TripInspectionView(isLoggedIn: $isLoggedIn)
+                WorkOrderManagementView(maintenanceStore: store)
+            }
+            .tabItem {
+                Label("Work Orders", systemImage: "wrench.and.screwdriver.fill")
+            }
+
+            // Tab 3: Inventory
+            NavigationStack {
+                InventoryView(isLoggedIn: $isLoggedIn)
+            }
+            .tabItem {
+                Label("Inventory", systemImage: "box.truck.fill")
+            }
+
+            // Tab 4: Inspections
+            NavigationStack {
+                InspectionHistoryView(isLoggedIn: $isLoggedIn, maintenanceStore: store)
             }
             .tabItem {
                 Label("Inspections", systemImage: "clipboard.fill")

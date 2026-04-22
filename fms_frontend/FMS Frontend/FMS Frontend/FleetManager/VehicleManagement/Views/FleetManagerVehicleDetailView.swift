@@ -203,7 +203,6 @@ struct FleetManagerVehicleDetailView: View {
             VStack(alignment: .leading, spacing: 0) {
 
                 // ── Row A: Vehicle Number | Odometer ──────────────────
-                HStack(alignment: .top, spacing: 0) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("VEHICLE NUMBER").cardLabel()
                         Text(vmPlate(for: vehicle.id))
@@ -211,17 +210,6 @@ struct FleetManagerVehicleDetailView: View {
                             .tracking(0.8)
                     }
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("ODOMETER").cardLabel()
-                        HStack(alignment: .firstTextBaseline, spacing: 3) {
-                            Text(vehicle.odometer)
-                                .font(.system(size: 20, weight: .black))
-                            Text("KM")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.gray)
-                        }
-                    }
-                }
                 .padding(22)
 
                 Divider().padding(.horizontal, 22)
