@@ -35,14 +35,14 @@ model User {
 }
 
 model Manager {
-  id        String   @id @default(cuid())
-  name      String
-  phone     String?  @unique
-  address   String?
+  id      String  @id @default(cuid())
+  name    String
+  phone   String? @unique
+  address String?
 
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -57,25 +57,25 @@ model Driver {
   expiryDate    String?
   classes       String[]
 
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Maintenance {
-  id            String   @id @default(cuid())
-  name          String
-  dob           DateTime
-  phone         String?  @unique
-  email         String?  @unique
+  id    String   @id @default(cuid())
+  name  String
+  dob   DateTime
+  phone String?  @unique
+  email String?  @unique
 
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Vehicle {
@@ -89,10 +89,10 @@ model Vehicle {
   vehicleInfo VehicleInfo?
 
   createdById String?
-  createdBy   User?    @relation("UserCreatedVehicles", fields: [createdById], references: [id])
+  createdBy   User?   @relation("UserCreatedVehicles", fields: [createdById], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model VehicleInfo {
@@ -113,7 +113,7 @@ model VehicleInfo {
 }
 
 model Trips {
-  id                  String   @id @default(cuid())
+  id                  String @id @default(cuid())
   sourceLocation      String
   destinationLocation String
   productType         String
@@ -122,9 +122,10 @@ model Trips {
   vehicle             String
   driver              String
   departureTime       String
+  createdById         String
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
