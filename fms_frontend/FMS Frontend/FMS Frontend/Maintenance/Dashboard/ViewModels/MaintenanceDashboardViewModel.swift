@@ -11,8 +11,7 @@ class MaintenanceDashboardViewModel: ObservableObject {
     // MARK: - System Status KPIs
     @Published var criticalAlertsCount: Int = 0
     @Published var pendingOrdersCount: Int  = 0
-    /// Mocked until a dedicated Inventory module is integrated.
-    @Published var lowStockPartsCount: Int  = 2
+    @Published var lowStockPartsCount: Int  = 0
 
     // MARK: - Priority Feed (top 3 non-completed work orders by priority)
     @Published var topCriticalWorkOrders: [PriorityFeedItem] = []
@@ -27,11 +26,12 @@ class MaintenanceDashboardViewModel: ObservableObject {
 
     // MARK: - Public Refresh Entry Point
     /// Called by the View via `onReceive` whenever `MaintenanceStore` publishes changes.
-    func refresh(workOrders: [WorkOrder], inspections: [TripInspection]) {
+    func refresh(workOrders: [WorkOrder], inspections: [TripInspection], lowStock: Int = 0) {
         computeSystemStatus(workOrders: workOrders, inspections: inspections)
         computePriorityFeed(workOrders: workOrders)
         computeComplianceScore(inspections: inspections)
         computeActiveStaff(workOrders: workOrders)
+        lowStockPartsCount = lowStock
     }
 
     // MARK: - Private Computations

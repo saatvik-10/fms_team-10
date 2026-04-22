@@ -6,9 +6,9 @@
 import SwiftUI
 
 struct InspectionHistoryView: View {
+    @Binding var isLoggedIn: Bool
     @EnvironmentObject var store: MaintenanceStore
     @StateObject private var viewModel: InspectionHistoryViewModel
-    @State private var showingProfile = false
     @State private var layoutMode: LayoutMode = .folders
     
     enum LayoutMode {
@@ -16,7 +16,8 @@ struct InspectionHistoryView: View {
         case list
     }
     
-    init(maintenanceStore: MaintenanceStore) {
+    init(isLoggedIn: Binding<Bool>, maintenanceStore: MaintenanceStore) {
+        self._isLoggedIn = isLoggedIn
         _viewModel = StateObject(wrappedValue: InspectionHistoryViewModel(store: maintenanceStore))
     }
     
@@ -122,29 +123,17 @@ struct InspectionHistoryView: View {
                         }
                     }) {
                         Image(systemName: layoutMode == .folders ? "list.bullet" : "square.grid.2x2")
-                            .font(.system(size: 18))
-                            .foregroundColor(.primary)
+                            .font(.system(size: 22))
+                            .foregroundColor(AppColors.primary)
                     }
-                    .padding(8)
-                    .background(Color.white)
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.05), radius: 5)
 
-                    Button(action: { showingProfile = true }) {
+                    NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
                         Image(systemName: "person.circle")
-                            .font(.system(size: 18))
-                            .foregroundColor(.primary)
+                            .font(.system(size: 22))
+                            .foregroundColor(AppColors.primary)
                     }
-                    .padding(8)
-                    .background(Color.white)
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.05), radius: 5)
                 }
             }
-        }
-        .sheet(isPresented: $showingProfile) {
-            // MaintenanceProfileView() or similar
-            Text("Profile View")
         }
     }
 }

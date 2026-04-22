@@ -34,12 +34,13 @@ struct InventoryView: View {
                     if !store.inventoryParts.isEmpty {
                         Button(action: { showingFileImporter = true }) {
                             Image(systemName: "plus.app")
-                                .font(.title3)
+                                .font(.system(size: 22))
                         }
                     }
                     NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
                         Image(systemName: "person.circle")
-                            .font(.title2)
+                            .font(.system(size: 22))
+                            .foregroundColor(AppColors.primary)
                     }
                 }
             }

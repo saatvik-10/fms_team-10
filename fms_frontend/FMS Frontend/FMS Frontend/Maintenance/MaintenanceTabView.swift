@@ -37,7 +37,7 @@ struct MaintenanceTabView: View {
 
             // Tab 4: Inspections
             NavigationStack {
-                InspectionHistoryView(maintenanceStore: store)
+                InspectionHistoryView(isLoggedIn: $isLoggedIn, maintenanceStore: store)
             }
             .tabItem {
                 Label("Inspections", systemImage: "clipboard.fill")

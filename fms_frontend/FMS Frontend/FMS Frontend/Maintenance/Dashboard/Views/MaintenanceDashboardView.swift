@@ -16,6 +16,7 @@ struct MaintenanceDashboardView: View {
     @State private var showingCreateInspection   = false
     @State private var showingEmergencyInspection = false
     @State private var showingCreateWorkOrder    = false
+    @State private var showingUpdateInventory    = false
 
     var body: some View {
         ScrollView {
@@ -25,12 +26,12 @@ struct MaintenanceDashboardView: View {
                 systemStatusSection
                     .padding(.top, 8)
 
-                // ── Section 2: Priority Feed ────────────────────────────────
-                priorityFeedSection
+                // ── Section 2: Quick Actions ────────────────────────────────
+                quickActionsSection
                     .padding(.top, 28)
 
-                // ── Section 4: Active Staff ─────────────────────────────────
-                activeStaffSection
+                // ── Section 3: Maintenance Alerts ─────────────────────────────
+                maintenanceAlertsSection
                     .padding(.top, 28)
 
                 Spacer(minLength: 48)
@@ -42,21 +43,6 @@ struct MaintenanceDashboardView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                // Critical Alerts Button
-                NavigationLink(destination: WorkOrderManagementView(maintenanceStore: store)) {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "exclamationmark.shield.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(viewModel.criticalAlertsCount > 0 ? AppColors.error : .secondary)
-                        
-                        if viewModel.criticalAlertsCount > 0 {
-                            Circle()
-                                .fill(Color.red)
-                                .frame(width: 8, height: 8)
-                                .offset(x: 2, y: -2)
-                        }
-                    }
-                }
                 // Profile Section
                 NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
                     Image(systemName: "person.circle")
@@ -67,114 +53,125 @@ struct MaintenanceDashboardView: View {
         }
         // ── Reactive updates from MaintenanceStore ──────────────────────────
         .onAppear {
-            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections)
+            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, lowStock: store.lowStockCount)
         }
         .onReceive(store.$workOrders) { orders in
-            viewModel.refresh(workOrders: orders, inspections: store.inspections)
+            viewModel.refresh(workOrders: orders, inspections: store.inspections, lowStock: store.lowStockCount)
         }
         .onReceive(store.$inspections) { inspections in
-            viewModel.refresh(workOrders: store.workOrders, inspections: inspections)
+            viewModel.refresh(workOrders: store.workOrders, inspections: inspections, lowStock: store.lowStockCount)
+        }
+        .onReceive(store.$inventoryParts) { _ in
+            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, lowStock: store.lowStockCount)
         }
         // ── Modals ──────────────────────────────────────────────────────────
         .sheet(isPresented: $showingCreateInspection)    { CreateInspectionModal(isEmergency: false) }
         .sheet(isPresented: $showingEmergencyInspection) { CreateInspectionModal(isEmergency: true)  }
         .sheet(isPresented: $showingCreateWorkOrder)     { CreateWorkOrderModal() }
+        .sheet(isPresented: $showingUpdateInventory)     { 
+            NavigationStack {
+                InventoryView(isLoggedIn: $isLoggedIn) 
+            }
+        }
     }
 
     // MARK: - Section 1: System Status
 
     private var systemStatusSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Row 1 – Pending Work Orders | Compliance Score
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Fleet Analysis")
+                .font(.title2.bold())
+                .padding(.horizontal, 20)
+
             HStack(spacing: 12) {
-                NavigationLink(destination: WorkOrderManagementView(maintenanceStore: store)) {
-                    SummaryCard(
-                        title: "Pending Work Orders",
+                NavigationLink(destination: PendingWorkOrdersListView()) {
+                    FleetAnalysisCard(
+                        title: "Pending Orders",
                         count: "\(viewModel.pendingOrdersCount)",
-                        icon:  "clock.fill",
+                        icon: "clock.fill",
                         color: AppColors.primary
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                NavigationLink(destination: TodayInspectionsView()) {
-                    InspectionSummaryCard(
-                        completed: viewModel.completedInspectionsToday,
-                        total: viewModel.totalInspectionsToday
+                NavigationLink(destination: LowStockPartsView()) {
+                    FleetAnalysisCard(
+                        title: "Restock Alerts",
+                        count: "\(viewModel.lowStockPartsCount)",
+                        icon: "archivebox.fill",
+                        color: .orange
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
             }
-
-            // Row 2 – Low Stock Parts (full-width warning banner)
-            NavigationLink(destination: LowStockPartsView()) {
-                LowStockCard(count: viewModel.lowStockPartsCount)
-            }
-            .buttonStyle(PlainButtonStyle())
+            .padding(.horizontal, 20)
         }
-        .padding(.horizontal, 20)
     }
 
-    // MARK: - Section 2: Priority Feed
+    // MARK: - Section 2: Quick Actions
 
-    private var priorityFeedSection: some View {
+    private var quickActionsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            MaintenanceSectionHeader(title: "Priority Feed", destination: WorkOrderManagementView(maintenanceStore: store))
+            Text("Quick Actions")
+                .font(.title2.bold())
+                .padding(.horizontal, 20)
+            
+            HStack(spacing: 12) {
+                QuickActionButton(
+                    title: "Create Work Order",
+                    icon: "plus.circle.fill",
+                    color: AppColors.primary,
+                    action: { showingCreateWorkOrder = true }
+                )
+                
+                QuickActionButton(
+                    title: "Update Inventory",
+                    icon: "shippingbox.fill",
+                    color: .orange,
+                    action: { showingUpdateInventory = true }
+                )
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    // MARK: - Section 2: Maintenance Alerts
+
+    private var maintenanceAlertsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Header – chevron navigates to dedicated alerts list, NOT Work Orders tab
+            MaintenanceSectionHeader(title: "Maintenance Alerts", destination: MaintenanceAlertsListView())
                 .padding(.horizontal, 20)
 
             if viewModel.topCriticalWorkOrders.isEmpty {
                 MaintenanceEmptyCard(message: "No active work orders", icon: "checkmark.circle.fill")
                     .padding(.horizontal, 20)
             } else {
-                VStack(spacing: 10) {
-                    ForEach(viewModel.topCriticalWorkOrders) { item in
+                VStack(spacing: 0) {
+                    ForEach(Array(viewModel.topCriticalWorkOrders.prefix(3).enumerated()), id: \.element.id) { index, item in
                         let match = store.workOrders.first { $0.id == item.id }
                         NavigationLink(
                             destination: Group {
                                 if let order = match {
                                     WorkOrderDetailsView(workOrder: order)
                                 } else {
-                                    WorkOrderManagementView(maintenanceStore: store)
+                                    MaintenanceAlertsListView()
                                 }
                             }
                         ) {
-                            PriorityFeedCard(item: item)
+                            MaintenanceAlertCard(item: item)
                         }
                         .buttonStyle(PlainButtonStyle())
-                    }
-                }
-                .padding(.horizontal, 20)
-            }
-        }
-    }
-
-    // MARK: - Section 4: Active Staff
-
-    private var activeStaffSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Active Technicians")
-                .font(.title2.bold())
-                .padding(.horizontal, 20)
-
-            if viewModel.activeStaff.isEmpty {
-                MaintenanceEmptyCard(
-                    message: "No technicians currently active",
-                    icon:    "person.fill"
-                )
-                .padding(.horizontal, 20)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(viewModel.activeStaff.enumerated()), id: \.element.id) { index, staff in
-                        ActiveStaffRow(staff: staff)
-                        if index < viewModel.activeStaff.count - 1 {
+                        
+                        if index < min(viewModel.topCriticalWorkOrders.count, 3) - 1 {
                             Divider()
-                                .padding(.horizontal, 16)
+                                .padding(.leading, 70)
                         }
                     }
                 }
-                .background(Color(UIColor.secondarySystemGroupedBackground))
+                .background(Color.white)
                 .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+                .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
                 .padding(.horizontal, 20)
             }
         }
