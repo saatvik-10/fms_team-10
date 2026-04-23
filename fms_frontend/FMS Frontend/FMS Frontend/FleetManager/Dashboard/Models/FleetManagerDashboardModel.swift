@@ -107,6 +107,15 @@ enum DriverStatus: String {
     case onDuty = "ON DUTY"
 }
 
+struct MaintenancePersonnel: Identifiable {
+    let id = UUID()
+    let name: String
+    let phone: String
+    let email: String
+    let dob: Date
+    let currentAssignment: String? // Vehicle ID
+}
+
 struct ActivityEvent: Identifiable {
     let id = UUID()
     let title: String
