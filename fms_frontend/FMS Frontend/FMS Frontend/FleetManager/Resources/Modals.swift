@@ -16,7 +16,7 @@ struct OCRUploadArea: View {
         VStack(spacing: 15) {
             Image(systemName: "doc.text.viewfinder")
                 .font(.system(size: 40))
-                .foregroundColor(AppColors.primary)
+                .foregroundColor(AppTheme.primary)
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(12)
@@ -38,7 +38,7 @@ struct OCRUploadArea: View {
                 .foregroundColor(.white)
                 .padding(.horizontal, 40)
                 .padding(.vertical, 12)
-                .background(AppColors.primary)
+                .background(AppTheme.primary)
                 .cornerRadius(8)
             }
         }
@@ -122,7 +122,7 @@ struct ModalSearchField: View {
                                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                                 }) {
                                     VStack(alignment: .leading) {
-                                        Text(completion.title).font(AppFonts.headline).foregroundColor(AppColors.textPrimary)
+                                        Text(completion.title).font(AppFonts.headline).foregroundColor(AppTheme.textPrimary)
                                         if !completion.subtitle.isEmpty {
                                             Text(completion.subtitle).font(AppFonts.caption1).foregroundColor(.gray)
                                         }
@@ -137,7 +137,7 @@ struct ModalSearchField: View {
                     .frame(maxHeight: 150)
                     .background(Color.white)
                     .cornerRadius(10)
-                    .modifier(AppColors.cardShadow())
+                    .modifier(AppTheme.cardShadow())
                     .offset(y: 5)
                 }
             }
@@ -306,7 +306,7 @@ struct DriverModalView: View {
                                             HStack {
                                                 Text(vehicleClasses[index])
                                                     .font(AppFonts.subheadline)
-                                                    .foregroundColor(AppColors.textPrimary)
+                                                    .foregroundColor(AppTheme.textPrimary)
                                                 Spacer()
                                                 Image(systemName: "chevron.up.chevron.down")
                                                     .font(AppFonts.caption2)
@@ -373,7 +373,7 @@ struct DriverModalView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(AppColors.primary)
+                    .background(AppTheme.primary)
                     .cornerRadius(12)
                 }
 
@@ -591,7 +591,7 @@ struct AddVehicleModalView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(AppColors.primary)
+                    .background(AppTheme.primary)
                     .cornerRadius(12)
                 }
 
@@ -708,7 +708,7 @@ struct OrderModalView: View {
                 }
             }
             .padding(25)
-            .foregroundColor(AppColors.primary)
+            .foregroundColor(AppTheme.primary)
             .background(Color.white)
             
             ScrollView {
@@ -738,7 +738,7 @@ struct OrderModalView: View {
                                     TextField("0.0", text: $loadAmount)
                                         .keyboardType(.decimalPad)
                                         .padding(12)
-                                        .background(AppColors.secondaryBackground)
+                                        .background(AppTheme.secondaryBackground)
                                         .cornerRadius(8)
                                     
                                     Menu {
@@ -753,7 +753,7 @@ struct OrderModalView: View {
                                             Image(systemName: "chevron.down")
                                                 .font(AppFonts.caption2)
                                         }
-                                        .foregroundColor(AppColors.primary)
+                                        .foregroundColor(AppTheme.primary)
                                         .padding(.horizontal, 12)
                                         .frame(height: 44)
                                         .background(Color.white)
@@ -787,14 +787,14 @@ struct OrderModalView: View {
                             HStack {
                                 Image(systemName: "truck.box.fill")
                                     .padding()
-                                    .background(AppColors.primary)
+                                    .background(AppTheme.primary)
                                     .foregroundColor(.white)
                                     .cornerRadius(8)
                                 
                                 VStack(alignment: .leading) {
                                     Text(selectedVehicleID.isEmpty ? "Tap to select vehicle" : selectedVehicleID)
                                         .font(AppFonts.headline)
-                                        .foregroundColor(selectedVehicleID.isEmpty ? .gray : AppColors.textPrimary)
+                                        .foregroundColor(selectedVehicleID.isEmpty ? .gray : AppTheme.textPrimary)
                                     Text("Available for dispatch")
                                         .font(AppFonts.caption1)
                                         .foregroundColor(.gray)
@@ -899,7 +899,7 @@ struct OrderModalView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 20)
-                            .background(fromLocation.isEmpty || selectedVehicleID.isEmpty ? Color.gray : AppColors.primary)
+                            .background(fromLocation.isEmpty || selectedVehicleID.isEmpty ? Color.gray : AppTheme.primary)
                             .cornerRadius(12)
                         }
                         .disabled(fromLocation.isEmpty || selectedVehicleID.isEmpty)

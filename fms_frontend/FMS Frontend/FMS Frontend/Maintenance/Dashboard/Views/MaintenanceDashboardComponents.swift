@@ -186,7 +186,7 @@ struct MaintenanceSectionHeader<Destination: View>: View {
 }
 
 // MARK: - Maintenance Alert Card
-struct MaintenanceAlertCard: View {
+struct MaintAlertCard: View {
     let item: PriorityFeedItem
 
     private var priorityColor: Color {

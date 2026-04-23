@@ -44,7 +44,7 @@ extension Color {
 }
 
 // MARK: - App Color System
-struct AppColors {
+struct AppTheme {
     
     // Primary
     static let primary = Color(red: 0.04, green: 0.19, blue: 0.23) // #0a303a
@@ -152,3 +152,4 @@ struct CardShadowModifier: ViewModifier {
             .shadow(color: AppColors.shadow, radius: 8, x: 0, y: 2)
     }
 }
+typealias AppColors = AppTheme

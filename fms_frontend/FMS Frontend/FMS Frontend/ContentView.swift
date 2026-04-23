@@ -7,75 +7,16 @@
 
 import SwiftUI
 
-enum AppUserRole {
-    case none
-    case driver
-    case maintenance
-    case manager
-}
-
-@MainActor
-final class SessionManager: ObservableObject {
-    @Published private(set) var userRole: AppUserRole = .none
-    @Published private(set) var isRestoringSession = true
-
-    private let authAPI: AuthAPI
-    private var didRestoreSession = false
-
-    init(authAPI: AuthAPI = .shared) {
-        self.authAPI = authAPI
-    }
-
-    func restoreSessionIfNeeded() async {
-        guard !didRestoreSession else { return }
-        didRestoreSession = true
-
-        defer {
-            isRestoringSession = false
-        }
-
-        guard APIClient.shared.currentToken() != nil else {
-            userRole = .none
-            return
-        }
-
-        do {
-            let profile = try await authAPI.getProfile().profile
-            userRole = AppUserRole(profile.role)
-        } catch {
-            authAPI.logout()
-            userRole = .none
-        }
-    }
-
-    func setAuthenticated(role: AppUserRole) {
-        userRole = role
-    }
-
-    func logout() {
-        authAPI.logout()
-        userRole = .none
-    }
-}
-
-private extension AppUserRole {
-    init(_ role: UserRole) {
-        switch role {
-        case .driver:
-            self = .driver
-        case .maintenance:
-            self = .maintenance
-        case .manager, .superAdmin:
-            self = .manager
-        }
-    }
-}
-
 struct ContentView: View {
     @StateObject private var session = SessionManager()
 
     var body: some View {
         Group {
+            // MARK: - DEV BYPASS
+            // Directly showing FleetManagerMainView to skip login for development.
+            FleetManagerMainView()
+            
+            /*
             if session.isRestoringSession {
                 ProgressView("Restoring session...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -113,8 +54,10 @@ struct ContentView: View {
             } else if session.userRole == .manager {
                 FleetManagerMainView()
             }
+            */
         }
         .task {
+            // We still run session restoration in background, but the UI is bypassed
             await session.restoreSessionIfNeeded()
         }
     }

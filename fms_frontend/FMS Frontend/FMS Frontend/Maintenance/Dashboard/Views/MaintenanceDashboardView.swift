@@ -182,7 +182,7 @@ struct MaintenanceDashboardView: View {
                                 }
                             }
                         ) {
-                            MaintenanceAlertCard(item: item)
+                            MaintAlertCard(item: item)
                         }
                         .buttonStyle(PlainButtonStyle())
                         

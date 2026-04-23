@@ -22,6 +22,15 @@ class FleetDataManager: ObservableObject {
     @Published var vehicles = MockDataProvider.vehicles
     @Published var maintenancePersonnel = MockDataProvider.maintenancePersonnel
     
+    // New Analytics (New)
+    @Published var maintenanceCostPerVehicle = MockDataProvider.maintenanceCostPerVehicle
+    @Published var totalKmsTravelled = MockDataProvider.totalKmsTravelled
+    @Published var driverDistanceData = MockDataProvider.driverDistanceData
+    
+    @Published var travelsHistory = MockDataProvider.travelsHistory
+    var idleDriversCount: Int { idleDrivers.count }
+    var idleDrivers: [Driver] { drivers.filter { $0.status == .active || $0.status == .offDuty } }
+    
     // Computed Metrics
     var activeCount: Int {
         vehicles.filter { $0.status == .inTransit }.count

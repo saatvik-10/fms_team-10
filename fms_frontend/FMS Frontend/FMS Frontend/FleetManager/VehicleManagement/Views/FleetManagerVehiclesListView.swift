@@ -165,7 +165,7 @@ struct FleetManagerVehiclesListView: View {
                     .padding(30)
                 }
             }
-            .background(AppColors.background)
+            .background(AppTheme.background)
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingAddVehicle) { AddVehicleModalView() }
