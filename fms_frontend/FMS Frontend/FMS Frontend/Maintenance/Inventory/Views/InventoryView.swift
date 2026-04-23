@@ -134,7 +134,7 @@ struct InventoryView: View {
                         .foregroundColor(AppColors.primary.opacity(0.8))
                         .textCase(.uppercase)
                     
-                    Text(String(format: "₹%.2fL", store.totalInventoryValue / 100000))
+                    Text(String(format: "₹%.2f", store.totalInventoryValue / 100000))
                         .font(.system(size: 40, weight: .bold, design: .rounded))
                         .foregroundColor(AppColors.primaryText)
                 }

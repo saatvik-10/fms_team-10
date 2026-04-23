@@ -15,10 +15,9 @@ struct CreateWorkOrderModal: View {
     @State private var priority: WorkOrderPriority = .medium
     @State private var taskDetails = ""
     @State private var scheduledDate = Date()
-    @State private var technicianId = "Arjun Mehra (Lead)"
     @State private var showingVehiclePicker = false
+    @State private var showingScheduleValidationAlert = false
 
-    let technicians = ["Arjun Mehra (Lead)", "Suresh Kumar (Senior)", "Vikram Singh (Junior)", "Rahul Sharma (Trainee)"]
     let vehicles = ["Mercedes-Benz Actros (Truck)", "Volvo FH16 (Truck)", "MAN TGX (Truck)", "Scania R450 (Truck)", "Toyota Coaster (Bus)", "Eicher Pro 6037", "Ashok Leyland Captain", "BharatBenz 3523R", "Tata Prima"]
     let serviceTypes = ["Routine PM", "Repair", "Inspection", "Emergency"]
 
@@ -80,22 +79,10 @@ struct CreateWorkOrderModal: View {
                         }
                     }
 
-                    // SECTION 3: ASSIGNMENT & TIMING
+                    // SECTION 3: TIMING
                     VStack(spacing: 12) {
-                        FormGroup(title: "ASSIGN TECHNICIAN") {
-                            Picker("Technician", selection: $technicianId) {
-                                ForEach(technicians, id: \.self) { Text($0) }
-                            }
-                            .pickerStyle(.menu)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color(.systemGray6).opacity(0.5))
-                            .cornerRadius(12)
-                        }
-
                         FormGroup(title: "SCHEDULED DATE & TIME") {
-                            DatePicker("", selection: $scheduledDate, displayedComponents: [.date, .hourAndMinute])
+                            DatePicker("", selection: $scheduledDate, in: Date()..., displayedComponents: [.date, .hourAndMinute])
                                 .datePickerStyle(.compact)
                                 .labelsHidden()
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -132,6 +119,13 @@ struct CreateWorkOrderModal: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
+                        let now = Date()
+                        guard scheduledDate >= now else {
+                            scheduledDate = now
+                            showingScheduleValidationAlert = true
+                            return
+                        }
+
                         let newOrder = WorkOrder(
                             title: taskTitle.isEmpty ? "New Task" : taskTitle,
                             vehicleName: vehicleName,
@@ -141,7 +135,7 @@ struct CreateWorkOrderModal: View {
                             status: .pending,
                             taskDetails: taskDetails,
                             scheduledDate: scheduledDate,
-                            technicianId: technicianId,
+                            technicianId: "Unassigned",
                             checklist: TripInspection.mockItems(for: vehicleName.contains("Bus") ? .car : .truck)
                         )
                         store.addWorkOrder(newOrder)
@@ -155,6 +149,11 @@ struct CreateWorkOrderModal: View {
                             .foregroundColor(AppColors.primary)
                     }
                 }
+            }
+            .alert("Invalid Schedule", isPresented: $showingScheduleValidationAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Scheduled date and time cannot be before the current time.")
             }
             .sheet(isPresented: $showingVehiclePicker) {
                 VehiclePickerView(selectedVehicle: $vehicleName, vehicles: vehicles)

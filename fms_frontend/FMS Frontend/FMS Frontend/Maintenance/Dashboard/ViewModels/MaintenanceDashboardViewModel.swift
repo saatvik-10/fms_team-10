@@ -15,6 +15,7 @@ class MaintenanceDashboardViewModel: ObservableObject {
 
     // MARK: - Priority Feed (top 3 non-completed work orders by priority)
     @Published var topCriticalWorkOrders: [PriorityFeedItem] = []
+    @Published var alertItems: [DashboardAlertItem] = []
 
     // MARK: - Compliance Score
     @Published var complianceScore: Int         = 0
@@ -26,9 +27,10 @@ class MaintenanceDashboardViewModel: ObservableObject {
 
     // MARK: - Public Refresh Entry Point
     /// Called by the View via `onReceive` whenever `MaintenanceStore` publishes changes.
-    func refresh(workOrders: [WorkOrder], inspections: [TripInspection], lowStock: Int = 0) {
+    func refresh(workOrders: [WorkOrder], inspections: [TripInspection], inventoryParts: [InventoryPart], lowStock: Int = 0) {
         computeSystemStatus(workOrders: workOrders, inspections: inspections)
         computePriorityFeed(workOrders: workOrders)
+        computeAlertItems(workOrders: workOrders, inventoryParts: inventoryParts)
         computeComplianceScore(inspections: inspections)
         computeActiveStaff(workOrders: workOrders)
         lowStockPartsCount = lowStock
@@ -50,6 +52,42 @@ class MaintenanceDashboardViewModel: ObservableObject {
         topCriticalWorkOrders = sorted.prefix(3).map {
             PriorityFeedItem(id: $0.id, title: $0.title, vehicleName: $0.vehicleName, priority: $0.priority)
         }
+    }
+
+    private func computeAlertItems(workOrders: [WorkOrder], inventoryParts: [InventoryPart]) {
+        let workOrderAlerts = workOrders
+            .filter { $0.status != .completed }
+            .map { order in
+                DashboardAlertItem(
+                    id: "wo-\(order.id.uuidString)",
+                    source: .workOrder,
+                    title: order.title,
+                    subtitle: "\(order.vehicleName) • Priority: \(order.priority.rawValue.capitalized)",
+                    sortOrder: order.priority.sortingOrder,
+                    workOrderId: order.id,
+                    inventoryPartId: nil
+                )
+            }
+
+        let inventoryAlerts = inventoryParts
+            .filter { $0.isLowStock }
+            .map { part in
+                DashboardAlertItem(
+                    id: "inv-\(part.partId)",
+                    source: .inventory,
+                    title: part.partName,
+                    subtitle: "\(part.partId) • Stock: \(part.stockQty)/\(part.minStock)",
+                    sortOrder: 0,
+                    workOrderId: nil,
+                    inventoryPartId: part.partId
+                )
+            }
+
+        alertItems = (workOrderAlerts + inventoryAlerts)
+            .sorted { lhs, rhs in
+                if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
+                return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+            }
     }
 
     private func computeComplianceScore(inspections: [TripInspection]) {

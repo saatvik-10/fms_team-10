@@ -12,7 +12,7 @@ struct InventoryPart: Identifiable, Codable {
     let partName: String
     let partId: String
     let category: String
-    let stockQty: Int
+    var stockQty: Int
     var minStock: Int
     let unitPriceInr: Double
     let supplier: String

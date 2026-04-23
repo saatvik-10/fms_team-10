@@ -187,34 +187,21 @@ struct MaintenanceSectionHeader<Destination: View>: View {
 
 // MARK: - Maintenance Alert Card
 struct MaintenanceAlertCard: View {
-    let item: PriorityFeedItem
+    let item: DashboardAlertItem
 
-    private var priorityColor: Color {
-        switch item.priority {
-        case .critical: return Color.red
-        case .high:     return Color.orange
-        case .medium:   return Color.blue
-        case .low:      return Color.green
-        }
-    }
-    
-    private var iconName: String {
-        switch item.priority {
-        case .critical: return "exclamationmark.triangle.fill"
-        default: return "drop.fill" // For example matching the image
-        }
-    }
+    private let iconName = "exclamationmark.triangle.fill"
+    private let iconColor: Color = .red
 
     var body: some View {
         HStack(spacing: 14) {
             // Left Icon in circle
             ZStack {
                 Circle()
-                    .fill(priorityColor.opacity(0.12))
+                    .fill(iconColor.opacity(0.12))
                     .frame(width: 40, height: 40)
                 Image(systemName: iconName)
                     .font(.system(size: 18))
-                    .foregroundColor(priorityColor)
+                    .foregroundColor(iconColor)
             }
 
             // Title + Subtitle
@@ -224,7 +211,7 @@ struct MaintenanceAlertCard: View {
                     .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
                 
-                Text("\(item.vehicleName) • Priority: \(item.priority.rawValue.capitalized)")
+                Text(item.subtitle)
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
                     .lineLimit(1)
