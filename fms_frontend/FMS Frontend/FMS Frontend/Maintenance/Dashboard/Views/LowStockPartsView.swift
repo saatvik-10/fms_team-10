@@ -47,21 +47,17 @@ struct LowStockPartsView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(part.partName)
                                 .font(.headline)
+                                .foregroundColor(AppColors.primaryText)
                             Text(part.partId)
                                 .font(.caption.monospaced())
                                 .foregroundColor(.secondary)
                         }
                         Spacer()
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("Stock: \(part.stockQty)")
-                                .font(.subheadline.bold())
-                                .foregroundColor(part.isLowStock ? .orange : AppColors.primaryText)
-                            Text("Min: \(part.minStock)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                        Text("\(part.stockQty)")
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .foregroundColor(part.isLowStock ? .orange : AppColors.primaryText)
                     }
-                    .padding(.vertical, 2)
+                    .padding(.vertical, 8)
                 }
             }
         }
