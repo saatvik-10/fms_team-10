@@ -8,7 +8,7 @@ import { customAlphabet } from 'nanoid';
 import { createVehicleSchema } from '../validators/vehicle.validator';
 
 const nanoid = customAlphabet(
-  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*',
+  'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*',
   10,
 );
 
