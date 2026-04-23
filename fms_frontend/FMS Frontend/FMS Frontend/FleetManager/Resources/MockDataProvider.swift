@@ -197,4 +197,12 @@ struct MockDataProvider {
             assessmentReason: "Route Optimized: Avoided Congestion"
         )
     ]
+    
+    // MARK: - Maintenance Personnel Dataset
+    static let maintenancePersonnel: [MaintenancePersonnel] = [
+        MaintenancePersonnel(name: "Arjun Mehta", phone: "+91 98765 43210", email: "arjun.m@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1989, month: 5, day: 15)) ?? Date(), currentAssignment: "TRK-9042"),
+        MaintenancePersonnel(name: "Sunita Deshmukh", phone: "+91 87654 32109", email: "sunita.d@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1994, month: 8, day: 22)) ?? Date(), currentAssignment: "EV-9910"),
+        MaintenancePersonnel(name: "Rajesh Khanna", phone: "+91 76543 21098", email: "rajesh.k@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1981, month: 12, day: 10)) ?? Date(), currentAssignment: nil),
+        MaintenancePersonnel(name: "Kavita Singh", phone: "+91 65432 10987", email: "kavita.s@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1992, month: 3, day: 30)) ?? Date(), currentAssignment: "VN-4209")
+    ]
 }
