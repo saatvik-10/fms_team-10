@@ -1,6 +1,8 @@
 import MapKit
 import SwiftUI
 import Combine
+import PhotosUI
+internal import UIKit
 
 // MARK: - Premium Modal Components
 
@@ -418,6 +420,12 @@ struct AddVehicleModalView: View {
     @State private var odometer: String
     @State private var showingScanner = false
 
+    // VEHICLE IMAGE STATE
+    @State private var selectedVehicleImage: UIImage?
+    @State private var showImagePicker = false
+    @State private var imageSourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State private var showActionSheet = false
+
 
 
     
@@ -462,7 +470,70 @@ struct AddVehicleModalView: View {
                         )
                     }
                     
-                    // Section 2: Review Details
+                    // Section 2: Vehicle Image (NEW)
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text("VEHICLE IMAGE")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.gray)
+                        
+                        VStack(spacing: 15) {
+                            if let image = selectedVehicleImage {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(height: 200)
+                                    .frame(maxWidth: .infinity)
+                                    .cornerRadius(12)
+                                    .clipped()
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                    )
+                                    .onTapGesture {
+                                        showActionSheet = true
+                                    }
+                            } else {
+                                VStack(spacing: 15) {
+                                    Image(systemName: "camera.fill")
+                                        .font(.system(size: 40))
+                                        .foregroundColor(AppTheme.primary)
+                                        .padding()
+                                        .background(Color.gray.opacity(0.1))
+                                        .cornerRadius(12)
+                                    
+                                    VStack(spacing: 4) {
+                                        Text("Upload Vehicle Image")
+                                            .font(.system(size: 16, weight: .bold))
+                                        Text("Take photo or choose from gallery")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    Button(action: { showActionSheet = true }) {
+                                        HStack {
+                                            Image(systemName: "plus")
+                                            Text("Add Image")
+                                        }
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 40)
+                                        .padding(.vertical, 12)
+                                        .background(AppTheme.primary)
+                                        .cornerRadius(8)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 30)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                                        .foregroundColor(Color.gray.opacity(0.4))
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Section 3: Review Details
                     VStack(alignment: .leading, spacing: 20) {
                         Text("REVIEW VEHICLE DETAILS")
                             .font(.system(size: 12, weight: .bold))
@@ -523,6 +594,28 @@ struct AddVehicleModalView: View {
         }
         .padding(30)
         .background(Color.white)
+        .actionSheet(isPresented: $showActionSheet) {
+            ActionSheet(
+                title: Text("Select Image Source"),
+                message: Text("Take photo or choose from gallery"),
+                buttons: [
+                    .default(Text("Take Photo")) {
+                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                            imageSourceType = .camera
+                            showImagePicker = true
+                        }
+                    },
+                    .default(Text("Choose from Gallery")) {
+                        imageSourceType = .photoLibrary
+                        showImagePicker = true
+                    },
+                    .cancel()
+                ]
+            )
+        }
+        .sheet(isPresented: $showImagePicker) {
+            VehicleAppImagePicker(sourceType: imageSourceType, selectedImage: $selectedVehicleImage)
+        }
         .sheet(isPresented: $showingScanner) {
             RCScannerView(isPresented: $showingScanner) { owner, reg, model, chassis in
                 self.regNumber = reg
@@ -534,6 +627,37 @@ struct AddVehicleModalView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Local ImagePicker Helper
+struct VehicleAppImagePicker: UIViewControllerRepresentable {
+    var sourceType: UIImagePickerController.SourceType
+    @Binding var selectedImage: UIImage?
+    @Environment(\.dismiss) var dismiss
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = sourceType
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: VehicleAppImagePicker
+        init(_ parent: VehicleAppImagePicker) { self.parent = parent }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let image = info[.originalImage] as? UIImage { parent.selectedImage = image }
+            parent.dismiss()
+        }
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { parent.dismiss() }
     }
 }
 

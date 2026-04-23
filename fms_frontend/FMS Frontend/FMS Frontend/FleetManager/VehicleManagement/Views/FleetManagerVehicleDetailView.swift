@@ -203,6 +203,7 @@ struct FleetManagerVehicleDetailView: View {
             VStack(alignment: .leading, spacing: 0) {
 
                 // ── Row A: Vehicle Number | Odometer ──────────────────
+                HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("VEHICLE NUMBER").cardLabel()
                         Text(vmPlate(for: vehicle.id))
@@ -210,6 +211,7 @@ struct FleetManagerVehicleDetailView: View {
                             .tracking(0.8)
                     }
                     Spacer()
+                }
                 .padding(22)
 
                 Divider().padding(.horizontal, 22)
