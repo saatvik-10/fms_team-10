@@ -1,11 +1,9 @@
 import type { Context } from 'hono';
 import { createManagerSchema } from '../validators/manager.validator';
-import { createDriverSchema } from '../validators/driver.validator';
 import { sendCredentialsMail } from '../services/resend.service';
 import { prisma } from '../../prisma';
 import { hashPassword } from '../lib/hashPassword';
 import { customAlphabet } from 'nanoid';
-import { createVehicleSchema } from '../validators/vehicle.validator';
 
 const nanoid = customAlphabet(
   'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*',
