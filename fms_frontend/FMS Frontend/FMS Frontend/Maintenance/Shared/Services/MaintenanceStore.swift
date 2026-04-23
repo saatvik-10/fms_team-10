@@ -55,7 +55,13 @@ class MaintenanceStore: ObservableObject {
         if let url = Bundle.main.url(forResource: "fleet_inventory_dataset", withExtension: "csv") {
             let (parts, errors) = InventoryCSVImportService.shared.parseCSV(at: url)
             if !parts.isEmpty {
-                self.inventoryParts = parts
+                var processedParts = parts
+                // Ensure some items are low stock for demonstration if none are naturally low
+                if processedParts.filter({ $0.isLowStock }).isEmpty && processedParts.count > 5 {
+                    processedParts[2].minStock = processedParts[2].stockQty + 5
+                    processedParts[5].minStock = processedParts[5].stockQty + 5
+                }
+                self.inventoryParts = processedParts
                 saveInventory()
             }
             if !errors.isEmpty {
