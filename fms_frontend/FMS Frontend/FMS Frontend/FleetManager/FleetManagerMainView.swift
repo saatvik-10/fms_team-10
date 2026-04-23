@@ -46,6 +46,15 @@ struct FleetManagerMainView: View {
             }
             .tag(2)
             
+            NavigationView {
+                FleetManagerMaintenanceListView()
+            }
+            .navigationViewStyle(.stack)
+            .tabItem {
+                Label("Maintenance", systemImage: "wrench.and.screwdriver.fill")
+            }
+            .tag(3)
+            
         }
         .accentColor(AppColors.primary)
         .environmentObject(dataManager)

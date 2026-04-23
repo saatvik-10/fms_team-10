@@ -14,7 +14,7 @@ export const jwtAuth = async ({ userId, role }: JwtAuthProps) => {
   const payload = {
     userId,
     role,
-    exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
+    exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
   };
 
   const token = await sign(payload, process.env.JWT_SECRET!, 'HS256');

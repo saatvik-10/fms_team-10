@@ -2,200 +2,212 @@
 //  MaintenanceDashboardView.swift
 //  FMS Frontend
 //
+//  Tab 1 – Dashboard
+//  Displays aggregated KPIs, Priority Feed, Compliance Score, and Active Staff.
+//
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MaintenanceDashboardView: View {
     @Binding var isLoggedIn: Bool
     @EnvironmentObject var store: MaintenanceStore
-    @State private var showingCreateInspection = false
+    @StateObject private var viewModel = MaintenanceDashboardViewModel()
+
+    @State private var showingCreateInspection   = false
     @State private var showingEmergencyInspection = false
-    @State private var showingCreateWorkOrder = false
-    
+    @State private var showingCreateWorkOrder    = false
+    @State private var showingFileImporter       = false
+    @State private var importErrors: [InventoryCSVImportService.ImportError] = []
+    @State private var showingImportAlert        = false
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                // Work Orders Section
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        Text("Work Orders")
-                            .font(.title2.bold())
+            VStack(alignment: .leading, spacing: 0) {
 
-                        Spacer()
+                // ── Section 1: System Status KPIs ──────────────────────────
+                systemStatusSection
+                    .padding(.top, 8)
 
-                        NavigationLink(destination: WorkOrderManagementView()) {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(Color(.systemGray3))
-                        }
-                    }
-                    .padding(.horizontal, 20)
+                // ── Section 2: Quick Actions ────────────────────────────────
+                quickActionsSection
+                    .padding(.top, 28)
 
-                    VStack(spacing: 16) {
-                        let sortedOrders = store.workOrders.sorted {
-                        if $0.status == .completed && $1.status != .completed { return false }
-                        if $0.status != .completed && $1.status == .completed { return true }
-                        return $0.priority.sortingOrder < $1.priority.sortingOrder
-                    }
-                        ForEach(sortedOrders.prefix(5)) { order in
-                            NavigationLink(destination: WorkOrderDetailsView(workOrder: order)) {
-                                WorkOrderTaskCard(order: order)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    withAnimation {
-                                        store.deleteWorkOrder(order)
-                                    }
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                }
-                
-                Spacer(minLength: 30)
+                // ── Section 3: Maintenance Alerts ─────────────────────────────
+                maintenanceAlertsSection
+                    .padding(.top, 28)
+
+                Spacer(minLength: 48)
             }
-            .padding(.top)
+            .padding(.top, 4)
         }
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                // Profile Section
                 NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
                     Image(systemName: "person.circle")
                         .font(.system(size: 22))
+                        .foregroundColor(AppColors.primary)
                 }
             }
         }
-        .sheet(isPresented: $showingCreateInspection) {
-            CreateInspectionModal(isEmergency: false)
+        // ── Reactive updates from MaintenanceStore ──────────────────────────
+        .onAppear {
+            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, lowStock: store.lowStockCount)
         }
-        .sheet(isPresented: $showingEmergencyInspection) {
-            CreateInspectionModal(isEmergency: true)
+        .onReceive(store.$workOrders) { orders in
+            viewModel.refresh(workOrders: orders, inspections: store.inspections, lowStock: store.lowStockCount)
         }
-        .sheet(isPresented: $showingCreateWorkOrder) {
-            CreateWorkOrderModal()
+        .onReceive(store.$inspections) { inspections in
+            viewModel.refresh(workOrders: store.workOrders, inspections: inspections, lowStock: store.lowStockCount)
+        }
+        .onReceive(store.$inventoryParts) { _ in
+            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, lowStock: store.lowStockCount)
+        }
+        // ── Modals ──────────────────────────────────────────────────────────
+        .sheet(isPresented: $showingCreateInspection)    { CreateInspectionModal(isEmergency: false) }
+        .sheet(isPresented: $showingEmergencyInspection) { CreateInspectionModal(isEmergency: true)  }
+        .sheet(isPresented: $showingCreateWorkOrder)     { CreateWorkOrderModal() }
+        .fileImporter(
+            isPresented: $showingFileImporter,
+            allowedContentTypes: [.commaSeparatedText, .text],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                let (parts, errors) = InventoryCSVImportService.shared.parseCSV(at: url)
+                if !parts.isEmpty {
+                    store.importInventory(parts)
+                }
+                self.importErrors = errors
+                self.showingImportAlert = true
+            case .failure(let error):
+                print("Import failed: \(error.localizedDescription)")
+            }
+        }
+        .alert("Import Status", isPresented: $showingImportAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            if importErrors.count > 0 {
+                Text("Encountered \(importErrors.count) issues during import. Check your CSV format.")
+            } else {
+                Text("Inventory imported successfully.")
+            }
         }
     }
-}
 
-struct SummaryCard: View {
-    let title: String
-    let count: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Circle()
-                    .fill(color.opacity(0.1))
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Image(systemName: icon)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(color)
+    // MARK: - Section 1: System Status
+
+    private var systemStatusSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Fleet Analysis")
+                .font(.title2.bold())
+                .padding(.horizontal, 20)
+
+            HStack(spacing: 12) {
+                NavigationLink(destination: PendingWorkOrdersListView()) {
+                    FleetAnalysisCard(
+                        title: "Pending Orders",
+                        count: "\(viewModel.pendingOrdersCount)",
+                        color: AppColors.primary
                     )
-                Spacer()
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(count)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
-                Text(title.uppercased())
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(AppColors.secondaryText)
-                    .tracking(1.0)
-            }
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-    }
-}
-
-struct AlertCard: View {
-    let alert: MaintenanceDashboardViewModel.MaintenanceAlert
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Circle()
-                .fill((alert.type == .inspection ? AppColors.primary : .orange).opacity(0.1))
-                .frame(width: 44, height: 44)
-                .overlay(
-                    Image(systemName: alert.type == .inspection ? "checkmark.shield.fill" : "exclamationmark.triangle.fill")
-                        .foregroundColor(alert.type == .inspection ? AppColors.primary : .orange)
-                        .font(.system(size: 18, weight: .bold))
-                )
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(alert.title)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
-                Text(alert.message)
-                    .font(.system(size: 13))
-                    .foregroundColor(AppColors.secondaryText)
-                    .lineLimit(2)
-            }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(alert.time)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(AppColors.secondaryText)
+                }
+                .buttonStyle(PlainButtonStyle())
                 
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(AppColors.secondaryText.opacity(0.3))
+                NavigationLink(destination: LowStockPartsView()) {
+                    FleetAnalysisCard(
+                        title: "Restock Alerts",
+                        count: "\(viewModel.lowStockPartsCount)",
+                        color: .orange
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    // MARK: - Section 2: Quick Actions
+
+    private var quickActionsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Quick Actions")
+                .font(.title2.bold())
+                .padding(.horizontal, 20)
+            
+            HStack(spacing: 12) {
+                QuickActionButton(
+                    title: "Create Work Order",
+                    icon: "plus",
+                    color: AppColors.primary,
+                    action: { showingCreateWorkOrder = true }
+                )
+                
+                QuickActionButton(
+                    title: "Update Inventory",
+                    icon: "shippingbox.fill",
+                    color: .orange,
+                    action: { showingFileImporter = true }
+                )
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    // MARK: - Section 2: Maintenance Alerts
+
+    private var maintenanceAlertsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Header – chevron navigates to dedicated alerts list, NOT Work Orders tab
+            MaintenanceSectionHeader(title: "Maintenance Alerts", destination: MaintenanceAlertsListView())
+                .padding(.horizontal, 20)
+
+            if viewModel.topCriticalWorkOrders.isEmpty {
+                MaintenanceEmptyCard(message: "No active work orders", icon: "checkmark.circle.fill")
+                    .padding(.horizontal, 20)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(viewModel.topCriticalWorkOrders.prefix(3).enumerated()), id: \.element.id) { index, item in
+                        let match = store.workOrders.first { $0.id == item.id }
+                        NavigationLink(
+                            destination: Group {
+                                if let order = match {
+                                    WorkOrderDetailsView(workOrder: order)
+                                } else {
+                                    MaintenanceAlertsListView()
+                                }
+                            }
+                        ) {
+                            MaintenanceAlertCard(item: item)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        if index < min(viewModel.topCriticalWorkOrders.count, 3) - 1 {
+                            Divider()
+                                .padding(.leading, 70)
+                        }
+                    }
+                }
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
+                .padding(.horizontal, 20)
             }
         }
-        .padding(16)
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
-        .padding(.horizontal, 20)
     }
 }
 
-struct QuickActionRow: View {
-    let title: String
-    let icon: String
-    let isLast: Bool
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundColor(AppColors.primary)
-                .frame(width: 24)
-            
-            Text(title)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(AppColors.primaryText)
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(AppColors.secondaryText.opacity(0.5))
-        }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 16)
-    }
-}
+// MARK: - Preview
 
 struct MaintenanceDashboardView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
             MaintenanceDashboardView(isLoggedIn: .constant(true))
+                .environmentObject(MaintenanceStore())
         }
     }
 }

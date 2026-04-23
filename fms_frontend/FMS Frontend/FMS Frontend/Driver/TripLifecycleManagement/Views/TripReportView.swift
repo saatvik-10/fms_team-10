@@ -96,26 +96,26 @@ struct TripReportView: View {
     // MARK: – PDF Generation
 
     private func generatePDF() async {
-        let data = await Task.detached(priority: .userInitiated) { () -> (Data, URL) in
-            let reportData = TripReportData.mock(from: self.trip)
-            let generator  = TripReportGenerator()
-            let pdfData    = generator.generate(from: reportData)
+        // Build data off the main actor, then publish results on it.
+        let trip = self.trip   // capture value type — safe to cross actor boundary
 
-            let fileName = "TripReport_\(self.trip.id).pdf"
+        let (pdfData, url): (Data, URL) = await Task.detached(priority: .userInitiated) {
+            // nonisolated context: call through nonisolated static helpers
+            let reportData = await MainActor.run { TripReportData.mock(from: trip) }
+            let pdfData    = await MainActor.run { TripReportGenerator().generate(from: reportData) }
+
+            let fileName = "TripReport_\(trip.id).pdf"
             let url = FileManager.default.temporaryDirectory
                             .appendingPathComponent(fileName)
             try? pdfData.write(to: url)
             return (pdfData, url)
         }.value
 
-        let (pdfData, url) = data
         let document = PDFDocument(data: pdfData)
 
-        await MainActor.run {
-            self.pdfDocument = document
-            self.pdfURL      = url
-            self.isLoading   = false
-        }
+        self.pdfDocument = document
+        self.pdfURL      = url
+        self.isLoading   = false
     }
 }
 

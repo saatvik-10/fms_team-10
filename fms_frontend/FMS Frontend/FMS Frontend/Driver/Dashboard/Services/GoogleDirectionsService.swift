@@ -112,24 +112,11 @@ class GoogleDirectionsService {
             throw NSError(domain: "GoogleDirectionsAPI", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "Invalid destination coordinate"])
         }
-        for (index, stop) in trip.stops.enumerated() {
-            guard isValidCoordinate(stop.coordinate) else {
-                throw NSError(domain: "GoogleDirectionsAPI", code: -1,
-                              userInfo: [NSLocalizedDescriptionKey: "Invalid stop coordinate at index \(index)"])
-            }
-        }
-
         let originParams  = "\(trip.pickup.coordinate.latitude),\(trip.pickup.coordinate.longitude)"
         let destParams    = "\(trip.destination.coordinate.latitude),\(trip.destination.coordinate.longitude)"
 
-        var waypoints = ""
-        if !trip.stops.isEmpty {
-            let wpStrings = trip.stops.map { "via:\($0.coordinate.latitude),\($0.coordinate.longitude)" }
-            waypoints = "&waypoints=" + wpStrings.joined(separator: "|")
-        }
-
         let urlString = "https://maps.googleapis.com/maps/api/directions/json"
-            + "?origin=\(originParams)&destination=\(destParams)\(waypoints)&key=\(apiKey)"
+            + "?origin=\(originParams)&destination=\(destParams)&key=\(apiKey)"
 
         guard let encoded = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let url = URL(string: encoded) else {

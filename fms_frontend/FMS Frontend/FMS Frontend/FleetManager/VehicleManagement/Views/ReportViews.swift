@@ -267,10 +267,9 @@ struct MaintenanceReportDetailView: View {
                             // Section: VEHICLE METRICS
                             VStack(alignment: .leading, spacing: 10) {
                                 PdfSectionHeader(title: "VEHICLE METRICS")
-                                PdfRow(label: "Odometer", value: "\(vehicle.odometer) mi", isZebra: false)
-                                PdfRow(label: "Fuel Level", value: "75%", isZebra: true)
-                                PdfRow(label: "Fuel Effic.", value: "14.2 mpg", isZebra: false)
-                                PdfRow(label: "Engine Hours", value: "4,821 hrs", isZebra: true)
+                                PdfRow(label: "Fuel Level", value: "75%", isZebra: false)
+                                PdfRow(label: "Fuel Effic.", value: "14.2 mpg", isZebra: true)
+                                PdfRow(label: "Engine Hours", value: "4,821 hrs", isZebra: false)
                             }
                             
                             // Section: INSPECTION SUMMARY

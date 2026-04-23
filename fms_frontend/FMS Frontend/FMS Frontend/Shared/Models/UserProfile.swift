@@ -10,13 +10,6 @@ struct UserProfile: Codable, Identifiable {
     let role: UserRole
     let createdAt: Date
     let updatedAt: Date
-    
-    enum UserRole: String, Codable {
-        case superAdmin = "SUPER_ADMIN"
-        case manager = "MANAGER"
-        case maintenance = "MAINTENANCE"
-        case driver = "DRIVER"
-    }
 }
 
 extension UserProfile {

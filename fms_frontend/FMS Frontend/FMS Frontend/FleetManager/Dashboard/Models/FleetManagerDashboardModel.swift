@@ -123,6 +123,7 @@ struct HistoricalPoint: Identifiable {
 struct Driver: Identifiable {
     let id: String
     let name: String
+    let email: String // New field for manual entry
     let title: String
     let licenseNum: String
     let licenseExp: String
@@ -148,6 +149,15 @@ enum DriverStatus: String {
     case onTrip = "ON TRIP"
     case offDuty = "OFF DUTY"
     case onDuty = "ON DUTY"
+}
+
+struct MaintenancePersonnel: Identifiable {
+    let id = UUID()
+    let name: String
+    let phone: String
+    let email: String
+    let dob: Date
+    let currentAssignment: String? // Vehicle ID
 }
 
 struct ActivityEvent: Identifiable {

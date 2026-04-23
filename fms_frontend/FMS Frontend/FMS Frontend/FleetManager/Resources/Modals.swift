@@ -1,6 +1,8 @@
 import MapKit
 import SwiftUI
 import Combine
+import PhotosUI
+internal import UIKit
 
 // MARK: - Premium Modal Components
 
@@ -154,6 +156,8 @@ struct DriverModalView: View {
         "LMV-NT",
         "LMV-TR",
         "LMV-GV",
+        "MCWG",
+        "TRANS",
         "LPV",
         "MGV",
         "MPV",
@@ -164,22 +168,41 @@ struct DriverModalView: View {
         "HTV"
     ]
     
+    private static let ocrToFormClass: [String: String] = [
+        "LMV": "LMV-NT",
+        "MCWG": "MCWG",
+        "HMV": "HGV",
+        "LMVTR": "LMV-TR",
+        "TR": "LMV-TR",
+        "TRANS": "TRANS",
+        "LMVTRANS": "LMV-TR"
+    ]
+    
     @State private var fullName: String
+    @State private var email: String = ""
     @State private var licenseNumber: String
     @State private var expiryDate: String
     @State private var phone: String
     @State private var vehicleClasses: [String] = [Self.vehicleClassOptions.first ?? "LMV-NT"] // Support multiple classes
     @State private var showingScanner = false
     @State private var licenseError: String? = nil
+    @State private var emailError: String? = nil
 
     init(driverToEdit: Driver? = nil) {
         self.driverToEdit = driverToEdit
         let validExistingClasses = (driverToEdit?.vehicleClasses ?? []).filter { Self.vehicleClassOptions.contains($0) }
         _fullName = State(initialValue: driverToEdit?.name ?? "")
+        _email = State(initialValue: driverToEdit?.email ?? "")
         _licenseNumber = State(initialValue: driverToEdit?.licenseNum ?? "")
         _expiryDate = State(initialValue: driverToEdit?.licenseExp ?? "")
         _phone = State(initialValue: driverToEdit?.phone ?? "+91 ")
         _vehicleClasses = State(initialValue: validExistingClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : validExistingClasses)
+    }
+
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
+        return emailPred.evaluate(with: email)
     }
 
     
@@ -319,9 +342,11 @@ struct DriverModalView: View {
                         }
                     }
                     let finalVehicleClasses = selectedVehicleClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : selectedVehicleClasses
+                    let newDriverID = "KM-\(Int.random(in: 1000...9999))"
                     let newDriver = Driver(
-                        id: "KM-\(Int.random(in: 1000...9999))",
+                        id: newDriverID,
                         name: fullName,
+                        email: email,
                         title: "\(finalVehicleClasses.first ?? "LMV-NT") Certified Driver",
                         licenseNum: licenseNumber,
                         licenseExp: expiryDate,
@@ -337,6 +362,7 @@ struct DriverModalView: View {
                         eta: nil,
                         phone: phone
                     )
+                    DriverEmailStore.shared.saveEmail(email, forDriverID: newDriverID)
                     dataManager.addDriver(newDriver)
                     dismiss() 
                 }) {
@@ -360,11 +386,19 @@ struct DriverModalView: View {
                 self.fullName = name
                 self.licenseNumber = id
                 self.expiryDate = date
-                // Split vehicles by comma or common separators if multiple detected
-                let detected = vehicles
-                    .components(separatedBy: CharacterSet(charactersIn: ",/&"))
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() }
-                    .filter { Self.vehicleClassOptions.contains($0) }
+                // Split vehicles by comma, slash, space, or newline if multiple detected
+                let separators = CharacterSet(charactersIn: ",/& \n\t")
+                var detected: [String] = []
+                let parts = vehicles.components(separatedBy: separators)
+                for part in parts {
+                    let trimmed = part.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+                    // Check if it's a direct match or needs mapping
+                    if Self.vehicleClassOptions.contains(trimmed) {
+                        if !detected.contains(trimmed) { detected.append(trimmed) }
+                    } else if let mapped = Self.ocrToFormClass[trimmed] {
+                        if !detected.contains(mapped) { detected.append(mapped) }
+                    }
+                }
                 self.vehicleClasses = detected.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : detected
             }
         }
@@ -384,6 +418,12 @@ struct AddVehicleModalView: View {
     @State private var vin: String
     @State private var odometer: String
     @State private var showingScanner = false
+
+    // VEHICLE IMAGE STATE
+    @State private var selectedVehicleImage: UIImage?
+    @State private var showImagePicker = false
+    @State private var imageSourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State private var showActionSheet = false
 
 
 
@@ -431,7 +471,70 @@ struct AddVehicleModalView: View {
                         )
                     }
                     
-                    // Section 2: Review Details
+                    // Section 2: Vehicle Image (NEW)
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text("VEHICLE IMAGE")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.gray)
+                        
+                        VStack(spacing: 15) {
+                            if let image = selectedVehicleImage {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(height: 200)
+                                    .frame(maxWidth: .infinity)
+                                    .cornerRadius(12)
+                                    .clipped()
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                    )
+                                    .onTapGesture {
+                                        showActionSheet = true
+                                    }
+                            } else {
+                                VStack(spacing: 15) {
+                                    Image(systemName: "camera.fill")
+                                        .font(.system(size: 40))
+                                        .foregroundColor(AppTheme.primary)
+                                        .padding()
+                                        .background(Color.gray.opacity(0.1))
+                                        .cornerRadius(12)
+                                    
+                                    VStack(spacing: 4) {
+                                        Text("Upload Vehicle Image")
+                                            .font(.system(size: 16, weight: .bold))
+                                        Text("Take photo or choose from gallery")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    Button(action: { showActionSheet = true }) {
+                                        HStack {
+                                            Image(systemName: "plus")
+                                            Text("Add Image")
+                                        }
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 40)
+                                        .padding(.vertical, 12)
+                                        .background(AppTheme.primary)
+                                        .cornerRadius(8)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 30)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                                        .foregroundColor(Color.gray.opacity(0.4))
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Section 3: Review Details
                     VStack(alignment: .leading, spacing: 20) {
                         Text("REVIEW VEHICLE DETAILS")
                             .font(AppFonts.caption2)
@@ -439,7 +542,7 @@ struct AddVehicleModalView: View {
                             .foregroundColor(.gray)
                         
                         HStack(spacing: 20) {
-                            ModalFormField(label: "Vehicle Make", text: $make)
+                            ModalFormField(label: "Vehicle Owner", text: $make)
                             ModalFormField(label: "Vehicle Model", text: $model)
                         }
                         
@@ -496,14 +599,70 @@ struct AddVehicleModalView: View {
         }
         .padding(30)
         .background(Color.white)
+        .actionSheet(isPresented: $showActionSheet) {
+            ActionSheet(
+                title: Text("Select Image Source"),
+                message: Text("Take photo or choose from gallery"),
+                buttons: [
+                    .default(Text("Take Photo")) {
+                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                            imageSourceType = .camera
+                            showImagePicker = true
+                        }
+                    },
+                    .default(Text("Choose from Gallery")) {
+                        imageSourceType = .photoLibrary
+                        showImagePicker = true
+                    },
+                    .cancel()
+                ]
+            )
+        }
+        .sheet(isPresented: $showImagePicker) {
+            VehicleAppImagePicker(sourceType: imageSourceType, selectedImage: $selectedVehicleImage)
+        }
         .sheet(isPresented: $showingScanner) {
-            CameraScannerView(isPresented: $showingScanner) { make, model, reg, vin in
-                self.make = "TATA MOTORS"
-                self.model = "PRIMA G.35 K"
-                self.regNumber = "MH-12-XY-1234"
-                self.vin = "4G2BM5..."
+            RCScannerView(isPresented: $showingScanner) { owner, reg, model, chassis in
+                self.regNumber = reg
+                self.model = model
+                self.vin = chassis
+                // Try to extract make from owner name or leave empty for user to fill
+                if !owner.isEmpty {
+                    self.make = owner
+                }
             }
         }
+    }
+}
+
+// MARK: - Local ImagePicker Helper
+struct VehicleAppImagePicker: UIViewControllerRepresentable {
+    var sourceType: UIImagePickerController.SourceType
+    @Binding var selectedImage: UIImage?
+    @Environment(\.dismiss) var dismiss
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = sourceType
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: VehicleAppImagePicker
+        init(_ parent: VehicleAppImagePicker) { self.parent = parent }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let image = info[.originalImage] as? UIImage { parent.selectedImage = image }
+            parent.dismiss()
+        }
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { parent.dismiss() }
     }
 }
 

@@ -62,6 +62,12 @@ struct MockDataProvider {
         EmissionData(day: "SAT", value: 8.0, isCurrent: false),
         EmissionData(day: "SUN", value: 9.5, isCurrent: false)
     ]
+
+    static let mockActivityLog: [ActivityEvent] = [
+        ActivityEvent(title: "Cargo Delivery Completed", detail: "Drop-off: WH-B12", time: "2h ago", type: "completed", value: "+₹2400.00"),
+        ActivityEvent(title: "Refueling Stopped", detail: "IOCL #429", time: "5h ago", type: "refueling", value: "14.2 L"),
+        ActivityEvent(title: "Shift Started", detail: "Main Dpt", time: "8h ago", type: "started", value: "SYSTEM"),
+        ActivityEvent(title: "Hard Braking Incident", detail: "Rt A-1", time: "Yesterday", type: "incident", value: "FLAGGED")
     
     static let mileageData: [MileageData] = [
         MileageData(day: "Sun", value: 881),
@@ -120,6 +126,17 @@ struct MockDataProvider {
         Driver(id: "KM-1044", name: "Priya Patel", title: "HGV Specialist", licenseNum: "DL-44810293", licenseExp: "Mar 2025", status: .onTrip, rating: 4.88, efficiency: "95.2%", totalTrips: 89, totalHours: 6200, activityLog: [], currentVehicleID: "EV-9910", vehicleClasses: ["LMV-GV", "HGV"], activeRoute: "Route B-12", eta: "1h 12m", phone: "+91 91234 56789"),
         Driver(id: "KM-1088", name: "Amit Singh", title: "Heavy Truck Expert", licenseNum: "DL-11882233", licenseExp: "Dec 2027", status: .active, rating: 4.75, efficiency: "92.1%", totalTrips: 210, totalHours: 12000, activityLog: [], currentVehicleID: "TRK-1088", vehicleClasses: ["HGV"], activeRoute: nil, eta: nil, phone: "+91 99887 76655")
     ]
+
+    // MARK: - Drivers Dataset (from Image 1 & 3)
+    static let drivers: [Driver] = [
+        Driver(id: "KM-1029", name: "Rahul Sharma", email: "rahul.s@fms.com", title: "Class A CDL Expert", licenseNum: "DL-99203381", licenseExp: "Oct 2026", status: .active, rating: 4.92, efficiency: "98.4%", totalTrips: 124, totalHours: 8420, activityLog: mockActivityLog, currentVehicleID: "VX-7702", vehicleClasses: ["Class A"], activeRoute: "IH-35 North bound", eta: "14:20 (22 mins)"),
+        Driver(id: "KM-1044", name: "Priya Patel", email: "priya.p@fms.com", title: "Heavy Haul Specialist", licenseNum: "DL-44810293", licenseExp: "Mar 2025", status: .onTrip, rating: 4.88, efficiency: "95.2%", totalTrips: 89, totalHours: 6200, activityLog: [], currentVehicleID: "VN-4209", vehicleClasses: ["Class A", "Class B"], activeRoute: "Route B-12", eta: "1h 12m"),
+        Driver(id: "KM-1011", name: "Amit Kumar", email: "amit.k@fms.com", title: "Regional Dispatcher", licenseNum: "DL-88293310", licenseExp: "Jan 2027", status: .offDuty, rating: 4.95, efficiency: "99.1%", totalTrips: 156, totalHours: 9800, activityLog: [], currentVehicleID: nil, vehicleClasses: ["Class B"], activeRoute: nil, eta: nil),
+        Driver(id: "KM-1052", name: "Sneha Rao", email: "sneha.r@fms.com", title: "Long Haul Driver", licenseNum: "DL-11029384", licenseExp: "Aug 2025", status: .active, rating: 4.76, efficiency: "94.8%", totalTrips: 72, totalHours: 5100, activityLog: [], currentVehicleID: "EV-9910", vehicleClasses: ["Class A"], activeRoute: "Sector 4", eta: "45m"),
+        Driver(id: "KM-1008", name: "Vikram Singh", email: "vikram.s@fms.com", title: "Safety Protocol Lead", licenseNum: "DL-77382291", licenseExp: "Dec 2024", status: .onTrip, rating: 4.99, efficiency: "99.9%", totalTrips: 210, totalHours: 12400, activityLog: [], currentVehicleID: "VX-8812", vehicleClasses: ["Class A", "Class D"], activeRoute: "North Route", eta: "10m")
+    ]
+
+    // MARK: - Vehicles Dataset (Expanded)
     
     static let vehicles: [Vehicle] = [
         Vehicle(
@@ -192,5 +209,13 @@ struct MockDataProvider {
             plateNumber: "MH 12 XB 1088",
             registrationNumber: "REG-IND-882012"
         )
+    ]
+    
+    // MARK: - Maintenance Personnel Dataset
+    static let maintenancePersonnel: [MaintenancePersonnel] = [
+        MaintenancePersonnel(name: "Arjun Mehta", phone: "+91 98765 43210", email: "arjun.m@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1989, month: 5, day: 15)) ?? Date(), currentAssignment: "TRK-9042"),
+        MaintenancePersonnel(name: "Sunita Deshmukh", phone: "+91 87654 32109", email: "sunita.d@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1994, month: 8, day: 22)) ?? Date(), currentAssignment: "EV-9910"),
+        MaintenancePersonnel(name: "Rajesh Khanna", phone: "+91 76543 21098", email: "rajesh.k@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1981, month: 12, day: 10)) ?? Date(), currentAssignment: nil),
+        MaintenancePersonnel(name: "Kavita Singh", phone: "+91 65432 10987", email: "kavita.s@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1992, month: 3, day: 30)) ?? Date(), currentAssignment: "VN-4209")
     ]
 }

@@ -31,9 +31,7 @@ private struct NavigationBannerView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
-            // Primary instruction row
             HStack(alignment: .center, spacing: 14) {
-                // Direction icon
                 ZStack {
                     Circle()
                         .fill(Color.white.opacity(0.15))
@@ -43,7 +41,6 @@ private struct NavigationBannerView: View {
                         .foregroundColor(.white)
                 }
 
-                // Instruction text
                 Text(currentInstruction)
                     .font(.system(size: 19, weight: .bold))
                     .foregroundColor(.white)
@@ -54,7 +51,6 @@ private struct NavigationBannerView: View {
             .padding(.top, 16)
             .padding(.bottom, nextInstruction.isEmpty ? 16 : 12)
 
-            // Divider + next instruction
             if !nextInstruction.isEmpty {
                 Divider()
                     .background(Color.white.opacity(0.25))
@@ -78,7 +74,7 @@ private struct NavigationBannerView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(red: 0.04, green: 0.56, blue: 0.54)) // Google Maps teal
+                .fill(Color(red: 0.04, green: 0.56, blue: 0.54))
                 .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 4)
         )
         .padding(.horizontal, 16)
@@ -128,23 +124,23 @@ private struct BottomTrackingCard: View {
 
 struct CustomNavigationView: View {
     @StateObject private var viewModel: NavigationViewModel
+    @StateObject private var drowsinessDetector = DrowsinessDetector()
+    @State private var showCameraNotice = false
     @Environment(\.dismiss) private var dismiss
-    
+
     init(trip: Trip) {
         _viewModel = StateObject(wrappedValue: NavigationViewModel(trip: trip))
     }
-    
+
     var body: some View {
         ZStack(alignment: .top) {
-            
+
             // Full-screen map
             CustomGoogleMapViewRepresentable(viewModel: viewModel)
                 .ignoresSafeArea()
-            
+
             // Top overlay
             VStack(spacing: 10) {
-                
-                // Dismiss button row
                 HStack {
                     Button {
                         dismiss()
@@ -160,29 +156,64 @@ struct CustomNavigationView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 16)
-                
-                // Navigation instruction banner
+
                 NavigationBannerView(
                     currentInstruction: viewModel.currentInstruction,
                     nextInstruction: viewModel.nextInstruction
                 )
             }
             .padding(.top, 16)
+
+            // Camera-in-use notice banner
+            if showCameraNotice {
+                VStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "camera.fill")
+                            .foregroundColor(.white)
+                            .font(.caption)
+                        Text("Camera active for drowsiness monitoring")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.black.opacity(0.75))
+                    .clipShape(Capsule())
+                    .padding(.top, 60)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(98)
+            }
+
+        } // end of ZStack
+        .animation(.easeInOut, value: showCameraNotice)
+        .fullScreenCover(isPresented: $drowsinessDetector.isDrowsy) {
+            DrowsinessAlertView {
+                drowsinessDetector.dismissAlert()
+            }
         }
-        
-        // ✅ THIS replaces overlay
         .safeAreaInset(edge: .bottom) {
-            BottomTrackingCard(
-                etaText: viewModel.etaText,
-                distanceRemaining: viewModel.distanceRemaining
-            )
-            .background(Color.black) // ensures no gap / transparency
+            if !drowsinessDetector.isDrowsy {
+                BottomTrackingCard(
+                    etaText: viewModel.etaText,
+                    distanceRemaining: viewModel.distanceRemaining
+                )
+                .background(Color.black)
+            }
         }
-        
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
             viewModel.startNavigation()
+            drowsinessDetector.startDetection()
+            withAnimation { showCameraNotice = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                withAnimation { showCameraNotice = false }
+            }
+        }
+        .onDisappear {
+            drowsinessDetector.stopDetection()
         }
     }
 }
