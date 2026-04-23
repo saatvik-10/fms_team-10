@@ -23,6 +23,7 @@ export class Maintenance {
 
     const existingEmailUser = await prisma.user.findUnique({
       where: { email },
+      select: { id: true },
     });
     if (existingEmailUser) {
       return c.json({ err: 'Email already in use' }, 409);
@@ -57,8 +58,18 @@ export class Maintenance {
           },
         },
       },
-      include: {
-        maintenance: true,
+      select: {
+        username: true,
+        maintenance: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            dob: true,
+            createdAt: true,
+          },
+        },
       },
     });
 

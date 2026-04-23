@@ -60,6 +60,10 @@ export class Auth {
         passwordHash,
         role: 'SUPER_ADMIN',
       },
+      select: {
+        id: true,
+        role: true,
+      },
     });
 
     const token = await jwtAuth({
@@ -82,10 +86,37 @@ export class Auth {
 
     const user = await prisma.user.findUnique({
       where: { username },
-      include: {
-        manager: true,
-        driver: true,
-        maintenance: true,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        passwordHash: true,
+        role: true,
+        manager: {
+          select: {
+            name: true,
+            phone: true,
+            address: true,
+          },
+        },
+        driver: {
+          select: {
+            name: true,
+            phone: true,
+            address: true,
+            licenceNumber: true,
+            expiryDate: true,
+            classes: true,
+          },
+        },
+        maintenance: {
+          select: {
+            name: true,
+            phone: true,
+            email: true,
+            dob: true,
+          },
+        },
       },
     });
 
@@ -218,10 +249,37 @@ export class Auth {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        manager: true,
-        driver: true,
-        maintenance: true,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        createdAt: true,
+        manager: {
+          select: {
+            name: true,
+            phone: true,
+            address: true,
+          },
+        },
+        driver: {
+          select: {
+            name: true,
+            phone: true,
+            address: true,
+            licenceNumber: true,
+            expiryDate: true,
+            classes: true,
+          },
+        },
+        maintenance: {
+          select: {
+            name: true,
+            phone: true,
+            email: true,
+            dob: true,
+          },
+        },
       },
     });
 

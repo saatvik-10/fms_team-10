@@ -30,6 +30,7 @@ export class Manager {
     // Check if email is already used in any user
     const existingEmailUser = await prisma.user.findUnique({
       where: { email },
+      select: { id: true },
     });
 
     if (existingEmailUser) {
@@ -66,8 +67,14 @@ export class Manager {
           },
         },
       },
-      include: {
-        manager: true,
+      select: {
+        username: true,
+        manager: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -112,7 +119,13 @@ export class Manager {
     const manager = await prisma.manager.findUnique({
       where: { id: managerId },
       include: {
-        user: true,
+        user: {
+          select: {
+            email: true,
+            username: true,
+            role: true,
+          },
+        },
       },
     });
 

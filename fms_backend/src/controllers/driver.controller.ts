@@ -20,7 +20,10 @@ export class Driver {
     const { fullName, email, licenseNumber, expiryDate, classes, phone, address } = result.data;
     const managerId = c.get('userId') as string;
 
-    const existingEmailUser = await prisma.user.findUnique({ where: { email } });
+    const existingEmailUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
     if (existingEmailUser) {
       return c.json({ err: 'Email already in use' }, 409);
     }
@@ -54,8 +57,21 @@ export class Driver {
           },
         },
       },
-      include: {
-        driver: true,
+      select: {
+        username: true,
+        driver: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            licenceNumber: true,
+            expiryDate: true,
+            classes: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -112,7 +128,11 @@ export class Driver {
         },
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
 
@@ -130,5 +150,13 @@ export class Driver {
         createdAt: driver.createdAt,
       })),
     });
+  }
+
+  async editDriver(c: Context) {
+
+  }
+
+  async deleteDriver(c: Context) {
+    
   }
 }
