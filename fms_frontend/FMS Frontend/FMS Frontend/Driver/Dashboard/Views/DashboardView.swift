@@ -117,7 +117,10 @@ struct DashboardHomeView: View {
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
         .navigationBarHidden(true)
         .navigationDestination(isPresented: $showProfile) {
-            DriverProfileView(onLogout: { userRole = .none })
+            DriverProfileView(onLogout: {
+                AuthAPI.shared.logout()
+                userRole = .none
+            })
         }
     }
     
