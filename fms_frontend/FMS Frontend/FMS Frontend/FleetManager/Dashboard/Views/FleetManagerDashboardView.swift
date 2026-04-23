@@ -110,6 +110,10 @@ struct FleetManagerDashboardView: View {
                                 IdleDriversAnalytic(drivers: dataManager.idleDrivers)
                                     .frame(maxWidth: .infinity)
                             }
+                            
+                            // Row C: Least Travelled Vehicles (full width)
+                            LeastTravelledVehiclesChart(vehicles: dataManager.vehicles)
+                                .frame(maxWidth: .infinity)
                         }
                         
                         // MARK: - Section 5: Maintenance & History

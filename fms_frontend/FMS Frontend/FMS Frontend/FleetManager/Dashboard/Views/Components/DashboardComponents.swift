@@ -1359,3 +1359,97 @@ struct IdleDriversAnalytic: View {
         .modifier(AppTheme.cardShadow())
     }
 }
+
+// MARK: - Least Travelled Vehicles Chart
+struct LeastTravelledVehiclesChart: View {
+
+    struct VehicleKms: Identifiable {
+        let id: String
+        let label: String
+        let kms: Double
+    }
+
+    let entries: [VehicleKms]
+
+    init(vehicles: [Vehicle]) {
+        let sorted = vehicles
+            .map { v -> VehicleKms in
+                let total = v.history.reduce(0.0) { sum, trip in
+                    let raw = (trip.distance ?? "")
+                        .components(separatedBy: CharacterSet(charactersIn: "0123456789.").inverted)
+                        .joined()
+                    return sum + (Double(raw) ?? 0)
+                }
+                return VehicleKms(id: v.id, label: v.id, kms: total)
+            }
+            .sorted { $0.kms < $1.kms }
+        self.entries = Array(sorted.prefix(5))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Least Travelled Vehicles")
+                    .font(AppFonts.title3)
+                    .foregroundColor(AppTheme.primary)
+                Text("by total distance covered (km)")
+                    .font(AppFonts.caption1)
+                    .foregroundColor(.gray)
+            }
+
+            if entries.isEmpty {
+                Text("No vehicle history available.")
+                    .font(AppFonts.caption1)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 30)
+            } else {
+                Chart(entries) { item in
+                    BarMark(
+                        x: .value("Distance (km)", item.kms),
+                        y: .value("Vehicle", item.label)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [AppTheme.alertRed.opacity(0.55), AppTheme.alertRed],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(5)
+                    .annotation(position: .trailing, alignment: .leading) {
+                        Text("\(Int(item.kms)) km")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
+                }
+                .chartXAxis(.hidden)
+                .chartYAxis {
+                    AxisMarks { value in
+                        AxisValueLabel {
+                            if let label = value.as(String.self) {
+                                Text(label)
+                                    .font(AppFonts.caption2)
+                                    .foregroundColor(AppTheme.primary)
+                            }
+                        }
+                    }
+                }
+                .frame(height: CGFloat(entries.count) * 38)
+            }
+
+            HStack(spacing: 5) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(AppTheme.alertRed.opacity(0.7))
+                Text("Low utilisation may indicate vehicles needing redeployment.")
+                    .font(AppFonts.caption2)
+                    .foregroundColor(.gray)
+            }
+            .padding(.top, 4)
+        }
+        .padding(20)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppTheme.cardShadow())
+    }
+}
