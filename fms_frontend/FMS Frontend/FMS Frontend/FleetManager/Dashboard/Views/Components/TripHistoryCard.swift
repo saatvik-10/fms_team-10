@@ -9,7 +9,7 @@ struct TripHistoryCard: View {
         VStack(alignment: .leading, spacing: 15) {
             HStack {
                 Text("Trip History")
-                    .font(AppFonts.title3)
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppColors.primary)
                 
                 Spacer()

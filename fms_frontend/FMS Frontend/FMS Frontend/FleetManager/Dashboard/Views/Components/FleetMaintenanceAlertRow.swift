@@ -18,10 +18,6 @@ struct FleetMaintenanceAlertRow: View {
                 Text(alert.title)
                     .font(AppFonts.headline)
                     .foregroundColor(AppColors.primary)
-                Text(alert.detail)
-                    .font(AppFonts.footnote)
-                    .foregroundColor(.gray)
-                    .lineLimit(1)
             }
             
             Spacer()

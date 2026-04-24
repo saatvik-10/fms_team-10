@@ -239,7 +239,7 @@ struct FleetOpsEmissionsChart: View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
                 Text("CO2 Emissions")
-                    .font(AppFonts.title3)
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppTheme.primary)
                 
                 Spacer()
@@ -291,7 +291,7 @@ struct FleetMileageChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("Fleet Mileage (last week)")
-                .font(AppFonts.title3)
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(AppTheme.primary)
             
             Chart {
@@ -347,7 +347,7 @@ struct FuelTrendChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("Last 3 Months Fuel Trend")
-                .font(AppFonts.title3)
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(AppTheme.primary)
             
             Chart {
@@ -717,7 +717,7 @@ struct FleetCO2EmissionsBarGraph: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top) { 
                 Text("CO2 Emissions Trends")
-                    .font(AppFonts.title3)
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppTheme.primary)
                 Spacer()
                 Text("KG CO2")
@@ -788,7 +788,7 @@ struct DriverBehaviorRankedList: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Top 3 Driver Efficiency")
-                .font(AppFonts.title3)
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(AppTheme.primary)
             
             Chart(rankings.prefix(3)) { driver in
@@ -837,7 +837,7 @@ struct OperationalCostChart: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Maintenance Cost Trends")
-                    .font(AppFonts.title3)
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppTheme.primary)
                 Text("Weekly")
                     .font(AppFonts.caption1)
@@ -907,7 +907,7 @@ struct FuelPerformanceChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Fuel Efficiency (L/100km)")
-                .font(AppFonts.title3)
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(AppTheme.primary)
             
             Chart(data, id: \.vehicleID) { item in
@@ -950,7 +950,7 @@ struct FleetHealthStatusStackedBar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("Fleet Health Index")
-                .font(AppFonts.title3)
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(AppTheme.primary)
             
             Chart {
@@ -1010,7 +1010,7 @@ struct TripStatusDonutChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Trip Status Overview")
-                .font(AppFonts.title3)
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(AppTheme.primary)
             
             ZStack {
@@ -1062,8 +1062,8 @@ struct MaintenanceAlertCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
-            Text("Maintenance Alert")
-                .font(AppFonts.title3)
+            Text("Maintenance Approvals")
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(AppTheme.primary)
             
             if alerts.isEmpty {
@@ -1107,7 +1107,7 @@ struct MaintenanceCostPerVehicleChart: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Per Vehicle Cost")
-                    .font(AppFonts.title3)
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppTheme.primary)
                 Text("Monthly")
                     .font(AppFonts.caption1)
@@ -1235,7 +1235,7 @@ struct DriverDistanceChart: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Driver Distance")
-                    .font(AppFonts.title3)
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppTheme.primary)
                 Text("km covered per driver")
                     .font(AppFonts.caption1)
@@ -1290,7 +1290,7 @@ struct IdleDriversAnalytic: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Available Drivers")
-                    .font(AppFonts.title3)
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppTheme.primary)
                 Text("Ready for dispatch")
                     .font(AppFonts.caption1)
@@ -1353,7 +1353,6 @@ struct IdleDriversAnalytic: View {
             }
         }
         .padding(20)
-        .frame(height: 240)
         .background(Color.white)
         .cornerRadius(16)
         .modifier(AppTheme.cardShadow())
@@ -1390,7 +1389,7 @@ struct LeastTravelledVehiclesChart: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Least Travelled Vehicles")
-                    .font(AppFonts.title3)
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppTheme.primary)
                 Text("by total distance covered (km)")
                     .font(AppFonts.caption1)

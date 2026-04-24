@@ -96,36 +96,48 @@ struct FleetManagerDashboardView: View {
                         VStack(alignment: .leading, spacing: 15) {
                             DashboardSectionHeader(title: "Fleet Intelligence")
                             
-                            // Row A: Total KMs (full width — dark card)
-                            TravelAnalyticsCard(
-                                totalKms: dataManager.totalKmsTravelled,
-                                history: dataManager.travelsHistory
-                            )
-                            
-                            // Row B: Least Travelled Vehicles + Available Drivers (side by side)
-                            HStack(alignment: .top, spacing: 15) {
-                                LeastTravelledVehiclesChart(vehicles: dataManager.vehicles)
-                                    .frame(maxWidth: .infinity)
+                            // Outer card wrapping all Fleet Intelligence content
+                            VStack(spacing: 16) {
+                                // Row A: Total KMs (full width — dark card)
+                                TravelAnalyticsCard(
+                                    totalKms: dataManager.totalKmsTravelled,
+                                    history: dataManager.travelsHistory
+                                )
                                 
-                                IdleDriversAnalytic(drivers: dataManager.idleDrivers)
-                                    .frame(maxWidth: .infinity)
+                                // Row B: Least Travelled Vehicles + Available Drivers (side by side)
+                                HStack(alignment: .top, spacing: 15) {
+                                    LeastTravelledVehiclesChart(vehicles: dataManager.vehicles)
+                                        .frame(maxWidth: .infinity)
+                                    
+                                    IdleDriversAnalytic(drivers: dataManager.idleDrivers)
+                                        .frame(maxWidth: .infinity)
+                                }
                             }
+                            .padding(20)
+                            .background(Color.white)
+                            .cornerRadius(AppTheme.defaultCornerRadius)
+                            .modifier(AppTheme.cardShadow())
                         }
                         
+                        // MARK: - Separator
+                        Rectangle()
+                            .fill(AppTheme.primary.opacity(0.08))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 1)
+                            .padding(.vertical, 4)
+                        
                         // MARK: - Section 5: Maintenance & History
-                        HStack(spacing: 20) {
+                        HStack(alignment: .top, spacing: 20) {
                             MaintenanceAlertCard(alerts: dataManager.maintenanceAlerts, onSelect: { alert in
                                 selectedAlert = alert
                                 showingAlertDetail = true
                             })
-                            .frame(height: 380)
                             
                             TripHistoryCard(trips: dataManager.allHistory, onSelect: { trip in
                                 selectedHistoryTrip = trip
                             }, onViewAll: {
                                 showingAllTrips = true
                             })
-                            .frame(height: 380)
                         }
                         
                         // Bottom padding for tab bar
@@ -163,7 +175,7 @@ struct DashboardSectionHeader: View {
     
     var body: some View {
         Text(title)
-            .font(AppFonts.title2)
+            .font(.system(size: 22, weight: .bold))
             .foregroundColor(AppTheme.primary)
     }
 }
