@@ -1,6 +1,9 @@
 import type { Context } from 'hono';
 import { sendCredentialsMail } from '../services/resend.service';
-import { createDriverSchema } from '../validators/driver.validator';
+import {
+  createDriverSchema,
+  updateVehicleDistanceSchema,
+} from '../validators/driver.validator';
 import { nanoid } from 'nanoid';
 import { prisma } from '../../prisma';
 import { hashPassword } from '../lib/hashPassword';
@@ -17,7 +20,15 @@ export class Driver {
       );
     }
 
-    const { fullName, email, licenseNumber, expiryDate, classes, phone, address } = result.data;
+    const {
+      fullName,
+      email,
+      licenseNumber,
+      expiryDate,
+      classes,
+      phone,
+      address,
+    } = result.data;
     const managerId = c.get('userId') as string;
 
     const existingEmailUser = await prisma.user.findUnique({
@@ -51,7 +62,7 @@ export class Driver {
             email,
             phone,
             address,
-            status: "ACTIVE",
+            status: 'ACTIVE',
             licenceNumber: licenseNumber,
             expiryDate,
             classes,
@@ -153,11 +164,44 @@ export class Driver {
     });
   }
 
-  async editDriver(c: Context) {
+  async editDriver(c: Context) {}
 
-  }
+  async deleteDriver(c: Context) {}
 
-  async deleteDriver(c: Context) {
-    
+  async updateDistance(c: Context) {
+    const body = await c.req.json();
+    const result = updateVehicleDistanceSchema.safeParse(body);
+
+    if (!result.success) {
+      return c.json(
+        { err: 'Invalid input', details: result.error.flatten() },
+        400,
+      );
+    }
+
+    const { vehicleId, increment } = result.data;
+
+    try {
+      const vehicle = await prisma.vehicle.update({
+        where: { id: vehicleId },
+        data: {
+          totalDistance: {
+            increment,
+          },
+        },
+        select: {
+          id: true,
+          totalDistance: true,
+        },
+      });
+
+      return c.json({
+        message: 'Vehicle distance updated successfully',
+        vehicle,
+        increment,
+      });
+    } catch {
+      return c.json({ err: 'Vehicle not found' }, 404);
+    }
   }
 }
