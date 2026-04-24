@@ -1,7 +1,7 @@
 import SwiftUI
 import Combine
 
-enum AppUserRole {
+enum AppUserRole: Equatable {
     case none
     case driver
     case maintenance
