@@ -20,7 +20,7 @@ class FleetDataManager: ObservableObject {
     
     @Published var drivers = MockDataProvider.drivers
     @Published var vehicles = MockDataProvider.vehicles
-    @Published var maintenancePersonnel = MockDataProvider.maintenancePersonnel
+    @Published var maintenancePersonnel: [MaintenancePersonnel] = []
     
     // New Analytics (New)
     @Published var maintenanceCostPerVehicle = MockDataProvider.maintenanceCostPerVehicle
@@ -229,9 +229,38 @@ class FleetDataManager: ObservableObject {
     func addMaintenancePersonnel(_ person: MaintenancePersonnel) {
         maintenancePersonnel.append(person)
     }
+
+    @MainActor
+    func refreshMaintenancePersonnel() async throws {
+        let response = try await MaintenanceAPI.shared.getMaintenances()
+        maintenancePersonnel = response.maintenances.map { item in
+            MaintenancePersonnel(
+                backendId: item.id,
+                name: item.name ?? "To be integrated",
+                phone: item.phone ?? "To be integrated",
+                email: item.email ?? "To be integrated",
+                dob: item.dob ?? Date(),
+                age: item.age,
+                currentAssignment: nil
+            )
+        }
+    }
     
-    func deleteMaintenancePersonnel(_ person: MaintenancePersonnel) {
-        maintenancePersonnel.removeAll(where: { $0.id == person.id })
+    @MainActor
+    func deleteMaintenancePersonnel(_ person: MaintenancePersonnel) async {
+        if let targetId = person.backendId {
+            do {
+                _ = try await MaintenanceAPI.shared.deleteMaintenance(id: targetId)
+            } catch {
+                print("Delete API failed for maintenance ID \(targetId): \(error)")
+            }
+        }
+
+        if let targetId = person.backendId {
+            maintenancePersonnel.removeAll(where: { $0.backendId == targetId })
+        } else {
+            maintenancePersonnel.removeAll(where: { $0.id == person.id })
+        }
     }
     
     func addOrder(trip: VehicleTrip, vehicleID: String) {

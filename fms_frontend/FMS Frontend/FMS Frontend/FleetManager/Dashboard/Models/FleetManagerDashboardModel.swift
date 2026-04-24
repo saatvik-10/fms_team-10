@@ -153,10 +153,12 @@ enum DriverStatus: String {
 
 struct MaintenancePersonnel: Identifiable {
     let id = UUID()
+    let backendId: String?
     let name: String
     let phone: String
     let email: String
     let dob: Date
+    let age: Int?
     let currentAssignment: String? // Vehicle ID
 }
 
@@ -247,4 +249,14 @@ enum VehicleStatus: String {
     case inTransit = "IN TRANSIT"
     case idle = "IDLE"
     case maintenance = "UNDER MAINTENANCE"
+}
+
+struct ManagerProfileData: Identifiable {
+    let id: String
+    let name: String
+    let email: String
+    let phone: String?
+    let address: String?
+    let username: String
+    let role: String
 }
