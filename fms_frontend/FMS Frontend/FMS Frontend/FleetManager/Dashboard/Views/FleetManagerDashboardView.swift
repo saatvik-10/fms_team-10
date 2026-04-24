@@ -102,18 +102,14 @@ struct FleetManagerDashboardView: View {
                                 history: dataManager.travelsHistory
                             )
                             
-                            // Row B: Driver Distance + Available Drivers (side by side)
+                            // Row B: Least Travelled Vehicles + Available Drivers (side by side)
                             HStack(alignment: .top, spacing: 15) {
-                                DriverDistanceChart(data: dataManager.driverDistanceData)
+                                LeastTravelledVehiclesChart(vehicles: dataManager.vehicles)
                                     .frame(maxWidth: .infinity)
                                 
                                 IdleDriversAnalytic(drivers: dataManager.idleDrivers)
                                     .frame(maxWidth: .infinity)
                             }
-                            
-                            // Row C: Least Travelled Vehicles (full width)
-                            LeastTravelledVehiclesChart(vehicles: dataManager.vehicles)
-                                .frame(maxWidth: .infinity)
                         }
                         
                         // MARK: - Section 5: Maintenance & History
