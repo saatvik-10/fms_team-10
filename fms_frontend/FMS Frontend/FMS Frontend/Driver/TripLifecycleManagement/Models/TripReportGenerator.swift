@@ -16,7 +16,7 @@ final class TripReportGenerator {
     // ── Page geometry ──────────────────────────────────────────────────────
     private let pageWidth:  CGFloat = 595.2   // A4 pt width
     private let pageHeight: CGFloat = 841.8   // A4 pt height
-    private let marginH:    CGFloat = 40
+    private let marginH:    CGFloat = 20  // Reduced for wider card
 
     // ── Brand palette ──────────────────────────────────────────────────────
     private let navy       = UIColor(red: 15/255,  green: 28/255,  blue: 36/255,  alpha: 1)
@@ -43,8 +43,8 @@ final class TripReportGenerator {
 
         var height: CGFloat {
             switch self {
-            case .standard, .link: return 22
-            case .total:           return 30
+            case .standard, .link: return 34  // Increased for better spacing
+            case .total:           return 40
             }
         }
     }
@@ -65,10 +65,12 @@ final class TripReportGenerator {
         drawMetaBanner(data: data)
         y += 16
 
-        drawBlock(number: 1, title: "TRIP INFORMATION",        rows: tripInfoRows(data))
-        drawBlock(number: 2, title: "DISTANCE & FUEL METRICS", rows: fuelRows(data))
-        drawBlock(number: 3, title: "PERFORMANCE METRICS",     rows: performanceRows(data))
-        drawBlock(number: 4, title: "COST BREAKDOWN",          rows: costRows(data))
+        // Combine all rows into one unified section
+        var allRows = tripInfoRows(data)
+        allRows.append(contentsOf: fuelRows(data))
+        allRows.append(contentsOf: performanceRows(data))
+
+        drawBlock(title: "TRIP INFORMATION", rows: allRows)
 
         drawFooter()
         UIGraphicsEndPDFContext()
@@ -82,38 +84,18 @@ final class TripReportGenerator {
         navy.setFill()
         UIRectFill(CGRect(x: 0, y: 0, width: pageWidth, height: h))
 
-        // Eye-brow label
-        put("FLEET MANAGEMENT SYSTEM",
-            at: CGPoint(x: marginH, y: 15),
-            font: .systemFont(ofSize: 9, weight: .semibold),
-            color: .white, alpha: 0.55, kern: 2.8)
-
-        // Main title
+        // Main title (now at the top)
         put("Trip Completion Report",
-            at: CGPoint(x: marginH, y: 33),
+            at: CGPoint(x: marginH, y: 22),
             font: .systemFont(ofSize: 22, weight: .bold),
             color: .white)
 
         // Subtitle
         put("Official Vehicle & Driver Performance Summary",
-            at: CGPoint(x: marginH, y: 61),
+            at: CGPoint(x: marginH, y: 52),
             font: .systemFont(ofSize: 10, weight: .regular),
             color: .white, alpha: 0.55)
 
-        // Trip ID badge (right)
-        let pillFont  = UIFont.monospacedSystemFont(ofSize: 13, weight: .bold)
-        let pillAttrs: [NSAttributedString.Key: Any] = [.font: pillFont, .foregroundColor: navy]
-        let pillSize  = (data.tripID as NSString).size(withAttributes: pillAttrs)
-        let pillW     = pillSize.width + 24
-        let pillH: CGFloat  = 26
-        let pillX     = pageWidth - marginH - pillW
-        let pillY: CGFloat  = 38
-
-        UIColor.white.setFill()
-        UIBezierPath(roundedRect: CGRect(x: pillX, y: pillY, width: pillW, height: pillH),
-                     cornerRadius: 5).fill()
-        (data.tripID as NSString).draw(at: CGPoint(x: pillX + 12, y: pillY + 5),
-                                        withAttributes: pillAttrs)
         y = h
     }
 
@@ -143,23 +125,23 @@ final class TripReportGenerator {
 
     // MARK: ── Section block (single-pass, bg drawn before text) ──────────
 
-    private func drawBlock(number: Int, title: String, rows: [RowItem]) {
+    private func drawBlock(title: String, rows: [RowItem]) {
         // Page-break guard
-        let totalH = 28 + 8 + rows.reduce(0) { $0 + $1.height } + 8
+        let totalH = 40 + 12 + rows.reduce(0) { $0 + $1.height } + 12
         if y + totalH > pageHeight - 36 {
             UIGraphicsBeginPDFPage()
             y = 36
         }
 
-        let headerH: CGFloat = 28
+        let headerH: CGFloat = 40
 
         // 1. Section content background (bottom-rounded)
         sectionBg.setFill()
-        let contentH = 8 + rows.reduce(0) { $0 + $1.height } + 8
+        let contentH = 12 + rows.reduce(0) { $0 + $1.height } + 12
         UIBezierPath(
             roundedRect: CGRect(x: sectionX, y: y + headerH, width: sectionW, height: contentH),
             byRoundingCorners: [.bottomLeft, .bottomRight],
-            cornerRadii: CGSize(width: 6, height: 6)
+            cornerRadii: CGSize(width: 8, height: 8)
         ).fill()
 
         // 2. Section header (top-rounded)
@@ -167,14 +149,15 @@ final class TripReportGenerator {
         UIBezierPath(
             roundedRect: CGRect(x: sectionX, y: y, width: sectionW, height: headerH),
             byRoundingCorners: [.topLeft, .topRight],
-            cornerRadii: CGSize(width: 6, height: 6)
+            cornerRadii: CGSize(width: 8, height: 8)
         ).fill()
-        put("\(number)  \(title)",
-            at: CGPoint(x: sectionX + 14, y: y + 9),
-            font: .systemFont(ofSize: 10, weight: .bold), color: .white, kern: 0.5)
+        
+        put(title,
+            at: CGPoint(x: sectionX + 20, y: y + 13),
+            font: .systemFont(ofSize: 12, weight: .bold), color: .white, kern: 1.2)
 
 
-        y += headerH + 8  // enter content area
+        y += headerH + 12  // enter content area
 
         // 3. Draw rows on top of already-rendered background
         for (i, row) in rows.enumerated() {
@@ -188,8 +171,8 @@ final class TripReportGenerator {
     // MARK: ── Row rendering ───────────────────────────────────────────────
 
     private func drawRow(_ row: RowItem, index: Int) {
-        let labelX = sectionX + 16
-        let valueX = sectionX + sectionW * 0.52
+        let labelX = sectionX + 20
+        let valueX = sectionX + sectionW * 0.48 // Start value column slightly earlier but with more space
 
         switch row {
         case .standard(let label, let value):
@@ -197,12 +180,19 @@ final class TripReportGenerator {
                 zebraWhite.setFill()
                 UIRectFill(CGRect(x: sectionX, y: y, width: sectionW, height: row.height))
             }
-            put(label, at: CGPoint(x: labelX, y: y + 6),
-                font: .systemFont(ofSize: 9.5, weight: .medium), color: bodyGray)
-            put(value, at: CGPoint(x: valueX, y: y + 6),
-                font: .systemFont(ofSize: 9.5, weight: .semibold), color: .black)
+            
+            // Label: Lighter, smaller
+            put(label, at: CGPoint(x: labelX, y: y + 10),
+                font: .systemFont(ofSize: 9, weight: .medium), color: bodyGray)
+            
+            // Value: Larger, semibold
+            put(value, at: CGPoint(x: valueX, y: y + 9),
+                font: .systemFont(ofSize: 11, weight: .semibold), color: .black)
+            
+            // Subtle divider
             divider.setFill()
-            UIRectFill(CGRect(x: labelX, y: y + row.height - 0.5, width: sectionW - 32, height: 0.5))
+            UIRectFill(CGRect(x: labelX, y: y + row.height - 0.5, width: sectionW - 40, height: 0.5))
+            
             y += row.height
 
         case .link(let label, let displayText):
@@ -210,10 +200,10 @@ final class TripReportGenerator {
                 zebraWhite.setFill()
                 UIRectFill(CGRect(x: sectionX, y: y, width: sectionW, height: row.height))
             }
-            put(label,       at: CGPoint(x: labelX, y: y + 6),
-                font: .systemFont(ofSize: 9.5, weight: .medium), color: bodyGray)
-            put(displayText, at: CGPoint(x: valueX, y: y + 6),
-                font: .systemFont(ofSize: 9.5, weight: .semibold), color: accentBlue, underline: true)
+            put(label,       at: CGPoint(x: labelX, y: y + 10),
+                font: .systemFont(ofSize: 9, weight: .medium), color: bodyGray)
+            put(displayText, at: CGPoint(x: valueX, y: y + 9),
+                font: .systemFont(ofSize: 11, weight: .semibold), color: accentBlue, underline: true)
             y += row.height
 
         case .total(let label, let value):
@@ -221,12 +211,12 @@ final class TripReportGenerator {
             UIBezierPath(
                 roundedRect: CGRect(x: sectionX, y: y, width: sectionW, height: row.height),
                 byRoundingCorners: [.bottomLeft, .bottomRight],
-                cornerRadii: CGSize(width: 6, height: 6)
+                cornerRadii: CGSize(width: 8, height: 8)
             ).fill()
-            put(label, at: CGPoint(x: labelX, y: y + 9),
-                font: .systemFont(ofSize: 11, weight: .bold), color: .white)
-            put(value, at: CGPoint(x: valueX, y: y + 8),
-                font: .systemFont(ofSize: 13, weight: .heavy), color: .white)
+            put(label, at: CGPoint(x: labelX, y: y + 13),
+                font: .systemFont(ofSize: 12, weight: .bold), color: .white)
+            put(value, at: CGPoint(x: valueX, y: y + 11),
+                font: .systemFont(ofSize: 14, weight: .heavy), color: .white)
             y += row.height
         }
     }
@@ -235,11 +225,8 @@ final class TripReportGenerator {
 
     private func tripInfoRows(_ d: TripReportData) -> [RowItem] {
         [
-            .standard(label: "Trip ID",            value: d.tripID),
-            .standard(label: "Vehicle ID",         value: d.vehicleID),
             .standard(label: "Vehicle Number",     value: d.vehicleNumber),
             .standard(label: "Driver Name",        value: d.driverName),
-            .standard(label: "Driver ID",          value: d.driverID),
             .standard(label: "Start Date & Time",  value: d.startDateTime),
             .standard(label: "End Date & Time",    value: d.endDateTime),
             .standard(label: "Trip Duration",      value: d.tripDuration),
@@ -250,33 +237,14 @@ final class TripReportGenerator {
 
     private func fuelRows(_ d: TripReportData) -> [RowItem] { [
         .standard(label: "Total Distance Covered", value: String(format: "%.1f km",    d.totalDistanceKm)),
-        .standard(label: "Fuel Consumed",          value: String(format: "%.2f L",     d.fuelConsumedLiters)),
-        .standard(label: "Fuel Efficiency",        value: String(format: "%.2f km/L",  d.fuelEfficiencyKmL)),
-        .standard(label: "Fuel Cost",              value: fmt(d.fuelCostINR)),
     ] }
 
     private func performanceRows(_ d: TripReportData) -> [RowItem] {
         let dh = Int(d.drivingTimeHours * 60)
-        let ih = Int(d.idleTimeHours    * 60)
-        var rows: [RowItem] = [
-            .standard(label: "Average Speed",  value: String(format: "%.1f km/h", d.averageSpeedKmH)),
-            .standard(label: "Max Speed",      value: String(format: "%.1f km/h", d.maxSpeedKmH)),
+        return [
             .standard(label: "Driving Time",   value: "\(dh / 60)h \(dh % 60)m"),
-            .standard(label: "Idle Time",      value: "\(ih / 60)h \(ih % 60)m"),
-            .standard(label: "Stops Count",    value: "\(d.stopsCount) stops"),
         ]
-        if let rh = d.restingHours {
-            let rm = Int(rh * 60)
-            rows.append(.standard(label: "Resting Hours", value: "\(rm / 60)h \(rm % 60)m"))
-        }
-        return rows
     }
-
-    private func costRows(_ d: TripReportData) -> [RowItem] { [
-        .standard(label: "Toll Charges", value: fmt(d.tollCostINR)),
-        .standard(label: "Driver Cost",  value: fmt(d.driverCostINR)),
-        .total(   label: "TOTAL COST",   value: fmt(d.totalCostINR)),
-    ] }
 
     // MARK: ── Footer ──────────────────────────────────────────────────────
 
