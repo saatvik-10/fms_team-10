@@ -20,7 +20,8 @@ struct FleetGoogleMapView: UIViewRepresentable {
     let destCoord: CLLocationCoordinate2D?
     let originLabel: String
     let destLabel: String
-
+    var geofenceRadius: Double = 1000.0
+    
     // MARK: - Coordinator
     final class Coordinator: NSObject {
         var mapView: GMSMapView?
@@ -78,8 +79,16 @@ struct FleetGoogleMapView: UIViewRepresentable {
         if let origin = originCoord, CLLocationCoordinate2DIsValid(origin) {
             let marker = GMSMarker(position: origin)
             marker.title = originLabel.isEmpty ? "Pickup" : originLabel
-            marker.icon = GMSMarker.markerImage(with: UIColor(red: 52/255, green: 199/255, blue: 89/255, alpha: 1))
+            let greenColor = UIColor(red: 52/255, green: 199/255, blue: 89/255, alpha: 1)
+            marker.icon = GMSMarker.markerImage(with: greenColor)
             marker.map = uiView
+            
+            // Geofence Circle for Origin
+            let originCircle = GMSCircle(position: origin, radius: geofenceRadius) // Dynamic radius
+            originCircle.fillColor = greenColor.withAlphaComponent(0.2)
+            originCircle.strokeColor = greenColor.withAlphaComponent(0.8)
+            originCircle.strokeWidth = 2
+            originCircle.map = uiView
         }
 
         // MARK: End marker (navy)
@@ -88,6 +97,13 @@ struct FleetGoogleMapView: UIViewRepresentable {
             marker.title = destLabel.isEmpty ? "Destination" : destLabel
             marker.icon = GMSMarker.markerImage(with: navyColor)
             marker.map = uiView
+            
+            // Geofence Circle for Destination
+            let destCircle = GMSCircle(position: dest, radius: geofenceRadius) // Dynamic radius
+            destCircle.fillColor = navyColor.withAlphaComponent(0.2)
+            destCircle.strokeColor = navyColor.withAlphaComponent(0.8)
+            destCircle.strokeWidth = 2
+            destCircle.map = uiView
         }
 
         // MARK: Camera

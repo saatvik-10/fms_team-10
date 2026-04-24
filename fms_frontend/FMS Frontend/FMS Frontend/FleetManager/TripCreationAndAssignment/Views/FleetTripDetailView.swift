@@ -86,7 +86,8 @@ struct FleetTripDetailView: View {
                                 originCoord: originCoord,
                                 destCoord: destCoord,
                                 originLabel: displayTrip?.origin ?? "Origin",
-                                destLabel: displayTrip?.destination ?? "Destination"
+                                destLabel: displayTrip?.destination ?? "Destination",
+                                geofenceRadius: displayTrip?.geofenceRadius ?? 1000.0
                             )
                             .frame(height: 300)
                             .cornerRadius(16)

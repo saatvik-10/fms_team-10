@@ -36,6 +36,7 @@ struct LocationPickerSheet: View {
     
     let title: String
     @Binding var selectedLocation: PickedLocation?
+    var geofenceRadius: Double = 1000.0 // Default 1km
     
     @State private var searchQuery: String = ""
     @State private var suggestions: [PlaceSuggestion] = []
@@ -81,7 +82,7 @@ struct LocationPickerSheet: View {
                 
                 // Map Area with Overlay Suggestions
                 ZStack(alignment: .top) {
-                    LocationPickerMapView(coordinate: $mapCoordinate, isMoving: $isMapMoving)
+                    LocationPickerMapView(coordinate: $mapCoordinate, isMoving: $isMapMoving, isSource: title.contains("Source"), geofenceRadius: geofenceRadius)
                         .edgesIgnoringSafeArea(.bottom)
                         .onChange(of: mapCoordinate) { _, newCoord in
                             if !isProgrammaticMove {
@@ -274,32 +275,45 @@ struct LocationPickerSheet: View {
 struct LocationPickerMapView: UIViewRepresentable {
     @Binding var coordinate: CLLocationCoordinate2D
     @Binding var isMoving: Bool
+    var isSource: Bool = true
+    var geofenceRadius: Double = 1000.0
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
     
     func makeUIView(context: Context) -> GMSMapView {
-        let camera = GMSCameraPosition.camera(withTarget: coordinate, zoom: 15)
+        let camera = GMSCameraPosition.camera(withTarget: coordinate, zoom: 14)
         let mapView = GMSMapView.map(withFrame: .zero, camera: camera)
         mapView.delegate = context.coordinator
         mapView.settings.compassButton = true
         mapView.settings.myLocationButton = true
         mapView.isMyLocationEnabled = true
+        
+        let circle = GMSCircle(position: coordinate, radius: geofenceRadius)
+        let circleColor = isSource ? UIColor(red: 52/255, green: 199/255, blue: 89/255, alpha: 1) : UIColor(red: 10/255, green: 48/255, blue: 58/255, alpha: 1)
+        circle.fillColor = circleColor.withAlphaComponent(0.2)
+        circle.strokeColor = circleColor.withAlphaComponent(0.8)
+        circle.strokeWidth = 2
+        circle.map = mapView
+        context.coordinator.geofenceCircle = circle
+        
         return mapView
     }
     
     func updateUIView(_ uiView: GMSMapView, context: Context) {
         // Only update camera if we are not actively dragging it
         if !context.coordinator.isUserDragging {
-            let camera = GMSCameraPosition.camera(withTarget: coordinate, zoom: 15)
+            let camera = GMSCameraPosition.camera(withTarget: coordinate, zoom: uiView.camera.zoom)
             uiView.animate(to: camera)
+            context.coordinator.geofenceCircle?.position = coordinate
         }
     }
     
     class Coordinator: NSObject, GMSMapViewDelegate {
         var parent: LocationPickerMapView
         var isUserDragging: Bool = false
+        var geofenceCircle: GMSCircle?
         
         init(_ parent: LocationPickerMapView) {
             self.parent = parent
@@ -312,9 +326,14 @@ struct LocationPickerMapView: UIViewRepresentable {
             }
         }
         
+        func mapView(_ mapView: GMSMapView, didChange position: GMSCameraPosition) {
+            geofenceCircle?.position = position.target
+        }
+        
         func mapView(_ mapView: GMSMapView, idleAt position: GMSCameraPosition) {
             isUserDragging = false
             parent.isMoving = false
+            geofenceCircle?.position = position.target
             // Update the bound coordinate to the new map center
             DispatchQueue.main.async {
                 self.parent.coordinate = position.target

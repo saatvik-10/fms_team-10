@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import CoreLocation
 
 // MARK: - Dashboard
 struct FleetManagerDashboardStats {
@@ -216,6 +217,11 @@ struct VehicleTrip: Identifiable {
     // Cargo Details (New)
     let productType: String?
     let loadAmount: String?
+    
+    // Geofencing (New)
+    var geofenceRadius: Double? = 1000.0
+    var originCoordinate: CLLocationCoordinate2D? = nil
+    var destCoordinate: CLLocationCoordinate2D? = nil
 }
 
 struct VehicleMaintenance {
