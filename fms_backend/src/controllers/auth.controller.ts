@@ -255,6 +255,7 @@ export class Auth {
         username: true,
         role: true,
         createdAt: true,
+        updatedAt: true,
         manager: {
           select: {
             name: true,
