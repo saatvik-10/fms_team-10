@@ -10,9 +10,6 @@ import Combine
 
 @MainActor
 final class AppSessionStore: ObservableObject {
-    //    let objectWillChange: ObservableObjectPublisher
-    
-    
     enum State: Equatable {
         case restoring
         case unauthenticated
@@ -20,6 +17,7 @@ final class AppSessionStore: ObservableObject {
     }
     
     @Published private(set) var state: State = .restoring
+    private(set) var managerProfile: ManagerProfileData?
     
     private let authAPI: AuthAPI
     private var didRestoreSession = false
@@ -50,15 +48,34 @@ final class AppSessionStore: ObservableObject {
         print("🟢 Token found:", token)
         
         do {
-            let profile = try await authAPI.getProfile().profile
+            let profileResponse = try await authAPI.getProfile()
+            let profile = profileResponse.profile
             print("🟢 Profile fetched — role:", profile.role)
+            
+            if profile.role == .manager || profile.role == .superAdmin {
+                managerProfile = ManagerProfileData(
+                    id: profile.id,
+                    name: profile.name ?? "Manager",
+                    email: profile.email,
+                    phone: profile.phone,
+                    address: profile.address,
+                    username: profile.username ?? "",
+                    role: profile.role.rawValue
+                )
+            }
+            
             state = .authenticated(AppUserRole(profile.role))
         } catch {
             print("🔴 Session restore failed:", error)
-            authAPI.logout()
-            state = .unauthenticated
+            if let existingToken = authAPI.getCurrentToken(), !existingToken.isEmpty {
+                state = .authenticated(.manager)
+            } else {
+                authAPI.logout()
+                state = .unauthenticated
+            }
         }
     }
+    
     func setAuthenticated(role: AppUserRole) {
         guard role != .none else {
             logout()
@@ -69,6 +86,7 @@ final class AppSessionStore: ObservableObject {
     
     func logout() {
         authAPI.logout()
+        managerProfile = nil
         state = .unauthenticated
     }
 }
@@ -121,7 +139,7 @@ struct ContentView: View {
                 case .maintenance:
                     MaintenanceTabView(isLoggedIn: maintenanceLoggedInBinding)
                 case .manager:
-                    FleetManagerMainView()
+                    FleetManagerMainView(profile: session.managerProfile)
                 case .none:
                     LoginView(userRole: userRoleBinding)
                 }
