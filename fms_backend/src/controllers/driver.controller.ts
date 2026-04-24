@@ -7,6 +7,7 @@ import {
 import { nanoid } from 'nanoid';
 import { prisma } from '../../prisma';
 import { hashPassword } from '../lib/hashPassword';
+import { genPswd } from '../lib/genPswd';
 
 export class Driver {
   async createDriver(c: Context) {
@@ -46,7 +47,7 @@ export class Driver {
 
     const firstName = fullName.split(' ')[0]!.toLowerCase();
     const username = `${firstName}_${nanoid(3)}`;
-    const password = nanoid();
+    const password = genPswd();
     const passwordHash = await hashPassword(password);
 
     const user = await prisma.user.create({
