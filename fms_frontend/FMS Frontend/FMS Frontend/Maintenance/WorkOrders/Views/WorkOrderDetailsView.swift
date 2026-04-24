@@ -21,6 +21,8 @@ struct WorkOrderDetailsView: View {
     @State private var partSearchText = ""
     @State private var showingScheduleValidationAlert = false
     @State private var showingChecklistIncompleteAlert = false
+    @State private var recentlyUpdatedPartId: String?
+    @State private var pendingSelectedPartIds: Set<String> = []
     
     private var taskPoints: [String] {
         workOrder.taskDetails.components(separatedBy: ".")
@@ -73,7 +75,7 @@ struct WorkOrderDetailsView: View {
                         // Vehicle Info Header
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Text(workOrder.orderID)
+                                Text("Work ID: \(workOrder.orderID)")
                                     .font(.system(size: 14, weight: .bold, design: .rounded))
                                     .foregroundColor(AppColors.primary)
                                     .padding(.horizontal, 10)
@@ -92,25 +94,28 @@ struct WorkOrderDetailsView: View {
                             Text("Scheduled for: \(workOrder.scheduledDate.formatted(date: .long, time: .shortened))")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            
-                            HStack(spacing: 8) {
-                                Text("VIN:")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundColor(.secondary)
-                                Text(workOrder.vehicleVIN)
-                                    .font(.caption.monospaced())
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color(.systemGray5))
-                                    .cornerRadius(6)
-                            }
-                            .padding(.top, 4)
-                            
+                             
                             HStack(spacing: 12) {
                                 StatusBadge(text: workOrder.status.rawValue, color: .blue)
                                 PriorityBadge(priority: workOrder.priority.rawValue)
                             }
                             .padding(.top, 8)
+                            
+                            if workOrder.isAccepted, let techId = workOrder.acceptedByTechnicianId {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "person.badge.shield.checkmark.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.green)
+                                    Text("Accepted by: \(techId)")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundColor(.green)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.green.opacity(0.1))
+                                .cornerRadius(8)
+                                .padding(.top, 4)
+                            }
                         }
                         
                         Divider().padding(.vertical, 12)
@@ -137,6 +142,12 @@ struct WorkOrderDetailsView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "DRIVER NOTES", icon: "person.wave.2.fill")
                             driverNotesContent
+                        }
+                        
+                        // Driver Media Card
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionHeader(title: "DRIVER MEDIA", icon: "photo.on.rectangle.angled")
+                            driverMediaContent
                         }
                         
                         // System Checklist
@@ -190,9 +201,16 @@ struct WorkOrderDetailsView: View {
                                                             .foregroundColor(.secondary)
                                                     }
 
-                                                    Text("\(usage.quantity)")
-                                                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                                                        .frame(minWidth: 22)
+                                                     Text("\(usage.quantity)")
+                                                         .font(.system(size: 14, weight: .bold, design: .rounded))
+                                                         .frame(minWidth: 22)
+
+                                                     if recentlyUpdatedPartId == usage.inventoryPartId {
+                                                         Image(systemName: "checkmark.circle.fill")
+                                                             .font(.subheadline)
+                                                             .foregroundColor(.green)
+                                                             .transition(.scale.combined(with: .opacity))
+                                                     }
 
                                                     Button {
                                                         updateConsumedQuantity(partId: usage.inventoryPartId, quantity: usage.quantity + 1)
@@ -217,6 +235,7 @@ struct WorkOrderDetailsView: View {
                                 }
 
                                 Button {
+                                    pendingSelectedPartIds = Set(workOrder.consumedParts.map { $0.inventoryPartId })
                                     showingPartPicker = true
                                 } label: {
                                     HStack(spacing: 8) {
@@ -277,42 +296,69 @@ struct WorkOrderDetailsView: View {
                         }
                         
                         // Action Buttons (Now part of the scroll content)
-                        HStack(spacing: 16) {
-                            if canReschedule {
-                                Button(action: { showingDatePicker = true }) {
-                                    Text("Schedule Later")
-                                        .font(.system(size: 15, weight: .bold))
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 16)
-                                        .background(Color.white)
-                                        .foregroundColor(.primary)
-                                        .cornerRadius(14)
-                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                        VStack(spacing: 16) {
+                            if !workOrder.isAccepted {
+                                Button(action: {
+                                    acceptWorkOrder()
+                                }) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "checkmark.shield.fill")
+                                            .font(.system(size: 16, weight: .bold))
+                                        Text("Accept Work Order")
+                                            .font(.system(size: 15, weight: .bold))
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [Color.green, Color.green.opacity(0.85)]),
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .foregroundColor(.white)
+                                    .cornerRadius(14)
+                                    .shadow(color: Color.green.opacity(0.3), radius: 8, x: 0, y: 4)
                                 }
                             }
                             
-                            Button(action: {
-                                guard isChecklistComplete else {
-                                    showingChecklistIncompleteAlert = true
-                                    return
+                            HStack(spacing: 16) {
+                                if canReschedule {
+                                    Button(action: { showingDatePicker = true }) {
+                                        Text("Schedule Later")
+                                            .font(.system(size: 15, weight: .bold))
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 16)
+                                            .background(Color.white)
+                                            .foregroundColor(.primary)
+                                            .cornerRadius(14)
+                                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                                    }
                                 }
-                                var updated = workOrder
-                                updated.status = .completed
-                                store.updateWorkOrder(updated)
-                                workOrder = updated
-                                dismiss()
-                            }) {
-                                Text("Complete Task")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
-                                    .background(AppColors.primary)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(14)
-                                    .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
+                                
+                                Button(action: {
+                                    guard isChecklistComplete else {
+                                        showingChecklistIncompleteAlert = true
+                                        return
+                                    }
+                                    var updated = workOrder
+                                    updated.status = .completed
+                                    store.updateWorkOrder(updated)
+                                    workOrder = updated
+                                    dismiss()
+                                }) {
+                                    Text("Complete Task")
+                                        .font(.system(size: 15, weight: .bold))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 16)
+                                        .background(AppColors.primary)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(14)
+                                        .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
+                                }
+                                .disabled(!isChecklistComplete)
+                                .opacity(isChecklistComplete ? 1 : 0.55)
                             }
-                            .disabled(!isChecklistComplete)
-                            .opacity(isChecklistComplete ? 1 : 0.55)
                         }
                         .padding(.top, 32)
                         .padding(.bottom, 40)
@@ -395,7 +441,11 @@ struct WorkOrderDetailsView: View {
                 List {
                     ForEach(filteredInventoryParts, id: \.id) { part in
                         Button {
-                            addOrIncrementConsumedPart(part)
+                            if pendingSelectedPartIds.contains(part.partId) {
+                                pendingSelectedPartIds.remove(part.partId)
+                            } else {
+                                pendingSelectedPartIds.insert(part.partId)
+                            }
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: "shippingbox.fill")
@@ -408,7 +458,7 @@ struct WorkOrderDetailsView: View {
                                         .foregroundColor(.secondary)
                                 }
                                 Spacer()
-                                if workOrder.consumedParts.contains(where: { $0.inventoryPartId == part.partId }) {
+                                if pendingSelectedPartIds.contains(part.partId) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundColor(AppColors.primary)
                                 }
@@ -421,8 +471,26 @@ struct WorkOrderDetailsView: View {
                 .searchable(text: $partSearchText, prompt: "Search by part name or ID")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
-                        Button("Close") {
+                        Button("Cancel") {
                             showingPartPicker = false
+                        }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            // Apply selected parts
+                            for partId in pendingSelectedPartIds {
+                                if !workOrder.consumedParts.contains(where: { $0.inventoryPartId == partId }) {
+                                    workOrder.consumedParts.append(WorkOrderPartUsage(inventoryPartId: partId, quantity: 1))
+                                }
+                            }
+                            // Remove parts that were unselected (optional, usually "Select" means add)
+                            // For now, we only ADD new ones as per typical "Select Parts" behavior.
+                            
+                            store.updateWorkOrder(workOrder)
+                            showingPartPicker = false
+                        } label: {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 16, weight: .bold))
                         }
                     }
                 }
@@ -484,6 +552,48 @@ struct WorkOrderDetailsView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .padding(.vertical, 4)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private var driverMediaContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if workOrder.driverMediaImages.isEmpty {
+                HStack(spacing: 10) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.title3)
+                        .foregroundColor(.secondary.opacity(0.6))
+                    Text("No driver media uploaded.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.vertical, 4)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(0..<workOrder.driverMediaImages.count, id: \.self) { index in
+                            if let uiImage = UIImage(data: workOrder.driverMediaImages[index]) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 100, height: 100)
+                                    .cornerRadius(12)
+                                    .clipped()
+                                    .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                            }
+                        }
+                    }
+                }
+                
+                Text("\(workOrder.driverMediaImages.count) photo(s) from driver")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
         }
         .padding(20)
@@ -584,15 +694,38 @@ struct WorkOrderDetailsView: View {
         guard let idx = workOrder.consumedParts.firstIndex(where: { $0.inventoryPartId == partId }) else { return }
         if quantity <= 0 {
             workOrder.consumedParts.remove(at: idx)
+            recentlyUpdatedPartId = nil
         } else {
             workOrder.consumedParts[idx].quantity = quantity
+            markPartUpdated(partId)
         }
         store.updateWorkOrder(workOrder)
+    }
+
+    private func markPartUpdated(_ partId: String) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            recentlyUpdatedPartId = partId
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+            if recentlyUpdatedPartId == partId {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    recentlyUpdatedPartId = nil
+                }
+            }
+        }
     }
 
     private func removeConsumedPart(partId: String) {
         guard let idx = workOrder.consumedParts.firstIndex(where: { $0.inventoryPartId == partId }) else { return }
         workOrder.consumedParts.remove(at: idx)
         store.updateWorkOrder(workOrder)
+    }
+
+    private func acceptWorkOrder() {
+        var updated = workOrder
+        updated.isAccepted = true
+        updated.acceptedByTechnicianId = updated.technicianId == "Unassigned" ? "TECH-\(String(format: "%04d", Int.random(in: 1...9999)))" : updated.technicianId
+        store.updateWorkOrder(updated)
+        workOrder = updated
     }
 }

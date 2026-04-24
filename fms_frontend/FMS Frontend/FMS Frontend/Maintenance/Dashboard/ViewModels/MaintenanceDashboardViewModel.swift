@@ -39,9 +39,9 @@ class MaintenanceDashboardViewModel: ObservableObject {
     // MARK: - Private Computations
 
     private func computeSystemStatus(workOrders: [WorkOrder], inspections: [TripInspection]) {
-        let criticalWOs         = workOrders.filter   { $0.priority == .critical && $0.status != .completed }.count
+        let highPriorityWOs     = workOrders.filter   { $0.priority == .high && $0.status != .completed }.count
         let emergencyPending    = inspections.filter  { $0.isEmergency && $0.status == .pending }.count
-        criticalAlertsCount     = criticalWOs + emergencyPending
+        criticalAlertsCount     = highPriorityWOs + emergencyPending
         pendingOrdersCount      = workOrders.filter { $0.status == .pending }.count
     }
 
