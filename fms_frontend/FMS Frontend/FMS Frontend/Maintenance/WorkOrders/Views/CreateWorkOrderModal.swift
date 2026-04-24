@@ -34,7 +34,7 @@ struct CreateWorkOrderModal: View {
                                     Text(vehicleName)
                                         .foregroundColor(.primary)
                                     Spacer()
-                                    Image(systemName: "chevron.right")
+                                    Image(systemName: "chevron.down")
                                         .font(.system(size: 14, weight: .bold))
                                         .foregroundColor(AppColors.primary)
                                 }
@@ -73,7 +73,6 @@ struct CreateWorkOrderModal: View {
                                 Text("Low").tag(WorkOrderPriority.low)
                                 Text("Medium").tag(WorkOrderPriority.medium)
                                 Text("High").tag(WorkOrderPriority.high)
-                                Text("Critical").tag(WorkOrderPriority.critical)
                             }
                             .pickerStyle(.segmented)
                         }

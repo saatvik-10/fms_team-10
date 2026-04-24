@@ -12,17 +12,15 @@ enum WorkOrderStatus: String, Codable, CaseIterable {
 }
 
 enum WorkOrderPriority: String, Codable, CaseIterable {
-    case critical = "Critical"
     case high = "High"
     case medium = "Medium"
     case low = "Low"
     
     var sortingOrder: Int {
         switch self {
-        case .critical: return 0
-        case .high: return 1
-        case .medium: return 2
-        case .low: return 3
+        case .high: return 0
+        case .medium: return 1
+        case .low: return 2
         }
     }
 }

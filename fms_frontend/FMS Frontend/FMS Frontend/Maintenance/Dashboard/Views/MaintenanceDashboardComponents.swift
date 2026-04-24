@@ -135,6 +135,7 @@ struct QuickActionButton: View {
     let icon: String
     let color: Color
     let action: () -> Void
+    var emphasize: Bool = false
     
     var body: some View {
         Button(action: action) {
@@ -159,6 +160,10 @@ struct QuickActionButton: View {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(Color(UIColor.secondarySystemGroupedBackground))
                     .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(emphasize ? color.opacity(0.45) : Color.clear, lineWidth: emphasize ? 1.5 : 0)
             )
         }
         .buttonStyle(PlainButtonStyle())

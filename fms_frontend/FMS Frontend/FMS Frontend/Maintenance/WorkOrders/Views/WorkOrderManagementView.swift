@@ -6,16 +6,45 @@
 import SwiftUI
 
 struct WorkOrderManagementView: View {
+    @Binding var isLoggedIn: Bool
     @EnvironmentObject var store: MaintenanceStore
     @StateObject private var viewModel: WorkOrdersViewModel
     @State private var showingCreateModal = false
     
-    init(maintenanceStore: MaintenanceStore) {
+    init(maintenanceStore: MaintenanceStore, isLoggedIn: Binding<Bool>) {
+        _isLoggedIn = isLoggedIn
         _viewModel = StateObject(wrappedValue: WorkOrdersViewModel(store: maintenanceStore))
     }
     
     var body: some View {
         VStack(spacing: 0) {
+            HStack {
+                Spacer()
+
+                Menu {
+                    Section("Priority") {
+                        Button("All Priorities") { viewModel.selectedPriority = nil }
+                        ForEach(WorkOrderPriority.allCases, id: \.self) { priority in
+                            Button(priority.rawValue) { viewModel.selectedPriority = priority }
+                        }
+                    }
+
+                    Section("Service Type") {
+                        Button("All Types") { viewModel.selectedServiceType = nil }
+                        let types = Array(Set(store.workOrders.map { $0.serviceType })).sorted()
+                        ForEach(types, id: \.self) { type in
+                            Button(type) { viewModel.selectedServiceType = type }
+                        }
+                    }
+                } label: {
+                    Image(systemName: (viewModel.selectedPriority != nil || viewModel.selectedServiceType != nil) ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                        .font(.system(size: 18))
+                        .foregroundColor(AppColors.primary)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 6)
+
             Picker("Status", selection: $viewModel.selectedStatus) {
                 Text("Pending").tag(WorkOrderStatus.pending as WorkOrderStatus?)
                 Text("In Progress").tag(WorkOrderStatus.inProgress as WorkOrderStatus?)
@@ -67,30 +96,15 @@ struct WorkOrderManagementView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 16) {
-                    Menu {
-                        Section("Priority") {
-                            Button("All Priorities") { viewModel.selectedPriority = nil }
-                            ForEach(WorkOrderPriority.allCases, id: \.self) { priority in
-                                Button(priority.rawValue) { viewModel.selectedPriority = priority }
-                            }
-                        }
-                        
-                        Section("Service Type") {
-                            Button("All Types") { viewModel.selectedServiceType = nil }
-                            let types = Array(Set(store.workOrders.map { $0.serviceType })).sorted()
-                            ForEach(types, id: \.self) { type in
-                                Button(type) { viewModel.selectedServiceType = type }
-                            }
-                        }
-                    } label: {
-                        Image(systemName: (viewModel.selectedPriority != nil || viewModel.selectedServiceType != nil) ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                            .font(.system(size: 18))
-                            .foregroundColor(AppColors.primary)
-                    }
-
                     Button(action: { showingCreateModal = true }) {
                         Image(systemName: "plus")
                             .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(AppColors.primary)
+                    }
+
+                    NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
+                        Image(systemName: "person.circle")
+                            .font(.system(size: 22))
                             .foregroundColor(AppColors.primary)
                     }
                 }

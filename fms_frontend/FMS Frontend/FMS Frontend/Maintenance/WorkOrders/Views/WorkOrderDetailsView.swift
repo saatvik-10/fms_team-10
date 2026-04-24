@@ -21,6 +21,8 @@ struct WorkOrderDetailsView: View {
     @State private var partSearchText = ""
     @State private var showingScheduleValidationAlert = false
     @State private var showingChecklistIncompleteAlert = false
+    @State private var recentlyUpdatedPartId: String?
+    @State private var pendingSelectedPartIds: Set<String> = []
     
     private var taskPoints: [String] {
         workOrder.taskDetails.components(separatedBy: ".")
@@ -73,7 +75,7 @@ struct WorkOrderDetailsView: View {
                         // Vehicle Info Header
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Text(workOrder.orderID)
+                                Text("Work ID: \(workOrder.orderID)")
                                     .font(.system(size: 14, weight: .bold, design: .rounded))
                                     .foregroundColor(AppColors.primary)
                                     .padding(.horizontal, 10)
@@ -92,20 +94,7 @@ struct WorkOrderDetailsView: View {
                             Text("Scheduled for: \(workOrder.scheduledDate.formatted(date: .long, time: .shortened))")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            
-                            HStack(spacing: 8) {
-                                Text("VIN:")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundColor(.secondary)
-                                Text(workOrder.vehicleVIN)
-                                    .font(.caption.monospaced())
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color(.systemGray5))
-                                    .cornerRadius(6)
-                            }
-                            .padding(.top, 4)
-                            
+                             
                             HStack(spacing: 12) {
                                 StatusBadge(text: workOrder.status.rawValue, color: .blue)
                                 PriorityBadge(priority: workOrder.priority.rawValue)
@@ -190,9 +179,16 @@ struct WorkOrderDetailsView: View {
                                                             .foregroundColor(.secondary)
                                                     }
 
-                                                    Text("\(usage.quantity)")
-                                                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                                                        .frame(minWidth: 22)
+                                                     Text("\(usage.quantity)")
+                                                         .font(.system(size: 14, weight: .bold, design: .rounded))
+                                                         .frame(minWidth: 22)
+
+                                                     if recentlyUpdatedPartId == usage.inventoryPartId {
+                                                         Image(systemName: "checkmark.circle.fill")
+                                                             .font(.subheadline)
+                                                             .foregroundColor(.green)
+                                                             .transition(.scale.combined(with: .opacity))
+                                                     }
 
                                                     Button {
                                                         updateConsumedQuantity(partId: usage.inventoryPartId, quantity: usage.quantity + 1)
@@ -217,6 +213,7 @@ struct WorkOrderDetailsView: View {
                                 }
 
                                 Button {
+                                    pendingSelectedPartIds = Set(workOrder.consumedParts.map { $0.inventoryPartId })
                                     showingPartPicker = true
                                 } label: {
                                     HStack(spacing: 8) {
@@ -395,7 +392,11 @@ struct WorkOrderDetailsView: View {
                 List {
                     ForEach(filteredInventoryParts, id: \.id) { part in
                         Button {
-                            addOrIncrementConsumedPart(part)
+                            if pendingSelectedPartIds.contains(part.partId) {
+                                pendingSelectedPartIds.remove(part.partId)
+                            } else {
+                                pendingSelectedPartIds.insert(part.partId)
+                            }
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: "shippingbox.fill")
@@ -408,7 +409,7 @@ struct WorkOrderDetailsView: View {
                                         .foregroundColor(.secondary)
                                 }
                                 Spacer()
-                                if workOrder.consumedParts.contains(where: { $0.inventoryPartId == part.partId }) {
+                                if pendingSelectedPartIds.contains(part.partId) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundColor(AppColors.primary)
                                 }
@@ -421,8 +422,26 @@ struct WorkOrderDetailsView: View {
                 .searchable(text: $partSearchText, prompt: "Search by part name or ID")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
-                        Button("Close") {
+                        Button("Cancel") {
                             showingPartPicker = false
+                        }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            // Apply selected parts
+                            for partId in pendingSelectedPartIds {
+                                if !workOrder.consumedParts.contains(where: { $0.inventoryPartId == partId }) {
+                                    workOrder.consumedParts.append(WorkOrderPartUsage(inventoryPartId: partId, quantity: 1))
+                                }
+                            }
+                            // Remove parts that were unselected (optional, usually "Select" means add)
+                            // For now, we only ADD new ones as per typical "Select Parts" behavior.
+                            
+                            store.updateWorkOrder(workOrder)
+                            showingPartPicker = false
+                        } label: {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 16, weight: .bold))
                         }
                     }
                 }
@@ -584,10 +603,25 @@ struct WorkOrderDetailsView: View {
         guard let idx = workOrder.consumedParts.firstIndex(where: { $0.inventoryPartId == partId }) else { return }
         if quantity <= 0 {
             workOrder.consumedParts.remove(at: idx)
+            recentlyUpdatedPartId = nil
         } else {
             workOrder.consumedParts[idx].quantity = quantity
+            markPartUpdated(partId)
         }
         store.updateWorkOrder(workOrder)
+    }
+
+    private func markPartUpdated(_ partId: String) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            recentlyUpdatedPartId = partId
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+            if recentlyUpdatedPartId == partId {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    recentlyUpdatedPartId = nil
+                }
+            }
+        }
     }
 
     private func removeConsumedPart(partId: String) {

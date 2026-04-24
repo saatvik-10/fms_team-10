@@ -22,7 +22,7 @@ struct MaintenanceTabView: View {
 
             // Tab 2: Work Orders
             NavigationStack {
-                WorkOrderManagementView(maintenanceStore: store)
+                WorkOrderManagementView(maintenanceStore: store, isLoggedIn: $isLoggedIn)
             }
             .tabItem {
                 Label("Work Orders", systemImage: "wrench.and.screwdriver.fill")
