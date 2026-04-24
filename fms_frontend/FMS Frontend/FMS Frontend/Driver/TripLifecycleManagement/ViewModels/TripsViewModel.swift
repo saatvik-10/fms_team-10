@@ -20,7 +20,7 @@ class TripsViewModel: ObservableObject {
             LifecycleTrip(id: "TRP-10495", source: "Delhi, DL", destination: "Jaipur, RJ", status: .assigned, dateValue: "Oct 19", timeLabel: "Arrival Window", timeValue: "13:30 - 15:00", loadInfo: "18 Pallets", distance: 281.0, vehicleNumber: nil),
             
             // Accepted Trips
-            LifecycleTrip(id: "TRP-10488", source: "Bengaluru, KA", destination: "Mysuru, KA", status: .scheduled, dateValue: "Oct 20", timeLabel: "Scheduled Start", timeValue: "14:30", loadInfo: "12 Pallets", distance: 143.2, vehicleNumber: "MH01BK9392"),
+            LifecycleTrip(id: "TRP-10488", source: "Mumbai, MH", destination: "Gurgaon, HR", status: .scheduled, dateValue: "Oct 20", timeLabel: "Scheduled Start", timeValue: "14:30", loadInfo: "12 Pallets", distance: 1412.0, vehicleNumber: "MH01BK9392"),
             
             // Past Trips
             LifecycleTrip(id: "TRP-10470", source: "Chennai, TN", destination: "Kochi, KL", status: .completed, dateValue: "Oct 15", timeLabel: "Completion Time", timeValue: "Yesterday, 18:45", loadInfo: "20 Pallets", distance: 684.1, vehicleNumber: "XYZ-9876")

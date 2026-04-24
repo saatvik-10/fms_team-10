@@ -101,7 +101,7 @@ class GoogleDirectionsService {
 
     // MARK: - Full Trip Directions (used by TripDetailView preview)
 
-    func fetchDirections(trip: Trip) async throws -> (eta: String, polyline: String, steps: [NavigationInstruction]) {
+    func fetchDirections(trip: Trip) async throws -> (eta: String, polyline: String, steps: [NavigationInstruction], distance: String) {
         print("--- DEBUG Directions API ---")
 
         guard isValidCoordinate(trip.pickup.coordinate) else {
@@ -143,18 +143,23 @@ class GoogleDirectionsService {
         }
 
         var totalSeconds = 0
+        var totalDistanceMeters = 0
         var allInstructions: [NavigationInstruction] = []
         for leg in route.legs {
             totalSeconds += leg.duration.value
+            totalDistanceMeters += leg.distance.value
             allInstructions.append(contentsOf: leg.steps.map { makeInstruction(from: $0) })
         }
 
         let hours   = totalSeconds / 3600
         let minutes = (totalSeconds % 3600) / 60
         let etaText = hours > 0 ? "\(hours) hrs \(minutes) min" : "\(minutes) min"
+        
+        let distanceKm = Double(totalDistanceMeters) / 1000.0
+        let distanceText = String(format: "%.1f km", distanceKm)
 
-        print("[Directions] ETA: \(etaText), steps: \(allInstructions.count)")
-        return (eta: etaText, polyline: route.overview_polyline.points, steps: allInstructions)
+        print("[Directions] ETA: \(etaText), distance: \(distanceText), steps: \(allInstructions.count)")
+        return (eta: etaText, polyline: route.overview_polyline.points, steps: allInstructions, distance: distanceText)
     }
 
     // MARK: - Segment Directions (used by NavigationViewModel — origin = user location)

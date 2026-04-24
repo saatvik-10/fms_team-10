@@ -28,6 +28,9 @@ struct TripDetailView: View {
     @State private var estimatedArrival: String = "Loading..."
     @State private var routePolyline: String = ""
     @State private var isLoadingEta: Bool = true
+    
+    // Live tracking for Actual ETA
+    @StateObject private var locationManager = LocationManager()
 
     // ── Trips-tab state ───────────────────────────────────────────────────
     // TEAMMATE HOOK: Update distanceToDestinationMeters from your tracking
@@ -173,16 +176,36 @@ struct TripDetailView: View {
         }
         .task {
             do {
+                // Fetch static full-route for map polyline and total distance
                 let result = try await GoogleDirectionsService.shared.fetchDirections(trip: trip)
                 DispatchQueue.main.async {
-                    self.estimatedArrival = result.eta
                     self.routePolyline = result.polyline
-                    self.isLoadingEta = false
+                    let totalDistance = result.distance
+                    print("--> New ETA (Static): \(result.eta), Total Direct Distance: \(totalDistance)")
                 }
             } catch {
-                DispatchQueue.main.async {
-                    self.estimatedArrival = "Unavailable"
-                    self.isLoadingEta = false
+                print("Failed to fetch static route")
+            }
+        }
+        // Track live location to calculate ACTUAL ETA from current coordinate to destination
+        .onChange(of: locationManager.location) { _, newLocation in
+            guard let currentLoc = newLocation else { return }
+            Task {
+                do {
+                    let segmentResult = try await GoogleDirectionsService.shared.fetchSegmentDirections(
+                        origin: currentLoc.coordinate,
+                        destination: trip.destination.coordinate
+                    )
+                    DispatchQueue.main.async {
+                        self.estimatedArrival = segmentResult.eta
+                        self.isLoadingEta = false
+                        print("--> Actual Live ETA from current position: \(segmentResult.eta)")
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        self.estimatedArrival = "Unavailable"
+                        self.isLoadingEta = false
+                    }
                 }
             }
         }

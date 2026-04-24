@@ -49,7 +49,7 @@ extension LifecycleTrip {
                 name: self.source,
                 coordinate: CLLocationCoordinate2D(latitude: 18.9499, longitude: 72.9525),
                 time: "08:00 AM",
-                status: .upcoming
+                status: .active
             ),
             destination: TripStop(
                 name: self.destination,

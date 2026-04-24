@@ -96,19 +96,6 @@ struct DashboardHomeView: View {
                 
                 // Active Mission Section
                 MissionCardView(viewModel: viewModel, locationManager: locationManager)
-                
-                // Vehicle Details Section
-                VehicleCardView(viewModel: viewModel)
-                
-                // Bottom Request Trip Action
-                PrimaryButton(
-                    title: "Request Trip",
-                    icon: "exclamationmark.triangle.fill",
-                    backgroundColor: AppColors.cardBackground,
-                    textColor: Color(white: 0.2)
-                ) {
-                    // Action handler
-                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -183,7 +170,7 @@ struct MissionCardView: View {
                         .cornerRadius(6)
                 }
                 
-                Text("Route #\(viewModel.activeTrip.routeNumber)")
+                Text(viewModel.vehiclePlate)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.black)
@@ -353,6 +340,7 @@ struct DashboardView_Previews: PreviewProvider {
 struct DriverProfileView: View {
     let profile = UserProfile.mockDriver
     var onLogout: (() -> Void)? = nil
+    @State private var isOffDuty: Bool = false
     
     var body: some View {
         List {
@@ -383,7 +371,17 @@ struct DriverProfileView: View {
                 AppProfileInfoRow(label: "ADDRESS", value: profile.address)
                 AppProfileInfoRow(label: "ROLE", value: profile.role.rawValue)
                 AppProfileInfoRow(label: "JOINED", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
-                AppProfileInfoRow(label: "CUID", value: profile.id)
+                AppProfileInfoRow(label: "LICENSE NUMBER", value: profile.id)
+                HStack {
+                    Text("TURN ON OFFDUTY")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Toggle("", isOn: $isOffDuty)
+                        .labelsHidden()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 4)
             }
             
             Section {

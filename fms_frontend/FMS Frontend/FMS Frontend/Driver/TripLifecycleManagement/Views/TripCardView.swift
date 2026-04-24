@@ -3,6 +3,7 @@ import SwiftUI
 struct TripCardView: View {
     let trip: LifecycleTrip
     
+    
     // Callbacks for button actions
     var onAccept: (() -> Void)? = nil
     var onDecline: (() -> Void)? = nil
@@ -13,24 +14,24 @@ struct TripCardView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Top Row: ID and Status badge
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(trip.id)
-                        .font(.caption2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.secondary)
-                    
-                    if let vehicleNo = trip.vehicleNumber {
-                        HStack(spacing: 4) {
-                            Image(systemName: "box.truck.fill")
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
-                            Text(vehicleNo)
-                                .font(.subheadline)
-                                .foregroundColor(.primary)
-                                .fontWeight(.medium)
-                        }
-                    }
-                }
+//                VStack(alignment: .leading, spacing: 4) {
+////                    Text(trip.id)
+////                        .font(.caption2)
+////                        .fontWeight(.bold)
+////                        .foregroundColor(.secondary)
+//                    
+//                    if let vehicleNo = trip.vehicleNumber {
+//                        HStack(spacing: 4) {
+//                            Image(systemName: "box.truck.fill")
+//                                .font(.system(size: 10))
+//                                .foregroundColor(.secondary)
+//                            Text(vehicleNo)
+//                                .font(.subheadline)
+//                                .foregroundColor(.primary)
+//                                .fontWeight(.medium)
+//                        }
+//                    }
+//                }
                 
                 Spacer()
                 
