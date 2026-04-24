@@ -115,8 +115,8 @@ model VehicleInfo {
 
 model Trips {
   id                  String @id @default(cuid())
-  sourceLocation      Float
-  destinationLocation Float
+  sourceLocation      String
+  destinationLocation String
   productType         String
   unit                String
   amount              Int
