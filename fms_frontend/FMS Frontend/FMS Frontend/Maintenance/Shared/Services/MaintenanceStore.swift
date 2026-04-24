@@ -33,6 +33,7 @@ class MaintenanceStore: ObservableObject {
         if inventoryParts.isEmpty {
             loadInitialInventory()
         }
+        refreshWorkOrderStatuses()
     }
     
     // MARK: - Persistence
@@ -215,18 +216,47 @@ class MaintenanceStore: ObservableObject {
     }
     
     func addWorkOrder(_ order: WorkOrder) {
-        workOrders.insert(order, at: 0)
+        var normalizedOrder = order
+        normalizedOrder.status = autoStatus(for: normalizedOrder)
+        workOrders.insert(normalizedOrder, at: 0)
+        reconcileInventoryForWorkOrderChange(oldParts: [], newParts: order.consumedParts)
     }
     
     func updateWorkOrder(_ order: WorkOrder) {
         if let index = workOrders.firstIndex(where: { $0.id == order.id }) {
+            let oldOrder = workOrders[index]
             let oldStatus = workOrders[index].status
-            workOrders[index] = order
+            var normalizedOrder = order
+            normalizedOrder.status = autoStatus(for: normalizedOrder)
+            workOrders[index] = normalizedOrder
+            reconcileInventoryForWorkOrderChange(oldParts: oldOrder.consumedParts, newParts: normalizedOrder.consumedParts)
             
             // If status changed to completed, generate an inspection record for the log
-            if oldStatus != .completed && order.status == .completed {
-                generateInspectionFromWorkOrder(order)
+            if oldStatus != .completed && normalizedOrder.status == .completed {
+                generateInspectionFromWorkOrder(normalizedOrder)
             }
+        }
+    }
+
+    func refreshWorkOrderStatuses(referenceDate: Date = Date()) {
+        var didChange = false
+        for index in workOrders.indices {
+            let current = workOrders[index]
+            let nextStatus: WorkOrderStatus
+            if current.status == .completed {
+                nextStatus = .completed
+            } else {
+                nextStatus = current.scheduledDate <= referenceDate ? .inProgress : .pending
+            }
+
+            if current.status != nextStatus {
+                workOrders[index].status = nextStatus
+                didChange = true
+            }
+        }
+
+        if didChange {
+            objectWillChange.send()
         }
     }
     
@@ -263,7 +293,40 @@ class MaintenanceStore: ObservableObject {
     }
 
     func deleteWorkOrder(_ order: WorkOrder) {
+        reconcileInventoryForWorkOrderChange(oldParts: order.consumedParts, newParts: [])
         workOrders.removeAll { $0.id == order.id }
+    }
+
+    private func reconcileInventoryForWorkOrderChange(oldParts: [WorkOrderPartUsage], newParts: [WorkOrderPartUsage]) {
+        var deltaByPartId: [String: Int] = [:]
+
+        for part in oldParts where part.quantity > 0 {
+            deltaByPartId[part.inventoryPartId, default: 0] += part.quantity
+        }
+
+        for part in newParts where part.quantity > 0 {
+            deltaByPartId[part.inventoryPartId, default: 0] -= part.quantity
+        }
+
+        guard !deltaByPartId.isEmpty else { return }
+
+        var didUpdateInventory = false
+        for (partId, delta) in deltaByPartId where delta != 0 {
+            guard let idx = inventoryParts.firstIndex(where: { $0.partId == partId }) else { continue }
+            inventoryParts[idx].stockQty = max(0, inventoryParts[idx].stockQty + delta)
+            didUpdateInventory = true
+        }
+
+        if didUpdateInventory {
+            saveInventory()
+        }
+    }
+
+    private func autoStatus(for order: WorkOrder, referenceDate: Date = Date()) -> WorkOrderStatus {
+        if order.status == .completed {
+            return .completed
+        }
+        return order.scheduledDate <= referenceDate ? .inProgress : .pending
     }
 
     func deleteInspection(_ inspection: TripInspection) {

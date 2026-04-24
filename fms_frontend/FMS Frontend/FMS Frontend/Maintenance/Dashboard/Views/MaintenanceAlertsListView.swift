@@ -14,52 +14,68 @@ struct MaintenanceAlertsListView: View {
     @State private var selectedFilter: AlertFilter = .all
 
     enum AlertFilter: String, CaseIterable, Identifiable {
-        case all      = "All"
-        case critical = "Critical"
-        case high     = "High"
-        case medium   = "Medium"
-        case low      = "Low"
+        case all       = "All"
+        case workOrders = "Work Orders"
+        case inventory = "Inventory"
         var id: String { rawValue }
     }
 
-    private var filteredOrders: [WorkOrder] {
-        let nonCompleted = store.workOrders
+    private var allAlerts: [DashboardAlertItem] {
+        let workOrderAlerts = store.workOrders
             .filter { $0.status != .completed }
-            .sorted { $0.priority.sortingOrder < $1.priority.sortingOrder }
+            .map { order in
+                DashboardAlertItem(
+                    id: "wo-\(order.id.uuidString)",
+                    source: .workOrder,
+                    title: order.title,
+                    subtitle: "\(order.vehicleName) • Priority: \(order.priority.rawValue.capitalized)",
+                    sortOrder: order.priority.sortingOrder,
+                    workOrderId: order.id,
+                    inventoryPartId: nil
+                )
+            }
 
+        let inventoryAlerts = store.inventoryParts
+            .filter { $0.isLowStock }
+            .map { part in
+                DashboardAlertItem(
+                    id: "inv-\(part.partId)",
+                    source: .inventory,
+                    title: part.partName,
+                    subtitle: "\(part.partId) • Stock: \(part.stockQty)/\(part.minStock)",
+                    sortOrder: 0,
+                    workOrderId: nil,
+                    inventoryPartId: part.partId
+                )
+            }
+
+        return (workOrderAlerts + inventoryAlerts)
+            .sorted { lhs, rhs in
+                if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
+                return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+            }
+    }
+
+    private var filteredAlerts: [DashboardAlertItem] {
         switch selectedFilter {
-        case .all:      return nonCompleted
-        case .critical: return nonCompleted.filter { $0.priority == .critical }
-        case .high:     return nonCompleted.filter { $0.priority == .high }
-        case .medium:   return nonCompleted.filter { $0.priority == .medium }
-        case .low:      return nonCompleted.filter { $0.priority == .low }
+        case .all:
+            return allAlerts
+        case .workOrders:
+            return allAlerts.filter { $0.source == .workOrder }
+        case .inventory:
+            return allAlerts.filter { $0.source == .inventory }
         }
     }
 
-    private func priorityColor(for priority: WorkOrderPriority) -> Color {
-        switch priority {
-        case .critical: return .red
-        case .high:     return .orange
-        case .medium:   return .blue
-        case .low:      return .green
-        }
-    }
-
-    private func priorityIcon(for priority: WorkOrderPriority) -> String {
-        switch priority {
-        case .critical: return "exclamationmark.triangle.fill"
-        case .high:     return "flame.fill"
-        case .medium:   return "wrench.and.screwdriver.fill"
-        case .low:      return "checkmark.circle.fill"
-        }
-    }
+    private let alertIconName = "exclamationmark.triangle.fill"
+    private let alertIconColor: Color = .red
 
     var body: some View {
         List {
 
             // Alerts List
             Section {
-                if filteredOrders.isEmpty {
+                if filteredAlerts.isEmpty {
                     HStack {
                         Spacer()
                         VStack(spacing: 8) {
@@ -74,23 +90,37 @@ struct MaintenanceAlertsListView: View {
                         Spacer()
                     }
                 } else {
-                    ForEach(filteredOrders) { order in
-                        NavigationLink(destination: WorkOrderDetailsView(workOrder: order)) {
+                    ForEach(filteredAlerts) { alert in
+                        let matchingWorkOrder = alert.workOrderId.flatMap { workOrderId in
+                            store.workOrders.first { $0.id == workOrderId }
+                        }
+                        let matchingInventoryPart = alert.inventoryPartId.flatMap { partId in
+                            store.inventoryParts.first { $0.partId == partId }
+                        }
+                        NavigationLink(destination: Group {
+                            if let order = matchingWorkOrder {
+                                WorkOrderDetailsView(workOrder: order)
+                            } else if let part = matchingInventoryPart {
+                                InventoryDetailView(part: part)
+                            } else {
+                                EmptyView()
+                            }
+                        }) {
                             HStack(spacing: 14) {
                                 ZStack {
                                     Circle()
-                                        .fill(priorityColor(for: order.priority).opacity(0.12))
+                                        .fill(alertIconColor.opacity(0.12))
                                         .frame(width: 40, height: 40)
-                                    Image(systemName: priorityIcon(for: order.priority))
+                                    Image(systemName: alertIconName)
                                         .font(.system(size: 16))
-                                        .foregroundColor(priorityColor(for: order.priority))
+                                        .foregroundColor(alertIconColor)
                                 }
-
+                                
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(order.title)
+                                    Text(alert.title)
                                         .font(.system(size: 16, weight: .semibold))
                                         .foregroundColor(AppColors.primaryText)
-                                    Text("\(order.vehicleName) • Priority: \(order.priority.rawValue.capitalized)")
+                                    Text(alert.subtitle)
                                         .font(.system(size: 13))
                                         .foregroundColor(.secondary)
                                         .lineLimit(1)

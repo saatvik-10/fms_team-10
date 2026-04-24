@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct MaintenanceTabView: View {
     @Binding var isLoggedIn: Bool
@@ -45,5 +46,8 @@ struct MaintenanceTabView: View {
         }
         .environmentObject(store)
         .accentColor(AppColors.primary)
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
+            store.refreshWorkOrderStatuses()
+        }
     }
 }

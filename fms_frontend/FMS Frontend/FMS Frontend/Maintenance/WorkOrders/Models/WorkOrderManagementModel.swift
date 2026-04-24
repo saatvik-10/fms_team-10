@@ -35,6 +35,12 @@ struct Part: Identifiable, Codable {
     var imageAsset: String? = nil
 }
 
+struct WorkOrderPartUsage: Identifiable, Codable, Hashable {
+    var id = UUID()
+    var inventoryPartId: String
+    var quantity: Int
+}
+
 struct WorkOrder: Identifiable, Codable {
     var id = UUID()
     var orderID: String = "WO-\(Int.random(in: 1000...9999))"
@@ -47,9 +53,11 @@ struct WorkOrder: Identifiable, Codable {
     var status: WorkOrderStatus
     var taskDetails: String
     var scheduledDate: Date
+    var hasBeenRescheduled: Bool = false
     var technicianId: String
     var technicianNotes: String = ""
     var partsNeeded: [Part] = []
+    var consumedParts: [WorkOrderPartUsage] = []
     var imageURL: String? = nil
     var imageAsset: String? = nil
     var voiceTranscript: String? = nil

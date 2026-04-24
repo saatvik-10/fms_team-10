@@ -19,6 +19,21 @@ struct PriorityFeedItem: Identifiable {
     let priority: WorkOrderPriority
 }
 
+enum DashboardAlertSource {
+    case workOrder
+    case inventory
+}
+
+struct DashboardAlertItem: Identifiable {
+    let id: String
+    let source: DashboardAlertSource
+    let title: String
+    let subtitle: String
+    let sortOrder: Int
+    let workOrderId: UUID?
+    let inventoryPartId: String?
+}
+
 // MARK: - Low Stock Part
 /// A part whose inventory is at or below the minimum threshold.
 struct LowStockPart: Identifiable {
