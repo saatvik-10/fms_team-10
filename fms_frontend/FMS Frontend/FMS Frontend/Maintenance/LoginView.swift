@@ -266,8 +266,6 @@ struct LoginView: View {
                 return
             }
 
-            _ = try await AuthAPI.shared.sendOTP(email: email)
-
             pendingEmail = email
             pendingRole = mappedRole
             navigateTo2FA = true
