@@ -253,7 +253,11 @@ struct LocationPickerSheet: View {
                     
                     await MainActor.run {
                         self.selectedPlaceName = address.isEmpty ? "Unknown Location" : address
-                        self.searchQuery = name.isEmpty ? address : name
+                        // Only update search bar if it already has content (user typing) or is non-initial
+                        // This prevents pre-filling "Kartavya Path" on the very first load.
+                        if !self.searchQuery.isEmpty {
+                            self.searchQuery = name.isEmpty ? address : name
+                        }
                     }
                 } else {
                     await MainActor.run {

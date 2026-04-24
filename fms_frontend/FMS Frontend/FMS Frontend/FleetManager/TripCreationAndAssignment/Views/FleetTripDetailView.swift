@@ -411,11 +411,11 @@ struct LogisticsTicketCard: View {
                             Rectangle()
                                 .fill(AppColors.primary.opacity(0.2))
                                 .frame(height: 1)
+                                .frame(width: 50) // Fixed width for arrow connector to keep alignment stable
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 8, weight: .black))
                                 .foregroundColor(AppColors.primary)
                         }
-                        .frame(width: sourceValue.count > 10 ? 40 : 60)
                         .padding(.top, 4)
                     }
                     
@@ -425,12 +425,12 @@ struct LogisticsTicketCard: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(destLabel.uppercased())
                             .font(AppFonts.caption2)
-                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         Text(destValue)
-                            .font(AppFonts.title2)
-                            .fontWeight(.black)
+                            .font(AppFonts.title3)
+                            .fontWeight(.bold)
                             .foregroundColor(AppColors.primary)
+                            .multilineTextAlignment(.trailing)
                     }
                 }
                 

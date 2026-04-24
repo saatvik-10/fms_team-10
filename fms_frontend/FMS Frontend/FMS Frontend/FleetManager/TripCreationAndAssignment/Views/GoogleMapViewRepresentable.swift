@@ -55,9 +55,15 @@ struct FleetGoogleMapView: UIViewRepresentable {
     // MARK: - updateUIView
 
     func updateUIView(_ uiView: GMSMapView, context: Context) {
-        // Performance guard: skip redraw if polyline hasn't changed
-        guard context.coordinator.lastPolyline != encodedPolyline ||
-              originCoord != nil || destCoord != nil else { return }
+        // Performance guard: only skip if we have no data at all
+        guard !encodedPolyline.isEmpty || originCoord != nil || destCoord != nil else { return }
+        
+        // Skip redraw ONLY if the polyline string is identical to what we just drew
+        // (unless we don't have a polyline yet, then we must draw the markers/circles)
+        if context.coordinator.lastPolyline == encodedPolyline && !encodedPolyline.isEmpty {
+            return
+        }
+        
         context.coordinator.lastPolyline = encodedPolyline
 
         uiView.clear()
