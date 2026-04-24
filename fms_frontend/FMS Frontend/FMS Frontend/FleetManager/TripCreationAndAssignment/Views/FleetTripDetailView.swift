@@ -272,10 +272,25 @@ struct FleetTripDetailView: View {
         isLoadingRoute = true
         routeError = nil
         
+        // If the trip already has precise coordinates and polyline saved (from Trip Creation), use them!
+        if let polyline = trip.encodedPolyline, let oCoord = trip.originCoordinate, let dCoord = trip.destCoordinate {
+            await MainActor.run {
+                self.encodedPolyline = polyline
+                self.originCoord = oCoord
+                self.destCoord = dCoord
+                self.originName = trip.origin
+                self.destName = trip.destination
+                self.apiEta = trip.duration ?? "TBD"
+                self.apiDistance = trip.distance ?? "TBD"
+                self.isLoadingRoute = false
+            }
+            return
+        }
+        
         do {
             let result: FleetDirectionsResult
             
-            // DEMO MODE: If active trip, show a route from Bangalore to Coorg with user as waypoint
+            // Fallback for older mock trips
             if tripOverride == nil {
                 result = try await FleetDirectionsService.shared.fetchDirections(
                     origin: "Bangalore",
@@ -283,7 +298,6 @@ struct FleetTripDetailView: View {
                     waypointCoord: locationManager.lastLocation
                 )
             } else {
-                // Otherwise use the trip's defined origin and destination
                 result = try await FleetDirectionsService.shared.fetchDirections(
                     origin: trip.origin,
                     destination: trip.destination

@@ -20,6 +20,7 @@ class FleetCreateTripViewModel: ObservableObject {
     
     // Geofencing (New)
     @Published var geofenceRadius: Double = 1000.0 // Default 1km
+    @Published var encodedPolyline: String = "" // Save polyline for detail view
     
     @Published var estimatedCost: Double = 0.0
     @Published var estimatedDistance: Double = 0.0
@@ -71,6 +72,7 @@ class FleetCreateTripViewModel: ObservableObject {
                 }
                 if hours == 0 { hours = dist / 60.0 } // fallback
                 
+                self.encodedPolyline = result.polyline
                 self.estimatedDistance = dist
                 self.estimatedDuration = hours
                 self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
@@ -110,7 +112,8 @@ class FleetCreateTripViewModel: ObservableObject {
             loadAmount: "\(loadAmount) \(loadUnit)",
             geofenceRadius: geofenceRadius,
             originCoordinate: src.coordinate,
-            destCoordinate: dst.coordinate
+            destCoordinate: dst.coordinate,
+            encodedPolyline: encodedPolyline
         )
         
         if let vIndex = dataManager.vehicles.firstIndex(where: { $0.id == selectedVehicleID }) {

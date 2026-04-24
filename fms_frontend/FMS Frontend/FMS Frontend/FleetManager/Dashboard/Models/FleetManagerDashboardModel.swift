@@ -222,6 +222,7 @@ struct VehicleTrip: Identifiable {
     var geofenceRadius: Double? = 1000.0
     var originCoordinate: CLLocationCoordinate2D? = nil
     var destCoordinate: CLLocationCoordinate2D? = nil
+    var encodedPolyline: String? = nil
 }
 
 struct VehicleMaintenance {
