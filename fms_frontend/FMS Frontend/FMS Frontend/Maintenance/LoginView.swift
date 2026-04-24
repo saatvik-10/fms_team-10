@@ -17,6 +17,7 @@ struct LoginView: View {
     @State private var loginError: String?
     @State private var pendingEmail = ""
     @State private var pendingRole: AppUserRole = .none
+    @State private var logoWidth: CGFloat = 0
     
     @FocusState private var focusedField: Field?
     enum Field {
@@ -26,162 +27,50 @@ struct LoginView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background Image - Full visibility
-                Image("login_bg")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .ignoresSafeArea()
-                
-                // Very light overshadow for readability
-                Color.black.opacity(0.1)
-                    .ignoresSafeArea()
-                
-                LoginGridView()
-                    .ignoresSafeArea()
+                backgroundSection
                 
                 VStack {
                     Spacer()
                     
                     // Main Content Card
                     VStack(spacing: 0) {
-                        // Logo Section
-                        VStack(spacing: 12) {
-                            ZStack(alignment: .leading) {
-                                Text("FLEETRO")
-                                    .font(.system(size: 36, weight: .black))
-                                    .tracking(8)
-                                    .foregroundColor(.white)
-                                    .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
-                                    .mask(
-                                        HStack(spacing: 0) {
-                                            Rectangle()
-                                                .frame(width: animateLogo ? 250 : 0)
-                                            Spacer()
-                                        }
-                                    )
-                                
-                                Image(systemName: "car.side.fill")
-                                    .font(.system(size: 26))
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .scaleEffect(x: -1, y: 1)
-                                    .offset(x: animateLogo ? 235 : -15)
-                                    .opacity(animateLogo ? 1 : 0)
-                            }
-                        }
-                        .padding(.top, 20)
-                        .onAppear {
-                            withAnimation(.easeInOut(duration: 3.5).delay(0.2)) {
-                                animateLogo = true
-                            }
-                        }
+                        logoSection
                         
-                        Spacer().frame(height: 50)
+                        // Internal Spacing
+                        Color.clear.frame(height: 40)
                         
-                        // Input Fields
-                        VStack(spacing: 20) {
-                            // Username Field
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Username")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white.opacity(0.9))
-                                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
-                                
-                                TextField("", text: $username, prompt: Text("Enter your username").foregroundColor(.white.opacity(0.4)))
-                                    .focused($focusedField, equals: .username)
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .padding(18)
-                                    .background(Color.white.opacity(0.15))
-                                    .cornerRadius(12)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(focusedField == .username ? Color.white.opacity(0.6) : Color.white.opacity(0.2), lineWidth: 1)
-                                    )
-                                    .autocapitalization(.none)
-                            }
-                            
-                            // Password Field
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Password")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white.opacity(0.9))
-                                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
-                                
-                                HStack {
-                                    if showPassword {
-                                        TextField("", text: $password, prompt: Text("Enter your password").foregroundColor(.white.opacity(0.4)))
-                                    } else {
-                                        SecureField("", text: $password, prompt: Text("Enter your password").foregroundColor(.white.opacity(0.4)))
-                                    }
-                                    
-                                    Button(action: { showPassword.toggle() }) {
-                                        Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
-                                            .foregroundColor(.white.opacity(0.7))
-                                    }
-                                }
-                                .focused($focusedField, equals: .password)
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
-                                .padding(18)
-                                .background(Color.white.opacity(0.15))
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(focusedField == .password ? Color.white.opacity(0.6) : Color.white.opacity(0.2), lineWidth: 1)
-                                )
-                            }
-                        }
+                        inputFieldsSection
 
                         if let loginError {
-                            Text(loginError)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.red.opacity(0.9))
-                                .multilineTextAlignment(.center)
-                                .padding(.top, 12)
+                            errorSection(loginError)
                         }
                         
-                        Spacer().frame(height: 35)
+                        Color.clear.frame(height: 32)
                         
-                        // Sign In Button
-                        Button(action: {
-                            Task {
-                                await signInAndSendOTP()
-                            }
-                        }) {
-                            ZStack {
-                                if isLoggingIn {
-                                    ProgressView().tint(AppColors.primary)
-                                } else {
-                                    Text("Sign In")
-                                        .font(.system(size: 18, weight: .bold))
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 60)
-                            .background(Color.white)
-                            .foregroundColor(AppColors.primary)
-                            .cornerRadius(12)
-                            .shadow(color: Color.white.opacity(0.2), radius: 10, y: 5)
-                        }
-                        .disabled(isLoggingIn || username.isEmpty || password.isEmpty)
+                        actionButtonSection
                     }
-                    .padding(.horizontal, 30)
-                    .padding(.vertical, 30)
-                    .frame(maxWidth: 500) // Constraint for iPad
+                    .padding(32)
+                    .frame(maxWidth: 400) // Fixed max width for consistent card look
                     .background(
                         RoundedRectangle(cornerRadius: 32)
-                            .fill(Color.white.opacity(0.2))
+                            .fill(Color.white.opacity(0.15))
+                            .background(
+                                RoundedRectangle(cornerRadius: 32)
+                                    .fill(Color.black.opacity(0.2))
+                                    .blur(radius: 10)
+                            )
                     )
-                    .cornerRadius(32)
+                    .clipShape(RoundedRectangle(cornerRadius: 32))
                     .overlay(
                         RoundedRectangle(cornerRadius: 32)
-                            .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
                     )
-                    .shadow(color: Color.black.opacity(0.15), radius: 30, x: 0, y: 15)
-                    .padding(.horizontal, 30) // Screen padding
+                    .shadow(color: Color.black.opacity(0.3), radius: 40, x: 0, y: 20)
+                    .padding(.horizontal, 24)
                     
                     Spacer()
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .navigationDestination(isPresented: $navigateTo2FA) {
                 TwoFactorView(
@@ -194,6 +83,157 @@ struct LoginView: View {
                 focusedField = nil
             }
         }
+    }
+
+    // MARK: - Subviews
+
+    @ViewBuilder
+    private var backgroundSection: some View {
+        ZStack {
+            Image("login_bg")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .ignoresSafeArea()
+            
+            Color.black.opacity(0.2)
+                .ignoresSafeArea()
+            
+            LoginGridView()
+                .ignoresSafeArea()
+        }
+    }
+
+    @ViewBuilder
+    private var logoSection: some View {
+        VStack(spacing: 0) {
+            ZStack(alignment: .leading) {
+                Text("FLEETRO")
+                    .font(.system(size: 28, weight: .black))
+                    .tracking(6)
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear
+                                .onAppear { logoWidth = geo.size.width }
+                                .onChange(of: geo.size.width) { logoWidth = $1 }
+                        }
+                    )
+                    .mask(
+                        HStack(spacing: 0) {
+                            Rectangle()
+                                .frame(width: animateLogo ? (logoWidth > 0 ? logoWidth : 200) : 0)
+                            Spacer(minLength: 0)
+                        }
+                    )
+                
+                Image(systemName: "car.side.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(.white.opacity(0.9))
+                    .scaleEffect(x: -1, y: 1)
+                    .offset(x: animateLogo ? (logoWidth > 0 ? logoWidth + 5 : 190) : -30)
+                    .opacity(animateLogo ? 1 : 0)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.0).delay(0.3)) {
+                animateLogo = true
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var inputFieldsSection: some View {
+        VStack(spacing: 24) {
+            // Username Field
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Username")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.leading, 4)
+                
+                TextField("", text: $username, prompt: Text("Enter your username").foregroundColor(.white.opacity(0.35)))
+                    .focused($focusedField, equals: .username)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(18)
+                    .background(Color.white.opacity(0.12))
+                    .cornerRadius(14)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(focusedField == .username ? Color.white.opacity(0.5) : Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                    .autocapitalization(.none)
+            }
+            
+            // Password Field
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Password")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.leading, 4)
+                
+                HStack {
+                    if showPassword {
+                        TextField("", text: $password, prompt: Text("Enter your password").foregroundColor(.white.opacity(0.35)))
+                    } else {
+                        SecureField("", text: $password, prompt: Text("Enter your password").foregroundColor(.white.opacity(0.35)))
+                    }
+                    
+                    Button(action: { showPassword.toggle() }) {
+                        Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+                .focused($focusedField, equals: .password)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white)
+                .padding(18)
+                .background(Color.white.opacity(0.12))
+                .cornerRadius(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(focusedField == .password ? Color.white.opacity(0.5) : Color.white.opacity(0.1), lineWidth: 1)
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func errorSection(_ error: String) -> some View {
+        Text(error)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundColor(.red.opacity(0.8))
+            .multilineTextAlignment(.center)
+            .padding(.top, 12)
+    }
+
+    @ViewBuilder
+    private var actionButtonSection: some View {
+        Button(action: {
+            Task {
+                await signInAndSendOTP()
+            }
+        }) {
+            ZStack {
+                if isLoggingIn {
+                    ProgressView().tint(AppColors.primary)
+                } else {
+                    Text("Sign In")
+                        .font(.system(size: 17, weight: .bold))
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 58)
+            .background(Color.white)
+            .foregroundColor(AppColors.primary)
+            .cornerRadius(14)
+            .shadow(color: Color.black.opacity(0.1), radius: 10, y: 5)
+        }
+        .disabled(isLoggingIn || username.isEmpty || password.isEmpty)
+        .opacity(isLoggingIn || username.isEmpty || password.isEmpty ? 0.7 : 1.0)
     }
 
     @MainActor
