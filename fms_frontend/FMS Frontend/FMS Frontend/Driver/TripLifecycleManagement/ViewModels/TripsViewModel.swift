@@ -65,6 +65,34 @@ class TripsViewModel: ObservableObject {
         print("Start Trip tapped for \(trip.id)")
     }
     
+    func endTrip(_ tripId: String) {
+        print("End Trip called for \(tripId)")
+        if let index = trips.firstIndex(where: { $0.id == tripId }) {
+            let existing = trips[index]
+            
+            // Format current time for completion time
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d"
+            let dateString = formatter.string(from: Date())
+            
+            formatter.dateFormat = "'Today', HH:mm"
+            let timeString = formatter.string(from: Date())
+            
+            trips[index] = LifecycleTrip(
+                id: existing.id,
+                source: existing.source,
+                destination: existing.destination,
+                status: .completed,
+                dateValue: dateString,
+                timeLabel: "Completion Time",
+                timeValue: timeString,
+                loadInfo: existing.loadInfo,
+                distance: existing.distance,
+                vehicleNumber: existing.vehicleNumber
+            )
+        }
+    }
+    
     func viewSummary(_ trip: LifecycleTrip) {
         print("View Summary tapped for \(trip.id)")
     }

@@ -245,7 +245,7 @@ struct TwoFactorView: View {
 
         do {
             let response = try await AuthAPI.shared.verifyOTP(email: otpEmail, otp: otp)
-            guard response.value.lowercased() == "success" else {
+            guard response.message.lowercased() == "success" else {
                 otpError = "Invalid OTP. Please try again."
                 return
             }

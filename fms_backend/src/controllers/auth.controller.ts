@@ -134,11 +134,6 @@ export class Auth {
       return c.json({ err: 'Invalid credentials' }, 401);
     }
 
-    const token = await jwtAuth({
-      userId: user.id,
-      role: user.role,
-    });
-
     // Return role-specific profile based on role
     let profileData: Record<string, any> = { id: user.id, email: user.email };
 
@@ -171,8 +166,28 @@ export class Auth {
       return c.json({ err: 'Invalid credentials' }, 401);
     }
 
+    const userEmail = user.email?.trim();
+    if (!userEmail) {
+      return c.json({ err: 'No email found for this account' }, 400);
+    }
+
+    const existingOtp = otpStore.get(userEmail);
+    const now = Date.now();
+
+    if (existingOtp && isCooldownActive(existingOtp, now)) {
+      return c.json({ err: 'Please wait before requesting another OTP' }, 429);
+    }
+
+    const otp = createOtpCode();
+    saveOtpForEmail(userEmail, otp, now);
+
+    await verificationOTP({
+      userEmail,
+      otp,
+    });
+
     return c.json({
-      token,
+      message: 'Credentials verified. OTP sent successfully.',
       user: {
         ...profileData,
         role: user.role,
@@ -237,7 +252,28 @@ export class Auth {
 
     if (storedOtp.otp === otp) {
       clearOtpState(email);
-      return c.json('Success');
+
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          role: true,
+        },
+      });
+
+      if (!user || user.role === 'SUPER_ADMIN') {
+        return c.json({ err: 'Invalid user' }, 401);
+      }
+
+      const token = await jwtAuth({
+        userId: user.id,
+        role: user.role,
+      });
+
+      return c.json({
+        message: 'Success',
+        token,
+      });
     }
 
     return c.json('Failure');

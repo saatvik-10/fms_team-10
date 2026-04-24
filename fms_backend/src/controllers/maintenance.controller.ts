@@ -5,6 +5,7 @@ import { prisma } from '../../prisma';
 import { hashPassword } from '../lib/hashPassword';
 import { sendCredentialsMail } from '../services/resend.service';
 import { calculateAge } from '../lib/utils';
+import { genPswd } from '../lib/genPswd';
 
 export class Maintenance {
   async createMaintenance(c: Context) {
@@ -38,7 +39,7 @@ export class Maintenance {
 
     const firstName = name.split(' ')[0]!.toLowerCase();
     const username = `${firstName}_${nanoid(3)}`;
-    const password = nanoid();
+    const password = genPswd();
     const passwordHash = await hashPassword(password);
 
     // Create User and Maintenance in transaction
