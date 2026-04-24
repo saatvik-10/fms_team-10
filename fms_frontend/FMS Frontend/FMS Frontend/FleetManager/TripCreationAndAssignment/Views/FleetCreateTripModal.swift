@@ -4,8 +4,13 @@ struct FleetCreateTripModal: View {
     @Binding var isPresented: Bool
     @EnvironmentObject var dataManager: FleetDataManager
     
-    @State private var source: String = ""
-    @State private var destination: String = ""
+    @State private var sourceLocation: PickedLocation? = nil
+    @State private var destinationLocation: PickedLocation? = nil
+    
+    @State private var showingSourcePicker = false
+    @State private var showingDestinationPicker = false
+    @State private var isCalculatingRoute = false
+    
     @State private var selectedVehicleID: String = ""
     @State private var selectedDriverID: String = ""
     @State private var scheduledDate: Date = Date()
@@ -28,11 +33,29 @@ struct FleetCreateTripModal: View {
         NavigationView {
             Form {
                 Section(header: Text("Location Details")) {
-                    ModalSearchField(label: "Source Location", text: $source)
-                        .onChange(of: source) { _, _ in calculateCost() }
+                    Button(action: { showingSourcePicker = true }) {
+                        HStack {
+                            Text("Source Location")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Text(sourceLocation?.name ?? "Tap to select")
+                                .foregroundColor(sourceLocation == nil ? .gray : AppColors.primary)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                    }
                     
-                    ModalSearchField(label: "Destination Location", text: $destination)
-                        .onChange(of: destination) { _, _ in calculateCost() }
+                    Button(action: { showingDestinationPicker = true }) {
+                        HStack {
+                            Text("Destination Location")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Text(destinationLocation?.name ?? "Tap to select")
+                                .foregroundColor(destinationLocation == nil ? .gray : AppColors.primary)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                    }
                 }
                 
                 Section(header: Text("Cargo Details")) {
@@ -74,27 +97,36 @@ struct FleetCreateTripModal: View {
                     DatePicker("Departure Time", selection: $scheduledDate, displayedComponents: [.date, .hourAndMinute])
                 }
                 
-                if estimatedCost > 0 {
+                if estimatedCost > 0 || isCalculatingRoute {
                     Section(header: Text("Cost Estimation (INR)")) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Total Estimated Cost")
-                                    .font(AppFonts.caption1)
-                                    .foregroundColor(.gray)
-                                Text("₹\(String(format: "%.2f", estimatedCost))")
-                                    .font(AppFonts.headline)
-                                    .foregroundColor(AppColors.primary)
+                        if isCalculatingRoute {
+                            HStack {
+                                Spacer()
+                                ProgressView("Calculating route...")
+                                Spacer()
                             }
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 4) {
-                                Text("\(Int(estimatedDistance)) km")
-                                    .font(AppFonts.headline)
-                                Text("Est. \(Int(estimatedDuration)) hrs")
-                                    .font(AppFonts.caption1)
-                                    .foregroundColor(.gray)
+                            .padding(.vertical, 8)
+                        } else {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Total Estimated Cost")
+                                        .font(AppFonts.caption1)
+                                        .foregroundColor(.gray)
+                                    Text("₹\(String(format: "%.2f", estimatedCost))")
+                                        .font(AppFonts.headline)
+                                        .foregroundColor(AppColors.primary)
+                                }
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    Text("\(Int(estimatedDistance)) km")
+                                        .font(AppFonts.headline)
+                                    Text("Est. \(Int(estimatedDuration)) hrs")
+                                        .font(AppFonts.caption1)
+                                        .foregroundColor(.gray)
+                                }
                             }
+                            .padding(.vertical, 8)
                         }
-                        .padding(.vertical, 8)
                     }
                 }
                 
@@ -122,34 +154,88 @@ struct FleetCreateTripModal: View {
                 }
             }
         }
+        .sheet(isPresented: $showingSourcePicker) {
+            LocationPickerSheet(title: "Select Source", selectedLocation: $sourceLocation)
+        }
+        .sheet(isPresented: $showingDestinationPicker) {
+            LocationPickerSheet(title: "Select Destination", selectedLocation: $destinationLocation)
+        }
+        .onChange(of: sourceLocation) { _, _ in fetchRealRoute() }
+        .onChange(of: destinationLocation) { _, _ in fetchRealRoute() }
     }
     
     private var canCreate: Bool {
-        !source.isEmpty && !destination.isEmpty && !selectedVehicleID.isEmpty && !selectedDriverID.isEmpty
+        sourceLocation != nil && destinationLocation != nil && !selectedVehicleID.isEmpty && !selectedDriverID.isEmpty
     }
     
-    private func calculateCost() {
-        guard !source.isEmpty && !destination.isEmpty else {
+    private func fetchRealRoute() {
+        guard let src = sourceLocation, let dst = destinationLocation else {
             estimatedCost = 0
             return
         }
         
-        // Mock calculation based on string lengths to simulate varied distances
-        let seed = Double(source.count + destination.count)
-        estimatedDistance = (seed * 15.0).truncatingRemainder(dividingBy: 800) + 50.0
-        estimatedDuration = estimatedDistance / 60.0 // Average 60km/h
+        isCalculatingRoute = true
         
-        estimatedCost = baseFee + (estimatedDistance * ratePerKM) + (estimatedDuration * hourlyRate)
+        Task {
+            do {
+                let result = try await FleetDirectionsService.shared.fetchDirections(
+                    originCoord: src.coordinate,
+                    destCoord: dst.coordinate,
+                    originName: src.name,
+                    destName: dst.name
+                )
+                
+                // Parse distance and duration to numbers for cost calculation
+                // Distance string like "32.4 km"
+                let distStr = result.distance.replacingOccurrences(of: " km", with: "").replacingOccurrences(of: ",", with: "")
+                let dist = Double(distStr) ?? 50.0
+                
+                // Duration string like "45 mins" or "2 hours 15 mins"
+                var hours = 0.0
+                let durationParts = result.eta.components(separatedBy: " ")
+                if result.eta.contains("hour") {
+                    if let hrIndex = durationParts.firstIndex(where: { $0.contains("hour") }), hrIndex > 0 {
+                        hours += Double(durationParts[hrIndex - 1]) ?? 0.0
+                    }
+                    if let minIndex = durationParts.firstIndex(where: { $0.contains("min") }), minIndex > 0 {
+                        hours += (Double(durationParts[minIndex - 1]) ?? 0.0) / 60.0
+                    }
+                } else if let minIndex = durationParts.firstIndex(where: { $0.contains("min") }), minIndex > 0 {
+                    hours += (Double(durationParts[minIndex - 1]) ?? 0.0) / 60.0
+                }
+                if hours == 0 { hours = dist / 60.0 } // fallback
+                
+                await MainActor.run {
+                    self.estimatedDistance = dist
+                    self.estimatedDuration = hours
+                    self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
+                    self.isCalculatingRoute = false
+                }
+            } catch {
+                await MainActor.run {
+                    print("Route fetch error: \(error)")
+                    // Fallback to mock if API fails
+                    let dist = 100.0
+                    let hours = dist / 60.0
+                    self.estimatedDistance = dist
+                    self.estimatedDuration = hours
+                    self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
+                    self.isCalculatingRoute = false
+                }
+            }
+        }
     }
     
     private func createTrip() {
+        guard let src = sourceLocation, let dst = destinationLocation else { return }
+        
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
         
         let newTrip = VehicleTrip(
             vehicleID: selectedVehicleID,
-            origin: source,
-            destination: destination,
+            origin: src.name,
+            destination: dst.name,
             progress: 0.0,
             eta: formatter.string(from: scheduledDate.addingTimeInterval(estimatedDuration * 3600)),
             date: "Today",
