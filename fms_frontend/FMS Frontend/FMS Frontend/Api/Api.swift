@@ -343,6 +343,10 @@ final class AuthAPI {
 		self.client = client
 	}
 
+	func getCurrentToken() -> String? {
+		client.currentToken()
+	}
+
 	func superAdminSignin(email: String, password: String) async throws -> AuthTokenResponse {
 		let response: AuthTokenResponse = try await client.request(
 			path: "/auth/super-admin/signin",

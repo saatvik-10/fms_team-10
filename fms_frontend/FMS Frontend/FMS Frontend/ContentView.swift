@@ -6,8 +6,9 @@
 //
 
 import SwiftUI
+import Combine
 
-enum AppUserRole {
+enum AppUserRole: Equatable {
     case none
     case driver
     case maintenance
@@ -15,9 +16,15 @@ enum AppUserRole {
 }
 
 @MainActor
-final class SessionManager: ObservableObject {
-    @Published private(set) var userRole: AppUserRole = .none
-    @Published private(set) var isRestoringSession = true
+final class AppSessionStore: ObservableObject {
+
+    enum State: Equatable {
+        case restoring
+        case unauthenticated
+        case authenticated(AppUserRole)
+    }
+
+    @Published private(set) var state: State = .restoring
 
     private let authAPI: AuthAPI
     private var didRestoreSession = false
@@ -26,39 +33,52 @@ final class SessionManager: ObservableObject {
         self.authAPI = authAPI
     }
 
+    var currentRole: AppUserRole {
+        if case let .authenticated(role) = state {
+            return role
+        }
+        return .none
+    }
+
     func restoreSessionIfNeeded() async {
         guard !didRestoreSession else { return }
         didRestoreSession = true
 
-        defer {
-            isRestoringSession = false
-        }
+        print("🟡 Checking for token...")
 
-        guard APIClient.shared.currentToken() != nil else {
-            userRole = .none
+        guard let token = authAPI.getCurrentToken(), !token.isEmpty else {
+            print("🔴 No token found — going to login")
+            state = .unauthenticated
             return
         }
 
+        print("🟢 Token found:", token)
+
         do {
             let profile = try await authAPI.getProfile().profile
-            userRole = AppUserRole(profile.role)
+            print("🟢 Profile fetched — role:", profile.role)
+            state = .authenticated(AppUserRole(profile.role))
         } catch {
+            print("🔴 Session restore failed:", error)
             authAPI.logout()
-            userRole = .none
+            state = .unauthenticated
         }
     }
-
     func setAuthenticated(role: AppUserRole) {
-        userRole = role
+        guard role != .none else {
+            logout()
+            return
+        }
+        state = .authenticated(role)
     }
 
     func logout() {
         authAPI.logout()
-        userRole = .none
+        state = .unauthenticated
     }
 }
 
-private extension AppUserRole {
+extension AppUserRole {
     init(_ role: UserRole) {
         switch role {
         case .driver:
@@ -72,46 +92,53 @@ private extension AppUserRole {
 }
 
 struct ContentView: View {
-    @StateObject private var session = SessionManager()
+    @StateObject private var session = AppSessionStore()
+
+    private var userRoleBinding: Binding<AppUserRole> {
+        Binding(
+            get: { session.currentRole },
+            set: { role in
+                if role == .none {
+                    session.logout()
+                } else {
+                    session.setAuthenticated(role: role)
+                }
+            }
+        )
+    }
+
+    private var maintenanceLoggedInBinding: Binding<Bool> {
+        Binding(
+            get: { session.currentRole == .maintenance },
+            set: { isLoggedIn in
+                if !isLoggedIn {
+                    session.logout()
+                }
+            }
+        )
+    }
 
     var body: some View {
         Group {
-            if session.isRestoringSession {
+            switch session.state {
+            case .restoring:
                 ProgressView("Restoring session...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if session.userRole == .none {
-                LoginView(userRole: Binding(
-                    get: { session.userRole },
-                    set: { newRole in
-                        if newRole == .none {
-                            session.logout()
-                        } else {
-                            session.setAuthenticated(role: newRole)
-                        }
-                    }
-                ))
-            } else if session.userRole == .driver {
-                DashboardView(userRole: Binding(
-                    get: { session.userRole },
-                    set: { newRole in
-                        if newRole == .none {
-                            session.logout()
-                        } else {
-                            session.setAuthenticated(role: newRole)
-                        }
-                    }
-                ))
-            } else if session.userRole == .maintenance {
-                MaintenanceTabView(isLoggedIn: Binding(
-                    get: { session.userRole == .maintenance },
-                    set: { isLoggedIn in
-                        if !isLoggedIn {
-                            session.logout()
-                        }
-                    }
-                ))
-            } else if session.userRole == .manager {
-                FleetManagerMainView()
+
+            case .unauthenticated:
+                LoginView(userRole: userRoleBinding)
+
+            case let .authenticated(role):
+                switch role {
+                case .driver:
+                    DashboardView(userRole: userRoleBinding)
+                case .maintenance:
+                    MaintenanceTabView(isLoggedIn: maintenanceLoggedInBinding)
+                case .manager:
+                    FleetManagerMainView()
+                case .none:
+                    LoginView(userRole: userRoleBinding)
+                }
             }
         }
         .task {
