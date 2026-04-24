@@ -8,15 +8,10 @@
 import SwiftUI
 import Combine
 
-enum AppUserRole: Equatable {
-    case none
-    case driver
-    case maintenance
-    case manager
-}
-
 @MainActor
 final class AppSessionStore: ObservableObject {
+//    let objectWillChange: ObservableObjectPublisher
+    
 
     enum State: Equatable {
         case restoring
@@ -75,19 +70,6 @@ final class AppSessionStore: ObservableObject {
     func logout() {
         authAPI.logout()
         state = .unauthenticated
-    }
-}
-
-extension AppUserRole {
-    init(_ role: UserRole) {
-        switch role {
-        case .driver:
-            self = .driver
-        case .maintenance:
-            self = .maintenance
-        case .manager, .superAdmin:
-            self = .manager
-        }
     }
 }
 
