@@ -10,6 +10,44 @@ struct UserProfile: Codable, Identifiable {
     let role: UserRole
     let createdAt: Date
     let updatedAt: Date
+
+    init(
+        id: String,
+        name: String,
+        username: String,
+        phone: String,
+        address: String,
+        email: String,
+        role: UserRole,
+        createdAt: Date,
+        updatedAt: Date
+    ) {
+        self.id = id
+        self.name = name
+        self.username = username
+        self.phone = phone
+        self.address = address
+        self.email = email
+        self.role = role
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        username = try container.decode(String.self, forKey: .username)
+        phone = try container.decode(String.self, forKey: .phone)
+        address = try container.decode(String.self, forKey: .address)
+        email = try container.decode(String.self, forKey: .email)
+        role = try container.decode(UserRole.self, forKey: .role)
+
+        let fallbackDate = Date()
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? fallbackDate
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? createdAt
+    }
 }
 
 extension UserProfile {
