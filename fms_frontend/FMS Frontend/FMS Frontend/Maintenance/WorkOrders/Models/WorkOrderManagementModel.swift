@@ -59,6 +59,9 @@ struct WorkOrder: Identifiable, Codable {
     var imageURL: String? = nil
     var imageAsset: String? = nil
     var voiceTranscript: String? = nil
+    var driverMediaImages: [Data] = []
+    var isAccepted: Bool = false
+    var acceptedByTechnicianId: String? = nil
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
     var proofOfWorkImages: [Data] = []

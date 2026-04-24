@@ -100,6 +100,22 @@ struct WorkOrderDetailsView: View {
                                 PriorityBadge(priority: workOrder.priority.rawValue)
                             }
                             .padding(.top, 8)
+                            
+                            if workOrder.isAccepted, let techId = workOrder.acceptedByTechnicianId {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "person.badge.shield.checkmark.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.green)
+                                    Text("Accepted by: \(techId)")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundColor(.green)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.green.opacity(0.1))
+                                .cornerRadius(8)
+                                .padding(.top, 4)
+                            }
                         }
                         
                         Divider().padding(.vertical, 12)
@@ -126,6 +142,12 @@ struct WorkOrderDetailsView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "DRIVER NOTES", icon: "person.wave.2.fill")
                             driverNotesContent
+                        }
+                        
+                        // Driver Media Card
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionHeader(title: "DRIVER MEDIA", icon: "photo.on.rectangle.angled")
+                            driverMediaContent
                         }
                         
                         // System Checklist
@@ -274,42 +296,69 @@ struct WorkOrderDetailsView: View {
                         }
                         
                         // Action Buttons (Now part of the scroll content)
-                        HStack(spacing: 16) {
-                            if canReschedule {
-                                Button(action: { showingDatePicker = true }) {
-                                    Text("Schedule Later")
-                                        .font(.system(size: 15, weight: .bold))
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 16)
-                                        .background(Color.white)
-                                        .foregroundColor(.primary)
-                                        .cornerRadius(14)
-                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                        VStack(spacing: 16) {
+                            if !workOrder.isAccepted {
+                                Button(action: {
+                                    acceptWorkOrder()
+                                }) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "checkmark.shield.fill")
+                                            .font(.system(size: 16, weight: .bold))
+                                        Text("Accept Work Order")
+                                            .font(.system(size: 15, weight: .bold))
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [Color.green, Color.green.opacity(0.85)]),
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .foregroundColor(.white)
+                                    .cornerRadius(14)
+                                    .shadow(color: Color.green.opacity(0.3), radius: 8, x: 0, y: 4)
                                 }
                             }
                             
-                            Button(action: {
-                                guard isChecklistComplete else {
-                                    showingChecklistIncompleteAlert = true
-                                    return
+                            HStack(spacing: 16) {
+                                if canReschedule {
+                                    Button(action: { showingDatePicker = true }) {
+                                        Text("Schedule Later")
+                                            .font(.system(size: 15, weight: .bold))
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 16)
+                                            .background(Color.white)
+                                            .foregroundColor(.primary)
+                                            .cornerRadius(14)
+                                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                                    }
                                 }
-                                var updated = workOrder
-                                updated.status = .completed
-                                store.updateWorkOrder(updated)
-                                workOrder = updated
-                                dismiss()
-                            }) {
-                                Text("Complete Task")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
-                                    .background(AppColors.primary)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(14)
-                                    .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
+                                
+                                Button(action: {
+                                    guard isChecklistComplete else {
+                                        showingChecklistIncompleteAlert = true
+                                        return
+                                    }
+                                    var updated = workOrder
+                                    updated.status = .completed
+                                    store.updateWorkOrder(updated)
+                                    workOrder = updated
+                                    dismiss()
+                                }) {
+                                    Text("Complete Task")
+                                        .font(.system(size: 15, weight: .bold))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 16)
+                                        .background(AppColors.primary)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(14)
+                                        .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
+                                }
+                                .disabled(!isChecklistComplete)
+                                .opacity(isChecklistComplete ? 1 : 0.55)
                             }
-                            .disabled(!isChecklistComplete)
-                            .opacity(isChecklistComplete ? 1 : 0.55)
                         }
                         .padding(.top, 32)
                         .padding(.bottom, 40)
@@ -513,6 +562,48 @@ struct WorkOrderDetailsView: View {
     }
 
     @ViewBuilder
+    private var driverMediaContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if workOrder.driverMediaImages.isEmpty {
+                HStack(spacing: 10) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.title3)
+                        .foregroundColor(.secondary.opacity(0.6))
+                    Text("No driver media uploaded.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.vertical, 4)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(0..<workOrder.driverMediaImages.count, id: \.self) { index in
+                            if let uiImage = UIImage(data: workOrder.driverMediaImages[index]) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 100, height: 100)
+                                    .cornerRadius(12)
+                                    .clipped()
+                                    .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                            }
+                        }
+                    }
+                }
+                
+                Text("\(workOrder.driverMediaImages.count) photo(s) from driver")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+    }
+
+    @ViewBuilder
     private var checklistContent: some View {
         VStack(spacing: 0) {
             ForEach($workOrder.checklist, id: \.id) { $item in
@@ -628,5 +719,13 @@ struct WorkOrderDetailsView: View {
         guard let idx = workOrder.consumedParts.firstIndex(where: { $0.inventoryPartId == partId }) else { return }
         workOrder.consumedParts.remove(at: idx)
         store.updateWorkOrder(workOrder)
+    }
+
+    private func acceptWorkOrder() {
+        var updated = workOrder
+        updated.isAccepted = true
+        updated.acceptedByTechnicianId = updated.technicianId == "Unassigned" ? "TECH-\(String(format: "%04d", Int.random(in: 1...9999)))" : updated.technicianId
+        store.updateWorkOrder(updated)
+        workOrder = updated
     }
 }
