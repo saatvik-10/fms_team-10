@@ -102,30 +102,34 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            switch session.state {
-            case .restoring:
-                ProgressView("Restoring session...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // ── LOGIN BYPASS (comment out to re-enable login) ──────────────
+            FleetManagerMainView()
+            // ── END BYPASS ─────────────────────────────────────────────────
 
-            case .unauthenticated:
-                LoginView(userRole: userRoleBinding)
-
-            case let .authenticated(role):
-                switch role {
-                case .driver:
-                    DashboardView(userRole: userRoleBinding)
-                case .maintenance:
-                    MaintenanceTabView(isLoggedIn: maintenanceLoggedInBinding)
-                case .manager:
-                    FleetManagerMainView()
-                case .none:
-                    LoginView(userRole: userRoleBinding)
-                }
-            }
+//            switch session.state {
+//            case .restoring:
+//                ProgressView("Restoring session...")
+//                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+//
+//            case .unauthenticated:
+//                LoginView(userRole: userRoleBinding)
+//
+//            case let .authenticated(role):
+//                switch role {
+//                case .driver:
+//                    DashboardView(userRole: userRoleBinding)
+//                case .maintenance:
+//                    MaintenanceTabView(isLoggedIn: maintenanceLoggedInBinding)
+//                case .manager:
+//                    FleetManagerMainView()
+//                case .none:
+//                    LoginView(userRole: userRoleBinding)
+//                }
+//            }
         }
-        .task {
-            await session.restoreSessionIfNeeded()
-        }
+//        .task {
+//            await session.restoreSessionIfNeeded()
+//        }
     }
 }
 

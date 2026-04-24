@@ -185,7 +185,7 @@ struct MaintenanceSectionHeader<Destination: View>: View {
     }
 }
 
-// MARK: - Maintenance Dashboard Alert Card
+// MARK: - Maintenance Alert Card
 struct MaintenanceDashboardAlertCard: View {
     let item: DashboardAlertItem
 
