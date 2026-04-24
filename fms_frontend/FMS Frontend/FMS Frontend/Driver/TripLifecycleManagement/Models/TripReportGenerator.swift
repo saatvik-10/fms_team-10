@@ -229,7 +229,6 @@ final class TripReportGenerator {
             .standard(label: "Driver Name",        value: d.driverName),
             .standard(label: "Start Date & Time",  value: d.startDateTime),
             .standard(label: "End Date & Time",    value: d.endDateTime),
-            .standard(label: "Trip Duration",      value: d.tripDuration),
             .standard(label: "Start Location",     value: d.startLocation),
             .standard(label: "End Location",       value: d.endLocation),
         ]

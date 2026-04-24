@@ -22,6 +22,8 @@ struct TripDetailView: View {
 
     // Passed from TripsView so ReportIssueView gets the full LifecycleTrip model.
     var lifecycleTrip: LifecycleTrip? = nil
+    
+    var onTripEnded: (() -> Void)? = nil
 
     @State private var estimatedArrival: String = "Loading..."
     @State private var routePolyline: String = ""
@@ -191,6 +193,7 @@ struct TripDetailView: View {
                 if newDistance <= 0 {
                     // AUTO-END: Driver has reached exact destination
                     tripProgressState = .ended
+                    onTripEnded?()
                 } else if newDistance <= 100 {
                     // NEAR DESTINATION: Unlock "End Trip" button (50–100 m range)
                     tripProgressState = .nearDestination
@@ -312,6 +315,7 @@ struct TripDetailView: View {
                 guard enabled else { return }
                 // TEAMMATE: trigger your trip-end / stop-tracking logic here
                 tripProgressState = .ended
+                onTripEnded?()
             }
             .allowsHitTesting(enabled)
 
