@@ -166,8 +166,28 @@ export class Auth {
       return c.json({ err: 'Invalid credentials' }, 401);
     }
 
+    const userEmail = user.email?.trim();
+    if (!userEmail) {
+      return c.json({ err: 'No email found for this account' }, 400);
+    }
+
+    const existingOtp = otpStore.get(userEmail);
+    const now = Date.now();
+
+    if (existingOtp && isCooldownActive(existingOtp, now)) {
+      return c.json({ err: 'Please wait before requesting another OTP' }, 429);
+    }
+
+    const otp = createOtpCode();
+    saveOtpForEmail(userEmail, otp, now);
+
+    await verificationOTP({
+      userEmail,
+      otp,
+    });
+
     return c.json({
-      message: 'Credentials verified. Proceed with OTP verification.',
+      message: 'Credentials verified. OTP sent successfully.',
       user: {
         ...profileData,
         role: user.role,
