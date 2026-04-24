@@ -80,13 +80,12 @@ model Maintenance {
 }
 
 model Vehicle {
-  id                 String @id @default(cuid())
-  ownerName          String
-  vehicleModel       String
-  registrationNum    String @unique
-  chassisNum         String @unique
-  odometerReading    Int
-  newOdometerReading Int
+  id              String @id @default(cuid())
+  ownerName       String
+  vehicleModel    String
+  registrationNum String @unique
+  chassisNum      String @unique
+  totalDistance   Int
 
   vehicleInfo VehicleInfo?
 
