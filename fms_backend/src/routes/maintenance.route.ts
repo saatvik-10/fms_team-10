@@ -12,5 +12,19 @@ maintenanceRoute.post(
   controller.createMaintenance,
 );
 
+maintenanceRoute.get(
+  '/get-maintenances',
+  proxyAuth,
+  requireRole(ROLES.MANAGER),
+  controller.getMaintenances,
+);
+
+maintenanceRoute.delete(
+  '/:maintenanceId',
+  proxyAuth,
+  requireRole(ROLES.MANAGER),
+  controller.deleteMaintenance,
+);
+
 export default maintenanceRoute;
 
