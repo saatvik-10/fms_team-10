@@ -307,7 +307,7 @@ struct AuthUser: Decodable {
 }
 
 struct UserSigninResponse: Decodable {
-	let token: String
+	let message: String?
 	let user: AuthUser
 }
 
@@ -316,21 +316,28 @@ struct UserProfileResponse: Decodable {
 }
 
 struct OTPVerifyResponse: Decodable {
-	let value: String
+	let message: String
+	let token: String?
 
 	init(from decoder: Decoder) throws {
 		if let container = try? decoder.singleValueContainer(),
 			 let singleValue = try? container.decode(String.self) {
-			self.value = singleValue
+			self.message = singleValue
+			self.token = nil
 			return
 		}
 
 		let keyed = try decoder.container(keyedBy: CodingKeys.self)
-		self.value = try keyed.decode(String.self, forKey: .message)
+		self.message = try keyed.decodeIfPresent(String.self, forKey: .message)
+			?? keyed.decodeIfPresent(String.self, forKey: .value)
+			?? "Failure"
+		self.token = try keyed.decodeIfPresent(String.self, forKey: .token)
 	}
 
 	private enum CodingKeys: String, CodingKey {
 		case message
+		case value
+		case token
 	}
 }
 
@@ -365,7 +372,6 @@ final class AuthAPI {
 			body: UserSigninRequest(username: username, password: password),
 			requiresAuth: false
 		)
-		client.setToken(response.token)
 		return response
 	}
 
@@ -379,12 +385,20 @@ final class AuthAPI {
 	}
 
 	func verifyOTP(email: String, otp: String) async throws -> OTPVerifyResponse {
-		try await client.request(
+		let response: OTPVerifyResponse = try await client.request(
 			path: "/auth/verify-otp",
 			method: .post,
 			body: OTPVerifyRequest(email: email, otp: otp),
 			requiresAuth: false
 		)
+
+		if response.message.lowercased() == "success",
+		   let token = response.token,
+		   !token.isEmpty {
+			client.setToken(token)
+		}
+
+		return response
 	}
 
 	func getProfile() async throws -> UserProfileResponse {
