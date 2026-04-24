@@ -18,10 +18,11 @@ struct FleetAnalyticsView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 5) {
                             Text("ENVIRONMENTAL IMPACT")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(AppFonts.caption2)
+                                .fontWeight(.bold)
                                 .foregroundColor(.gray)
                             Text("CO2 Emission Analytics")
-                                .font(.system(size: 32, weight: .black))
+                                .font(AppFonts.largeTitle)
                         }
                         Spacer()
                         
@@ -41,23 +42,26 @@ struct FleetAnalyticsView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("AVERAGE EMISSIONS")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
                                 Text("14.2 kg/mi")
-                                    .font(.system(size: 28, weight: .black))
+                                    .font(AppFonts.title1)
                                 Text("-12.4% from last period")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(AppTheme.activeGreen)
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(AppColors.activeGreen)
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 8) {
                                 Text("PEAK DAY")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
                                 Text("Thursday")
-                                    .font(.system(size: 18, weight: .bold))
+                                    .font(AppFonts.title3)
                                 Text("18.2 kg/mi")
-                                    .font(.system(size: 12))
+                                    .font(AppFonts.caption1)
                                     .foregroundColor(.gray)
                             }
                         }
@@ -72,7 +76,7 @@ struct FleetAnalyticsView: View {
                                             .frame(height: 250)
                                         
                                         RoundedRectangle(cornerRadius: 8)
-                                            .fill(item.isCurrent ? AppTheme.primary : AppTheme.statusBlue.opacity(0.3))
+                                            .fill(item.isCurrent ? AppColors.primary : AppColors.statusBlue.opacity(0.3))
                                             .frame(height: CGFloat(item.value * 12))
                                             .overlay(
                                                 Text(String(format: "%.1f", item.value))
@@ -84,7 +88,8 @@ struct FleetAnalyticsView: View {
                                     }
                                     
                                     Text(item.day)
-                                        .font(.system(size: 12, weight: .black))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.black)
                                         .foregroundColor(.gray)
                                 }
                                 .frame(maxWidth: .infinity)
@@ -99,15 +104,15 @@ struct FleetAnalyticsView: View {
                     
                     // Efficiency Row
                     HStack(spacing: 30) {
-                        EfficiencySectorCard(title: "Truck Fleet", value: "82%", icon: "truck.box.fill", color: AppTheme.primary)
-                        EfficiencySectorCard(title: "Van Fleet", value: "94%", icon: "bus.fill", color: AppTheme.statusBlue)
-                        EfficiencySectorCard(title: "EV Units", value: "98%", icon: "bolt.car.fill", color: AppTheme.activeGreen)
+                        EfficiencySectorCard(title: "Truck Fleet", value: "82%", icon: "truck.box.fill", color: AppColors.primary)
+                        EfficiencySectorCard(title: "Van Fleet", value: "94%", icon: "bus.fill", color: AppColors.statusBlue)
+                        EfficiencySectorCard(title: "EV Units", value: "98%", icon: "bolt.car.fill", color: AppColors.activeGreen)
                     }
                     .padding(.horizontal, 30)
                 }
                 .padding(.bottom, 50)
             }
-            .background(AppTheme.background)
+            .background(AppColors.background)
         }
         .navigationTitle("Fleet Analytics")
         .navigationBarTitleDisplayMode(.inline)
@@ -129,12 +134,13 @@ struct EfficiencySectorCard: View {
                     .foregroundColor(color)
                 Spacer()
                 Text(value)
-                    .font(.system(size: 24, weight: .black))
+                    .font(AppFonts.title2)
             }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title.uppercased())
-                    .font(.system(size: 10, weight: .bold))
+                    .font(AppFonts.caption2)
+                    .fontWeight(.bold)
                     .foregroundColor(.gray)
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.gray.opacity(0.1)).frame(height: 4)
@@ -145,7 +151,7 @@ struct EfficiencySectorCard: View {
         .padding(25)
         .background(Color.white)
         .cornerRadius(16)
-        .modifier(AppTheme.cardShadow())
+        .modifier(AppColors.cardShadow())
         .frame(maxWidth: .infinity)
     }
 }

@@ -14,11 +14,11 @@ struct DriverDetailView: View {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(AppTheme.primary)
+                        .foregroundColor(AppColors.primary)
                 }
 
                 Text(driver.name)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(AppFonts.title3)
 
                 Spacer()
 
@@ -65,13 +65,14 @@ struct DriverDetailView: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text(driver.name)
-                                .font(.system(size: 26, weight: .bold))
+                                .font(AppFonts.title1)
                             HStack(spacing: 6) {
                                 Circle()
                                     .fill(statusColor)
                                     .frame(width: 6, height: 6)
                                 Text(driver.status.rawValue)
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(statusColor)
                             }
                             .padding(.horizontal, 12)
@@ -96,7 +97,8 @@ struct DriverDetailView: View {
 
                     VStack(alignment: .leading, spacing: 14) {
                         Text("CURRENT ASSIGNMENT")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
 
                         HStack {
@@ -114,12 +116,13 @@ struct DriverDetailView: View {
 
                     VStack(alignment: .leading, spacing: 12) {
                         Text("RECENT ACTIVITY")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
 
                         if driver.activityLog.isEmpty {
                             Text("No recent activity")
-                                .font(.system(size: 13))
+                                .font(AppFonts.body)
                                 .foregroundColor(.gray)
                                 .padding(.vertical, 8)
                         } else {
@@ -140,7 +143,7 @@ struct DriverDetailView: View {
                 .padding(16)
                 .padding(.bottom, 24)
             }
-            .background(AppTheme.background)
+            .background(AppColors.background)
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingEditModal) {
@@ -161,9 +164,9 @@ struct DriverDetailView: View {
     
     var statusColor: Color {
         switch driver.status {
-        case .active, .onDuty: return AppTheme.activeGreen
-        case .onTrip: return AppTheme.maintenanceOrange
-        case .offDuty: return AppTheme.criticalRed
+        case .active, .onDuty: return AppColors.activeGreen
+        case .onTrip: return AppColors.maintenanceOrange
+        case .offDuty: return AppColors.criticalRed
         }
     }
 }
@@ -181,7 +184,7 @@ struct DetailHeaderStat: View {
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.gray)
             Text(value)
-                .font(.system(size: 18, weight: .black))
+                .font(AppFonts.title3)
                 .foregroundColor(color)
         }
     }
@@ -201,13 +204,14 @@ struct MiniStatCard: View {
             
             HStack(alignment: .bottom) {
                 Text(value)
-                    .font(.system(size: 24, weight: .black))
+                    .font(AppFonts.title2)
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                 
                 if let trend = trend {
                     Text(trend)
-                        .font(.system(size: 10, weight: .bold))
+                        .font(AppFonts.caption2)
+                        .fontWeight(.bold)
                         .foregroundColor(trendColor)
                         .padding(.bottom, 4)
                 }
@@ -234,9 +238,9 @@ struct ActivityRow: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(event.title)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFonts.headline)
                 Text(event.detail + " • " + event.time)
-                    .font(.system(size: 11))
+                    .font(AppFonts.caption2)
                     .foregroundColor(.gray)
             }
             
@@ -244,8 +248,9 @@ struct ActivityRow: View {
             
             if let val = event.value {
                 Text(val)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(event.type == "incident" ? AppTheme.criticalRed : .gray)
+                    .font(AppFonts.caption1)
+                    .fontWeight(.bold)
+                    .foregroundColor(event.type == "incident" ? AppColors.criticalRed : .gray)
             }
         }
     }

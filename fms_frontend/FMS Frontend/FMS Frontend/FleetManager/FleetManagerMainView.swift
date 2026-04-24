@@ -56,7 +56,7 @@ struct FleetManagerMainView: View {
             .tag(3)
             
         }
-        .accentColor(AppTheme.primary)
+        .accentColor(AppColors.primary)
         .environmentObject(dataManager)
     }
 }

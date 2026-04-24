@@ -60,12 +60,30 @@ enum AssessmentStatus {
     case scheduled
 }
 
-struct MaintenanceAlert: Identifiable {
-    let id = UUID()
+struct FleetMaintenanceAlert: Identifiable {
+    let id: UUID
     let title: String
     let detail: String
     let iconName: String
     let status: String
+    let vehicleID: String
+    let taskDetails: String
+    let notes: String
+    let media: [String]
+    var isAccepted: Bool
+    
+    init(id: UUID = UUID(), title: String, detail: String, iconName: String, status: String, vehicleID: String = "TRK-9042", taskDetails: String = "Standard system check and sensor calibration required.", notes: String = "User reported minor vibration at high speeds.", media: [String] = ["brake_part", "engine_part"], isAccepted: Bool = false) {
+        self.id = id
+        self.title = title
+        self.detail = detail
+        self.iconName = iconName
+        self.status = status
+        self.vehicleID = vehicleID
+        self.taskDetails = taskDetails
+        self.notes = notes
+        self.media = media
+        self.isAccepted = isAccepted
+    }
 }
 
 struct EmissionData: Identifiable {
@@ -73,6 +91,31 @@ struct EmissionData: Identifiable {
     let day: String
     let value: Double
     let isCurrent: Bool
+}
+
+struct MileageData: Identifiable {
+    let id = UUID()
+    let day: String
+    let value: Double
+}
+
+struct FuelTrendData: Identifiable {
+    let id = UUID()
+    let month: String
+    let value: Double
+}
+
+struct HistoricalPoint: Identifiable {
+    let id = UUID()
+    let label: String
+    let value: Double
+    let color: Color?
+    
+    init(label: String, value: Double, color: Color? = nil) {
+        self.label = label
+        self.value = value
+        self.color = color
+    }
 }
 
 // MARK: - Management (New)
@@ -96,6 +139,7 @@ struct Driver: Identifiable {
     let vehicleClasses: [String] // Format like "LMV-NT", "HGV"
     let activeRoute: String?
     let eta: String?
+    let phone: String // New field
     
     var identifier: UUID { UUID() }
 }
@@ -144,10 +188,20 @@ struct Vehicle: Identifiable {
     let history: [VehicleTrip]
     let reports: [VehicleReport]
     let assessmentReason: String? // Direct link to dashboard assessment logic
+    
+    let plateNumber: String // New field
+    let registrationNumber: String // New field
+}
+
+enum FleetTripStatus: String, Codable {
+    case scheduled = "Scheduled"
+    case inTransit = "In Transit"
+    case completed = "Completed"
 }
 
 struct VehicleTrip: Identifiable {
     let id = UUID()
+    let vehicleID: String // Link to the owning vehicle
     let origin: String
     let destination: String
     let progress: Double
@@ -155,12 +209,19 @@ struct VehicleTrip: Identifiable {
     let date: String?
     let distance: String?
     let duration: String?
+    let costEstimate: String?
+    let startTime: Date?
+    var status: FleetTripStatus
+    
+    // Cargo Details (New)
+    let productType: String?
+    let loadAmount: String?
 }
 
 struct VehicleMaintenance {
     let nextService: String
     let inspectionStatus: String
-    let alerts: [MaintenanceAlert]
+    let alerts: [FleetMaintenanceAlert]
 }
 
 struct VehicleReport: Identifiable {
@@ -185,5 +246,5 @@ struct ReportTask: Identifiable {
 enum VehicleStatus: String {
     case inTransit = "IN TRANSIT"
     case idle = "IDLE"
-    case maintenance = "MAINTENANCE"
+    case maintenance = "UNDER MAINTENANCE"
 }

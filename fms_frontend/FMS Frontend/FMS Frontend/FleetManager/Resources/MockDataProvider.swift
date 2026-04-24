@@ -1,7 +1,7 @@
 import Foundation
+import SwiftUI
 
 struct MockDataProvider {
-    // ... previous dashboard stats ...
     static let dashboardStats = FleetManagerDashboardStats(
         totalShipments: 172,
         totalShipmentsTrend: "+1,92%",
@@ -13,12 +13,7 @@ struct MockDataProvider {
         criticalMass: 0.22
     )
     
-    static let shipments: [ShipmentActivity] = [
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Electronic", company: "Tata Logistics", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .delivered),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Industrial", company: "Mahindra Logistics", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .inTransit),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "FMCG", company: "Delhivery", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .pending),
-        ShipmentActivity(orderID: "#172899-72-727bjk", category: "Auto Parts", company: "Eicher Motors", arrivalTime: "24 Dec 2023", route: "BOM - PNQ", price: "₹5,872.90", status: .processing)
-    ]
+    static let shipments: [ShipmentActivity] = []
     
     static let fleetStatus = FleetVehicleStatus(
         active: 12,
@@ -30,14 +25,32 @@ struct MockDataProvider {
     
     static let assessments: [SmartFleetAssessment] = [
         SmartFleetAssessment(truckName: "Tata Prima 4028.S", truckID: "TRK-9042", routeFrom: "DEL", routeTo: "JAI", etaTime: "16:15", etaDay: "Today", status: .inTransit, imageName: "truck_freightliner_m2"),
-        SmartFleetAssessment(truckName: "Tata Ace EV", truckID: "EV-9910", routeFrom: "BLR Hub", routeTo: "HSR Lyt", etaTime: "Critical", etaDay: "", status: .alertReceived, imageName: "van_rivian"),
-        SmartFleetAssessment(truckName: "Eicher Pro 6028", truckID: "TRK-5502", routeFrom: "MAA", routeTo: "COK", etaTime: "11:00", etaDay: "Today", status: .inTransit, imageName: "truck_kenworth_t680"),
-        SmartFleetAssessment(truckName: "BharatBenz 3523R", truckID: "TRK-2101", routeFrom: "HYD", routeTo: "PNQ", etaTime: "21:30", etaDay: "Today", status: .inTransit, imageName: "truck_volvo_fh")
+        SmartFleetAssessment(truckName: "Tata Ace EV", truckID: "EV-9910", routeFrom: "BLR Hub", routeTo: "HSR Lyt", etaTime: "Critical", etaDay: "", status: .alertReceived, imageName: "van_rivian")
     ]
     
-    static let maintenanceAlerts: [MaintenanceAlert] = [
-        MaintenanceAlert(title: "Insurance Renewal", detail: "Overdue • Policy #XX-990 • Action Required", iconName: "exclamationmark.triangle.fill", status: "Urgent"),
-        MaintenanceAlert(title: "Compliance Audit", detail: "Due in 4 days • Regional Hub Compliance Unit", iconName: "doc.text.fill", status: "Scheduled")
+    static let maintenanceAlerts: [FleetMaintenanceAlert] = [
+        FleetMaintenanceAlert(
+            title: "Brake Pad Wear",
+            detail: "TRK-9042 • Wear Level: 85% • Priority: Urgent",
+            iconName: "exclamationmark.triangle.fill",
+            status: "Urgent",
+            vehicleID: "TRK-9042",
+            taskDetails: "Replace front brake pads and inspect rotors. Brake performance has degraded by 15%.",
+            notes: "Driver reported squealing noise when braking on downhills.",
+            media: ["brake_part", "tire_part"],
+            isAccepted: false
+        ),
+        FleetMaintenanceAlert(
+            title: "Engine Oil Life",
+            detail: "EV-9910 • Life: 10% • Priority: Scheduled",
+            iconName: "drop.fill",
+            status: "Scheduled",
+            vehicleID: "EV-9910",
+            taskDetails: "Standard oil and filter change. Inspect for any potential leaks.",
+            notes: "Last service was 12,000 km ago.",
+            media: ["engine_part"],
+            isAccepted: false
+        )
     ]
     
     static let emissionData: [EmissionData] = [
@@ -54,19 +67,101 @@ struct MockDataProvider {
         ActivityEvent(title: "Cargo Delivery Completed", detail: "Drop-off: WH-B12", time: "2h ago", type: "completed", value: "+₹2400.00"),
         ActivityEvent(title: "Refueling Stopped", detail: "IOCL #429", time: "5h ago", type: "refueling", value: "14.2 L"),
         ActivityEvent(title: "Shift Started", detail: "Main Dpt", time: "8h ago", type: "started", value: "SYSTEM"),
-        ActivityEvent(title: "Hard Braking Incident", detail: "Rt A-1", time: "Yesterday", type: "incident", value: "FLAGGED")
+    ]
+    
+    static let mileageData: [MileageData] = [
+        MileageData(day: "Sun", value: 881),
+        MileageData(day: "Mon", value: 786),
+        MileageData(day: "Tue", value: 824),
+        MileageData(day: "Wed", value: 1031),
+        MileageData(day: "Thu", value: 549),
+        MileageData(day: "Fri", value: 629),
+        MileageData(day: "Sat", value: 1145)
+    ]
+    
+    static let fuelTrendData: [FuelTrendData] = [
+        FuelTrendData(month: "March 2021", value: 1540),
+        FuelTrendData(month: "April 2021", value: 1100),
+        FuelTrendData(month: "May 2021", value: 870)
+    ]
+    
+    // Performance Trends (7-Day Sparklines)
+    static let utilizationTrend: [HistoricalPoint] = [
+        HistoricalPoint(label: "Mon", value: 65),
+        HistoricalPoint(label: "Tue", value: 72),
+        HistoricalPoint(label: "Wed", value: 68),
+        HistoricalPoint(label: "Thu", value: 85),
+        HistoricalPoint(label: "Fri", value: 78),
+        HistoricalPoint(label: "Sat", value: 45),
+        HistoricalPoint(label: "Sun", value: 40)
+    ]
+    
+    static let efficiencyTrend: [HistoricalPoint] = [
+        HistoricalPoint(label: "Mon", value: 42.5),
+        HistoricalPoint(label: "Tue", value: 44.0),
+        HistoricalPoint(label: "Wed", value: 41.2),
+        HistoricalPoint(label: "Thu", value: 46.8),
+        HistoricalPoint(label: "Fri", value: 45.1),
+        HistoricalPoint(label: "Sat", value: 48.2),
+        HistoricalPoint(label: "Sun", value: 47.5)
+    ]
+    
+    static let costTrend: [HistoricalPoint] = [
+        HistoricalPoint(label: "Mon", value: 34.2),
+        HistoricalPoint(label: "Tue", value: 33.5),
+        HistoricalPoint(label: "Wed", value: 35.8),
+        HistoricalPoint(label: "Thu", value: 32.1),
+        HistoricalPoint(label: "Fri", value: 31.5),
+        HistoricalPoint(label: "Sat", value: 30.2),
+        HistoricalPoint(label: "Sun", value: 29.8)
+    ]
+    
+    static let idleTrend: [HistoricalPoint] = [
+        HistoricalPoint(label: "Mon", value: 12),
+        HistoricalPoint(label: "Tue", value: 15),
+        HistoricalPoint(label: "Wed", value: 10),
+        HistoricalPoint(label: "Thu", value: 18),
+        HistoricalPoint(label: "Fri", value: 14),
+        HistoricalPoint(label: "Sat", value: 25),
+        HistoricalPoint(label: "Sun", value: 22)
     ]
 
-    // MARK: - Drivers Dataset (from Image 1 & 3)
+    static let maintenanceCostPerVehicle: [HistoricalPoint] = [
+        HistoricalPoint(label: "TRK-9042", value: 12400),
+        HistoricalPoint(label: "EV-9910", value: 3200),
+        HistoricalPoint(label: "TRK-1088", value: 18500),
+        HistoricalPoint(label: "VN-4209", value: 5600),
+        HistoricalPoint(label: "VX-7702", value: 9800)
+    ]
+
+    static let totalKmsTravelled: Double = 725428
+
+    static let driverDistanceData: [HistoricalPoint] = [
+        HistoricalPoint(label: "Rahul", value: 12400),
+        HistoricalPoint(label: "Priya", value: 15600),
+        HistoricalPoint(label: "Amit", value: 8900),
+        HistoricalPoint(label: "Sneha", value: 11200),
+        HistoricalPoint(label: "Vikram", value: 14500)
+    ]
+
+    static let travelsHistory: [HistoricalPoint] = [
+        HistoricalPoint(label: "Jan", value: 45000),
+        HistoricalPoint(label: "Feb", value: 52000),
+        HistoricalPoint(label: "Mar", value: 48000),
+        HistoricalPoint(label: "Apr", value: 61000),
+        HistoricalPoint(label: "May", value: 55000)
+    ]
+    // MARK: - Drivers Dataset
     static let drivers: [Driver] = [
-        Driver(id: "KM-1029", name: "Rahul Sharma", email: "rahul.s@fms.com", title: "Class A CDL Expert", licenseNum: "DL-99203381", licenseExp: "Oct 2026", status: .active, rating: 4.92, efficiency: "98.4%", totalTrips: 124, totalHours: 8420, activityLog: mockActivityLog, currentVehicleID: "VX-7702", vehicleClasses: ["Class A"], activeRoute: "IH-35 North bound", eta: "14:20 (22 mins)"),
-        Driver(id: "KM-1044", name: "Priya Patel", email: "priya.p@fms.com", title: "Heavy Haul Specialist", licenseNum: "DL-44810293", licenseExp: "Mar 2025", status: .onTrip, rating: 4.88, efficiency: "95.2%", totalTrips: 89, totalHours: 6200, activityLog: [], currentVehicleID: "VN-4209", vehicleClasses: ["Class A", "Class B"], activeRoute: "Route B-12", eta: "1h 12m"),
-        Driver(id: "KM-1011", name: "Amit Kumar", email: "amit.k@fms.com", title: "Regional Dispatcher", licenseNum: "DL-88293310", licenseExp: "Jan 2027", status: .offDuty, rating: 4.95, efficiency: "99.1%", totalTrips: 156, totalHours: 9800, activityLog: [], currentVehicleID: nil, vehicleClasses: ["Class B"], activeRoute: nil, eta: nil),
-        Driver(id: "KM-1052", name: "Sneha Rao", email: "sneha.r@fms.com", title: "Long Haul Driver", licenseNum: "DL-11029384", licenseExp: "Aug 2025", status: .active, rating: 4.76, efficiency: "94.8%", totalTrips: 72, totalHours: 5100, activityLog: [], currentVehicleID: "EV-9910", vehicleClasses: ["Class A"], activeRoute: "Sector 4", eta: "45m"),
-        Driver(id: "KM-1008", name: "Vikram Singh", email: "vikram.s@fms.com", title: "Safety Protocol Lead", licenseNum: "DL-77382291", licenseExp: "Dec 2024", status: .onTrip, rating: 4.99, efficiency: "99.9%", totalTrips: 210, totalHours: 12400, activityLog: [], currentVehicleID: "VX-8812", vehicleClasses: ["Class A", "Class D"], activeRoute: "North Route", eta: "10m")
+        Driver(id: "KM-1029", name: "Rahul Sharma", email: "rahul.s@fms.com", title: "Class A CDL Expert", licenseNum: "DL-99203381", licenseExp: "Oct 2026", status: .active, rating: 4.92, efficiency: "98.4%", totalTrips: 124, totalHours: 8420, activityLog: mockActivityLog, currentVehicleID: "VX-7702", vehicleClasses: ["Class A"], activeRoute: "IH-35 North bound", eta: "14:20 (22 mins)", phone: "+91 98765 43210"),
+        Driver(id: "KM-1044", name: "Priya Patel", email: "priya.p@fms.com", title: "Heavy Haul Specialist", licenseNum: "DL-44810293", licenseExp: "Mar 2025", status: .onTrip, rating: 4.88, efficiency: "95.2%", totalTrips: 89, totalHours: 6200, activityLog: [], currentVehicleID: "VN-4209", vehicleClasses: ["Class A", "Class B"], activeRoute: "Route B-12", eta: "1h 12m", phone: "+91 91234 56789"),
+        Driver(id: "KM-1011", name: "Amit Kumar", email: "amit.k@fms.com", title: "Regional Dispatcher", licenseNum: "DL-88293310", licenseExp: "Jan 2027", status: .offDuty, rating: 4.95, efficiency: "99.1%", totalTrips: 156, totalHours: 9800, activityLog: [], currentVehicleID: nil, vehicleClasses: ["Class B"], activeRoute: nil, eta: nil, phone: "+91 99887 76655"),
+        Driver(id: "KM-1052", name: "Sneha Rao", email: "sneha.r@fms.com", title: "Long Haul Driver", licenseNum: "DL-11029384", licenseExp: "Aug 2025", status: .active, rating: 4.76, efficiency: "94.8%", totalTrips: 72, totalHours: 5100, activityLog: [], currentVehicleID: "EV-9910", vehicleClasses: ["Class A"], activeRoute: "Sector 4", eta: "45m", phone: "+91 90000 11111"),
+        Driver(id: "KM-1008", name: "Vikram Singh", email: "vikram.s@fms.com", title: "Safety Protocol Lead", licenseNum: "DL-77382291", licenseExp: "Dec 2024", status: .onTrip, rating: 4.99, efficiency: "99.9%", totalTrips: 210, totalHours: 12400, activityLog: [], currentVehicleID: "VX-8812", vehicleClasses: ["Class A", "Class D"], activeRoute: "North Route", eta: "10m", phone: "+91 91111 22222")
     ]
 
     // MARK: - Vehicles Dataset (Expanded)
+    
     static let vehicles: [Vehicle] = [
         Vehicle(
             id: "TRK-9042",
@@ -79,122 +174,64 @@ struct MockDataProvider {
             color: "Silver Birch Metallic",
             odometer: "42,892",
             operationalStatus: "OPERATIONAL",
-            currentTrip: VehicleTrip(origin: "DEL", destination: "JAI", progress: 0.72, eta: "4:15 PM", date: nil, distance: nil, duration: nil),
-            assignedDriver: drivers.first,
-            maintenance: VehicleMaintenance(
-                nextService: "Oct 24, 2023",
-                inspectionStatus: "Completed",
-                alerts: [MaintenanceAlert(title: "Minor: Left Tail Lamp", detail: "LOGGED 2D AGO", iconName: "exclamationmark.triangle.fill", status: "Minor")]
-            ),
+            currentTrip: VehicleTrip(vehicleID: "TRK-9042", origin: "DEL", destination: "JAI", progress: 0.72, eta: "4:15 PM", date: "Today", distance: "250 KM", duration: "4 HRS", costEstimate: "₹8500.00", startTime: Date(), status: .inTransit, productType: "Steel Coils", loadAmount: "25 Tons"),
+            assignedDriver: drivers[0],
+            maintenance: VehicleMaintenance(nextService: "Oct 24, 2023", inspectionStatus: "Completed", alerts: []),
             history: [
-                VehicleTrip(origin: "DEL", destination: "AGR", progress: 1.0, eta: "", date: "OCT 12", distance: "297 KM", duration: "4.5 HRS"),
-                VehicleTrip(origin: "AGR", destination: "NDA", progress: 1.0, eta: "", date: "OCT 09", distance: "284 KM", duration: "4.2 HRS")
+                VehicleTrip(vehicleID: "TRK-9042", origin: "MUM", destination: "PUN", progress: 1.0, eta: "Completed", date: "Apr 18, 2026", distance: "150 KM", duration: "3h", costEstimate: "₹4,200", startTime: nil, status: .completed, productType: "Pharma Supplies", loadAmount: "8 Tons"),
+                VehicleTrip(vehicleID: "TRK-9042", origin: "AMD", destination: "SUR", progress: 1.0, eta: "Completed", date: "Apr 16, 2026", distance: "280 KM", duration: "5h", costEstimate: "₹7,800", startTime: nil, status: .completed, productType: "Industrial Valves", loadAmount: "12 Tons"),
+                VehicleTrip(vehicleID: "TRK-9042", origin: "DEL", destination: "AGR", progress: 1.0, eta: "Completed", date: "Apr 14, 2026", distance: "210 KM", duration: "4h", costEstimate: "₹6,100", startTime: nil, status: .completed, productType: "Textiles", loadAmount: "10 Tons")
             ],
-            reports: [
-                VehicleReport(title: "Monthly Maintenance Report - Sept", subtitle: "PDF • 1.2 MB • SEP 30, 2023", fileType: "pdf", date: "SEP 30, 2023", serviceProvider: "Fleet Care Solutions", tasks: [
-                    ReportTask(description: "Oil and Filter Change", cost: "₹1200.00"),
-                    ReportTask(description: "Brake Pad Replacement", cost: "₹4500.00")
-                ], totalCost: "₹5700.00"),
-                VehicleReport(title: "Trip Efficiency Analysis - Oct", subtitle: "PDF • 840 KB • OCT 15, 2023", fileType: "pdf", date: "OCT 15, 2023", serviceProvider: "Logistics Insights AI", tasks: [
-                    ReportTask(description: "Fuel Efficiency Audit", cost: "₹0.00"),
-                    ReportTask(description: "Route Optimization Report", cost: "₹0.00")
-                ], totalCost: "₹0.00")
-            ],
-            assessmentReason: "Route Optimized: Fuel Savings +12%"
-        ),
-        Vehicle(
-            id: "VN-4209",
-            make: "Mahindra",
-            model: "Bolero Pik-Up",
-            type: "Van",
-            status: .idle,
-            imageName: "van_ford",
-            year: "2022",
-            color: "White",
-            odometer: "12,140",
-            operationalStatus: "OPERATIONAL",
-            currentTrip: nil,
-            assignedDriver: drivers[1],
-            maintenance: VehicleMaintenance(nextService: "Nov 12, 2023", inspectionStatus: "Pending", alerts: []),
-            history: [],
             reports: [],
-            assessmentReason: nil
+            assessmentReason: "Route Optimized: Fuel Savings +12%",
+            plateNumber: "DL 1C AB 9042",
+            registrationNumber: "REG-IND-442033"
         ),
         Vehicle(
             id: "EV-9910",
             make: "Tata",
             model: "Ace EV",
             type: "EV",
-            status: .maintenance,
+            status: .idle,
             imageName: "van_rivian",
             year: "2024",
             color: "Deep Blue",
             odometer: "3,420",
-            operationalStatus: "UNDER SERVICE",
+            operationalStatus: "OPERATIONAL",
+            currentTrip: nil,
+            assignedDriver: drivers[1],
+            maintenance: VehicleMaintenance(nextService: "Oct 18, 2023", inspectionStatus: "Completed", alerts: []),
+            history: [
+                VehicleTrip(vehicleID: "EV-9910", origin: "BLR Hub", destination: "HSR", progress: 1.0, eta: "Completed", date: "Apr 19, 2026", distance: "12 KM", duration: "45m", costEstimate: "₹250", startTime: nil, status: .completed, productType: "E-commerce Parcels", loadAmount: "1.2 Tons"),
+                VehicleTrip(vehicleID: "EV-9910", origin: "KOR", destination: "IND", progress: 1.0, eta: "Completed", date: "Apr 17, 2026", distance: "15 KM", duration: "1h", costEstimate: "₹300", startTime: nil, status: .completed, productType: "Fresh Produce", loadAmount: "0.8 Tons")
+            ],
+            reports: [],
+            assessmentReason: nil,
+            plateNumber: "KA 01 EV 9910",
+            registrationNumber: "REG-IND-112099"
+        ),
+        Vehicle(
+            id: "TRK-1088",
+            make: "Mahindra",
+            model: "Blazo X",
+            type: "Truck",
+            status: .maintenance,
+            imageName: "truck_freightliner_m2",
+            year: "2022",
+            color: "White",
+            odometer: "89,120",
+            operationalStatus: "MAINTENANCE",
             currentTrip: nil,
             assignedDriver: drivers[2],
-            maintenance: VehicleMaintenance(nextService: "Oct 18, 2023", inspectionStatus: "In Progress", alerts: [MaintenanceAlert(title: "Battery Optimization", detail: "FIRMWARE UPGRADE", iconName: "bolt.fill", status: "Critical")]),
-            history: [],
-            reports: [
-                VehicleReport(title: "Initial Compliance Report", subtitle: "PDF • 500 KB • AUG 12, 2023", fileType: "pdf", date: "AUG 12, 2023", serviceProvider: "Tata Motors Service", tasks: [
-                    ReportTask(description: "Standard Inspection", cost: "₹1,500.00")
-                ], totalCost: "₹1,500.00")
+            maintenance: VehicleMaintenance(nextService: "Overdue", inspectionStatus: "Pending", alerts: []),
+            history: [
+                VehicleTrip(vehicleID: "TRK-1088", origin: "HYD", destination: "BLR", progress: 1.0, eta: "Completed", date: "Apr 15, 2026", distance: "570 KM", duration: "12h", costEstimate: "₹18,500", startTime: nil, status: .completed, productType: "General Freight", loadAmount: "18 Tons"),
+                VehicleTrip(vehicleID: "TRK-1088", origin: "MAA", destination: "BLR", progress: 1.0, eta: "Completed", date: "Apr 12, 2026", distance: "340 KM", duration: "7h", costEstimate: "₹12,400", startTime: nil, status: .completed, productType: "Auto Parts", loadAmount: "15 Tons")
             ],
-            assessmentReason: "Predictive: Battery Thermal Variance"
-        ),
-        Vehicle(
-            id: "TRK-2101",
-            make: "Ashok Leyland",
-            model: "Captain",
-            type: "Truck",
-            status: .inTransit,
-            imageName: "truck_volvo_fh",
-            year: "2023",
-            color: "Titanium Grey",
-            odometer: "68,200",
-            operationalStatus: "OPERATIONAL",
-            currentTrip: VehicleTrip(origin: "HYD", destination: "PNQ", progress: 0.45, eta: "9:30 PM", date: nil, distance: nil, duration: nil),
-            assignedDriver: drivers[3],
-            maintenance: VehicleMaintenance(nextService: "Nov 01, 2023", inspectionStatus: "Completed", alerts: []),
-            history: [],
             reports: [],
-            assessmentReason: "On Schedule: High Efficiency"
-        ),
-        Vehicle(
-            id: "VN-1100",
-            make: "Mahindra",
-            model: "Supro",
-            type: "Van",
-            status: .idle,
-            imageName: "van_sprinter",
-            year: "2023",
-            color: "Iridium Silver",
-            odometer: "8,900",
-            operationalStatus: "OPERATIONAL",
-            currentTrip: nil,
-            assignedDriver: drivers[4],
-            maintenance: VehicleMaintenance(nextService: "Dec 10, 2023", inspectionStatus: "Completed", alerts: []),
-            history: [],
-            reports: [],
-            assessmentReason: nil
-        ),
-        Vehicle(
-            id: "TRK-5502",
-            make: "Eicher",
-            model: "Pro 6000",
-            type: "Truck",
-            status: .inTransit,
-            imageName: "truck_kenworth_t680",
-            year: "2024",
-            color: "Radiant Red",
-            odometer: "15,200",
-            operationalStatus: "OPERATIONAL",
-            currentTrip: VehicleTrip(origin: "MAA", destination: "COK", progress: 0.88, eta: "11:00 AM", date: nil, distance: nil, duration: nil),
-            assignedDriver: drivers.first,
-            maintenance: VehicleMaintenance(nextService: "Jan 15, 2024", inspectionStatus: "Completed", alerts: []),
-            history: [],
-            reports: [],
-            assessmentReason: "Route Optimized: Avoided Congestion"
+            assessmentReason: nil,
+            plateNumber: "MH 12 XB 1088",
+            registrationNumber: "REG-IND-882012"
         )
     ]
     

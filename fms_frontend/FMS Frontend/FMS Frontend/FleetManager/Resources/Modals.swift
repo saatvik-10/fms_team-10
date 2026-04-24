@@ -23,9 +23,9 @@ struct OCRUploadArea: View {
             
             VStack(spacing: 4) {
                 Text(title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFonts.headline)
                 Text(subtitle)
-                    .font(.system(size: 12))
+                    .font(AppFonts.caption1)
                     .foregroundColor(.gray)
             }
             
@@ -34,7 +34,7 @@ struct OCRUploadArea: View {
                     Image(systemName: "plus")
                     Text(buttonTitle)
                 }
-                .font(.system(size: 14, weight: .bold))
+                .font(AppFonts.button)
                 .foregroundColor(.white)
                 .padding(.horizontal, 40)
                 .padding(.vertical, 12)
@@ -59,12 +59,13 @@ struct ModalFormField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(label.uppercased())
-                .font(.system(size: 10, weight: .bold))
+                .font(AppFonts.caption2)
+                .fontWeight(.bold)
                 .foregroundColor(.gray)
             
             HStack {
                 TextField("", text: $text)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFonts.subheadline)
                     .minimumScaleFactor(0.5)
                 Spacer()
                 Image(systemName: "pencil")
@@ -87,7 +88,8 @@ struct ModalSearchField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(label.uppercased())
-                .font(.system(size: 10, weight: .bold))
+                .font(AppFonts.caption2)
+                .fontWeight(.bold)
                 .foregroundColor(.gray)
             
             VStack(spacing: 0) {
@@ -101,7 +103,8 @@ struct ModalSearchField: View {
                     .onChange(of: text) { _, newValue in
                         completer.searchQuery = newValue
                     }
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFonts.subheadline)
+                    .fontWeight(.medium)
                     Spacer()
                 }
                 .padding()
@@ -119,9 +122,9 @@ struct ModalSearchField: View {
                                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                                 }) {
                                     VStack(alignment: .leading) {
-                                        Text(completion.title).font(.system(size: 14, weight: .bold)).foregroundColor(AppTheme.textPrimary)
+                                        Text(completion.title).font(AppFonts.headline).foregroundColor(AppTheme.textPrimary)
                                         if !completion.subtitle.isEmpty {
-                                            Text(completion.subtitle).font(.system(size: 12)).foregroundColor(.gray)
+                                            Text(completion.subtitle).font(AppFonts.caption1).foregroundColor(.gray)
                                         }
                                         Divider()
                                     }
@@ -179,6 +182,7 @@ struct DriverModalView: View {
     @State private var email: String = ""
     @State private var licenseNumber: String
     @State private var expiryDate: String
+    @State private var phone: String
     @State private var vehicleClasses: [String] = [Self.vehicleClassOptions.first ?? "LMV-NT"] // Support multiple classes
     @State private var showingScanner = false
     @State private var licenseError: String? = nil
@@ -191,6 +195,7 @@ struct DriverModalView: View {
         _email = State(initialValue: driverToEdit?.email ?? "")
         _licenseNumber = State(initialValue: driverToEdit?.licenseNum ?? "")
         _expiryDate = State(initialValue: driverToEdit?.licenseExp ?? "")
+        _phone = State(initialValue: driverToEdit?.phone ?? "+91 ")
         _vehicleClasses = State(initialValue: validExistingClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : validExistingClasses)
     }
 
@@ -206,12 +211,12 @@ struct DriverModalView: View {
             // Header
             HStack {
                 Text(driverToEdit == nil ? "Add Driver" : "Update Driver")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(AppFonts.title1)
                 Spacer()
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .foregroundColor(.gray)
-                        .font(.system(size: 20))
+                        .font(AppFonts.title3)
                 }
             }
             .padding(.top, 10)
@@ -222,7 +227,8 @@ struct DriverModalView: View {
                     // Section 1: License Verification
                     VStack(alignment: .leading, spacing: 15) {
                         Text("LICENSE VERIFICATION")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         
                         OCRUploadArea(
@@ -236,50 +242,38 @@ struct DriverModalView: View {
                     // Section 2: Review Details
                     VStack(alignment: .leading, spacing: 20) {
                         Text("REVIEW DRIVER DETAILS")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         
                         HStack(spacing: 20) {
                             ModalFormField(label: "Full Name", text: $fullName)
-                            
-                            VStack(alignment: .leading, spacing: 10) {
-                                ModalFormField(label: "License Number", text: $licenseNumber)
-                                    .onChange(of: licenseNumber) { _, newValue in
-                                        if newValue.count != 15 && !newValue.isEmpty {
-                                            licenseError = "License number must be exactly 15 characters"
-                                        } else {
-                                            licenseError = nil
-                                        }
+                            ModalFormField(label: "Phone Number", text: $phone)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 10) {
+                            ModalFormField(label: "License Number", text: $licenseNumber)
+                                .onChange(of: licenseNumber) { _, newValue in
+                                    if newValue.count != 16 && !newValue.isEmpty {
+                                        licenseError = "License number must be exactly 16 characters"
+                                    } else {
+                                        licenseError = nil
                                     }
-                                if let error = licenseError {
-                                    Text(error)
-                                        .font(.system(size: 10))
-                                        .foregroundColor(.red)
                                 }
+                            if let error = licenseError {
+                                Text(error)
+                                    .font(AppFonts.caption2)
+                                    .foregroundColor(.red)
                             }
                         }
                         
-                        ModalFormField(label: "Email Address", text: $email)
-                            .onChange(of: email) { _, newValue in
-                                if !isValidEmail(newValue) && !newValue.isEmpty {
-                                    emailError = "Invalid email format"
-                                } else {
-                                    emailError = nil
-                                }
-                            }
-                        if let error = emailError {
-                            Text(error)
-                                .font(.system(size: 10))
-                                .foregroundColor(.red)
-                                .padding(.top, -15)
-                        }
-
                         ModalFormField(label: "Expiry Date", text: $expiryDate)
                         
                         VStack(alignment: .leading, spacing: 15) {
                             HStack {
                                 Text("VEHICLE CLASSES")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(.gray)
                                 Spacer()
                                 Button(action: { vehicleClasses.append(Self.vehicleClassOptions.first ?? "LMV-NT") }) {
@@ -287,7 +281,8 @@ struct DriverModalView: View {
                                         Image(systemName: "plus")
                                         Text("Add Class")
                                     }
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                 }
                             }
                             
@@ -295,7 +290,8 @@ struct DriverModalView: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 10) {
                                         Text("CLASS \(index + 1)")
-                                            .font(.system(size: 10, weight: .bold))
+                                            .font(AppFonts.caption2)
+                                            .fontWeight(.bold)
                                             .foregroundColor(.gray)
 
                                         Menu {
@@ -309,11 +305,12 @@ struct DriverModalView: View {
                                         } label: {
                                             HStack {
                                                 Text(vehicleClasses[index])
-                                                    .font(.system(size: 15, weight: .medium))
+                                                    .font(AppFonts.subheadline)
                                                     .foregroundColor(AppTheme.textPrimary)
                                                 Spacer()
                                                 Image(systemName: "chevron.up.chevron.down")
-                                                    .font(.system(size: 12, weight: .bold))
+                                                    .font(AppFonts.caption2)
+                                                    .fontWeight(.bold)
                                                     .foregroundColor(.gray)
                                             }
                                             .padding()
@@ -362,7 +359,8 @@ struct DriverModalView: View {
                         currentVehicleID: nil,
                         vehicleClasses: finalVehicleClasses,
                         activeRoute: nil,
-                        eta: nil
+                        eta: nil,
+                        phone: phone
                     )
                     DriverEmailStore.shared.saveEmail(email, forDriverID: newDriverID)
                     dataManager.addDriver(newDriver)
@@ -371,7 +369,7 @@ struct DriverModalView: View {
                     HStack {
                         Text("Save Driver")
                     }
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFonts.button)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
@@ -416,6 +414,7 @@ struct AddVehicleModalView: View {
     @State private var make: String
     @State private var model: String
     @State private var regNumber: String
+    @State private var plateNumber: String
     @State private var vin: String
     @State private var odometer: String
     @State private var showingScanner = false
@@ -433,8 +432,9 @@ struct AddVehicleModalView: View {
         self.vehicleToEdit = vehicleToEdit
         _make = State(initialValue: vehicleToEdit?.make ?? "")
         _model = State(initialValue: vehicleToEdit?.model ?? "")
-        _regNumber = State(initialValue: vehicleToEdit?.id ?? "")
-        _vin = State(initialValue: "")
+        _regNumber = State(initialValue: vehicleToEdit?.registrationNumber ?? "")
+        _plateNumber = State(initialValue: vehicleToEdit?.id ?? "")
+        _vin = State(initialValue: "4G2BM59XYZ1234567")
         _odometer = State(initialValue: vehicleToEdit?.odometer ?? "0")
     }
     
@@ -443,12 +443,12 @@ struct AddVehicleModalView: View {
             // Header
             HStack {
                 Text(vehicleToEdit == nil ? "Add Vehicle" : "Update Vehicle")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(AppFonts.title1)
                 Spacer()
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .foregroundColor(.gray)
-                        .font(.system(size: 20))
+                        .font(AppFonts.title3)
                 }
             }
             .padding(.top, 10)
@@ -459,7 +459,8 @@ struct AddVehicleModalView: View {
                     // Section 1: RC Verification
                     VStack(alignment: .leading, spacing: 15) {
                         Text("VEHICLE REGISTRATION (RC) VERIFICATION")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         
                         OCRUploadArea(
@@ -536,7 +537,8 @@ struct AddVehicleModalView: View {
                     // Section 3: Review Details
                     VStack(alignment: .leading, spacing: 20) {
                         Text("REVIEW VEHICLE DETAILS")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         
                         HStack(spacing: 20) {
@@ -546,8 +548,9 @@ struct AddVehicleModalView: View {
                         
                         HStack(spacing: 20) {
                             ModalFormField(label: "Registration Number", text: $regNumber)
-                            ModalFormField(label: "Chassis Number / VIN", text: $vin)
+                            ModalFormField(label: "License Plate", text: $plateNumber)
                         }
+                        ModalFormField(label: "Chassis Number / VIN", text: $vin)
                         
                         ModalFormField(label: "Total Odometer Run (MI)", text: $odometer)
                     }
@@ -574,7 +577,9 @@ struct AddVehicleModalView: View {
                         maintenance: VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
                         history: [],
                         reports: [],
-                        assessmentReason: nil as String?
+                        assessmentReason: nil as String?,
+                        plateNumber: plateNumber,
+                        registrationNumber: regNumber
                     )
                     dataManager.addVehicle(newVehicle)
                     dismiss() 
@@ -582,7 +587,7 @@ struct AddVehicleModalView: View {
                     HStack {
                         Text("Save Vehicle")
                     }
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFonts.button)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
@@ -668,9 +673,14 @@ struct OrderModalView: View {
     @State private var fromLocation = ""
     @State private var toLocation = ""
     @State private var selectedVehicleID = ""
+    @State private var productName = ""
+    @State private var loadAmount = ""
+    @State private var loadUnit = "Tons"
     @State private var ownerName = ""
     @State private var phoneNum = ""
     @State private var showingScanner = false
+    
+    private let unitOptions = ["Tons", "KG", "Liters", "Units", "Pallets"]
 
     // Dynamic estimation logic
     private var estimatedDistance: Int {
@@ -689,12 +699,12 @@ struct OrderModalView: View {
             // Header
             HStack {
                 Text("New Order")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(AppFonts.title1)
                 Spacer()
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .foregroundColor(.gray)
-                        .font(.system(size: 20))
+                        .font(AppFonts.title3)
                 }
             }
             .padding(25)
@@ -707,21 +717,62 @@ struct OrderModalView: View {
                     // 1. Route Details
                     VStack(alignment: .leading, spacing: 15) {
                         Label("ROUTE DETAILS", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                         
                         HStack(spacing: 20) {
                             ModalSearchField(label: "FROM", text: $fromLocation)
                             ModalSearchField(label: "TO", text: $toLocation)
+                        }
+                        
+                        HStack(spacing: 20) {
+                            ModalFormField(label: "PRODUCT TYPE", text: $productName)
+                            
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("LOAD AMOUNT")
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.gray)
+                                
+                                HStack(spacing: 0) {
+                                    TextField("0.0", text: $loadAmount)
+                                        .keyboardType(.decimalPad)
+                                        .padding(12)
+                                        .background(AppTheme.secondaryBackground)
+                                        .cornerRadius(8)
+                                    
+                                    Menu {
+                                        ForEach(unitOptions, id: \.self) { unit in
+                                            Button(unit) { loadUnit = unit }
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text(loadUnit)
+                                                .font(AppFonts.caption2)
+                                                .fontWeight(.bold)
+                                            Image(systemName: "chevron.down")
+                                                .font(AppFonts.caption2)
+                                        }
+                                        .foregroundColor(AppTheme.primary)
+                                        .padding(.horizontal, 12)
+                                        .frame(height: 44)
+                                        .background(Color.white)
+                                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.2)))
+                                    }
+                                }
+                            }
                         }
                     }
                     
                     // 2. Vehicle Assignment
                     VStack(alignment: .leading, spacing: 15) {
                         Label("VEHICLE ASSIGNMENT", systemImage: "truck.box.fill")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                         
                         Text("SELECTED VEHICLE")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         
                         Menu {
@@ -742,16 +793,17 @@ struct OrderModalView: View {
                                 
                                 VStack(alignment: .leading) {
                                     Text(selectedVehicleID.isEmpty ? "Tap to select vehicle" : selectedVehicleID)
-                                        .font(.system(size: 16, weight: .bold))
+                                        .font(AppFonts.headline)
                                         .foregroundColor(selectedVehicleID.isEmpty ? .gray : AppTheme.textPrimary)
                                     Text("Available for dispatch")
-                                        .font(.system(size: 12))
+                                        .font(AppFonts.caption1)
                                         .foregroundColor(.gray)
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.up.chevron.down")
                                     .foregroundColor(.gray)
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                             }
                             .padding()
                             .background(Color.gray.opacity(0.1))
@@ -762,7 +814,8 @@ struct OrderModalView: View {
                     // 3. Contact Details
                     VStack(alignment: .leading, spacing: 15) {
                         Label("CONTACT DETAILS", systemImage: "person.crop.circle.badge.checkmark")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(AppFonts.headline)
+                            .fontWeight(.bold)
                         
                         ModalFormField(label: "PHONE NUMBER", text: $phoneNum)
                     }
@@ -773,15 +826,17 @@ struct OrderModalView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("ESTIMATED FUEL COST")
-                                        .font(.system(size: 10, weight: .bold))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                         .foregroundColor(.gray)
                                     Text(String(format: "$%.2f", estimatedCost))
-                                        .font(.system(size: 38, weight: .black))
+                                        .font(AppFonts.largeTitle)
+                                        .fontWeight(.black)
                                 }
                                 Spacer()
                                 VStack(alignment: .trailing, spacing: 8) {
                                     Text("Dist: 120mi • 8mpg • ₹3.50/gal")
-                                        .font(.system(size: 10))
+                                        .font(AppFonts.footnote)
                                         .foregroundColor(.gray)
                                 }
                             }
@@ -791,18 +846,21 @@ struct OrderModalView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("CO2 IMPACT")
-                                        .font(.system(size: 8, weight: .bold))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                         .foregroundColor(.gray)
                                     Text("0.42 Tons")
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(AppFonts.subheadline)
+                                        .fontWeight(.bold)
                                 }
                                 Spacer()
                                 VStack(alignment: .trailing, spacing: 4) {
                                     Text("ETA")
-                                        .font(.system(size: 8, weight: .bold))
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                         .foregroundColor(.gray)
                                     Text("2h 45m")
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(AppFonts.headline)
                                 }
                             }
                         }
@@ -816,14 +874,28 @@ struct OrderModalView: View {
                     // Bottom Button
                     VStack(spacing: 15) {
                         Button(action: { 
-                            let trip = VehicleTrip(origin: fromLocation, destination: toLocation, progress: 0.0, eta: "TBD", date: "Now", distance: "0 mi", duration: "0 hrs")
+                            let trip = VehicleTrip(
+                                vehicleID: selectedVehicleID,
+                                origin: fromLocation,
+                                destination: toLocation,
+                                progress: 0.0,
+                                eta: "TBD",
+                                date: "Now",
+                                distance: "0 mi",
+                                duration: "0 hrs",
+                                costEstimate: String(format: "₹%.2f", estimatedCost),
+                                startTime: Date(),
+                                status: .scheduled,
+                                productType: productName,
+                                loadAmount: "\(loadAmount) \(loadUnit)"
+                            )
                             dataManager.addOrder(trip: trip, vehicleID: selectedVehicleID)
                             dismiss() 
                         }) {
                             HStack {
                                 Text("Create Order")
                             }
-                            .font(.system(size: 18, weight: .bold))
+                            .font(AppFonts.button)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 20)
@@ -833,7 +905,7 @@ struct OrderModalView: View {
                         .disabled(fromLocation.isEmpty || selectedVehicleID.isEmpty)
                         
                         Text("Complete all mandatory fields to finalize dispatch")
-                            .font(.system(size: 10))
+                            .font(AppFonts.caption2)
                             .foregroundColor(.gray)
                             .frame(maxWidth: .infinity)
                     }
