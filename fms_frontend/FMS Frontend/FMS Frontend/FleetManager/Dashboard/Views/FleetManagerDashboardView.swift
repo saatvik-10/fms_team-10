@@ -20,6 +20,15 @@ struct FleetManagerDashboardView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 30) {
                         
+                        // MARK: - Live Geofence Alerts
+                        if let latestAlert = dataManager.geofenceAlerts.first {
+                            GeofenceAlertBanner(alert: latestAlert) {
+                                withAnimation {
+                                    dataManager.geofenceAlerts.removeAll(where: { $0.id == latestAlert.id })
+                                }
+                            }
+                        }
+                        
                         // MARK: - Section 1: Fleet Overview
                         VStack(alignment: .leading, spacing: 15) {
                             DashboardSectionHeader(title: "Fleet Overview")

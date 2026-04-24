@@ -193,7 +193,7 @@ struct FleetTripDetailView: View {
                             .padding(.horizontal, 2)
                             
                             // Logistics Overview Section
-                            HStack(alignment: .top, spacing: 20) {
+                            VStack(spacing: 20) {
                                 LogisticsTicketCard(
                                     title: "ROUTE SUMMARY",
                                     icon: "truck.box.fill",
@@ -394,8 +394,6 @@ struct LogisticsTicketCard: View {
                         Text(sourceValue)
                             .font(AppFonts.title3)
                             .foregroundColor(AppColors.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
                     }
                     
                     Spacer()
@@ -433,8 +431,6 @@ struct LogisticsTicketCard: View {
                             .font(AppFonts.title2)
                             .fontWeight(.black)
                             .foregroundColor(AppColors.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
                     }
                 }
                 

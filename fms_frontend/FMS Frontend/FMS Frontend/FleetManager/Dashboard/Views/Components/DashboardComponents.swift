@@ -1452,3 +1452,56 @@ struct LeastTravelledVehiclesChart: View {
         .modifier(AppTheme.cardShadow())
     }
 }
+// MARK: - Geofence Alert Banner
+struct GeofenceAlertBanner: View {
+    let alert: FleetDataManager.GeofenceAlert
+    var onDismiss: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 15) {
+            ZStack {
+                Circle()
+                    .fill(alert.type == .arrival ? AppTheme.activeGreen.opacity(0.2) : Color.orange.opacity(0.2))
+                    .frame(width: 40, height: 40)
+                
+                Image(systemName: alert.type == .arrival ? "mappin.and.ellipse" : "figure.walk.departure")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(alert.type == .arrival ? AppTheme.activeGreen : .orange)
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(alert.type == .arrival ? "NEW ARRIVAL" : "NEW DEPARTURE")
+                    .font(AppFonts.caption2)
+                    .fontWeight(.black)
+                    .tracking(1)
+                    .foregroundColor(alert.type == .arrival ? AppTheme.activeGreen : .orange)
+                
+                Text(alert.message)
+                    .font(AppFonts.body)
+                    .fontWeight(.bold)
+                    .foregroundColor(AppTheme.primary)
+                    .lineLimit(1)
+                
+                Text("\(alert.timestamp, style: .time)")
+                    .font(AppFonts.caption2)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.gray)
+                    .padding(8)
+                    .background(Color.gray.opacity(0.1))
+                    .clipShape(Circle())
+            }
+        }
+        .padding(15)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppTheme.cardShadow())
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+}

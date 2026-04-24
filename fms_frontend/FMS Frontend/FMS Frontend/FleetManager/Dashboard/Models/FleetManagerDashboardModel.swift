@@ -186,7 +186,7 @@ struct Vehicle: Identifiable {
     var currentTrip: VehicleTrip?
     let assignedDriver: Driver?
     let maintenance: VehicleMaintenance
-    let history: [VehicleTrip]
+    var history: [VehicleTrip]
     let reports: [VehicleReport]
     let assessmentReason: String? // Direct link to dashboard assessment logic
     

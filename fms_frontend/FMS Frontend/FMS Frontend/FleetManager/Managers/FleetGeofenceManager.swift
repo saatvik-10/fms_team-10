@@ -2,6 +2,11 @@ import Foundation
 import CoreLocation
 import Combine
 
+extension Notification.Name {
+    static let geofenceEntered = Notification.Name("GeofenceEntered")
+    static let geofenceExited = Notification.Name("GeofenceExited")
+}
+
 class FleetGeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     static let shared = FleetGeofenceManager()
     
@@ -82,7 +87,7 @@ class FleetGeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegat
             // e.g., if identifier contains "destination", status = .completed
             
             // Post a notification for the UI to handle if needed
-            NotificationCenter.default.post(name: NSNotification.Name("GeofenceEntered"), object: nil, userInfo: ["region": circularRegion.identifier])
+            NotificationCenter.default.post(name: .geofenceEntered, object: nil, userInfo: ["region": circularRegion.identifier])
         }
     }
     
@@ -92,7 +97,7 @@ class FleetGeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegat
             
             // e.g., if identifier contains "origin", status = .inTransit
             
-            NotificationCenter.default.post(name: NSNotification.Name("GeofenceExited"), object: nil, userInfo: ["region": circularRegion.identifier])
+            NotificationCenter.default.post(name: .geofenceExited, object: nil, userInfo: ["region": circularRegion.identifier])
         }
     }
     
