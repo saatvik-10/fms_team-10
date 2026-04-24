@@ -17,7 +17,7 @@ export class Vehicle {
         vehicleModel: data.vehicleModel,
         registrationNum: data.registrationNum,
         chassisNum: data.chassisNum,
-        odometerReading: data.odometerReading,
+        totalDistance: 0,
         createdById: userId,
       },
     });

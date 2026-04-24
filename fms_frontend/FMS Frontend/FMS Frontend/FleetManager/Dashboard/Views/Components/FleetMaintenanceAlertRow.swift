@@ -34,10 +34,6 @@ struct FleetMaintenanceAlertRow: View {
     }
     
     private var alertColor: Color {
-        switch alert.status {
-        case "Urgent", "Critical": return AppColors.statusCritical
-        case "Scheduled": return AppColors.statusMaintenance
-        default: return AppColors.primary
-        }
+        AppColors.statusCritical
     }
 }

@@ -22,7 +22,7 @@ struct FleetManagerDashboardView: View {
                         
                         // MARK: - Section 1: Fleet Overview
                         VStack(alignment: .leading, spacing: 15) {
-                            DashboardSectionHeader(title: "Fleet Overview", subtitle: "Live vehicle status at a glance")
+                            DashboardSectionHeader(title: "Fleet Overview")
                             
                             FleetStatusMetricsGrid(
                                 active: dataManager.activeCount,
@@ -42,7 +42,7 @@ struct FleetManagerDashboardView: View {
                         // MARK: - Section 2: Active Logistics
                         VStack(alignment: .leading, spacing: 15) {
                             HStack {
-                                DashboardSectionHeader(title: "Active Logistics", subtitle: "Trips in progress")
+                                DashboardSectionHeader(title: "Active Logistics")
                                 Spacer()
                                 Button(action: { showingAddOrder = true }) {
                                     HStack(spacing: 4) {
@@ -80,7 +80,7 @@ struct FleetManagerDashboardView: View {
                         
                         // MARK: - Section 3: Maintenance Cost Analytics
                         VStack(alignment: .leading, spacing: 15) {
-                            DashboardSectionHeader(title: "Maintenance Analytics", subtitle: "Cost breakdown and trends")
+                            DashboardSectionHeader(title: "Maintenance Analytics")
                             
                             // Weekly trend + Per vehicle side by side
                             HStack(alignment: .top, spacing: 15) {
@@ -94,7 +94,7 @@ struct FleetManagerDashboardView: View {
                         
                         // MARK: - Section 4: Fleet Intelligence
                         VStack(alignment: .leading, spacing: 15) {
-                            DashboardSectionHeader(title: "Fleet Intelligence", subtitle: "Distance, coverage & driver availability")
+                            DashboardSectionHeader(title: "Fleet Intelligence")
                             
                             // Row A: Total KMs (full width — dark card)
                             TravelAnalyticsCard(
@@ -102,18 +102,14 @@ struct FleetManagerDashboardView: View {
                                 history: dataManager.travelsHistory
                             )
                             
-                            // Row B: Driver Distance + Available Drivers (side by side)
+                            // Row B: Least Travelled Vehicles + Available Drivers (side by side)
                             HStack(alignment: .top, spacing: 15) {
-                                DriverDistanceChart(data: dataManager.driverDistanceData)
+                                LeastTravelledVehiclesChart(vehicles: dataManager.vehicles)
                                     .frame(maxWidth: .infinity)
                                 
                                 IdleDriversAnalytic(drivers: dataManager.idleDrivers)
                                     .frame(maxWidth: .infinity)
                             }
-                            
-                            // Row C: Least Travelled Vehicles (full width)
-                            LeastTravelledVehiclesChart(vehicles: dataManager.vehicles)
-                                .frame(maxWidth: .infinity)
                         }
                         
                         // MARK: - Section 5: Maintenance & History
@@ -164,17 +160,11 @@ struct FleetManagerDashboardView: View {
 // MARK: - Section Header Helper
 struct DashboardSectionHeader: View {
     let title: String
-    let subtitle: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(AppFonts.title2)
-                .foregroundColor(AppTheme.primary)
-            Text(subtitle)
-                .font(AppFonts.caption1)
-                .foregroundColor(.gray)
-        }
+        Text(title)
+            .font(AppFonts.title2)
+            .foregroundColor(AppTheme.primary)
     }
 }
 
@@ -377,7 +367,6 @@ struct ManagerProfileView: View {
                             VStack(spacing: 15) {
                                 ProfileInfoRow(icon: "envelope.fill", label: "Email", value: "vikram.rathore@fms.com")
                                 ProfileInfoRow(icon: "phone.fill", label: "Work Phone", value: "+91 98765 43210")
-                                ProfileInfoRow(icon: "building.2.fill", label: "Department", value: "Logistics Optimization")
                             }
                         }
                         .padding(24)

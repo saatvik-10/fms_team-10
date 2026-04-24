@@ -85,7 +85,7 @@ model Vehicle {
   vehicleModel    String
   registrationNum String @unique
   chassisNum      String @unique
-  odometerReading String
+  totalDistance   Int
 
   vehicleInfo VehicleInfo?
 

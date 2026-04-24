@@ -146,8 +146,6 @@ struct FleetTripDetailView: View {
                                         FleetDetailItemRow(icon: "number", label: "Plate", value: vehicle.plateNumber, iconColor: .orange)
                                         Divider()
                                         FleetDetailItemRow(icon: "doc.text", label: "Reg", value: vehicle.registrationNumber, iconColor: .purple)
-                                        Divider()
-                                        FleetDetailItemRow(icon: "car.side", label: "Year", value: vehicle.year, iconColor: .green)
                                     }
                                 }
                                 .padding(20)
@@ -182,8 +180,6 @@ struct FleetTripDetailView: View {
                                             FleetDetailItemRow(icon: "card.fill", label: "License", value: driver.licenseNum, iconColor: .red)
                                             Divider()
                                             FleetDetailItemRow(icon: "phone.fill", label: "Contact", value: driver.phone, iconColor: .green)
-                                            Divider()
-                                            FleetDetailItemRow(icon: "star.fill", label: "Rating", value: String(format: "%.1f ★", driver.rating), iconColor: .yellow)
                                         }
                                     }
                                     .padding(20)
