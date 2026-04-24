@@ -185,8 +185,8 @@ struct MaintenanceSectionHeader<Destination: View>: View {
     }
 }
 
-// MARK: - Maintenance Alert Card
-struct MaintenanceAlertCard: View {
+// MARK: - Maintenance Dashboard Alert Card
+struct MaintenanceDashboardAlertCard: View {
     let item: DashboardAlertItem
 
     private let iconName = "exclamationmark.triangle.fill"
