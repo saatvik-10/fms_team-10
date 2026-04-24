@@ -51,6 +51,7 @@ export class Driver {
             email,
             phone,
             address,
+            status: "ACTIVE",
             licenceNumber: licenseNumber,
             expiryDate,
             classes,

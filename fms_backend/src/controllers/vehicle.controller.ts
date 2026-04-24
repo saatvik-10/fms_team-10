@@ -18,6 +18,11 @@ export class Vehicle {
         registrationNum: data.registrationNum,
         chassisNum: data.chassisNum,
         odometerReading: data.odometerReading,
+        newOdometerReading: {
+          increment: {
+            
+          }
+        }
         createdById: userId,
       },
     });
