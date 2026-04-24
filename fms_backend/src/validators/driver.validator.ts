@@ -24,7 +24,11 @@ export const createDriverSchema = z.object({
   email: z.string().trim().email('A valid email is required'),
   phone: z.string().trim().min(10, 'Phone number is required'),
   address: z.string().trim().min(1, 'Address is required').optional(),
-  licenseNumber: z.string().trim().min(1, 'License number is required'),
+  licenseNumber: z
+    .string()
+    .trim()
+    .min(1, 'License number is required')
+    .max(15, 'License number is required'),
   expiryDate: expiryDateSchema,
   classes: z
     .array(z.string().trim().min(1, 'Class cannot be empty'))
