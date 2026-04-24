@@ -42,7 +42,7 @@ class FleetDataManager: ObservableObject {
     }
     
     enum GeofenceAlertType {
-        case departure, arrival
+        case departure, arrival, deviation
     }
     
     init() {
@@ -59,6 +59,12 @@ class FleetDataManager: ObservableObject {
         NotificationCenter.default.publisher(for: .geofenceExited)
             .sink { [weak self] notification in
                 self?.handleGeofenceEvent(notification: notification, type: .departure)
+            }
+            .store(in: &cancellables)
+            
+        NotificationCenter.default.publisher(for: .routeDeviationDetected)
+            .sink { [weak self] notification in
+                self?.handleDeviationEvent(notification: notification)
             }
             .store(in: &cancellables)
     }
@@ -99,10 +105,19 @@ class FleetDataManager: ObservableObject {
                             var completedTrip = self.vehicles[vIndex].currentTrip!
                             completedTrip.status = .completed
                             self.vehicles[vIndex].history.insert(completedTrip, at: 0)
+                            
+                            // Stop route tracking
+                            FleetRouteTracker.shared.stopTracking(tripID: tripID)
+                            
                             self.vehicles[vIndex].currentTrip = nil
                             self.vehicles[vIndex].status = .idle
                         } else if newStatus == .inTransit {
                             self.vehicles[vIndex].status = .inTransit
+                            
+                            // Start route tracking
+                            if let trip = self.vehicles[vIndex].currentTrip {
+                                FleetRouteTracker.shared.startTracking(trip: trip)
+                            }
                         }
                     }
                     
@@ -120,6 +135,30 @@ class FleetDataManager: ObservableObject {
                     if self.geofenceAlerts.count > 10 {
                         self.geofenceAlerts.removeLast()
                     }
+                }
+            }
+        }
+    }
+    
+    private func handleDeviationEvent(notification: Notification) {
+        guard let tripID = notification.userInfo?["tripID"] as? String else { return }
+        
+        if let vIndex = vehicles.firstIndex(where: { $0.currentTrip?.id.uuidString == tripID }) {
+            let vehicle = vehicles[vIndex]
+            let message = "⚠️ ROUTE DEVIATION: Vehicle \(vehicle.id) has left the assigned corridor!"
+            
+            DispatchQueue.main.async {
+                let alert = GeofenceAlert(
+                    tripID: tripID,
+                    vehicleID: vehicle.id,
+                    message: message,
+                    timestamp: Date(),
+                    type: .deviation
+                )
+                self.geofenceAlerts.insert(alert, at: 0)
+                
+                if self.geofenceAlerts.count > 10 {
+                    self.geofenceAlerts.removeLast()
                 }
             }
         }

@@ -5,6 +5,7 @@ import Combine
 extension Notification.Name {
     static let geofenceEntered = Notification.Name("GeofenceEntered")
     static let geofenceExited = Notification.Name("GeofenceExited")
+    static let routeDeviationDetected = Notification.Name("routeDeviationDetected")
 }
 
 class FleetGeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegate {

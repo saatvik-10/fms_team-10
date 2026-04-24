@@ -1457,30 +1457,54 @@ struct GeofenceAlertBanner: View {
     let alert: FleetDataManager.GeofenceAlert
     var onDismiss: () -> Void
     
+    private var alertColor: Color {
+        switch alert.type {
+        case .arrival: return AppTheme.activeGreen
+        case .departure: return Color.orange
+        case .deviation: return Color.red
+        }
+    }
+    
+    private var alertIcon: String {
+        switch alert.type {
+        case .arrival: return "mappin.and.ellipse"
+        case .departure: return "figure.walk.departure"
+        case .deviation: return "exclamationmark.triangle.fill"
+        }
+    }
+    
+    private var alertTitle: String {
+        switch alert.type {
+        case .arrival: return "NEW ARRIVAL"
+        case .departure: return "NEW DEPARTURE"
+        case .deviation: return "ROUTE DEVIATION"
+        }
+    }
+    
     var body: some View {
         HStack(spacing: 15) {
             ZStack {
                 Circle()
-                    .fill(alert.type == .arrival ? AppTheme.activeGreen.opacity(0.2) : Color.orange.opacity(0.2))
+                    .fill(alertColor.opacity(0.2))
                     .frame(width: 40, height: 40)
                 
-                Image(systemName: alert.type == .arrival ? "mappin.and.ellipse" : "figure.walk.departure")
+                Image(systemName: alertIcon)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(alert.type == .arrival ? AppTheme.activeGreen : .orange)
+                    .foregroundColor(alertColor)
             }
             
             VStack(alignment: .leading, spacing: 2) {
-                Text(alert.type == .arrival ? "NEW ARRIVAL" : "NEW DEPARTURE")
+                Text(alertTitle)
                     .font(AppFonts.caption2)
                     .fontWeight(.black)
                     .tracking(1)
-                    .foregroundColor(alert.type == .arrival ? AppTheme.activeGreen : .orange)
+                    .foregroundColor(alertColor)
                 
                 Text(alert.message)
                     .font(AppFonts.body)
                     .fontWeight(.bold)
                     .foregroundColor(AppTheme.primary)
-                    .lineLimit(1)
+                    .lineLimit(2)
                 
                 Text("\(alert.timestamp, style: .time)")
                     .font(AppFonts.caption2)

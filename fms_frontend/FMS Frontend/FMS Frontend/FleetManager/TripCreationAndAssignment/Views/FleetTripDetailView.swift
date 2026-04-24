@@ -263,7 +263,14 @@ struct FleetTripDetailView: View {
         if let trip = tripOverride {
             return "Trip Completed on \(trip.date ?? "Past")"
         }
-        return "\(vehicle.id) is on Highway 44"
+        if let trip = vehicle.currentTrip {
+            switch trip.status {
+            case .scheduled: return "Scheduled: \(trip.origin) to \(trip.destination)"
+            case .inTransit: return "\(vehicle.id) is currently In Transit"
+            case .completed: return "Trip Completed"
+            }
+        }
+        return "Vehicle is currently Idle"
     }
     
     private func loadRouteData() async {
