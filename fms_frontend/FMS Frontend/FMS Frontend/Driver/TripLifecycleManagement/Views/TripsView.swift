@@ -67,7 +67,10 @@ struct TripsView: View {
                     TripDetailView(
                         trip: selected.toTripModel(),
                         showTripControls: true,
-                        lifecycleTrip: selected          // forwarded to ReportIssueView
+                        lifecycleTrip: selected,         // forwarded to ReportIssueView
+                        onTripEnded: {
+                            viewModel.endTrip(selected.id)
+                        }
                     )
                 }
             }
