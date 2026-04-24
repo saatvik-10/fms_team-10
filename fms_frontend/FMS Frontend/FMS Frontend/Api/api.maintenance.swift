@@ -30,6 +30,10 @@ struct CreateMaintenanceResponse: Decodable {
   let maintenance: MaintenanceItem
 }
 
+struct GetMaintenancesResponse: Decodable {
+  let maintenances: [MaintenanceItem]
+}
+
 final class MaintenanceAPI {
   static let shared = MaintenanceAPI()
 
@@ -44,6 +48,22 @@ final class MaintenanceAPI {
       path: "/maintenance/create-maintenance-profile",
       method: .post,
       body: request,
+      requiresAuth: true
+    )
+  }
+
+  func getMaintenances() async throws -> GetMaintenancesResponse {
+    try await client.request(
+      path: "/maintenance/get-maintenances",
+      method: .get,
+      requiresAuth: true
+    )
+  }
+
+  func deleteMaintenance(id: String) async throws -> BasicMessageResponse {
+    try await client.request(
+      path: "/maintenance/\(id)",
+      method: .delete,
       requiresAuth: true
     )
   }
