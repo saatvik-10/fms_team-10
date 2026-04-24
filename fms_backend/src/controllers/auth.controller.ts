@@ -134,11 +134,6 @@ export class Auth {
       return c.json({ err: 'Invalid credentials' }, 401);
     }
 
-    const token = await jwtAuth({
-      userId: user.id,
-      role: user.role,
-    });
-
     // Return role-specific profile based on role
     let profileData: Record<string, any> = { id: user.id, email: user.email };
 
@@ -172,7 +167,7 @@ export class Auth {
     }
 
     return c.json({
-      token,
+      message: 'Credentials verified. Proceed with OTP verification.',
       user: {
         ...profileData,
         role: user.role,
@@ -237,7 +232,28 @@ export class Auth {
 
     if (storedOtp.otp === otp) {
       clearOtpState(email);
-      return c.json('Success');
+
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          role: true,
+        },
+      });
+
+      if (!user || user.role === 'SUPER_ADMIN') {
+        return c.json({ err: 'Invalid user' }, 401);
+      }
+
+      const token = await jwtAuth({
+        userId: user.id,
+        role: user.role,
+      });
+
+      return c.json({
+        message: 'Success',
+        token,
+      });
     }
 
     return c.json('Failure');
