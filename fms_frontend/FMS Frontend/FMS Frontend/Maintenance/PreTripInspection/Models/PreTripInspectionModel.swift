@@ -1,4 +1,0 @@
-//
-//  PreTripInspectionModel.swift
-//  FMS Frontend
-//

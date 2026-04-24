@@ -1,18 +1,19 @@
 import { Hono } from 'hono';
-import { proxyAuth, requireRole } from '../proxy';
+import { proxyAuth, requireRole, ROLES } from '../proxy';
 import { Manager } from '../controllers/manager.controller.ts';
 
 const managerRoute = new Hono();
 const controller = new Manager();
 
+const authRole = requireRole(ROLES.MANAGER);
+
 managerRoute.post(
-  '/create',
+  '/create-manager-profile',
   proxyAuth,
-  requireRole('SUPER_ADMIN'),
+  requireRole(ROLES.SUPER_ADMIN),
   controller.createManager,
 );
-// managerRoute.post('/getAll', requireRole('SUPER_ADMIN', controller.getManagers)
-managerRoute.get('/me', proxyAuth, requireRole('MANAGER'), controller.getMyProfile)
-// managerRoute.get('/:id', proxyAuth, requireRole('MANAGER'), controller.getManager)
+managerRoute.get('/:id', proxyAuth, requireRole(ROLES.SUPER_ADMIN), controller.getManager);
 
 export default managerRoute;
+

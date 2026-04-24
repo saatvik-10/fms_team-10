@@ -24,29 +24,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
     private var currentGMSPath: GMSPath?
     private var lastLocation: CLLocation?
     private var isFetching = false
-    private var nextStopIndex: Int = 0
     private var hasStartedInitialFetch = false
-
-    // MARK: - Computed: next stop destination coordinate
-
-    var nextStopCoordinate: CLLocationCoordinate2D? {
-        // 1. If pickup not completed → go there first
-        if trip.pickup.status != .completed {
-            return trip.pickup.coordinate
-        }
-
-        // 2. Find first stop not completed
-        if let nextStop = trip.stops.first(where: { $0.status != .completed }) {
-            return nextStop.coordinate
-        }
-
-        // 3. Otherwise go to final destination
-        if trip.destination.status != .completed {
-            return trip.destination.coordinate
-        }
-
-        return nil
-    }
     // MARK: - Init
 
     init(trip: Trip) {
@@ -66,7 +44,6 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
     // MARK: - Public Entry Point
 
     func startNavigation() {
-        nextStopIndex = 0
         hasStartedInitialFetch = false
 
         if let existing = locationManager.location {
@@ -93,7 +70,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
             return
         }
 
-        guard let destination = nextStopCoordinate else {
+        guard let destination = CLLocationCoordinate2D?(trip.destination.coordinate) else {
             print("[Nav] No destination available")
             return
         }
@@ -191,15 +168,6 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
         let timeSinceLast = lastLocation.map { location.timestamp.timeIntervalSince($0.timestamp) } ?? 30
         if timeSinceLast > 10 { lastLocation = location }
 
-        // Stop arrival check (within 30m of next stop)
-        if let dest = nextStopCoordinate {
-            let destCL = CLLocation(latitude: dest.latitude, longitude: dest.longitude)
-            if location.distance(from: destCL) < 30.0 {
-                DispatchQueue.main.async { self.advanceToNextStop() }
-                return
-            }
-        }
-
         // Step-level progression — uses endLocation from NavigationInstruction
         guard currentStepIndex < rawSteps.count else { return }
         let step    = rawSteps[currentStepIndex]
@@ -222,32 +190,11 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
         print("[Nav] Location error: \(error.localizedDescription)")
     }
 
-    // MARK: - Stop Advancement
-
-    private func advanceToNextStop() {
-        nextStopIndex += 1
-        if nextStopIndex > trip.stops.count {
-            currentInstruction  = "Arrived at destination"
-            nextInstruction     = ""
-            distanceRemaining   = "0 m"
-            polylineString      = ""
-            return
-        }
-        rawSteps            = []
-        currentStepIndex    = 0
-        currentGMSPath      = nil
-        polylineString      = ""
-        currentInstruction  = "Heading to next stop..."
-        fetchSegmentRoute()
-    }
-
     // MARK: - Instruction Updates (no HTML or string formatting here)
 
     private func updateInstructions() {
         guard currentStepIndex < rawSteps.count else {
-            currentInstruction = nextStopIndex > trip.stops.count
-                ? "Arrived at destination"
-                : "Arrived at stop"
+            currentInstruction = "Arrived at destination"
             nextInstruction = ""
             return
         }

@@ -16,14 +16,14 @@ class TripsViewModel: ObservableObject {
     private func loadMockData() {
         trips = [
             // Assigned Trips
-            LifecycleTrip(id: "TRP-10492", source: "Chicago, IL", destination: "Detroit, MI", status: .assigned, dateValue: "Oct 18", timeLabel: "Arrival Window", timeValue: "08:00 - 10:00", loadInfo: "24 Pallets", distance: 283.4, vehicleNumber: nil),
-            LifecycleTrip(id: "TRP-10495", source: "Gary, IN", destination: "Columbus, OH", status: .assigned, dateValue: "Oct 19", timeLabel: "Arrival Window", timeValue: "13:30 - 15:00", loadInfo: "18 Pallets", distance: 250.0, vehicleNumber: nil),
+            LifecycleTrip(id: "TRP-10492", source: "Mumbai, MH", destination: "Pune, MH", status: .assigned, dateValue: "Oct 18", timeLabel: "Arrival Window", timeValue: "08:00 - 10:00", loadInfo: "24 Pallets", distance: 148.4, vehicleNumber: nil),
+            LifecycleTrip(id: "TRP-10495", source: "Delhi, DL", destination: "Jaipur, RJ", status: .assigned, dateValue: "Oct 19", timeLabel: "Arrival Window", timeValue: "13:30 - 15:00", loadInfo: "18 Pallets", distance: 281.0, vehicleNumber: nil),
             
             // Accepted Trips
-            LifecycleTrip(id: "TRP-10488", source: "Indianapolis, IN", destination: "Louisville, KY", status: .scheduled, dateValue: "Oct 20", timeLabel: "Scheduled Start", timeValue: "14:30", loadInfo: "12 Pallets", distance: 114.2, vehicleNumber: "MH01BK9392"),
+            LifecycleTrip(id: "TRP-10488", source: "Bengaluru, KA", destination: "Mysuru, KA", status: .scheduled, dateValue: "Oct 20", timeLabel: "Scheduled Start", timeValue: "14:30", loadInfo: "12 Pallets", distance: 143.2, vehicleNumber: "MH01BK9392"),
             
             // Past Trips
-            LifecycleTrip(id: "TRP-10470", source: "Nashville, TN", destination: "Atlanta, GA", status: .completed, dateValue: "Oct 15", timeLabel: "Completion Time", timeValue: "Yesterday, 18:45", loadInfo: "20 Pallets", distance: 248.1, vehicleNumber: "XYZ-9876")
+            LifecycleTrip(id: "TRP-10470", source: "Chennai, TN", destination: "Kochi, KL", status: .completed, dateValue: "Oct 15", timeLabel: "Completion Time", timeValue: "Yesterday, 18:45", loadInfo: "20 Pallets", distance: 684.1, vehicleNumber: "XYZ-9876")
         ]
     }
     

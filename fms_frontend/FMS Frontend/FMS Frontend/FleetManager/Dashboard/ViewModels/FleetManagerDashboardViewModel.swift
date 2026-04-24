@@ -1,4 +1,0 @@
-//
-//  DashboardViewModel.swift
-//  FMS Frontend
-//

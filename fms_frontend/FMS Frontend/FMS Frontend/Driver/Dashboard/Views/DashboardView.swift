@@ -47,7 +47,8 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 }
 
 class DashboardViewModel: ObservableObject {
-    @Published var userName: String = "Marcus"
+    // Single source of truth — name comes from the shared UserProfile model
+    @Published var userName: String = UserProfile.mockDriver.name
     @Published var activeTrip: Trip = Trip.mockTrip
     @Published var vehicleName: String = "Tata Prima 4028.S"
     @Published var vehiclePlate: String = "MH 43 AB 1234"
@@ -59,10 +60,12 @@ class DashboardViewModel: ObservableObject {
 // MARK: - Main Tab View
 
 struct DashboardView: View {
+    @Binding var userRole: AppUserRole
+
     var body: some View {
         TabView {
             NavigationStack {
-                DashboardHomeView()
+                DashboardHomeView(userRole: $userRole)
             }
             .tabItem {
                 Label("Home", systemImage: "house.fill")
@@ -72,11 +75,6 @@ struct DashboardView: View {
             .tabItem {
                 Label("Trips", systemImage: "map.fill")
             }
-            
-//            Text("Profile Placeholder")
-//            .tabItem {
-//                Label("Profile", systemImage: "person.crop.circle.fill")
-//            }
         }
         .accentColor(AppColors.primary)
     }
@@ -87,6 +85,8 @@ struct DashboardView: View {
 struct DashboardHomeView: View {
     @StateObject private var viewModel = DashboardViewModel()
     @StateObject private var locationManager = LocationManager()
+    @State private var showProfile = false
+    @Binding var userRole: AppUserRole
     
     var body: some View {
         ScrollView {
@@ -116,23 +116,34 @@ struct DashboardHomeView: View {
         }
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
         .navigationBarHidden(true)
+        .navigationDestination(isPresented: $showProfile) {
+            DriverProfileView(onLogout: {
+                AuthAPI.shared.logout()
+                userRole = .none
+            })
+        }
     }
     
     private var headerView: some View {
         HStack(spacing: 16) {
-            Image(systemName: "person.circle.fill")
-                .resizable()
-                .frame(width: 48, height: 48)
-                .foregroundColor(Color.gray.opacity(0.8))
-            
-            Text("Hi, \(viewModel.userName)")
-                .font(.system(.title2, design: .default, weight: .bold))
+            Text("Home")
+                .font(.system(.title, design: .default, weight: .bold))
                 .foregroundColor(.black)
             
             Spacer()
             
             Button(action: {}) {
                 Image(systemName: "bell.fill")
+                    .font(.title3)
+                    .foregroundColor(.black)
+                    .padding(12)
+                    .background(Color.white)
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+            }
+            
+            Button(action: { showProfile = true }) {
+                Image(systemName: "person.crop.circle.fill")
                     .font(.title3)
                     .foregroundColor(.black)
                     .padding(12)
@@ -277,30 +288,6 @@ struct VehicleCardView: View {
     }
 }
 
-struct PrimaryButton: View {
-    var title: String
-    var icon: String? = nil
-    var backgroundColor: Color = AppColors.primary
-    var textColor: Color = .white
-    var action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                if let icon = icon {
-                    Image(systemName: icon)
-                }
-                Text(title)
-            }
-            .font(.headline)
-            .foregroundColor(textColor)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(backgroundColor)
-            .cornerRadius(12)
-        }
-    }
-}
 
 struct RouteDetailRow: View {
     var label: String
@@ -359,6 +346,55 @@ struct GoogleMapView: UIViewRepresentable {
 
 struct DashboardView_Previews: PreviewProvider {
     static var previews: some View {
-        DashboardView()
+        DashboardView(userRole: .constant(.driver))
     }
 }
+
+struct DriverProfileView: View {
+    let profile = UserProfile.mockDriver
+    var onLogout: (() -> Void)? = nil
+    
+    var body: some View {
+        List {
+            Section {
+                VStack(spacing: 16) {
+                    Image(systemName: "person.crop.circle.fill")
+                        .resizable()
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(AppColors.primary)
+                    
+                    VStack(spacing: 4) {
+                        Text(profile.name)
+                            .font(.title2.bold())
+                        Text("Certified Commercial Driver")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+            }
+            .listRowBackground(Color.clear)
+            
+            Section("Account Details") {
+                AppProfileInfoRow(label: "USERNAME", value: profile.username)
+                AppProfileInfoRow(label: "PHONE", value: profile.phone)
+                AppProfileInfoRow(label: "EMAIL", value: profile.email)
+                AppProfileInfoRow(label: "ADDRESS", value: profile.address)
+                AppProfileInfoRow(label: "ROLE", value: profile.role.rawValue)
+                AppProfileInfoRow(label: "JOINED", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
+                AppProfileInfoRow(label: "CUID", value: profile.id)
+            }
+            
+            Section {
+                Button(action: { onLogout?() }) {
+                    Text("Logout")
+                        .foregroundColor(.red)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .navigationTitle("Profile")
+    }
+}
+

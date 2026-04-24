@@ -1,11 +1,12 @@
 import type { Context } from 'hono';
 import { createManagerSchema } from '../validators/manager.validator';
+import { sendCredentialsMail } from '../services/resend.service';
 import { prisma } from '../../prisma';
 import { hashPassword } from '../lib/hashPassword';
 import { customAlphabet } from 'nanoid';
 
 const nanoid = customAlphabet(
-  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*',
+  'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*',
   10,
 );
 
@@ -24,11 +25,22 @@ export class Manager {
     const { name, phone, address, email } = result.data;
     const superAdminId = c.get('userId');
 
-    const existingUser = await prisma.user.findUnique({
+    // Check if email is already used in any user
+    const existingEmailUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+
+    if (existingEmailUser) {
+      return c.json({ err: 'Email already in use' }, 409);
+    }
+
+    // Check if phone is already used in manager
+    const existingManager = await prisma.manager.findUnique({
       where: { phone },
     });
 
-    if (existingUser) {
+    if (existingManager) {
       return c.json({ err: 'Phone already in use' }, 409);
     }
 
@@ -37,18 +49,50 @@ export class Manager {
     const password = nanoid();
     const passwordHash = await hashPassword(password);
 
-    const manager = await prisma.user.create({
+    // Create User and Manager in transaction
+    const user = await prisma.user.create({
       data: {
-        name,
         username,
-        phone,
-        address,
         email,
         passwordHash,
         role: 'MANAGER',
         createdById: superAdminId,
+        manager: {
+          create: {
+            name,
+            phone,
+            address,
+          },
+        },
+      },
+      select: {
+        username: true,
+        manager: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
+
+    let mailStatus: { sent: boolean; details?: string } = { sent: true };
+
+    try {
+      await sendCredentialsMail({
+        userEmail: email,
+        role: 'Manager',
+        username,
+        password,
+        senderRole: 'Super Admin',
+      });
+    } catch (error) {
+      console.error('Failed to send manager credentials email', error);
+      mailStatus = {
+        sent: false,
+        details: error instanceof Error ? error.message : 'Unknown mail error',
+      };
+    }
 
     return c.json(
       {
@@ -57,81 +101,47 @@ export class Manager {
           username,
           password,
         },
+        mail: mailStatus,
         manager: {
-          id: manager.id,
-          name: manager.name,
+          id: user.manager?.id,
+          name: user.manager?.name,
         },
       },
       201,
     );
   }
 
-  //   async getManagers(c: Context) {
-  //     const managers = await prisma.user.findMany({
-  //       where: { role: 'MANAGER' },
-  //       select: {
-  //         id: true,
-  //         name: true,
-  //         username: true,
-  //         phone: true,
-  //         address: true,
-  //         email: true,
-  //         createdAt: true,
-  //       },
-  //     });
-
-  //     return c.json({ managers });
-  //   }
-
-  async getMyProfile(c: Context) {
-    const userId = c.get('userId') as string;
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        phone: true,
-        address: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-
-    if (!user || user.role !== 'MANAGER') {
-      return c.json({ err: 'Manager not found' }, 404);
-    }
-
-    return c.json({
-      manager: user,
-    });
-  }
-
   async getManager(c: Context) {
-    const userId = c.req.param('id');
+    const managerId = c.req.param('id');
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        phone: true,
-        address: true,
-        email: true,
-        role: true,
-        createdAt: true,
+    const manager = await prisma.manager.findUnique({
+      where: { id: managerId },
+      include: {
+        user: {
+          select: {
+            email: true,
+            username: true,
+            role: true,
+          },
+        },
       },
     });
 
-    if (!user || user.role !== 'MANAGER') {
+    if (!manager) {
       return c.json({ err: 'Manager not found' }, 404);
     }
 
     return c.json({
-      manager: user,
+      manager: {
+        id: manager.id,
+        name: manager.name,
+        email: manager.user.email,
+        username: manager.user.username,
+        phone: manager.phone,
+        address: manager.address,
+        role: manager.user.role,
+        createdAt: manager.createdAt,
+      },
     });
   }
 }

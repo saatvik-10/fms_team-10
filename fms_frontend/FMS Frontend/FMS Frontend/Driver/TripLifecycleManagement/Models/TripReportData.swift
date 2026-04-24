@@ -60,7 +60,7 @@ struct TripReportData {
             tripID:               trip.id,
             vehicleID:            "VH-\(trip.id.suffix(4))",
             vehicleNumber:        "MH-12-AB-\(trip.id.suffix(4))",
-            driverName:           "Rajesh Kumar",
+            driverName:           "Aarav Sharma",
             driverID:             "DRV-4821",
             startDateTime:        "\(trip.dateValue)  \(trip.timeValue.components(separatedBy: " - ").first ?? "08:00")",
             endDateTime:          "\(trip.dateValue)  \(trip.timeValue.components(separatedBy: " - ").last ?? "18:00")",
