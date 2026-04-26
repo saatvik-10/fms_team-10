@@ -187,6 +187,10 @@ struct DriverModalView: View {
     @State private var showingScanner = false
     @State private var licenseError: String? = nil
     @State private var emailError: String? = nil
+    @State private var frontLicenseImageData: Data?
+    @State private var backLicenseImageData: Data?
+    @State private var isSaving = false
+    @State private var saveError: String? = nil
 
     init(driverToEdit: Driver? = nil) {
         self.driverToEdit = driverToEdit
@@ -224,19 +228,40 @@ struct DriverModalView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 25) {
                     
-                    // Section 1: License Verification
-                    VStack(alignment: .leading, spacing: 15) {
-                        Text("LICENSE VERIFICATION")
-                            .font(AppFonts.caption2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.gray)
-                        
-                        OCRUploadArea(
-                            title: "Upload Driver License",
-                            subtitle: "Drag and drop or tap to scan document",
-                            buttonTitle: "Upload License",
-                            action: { showingScanner = true }
-                        )
+                    if driverToEdit == nil {
+                        // Section 1: License Verification
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("LICENSE VERIFICATION")
+                                .font(AppFonts.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.gray)
+                            
+                            OCRUploadArea(
+                                title: "Upload Driver License",
+                                subtitle: "Drag and drop or tap to scan document",
+                                buttonTitle: "Upload License",
+                                action: { showingScanner = true }
+                            )
+                            if frontLicenseImageData != nil || backLicenseImageData != nil {
+                                HStack(spacing: 12) {
+                                    Label(frontLicenseImageData != nil ? "Front uploaded" : "Front missing", systemImage: frontLicenseImageData != nil ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                        .foregroundColor(frontLicenseImageData != nil ? .green : .orange)
+                                    Label(backLicenseImageData != nil ? "Back uploaded" : "Back missing", systemImage: backLicenseImageData != nil ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                        .foregroundColor(backLicenseImageData != nil ? .green : .orange)
+                                }
+                                .font(AppFonts.caption2)
+                            }
+                        }
+                    } else {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("LICENSE VERIFICATION")
+                                .font(AppFonts.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.gray)
+                            Text("License images are already stored. Update the text fields below to edit the driver profile.")
+                                .font(AppFonts.caption1)
+                                .foregroundColor(.gray)
+                        }
                     }
                     
                     // Section 2: Review Details
@@ -250,12 +275,30 @@ struct DriverModalView: View {
                             ModalFormField(label: "Full Name", text: $fullName)
                             ModalFormField(label: "Phone Number", text: $phone)
                         }
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            ModalFormField(label: "Email", text: $email)
+                                .onChange(of: email) { _, newValue in
+                                    if newValue.isEmpty {
+                                        emailError = nil
+                                    } else if !isValidEmail(newValue) {
+                                        emailError = "Enter a valid email address"
+                                    } else {
+                                        emailError = nil
+                                    }
+                                }
+                            if let error = emailError {
+                                Text(error)
+                                    .font(AppFonts.caption2)
+                                    .foregroundColor(.red)
+                            }
+                        }
                         
                         VStack(alignment: .leading, spacing: 10) {
                             ModalFormField(label: "License Number", text: $licenseNumber)
                                 .onChange(of: licenseNumber) { _, newValue in
-                                    if newValue.count != 16 && !newValue.isEmpty {
-                                        licenseError = "License number must be exactly 16 characters"
+                                    if newValue.count != 15 && !newValue.isEmpty {
+                                        licenseError = "License number must be 15 characters"
                                     } else {
                                         licenseError = nil
                                     }
@@ -334,58 +377,38 @@ struct DriverModalView: View {
             
             // Footer Buttons
             HStack(spacing: 15) {
-                Button(action: { 
-                    let validVehicleClasses = vehicleClasses.filter { Self.vehicleClassOptions.contains($0) }
-                    let selectedVehicleClasses = validVehicleClasses.reduce(into: [String]()) { result, item in
-                        if !result.contains(item) {
-                            result.append(item)
-                        }
-                    }
-                    let finalVehicleClasses = selectedVehicleClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : selectedVehicleClasses
-                    let newDriverID = "KM-\(Int.random(in: 1000...9999))"
-                    let newDriver = Driver(
-                        id: newDriverID,
-                        name: fullName,
-                        email: email,
-                        title: "\(finalVehicleClasses.first ?? "LMV-NT") Certified Driver",
-                        licenseNum: licenseNumber,
-                        licenseExp: expiryDate,
-                        status: .offDuty,
-                        rating: 5.0,
-                        efficiency: "100%",
-                        totalTrips: 0,
-                        totalHours: 0,
-                        activityLog: [],
-                        currentVehicleID: nil,
-                        vehicleClasses: finalVehicleClasses,
-                        activeRoute: nil,
-                        eta: nil,
-                        phone: phone
-                    )
-                    DriverEmailStore.shared.saveEmail(email, forDriverID: newDriverID)
-                    dataManager.addDriver(newDriver)
-                    dismiss() 
+                Button(action: {
+                    Task { await saveDriver() }
                 }) {
                     HStack {
-                        Text("Save Driver")
+                        Text(isSaving ? "Saving..." : (driverToEdit == nil ? "Save Driver" : "Update Driver"))
                     }
                     .font(AppFonts.button)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(AppTheme.primary)
+                    .background(canSave ? AppTheme.primary : Color.gray)
                     .cornerRadius(12)
                 }
+                .disabled(isSaving || !canSave)
 
+            }
+            if let saveError {
+                Text(saveError)
+                    .font(AppFonts.caption2)
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(30)
         .background(Color.white)
         .sheet(isPresented: $showingScanner) {
-            CameraScannerView(isPresented: $showingScanner) { name, id, date, vehicles in
+            CameraScannerView(isPresented: $showingScanner) { name, id, date, vehicles, frontImage, backImage in
                 self.fullName = name
                 self.licenseNumber = id
                 self.expiryDate = date
+                self.frontLicenseImageData = frontImage
+                self.backLicenseImageData = backImage
                 // Split vehicles by comma, slash, space, or newline if multiple detected
                 let separators = CharacterSet(charactersIn: ",/& \n\t")
                 var detected: [String] = []
@@ -400,6 +423,187 @@ struct DriverModalView: View {
                     }
                 }
                 self.vehicleClasses = detected.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : detected
+            }
+        }
+    }
+
+    private var canSave: Bool {
+        !fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        isValidEmail(email) &&
+        !phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !licenseNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !expiryDate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        (driverToEdit != nil || (frontLicenseImageData != nil && backLicenseImageData != nil))
+    }
+
+    private func saveDriverLocally() {
+        let validVehicleClasses = vehicleClasses.filter { Self.vehicleClassOptions.contains($0) }
+        let selectedVehicleClasses = validVehicleClasses.reduce(into: [String]()) { result, item in
+            if !result.contains(item) {
+                result.append(item)
+            }
+        }
+        let finalVehicleClasses = selectedVehicleClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : selectedVehicleClasses
+        let newDriverID = driverToEdit?.id ?? "KM-\(Int.random(in: 1000...9999))"
+        let newDriver = Driver(
+            id: newDriverID,
+            backendId: driverToEdit?.backendId,
+            name: fullName,
+            email: email,
+            title: "\(finalVehicleClasses.first ?? "LMV-NT") Certified Driver",
+            licenseNum: licenseNumber,
+            licenseExp: expiryDate,
+            status: .offDuty,
+            rating: 5.0,
+            efficiency: "100%",
+            totalTrips: 0,
+            totalHours: 0,
+            activityLog: [],
+            currentVehicleID: nil,
+            vehicleClasses: finalVehicleClasses,
+            activeRoute: nil,
+            eta: nil,
+            phone: phone,
+            dlFrontImageUrl: driverToEdit?.dlFrontImageUrl,
+            dlBackImageUrl: driverToEdit?.dlBackImageUrl,
+            dlFrontImageKey: driverToEdit?.dlFrontImageKey,
+            dlBackImageKey: driverToEdit?.dlBackImageKey
+        )
+        DriverEmailStore.shared.saveEmail(email, forDriverID: newDriverID)
+        dataManager.upsertDriver(newDriver)
+        dismiss()
+    }
+
+    private func saveDriver() async {
+        saveError = nil
+        guard canSave else {
+            saveError = "Please complete all fields and upload both DL images."
+            return
+        }
+
+        let validVehicleClasses = vehicleClasses.filter { Self.vehicleClassOptions.contains($0) }
+        let selectedVehicleClasses = validVehicleClasses.reduce(into: [String]()) { result, item in
+            if !result.contains(item) {
+                result.append(item)
+            }
+        }
+        let finalVehicleClasses = selectedVehicleClasses.isEmpty ? [Self.vehicleClassOptions.first ?? "LMV-NT"] : selectedVehicleClasses
+
+        let request = CreateDriverRequest(
+            fullName: fullName,
+            email: email,
+            phone: phone,
+            address: nil,
+            licenseNumber: licenseNumber,
+            expiryDate: expiryDate,
+            classes: finalVehicleClasses,
+            licenseFrontImage: frontLicenseImageData ?? Data(),
+            licenseBackImage: backLicenseImageData ?? Data()
+        )
+
+        if let editingDriver = driverToEdit {
+            await updateDriver(editingDriver, finalVehicleClasses: finalVehicleClasses)
+            return
+        }
+
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            let response = try await DriverAPI.shared.createDriverProfile(request)
+            let newDriverID = "KM-\(Int.random(in: 1000...9999))"
+            let newDriver = Driver(
+                id: newDriverID,
+                backendId: response.driver.id,
+                name: response.driver.name ?? fullName,
+                email: response.driver.email ?? email,
+                title: "\(finalVehicleClasses.first ?? "LMV-NT") Certified Driver",
+                licenseNum: response.driver.licenceNumber ?? licenseNumber,
+                licenseExp: response.driver.expiryDate ?? expiryDate,
+                status: .offDuty,
+                rating: 5.0,
+                efficiency: "100%",
+                totalTrips: 0,
+                totalHours: 0,
+                activityLog: [],
+                currentVehicleID: nil,
+                vehicleClasses: response.driver.classes ?? finalVehicleClasses,
+                activeRoute: nil,
+                eta: nil,
+                phone: response.driver.phone ?? phone,
+                dlFrontImageUrl: response.driver.dlFrontImageUrl,
+                dlBackImageUrl: response.driver.dlBackImageUrl,
+                dlFrontImageKey: response.driver.dlFrontImageKey,
+                dlBackImageKey: response.driver.dlBackImageKey
+            )
+
+            await MainActor.run {
+                DriverEmailStore.shared.saveEmail(email, forDriverID: response.driver.id ?? newDriverID)
+                dataManager.upsertDriver(newDriver)
+                dismiss()
+            }
+        } catch {
+            await MainActor.run {
+                saveError = error.localizedDescription
+            }
+        }
+    }
+
+    private func updateDriver(_ editingDriver: Driver, finalVehicleClasses: [String]) async {
+        guard let backendId = editingDriver.backendId else {
+            saveDriverLocally()
+            return
+        }
+
+        isSaving = true
+        defer { isSaving = false }
+
+        let request = UpdateDriverRequest(
+            fullName: fullName,
+            email: email,
+            phone: phone,
+            address: nil,
+            licenseNumber: licenseNumber,
+            expiryDate: expiryDate,
+            classes: finalVehicleClasses
+        )
+
+        do {
+            let response = try await DriverAPI.shared.updateDriverProfile(id: backendId, request: request)
+            let updatedDriver = Driver(
+                id: editingDriver.id,
+                backendId: response.driver.id ?? backendId,
+                name: response.driver.name ?? fullName,
+                email: response.driver.email ?? email,
+                title: "\(finalVehicleClasses.first ?? "LMV-NT") Certified Driver",
+                licenseNum: response.driver.licenceNumber ?? licenseNumber,
+                licenseExp: response.driver.expiryDate ?? expiryDate,
+                status: editingDriver.status,
+                rating: editingDriver.rating,
+                efficiency: editingDriver.efficiency,
+                totalTrips: editingDriver.totalTrips,
+                totalHours: editingDriver.totalHours,
+                activityLog: editingDriver.activityLog,
+                currentVehicleID: editingDriver.currentVehicleID,
+                vehicleClasses: response.driver.classes ?? finalVehicleClasses,
+                activeRoute: editingDriver.activeRoute,
+                eta: editingDriver.eta,
+                phone: response.driver.phone ?? phone,
+                dlFrontImageUrl: editingDriver.dlFrontImageUrl,
+                dlBackImageUrl: editingDriver.dlBackImageUrl,
+                dlFrontImageKey: editingDriver.dlFrontImageKey,
+                dlBackImageKey: editingDriver.dlBackImageKey
+            )
+
+            await MainActor.run {
+                DriverEmailStore.shared.saveEmail(email, forDriverID: backendId)
+                dataManager.upsertDriver(updatedDriver)
+                dismiss()
+            }
+        } catch {
+            await MainActor.run {
+                saveError = error.localizedDescription
             }
         }
     }
@@ -916,7 +1120,7 @@ struct OrderModalView: View {
         .frame(minWidth: 600, minHeight: 700)
         .background(Color.white)
         .sheet(isPresented: $showingScanner) {
-            CameraScannerView(isPresented: $showingScanner) { name, doc, _, _ in
+            CameraScannerView(isPresented: $showingScanner) { name, doc, _, _, _, _ in
                 self.ownerName = name
             }
         }
