@@ -6,7 +6,21 @@ struct DriverDetailView: View {
     @EnvironmentObject var dataManager: FleetDataManager
     @State private var showingEditModal = false
     @State private var showingDeleteAlert = false
+    @State private var routeEta: String = "--"
     private let infoCardHeight: CGFloat = 180
+    
+    private var assignedVehicle: Vehicle? {
+        dataManager.vehicles.first(where: {
+            ($0.assignedDriver?.backendId != nil && $0.assignedDriver?.backendId == driver.backendId) ||
+            ($0.assignedDriver?.id != nil && $0.assignedDriver?.id == driver.id) ||
+            $0.id == driver.currentVehicleID ||
+            $0.registrationNumber == driver.currentVehicleID
+        })
+    }
+    
+    private var assignedTrip: VehicleTrip? {
+        assignedVehicle?.currentTrip
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -101,16 +115,27 @@ struct DriverDetailView: View {
                             .fontWeight(.bold)
                             .foregroundColor(.gray)
 
+                        let trip = assignedTrip
+                        let routeStr = trip != nil ? "\(trip!.origin) → \(trip!.destination)" : "Idle"
+                        let vehicleStr = assignedVehicle?.registrationNumber ?? "N/A"
+
                         HStack {
-                            DetailHeaderStat(label: "VEHICLE", value: driver.currentVehicleID ?? "N/A")
+                            DetailHeaderStat(label: "VEHICLE", value: vehicleStr)
                             Spacer()
-                            DetailHeaderStat(label: "ETA", value: driver.eta ?? "--")
+                            DetailHeaderStat(label: "ETA", value: routeEta)
                         }
 
-                        DetailHeaderStat(label: "ACTIVE ROUTE", value: driver.activeRoute ?? "Idle")
+                        DetailHeaderStat(label: "ACTIVE ROUTE", value: routeStr)
+
+                        if let vehicle = assignedVehicle, trip != nil {
+                            AsyncFleetVehicleMap(vehicle: vehicle)
+                                .frame(height: 180)
+                                .cornerRadius(12)
+                                .padding(.top, 8)
+                        }
                     }
                     .padding(20)
-                    .frame(maxWidth: .infinity, minHeight: infoCardHeight, maxHeight: infoCardHeight, alignment: .topLeading)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
                     .background(Color.white)
                     .cornerRadius(14)
 
@@ -162,6 +187,12 @@ struct DriverDetailView: View {
         } message: {
             Text("Are you sure you want to delete this driver?")
         }
+        .task {
+            await loadAssignment()
+        }
+        .onChange(of: assignedTrip?.origin) { _, _ in
+            Task { await loadRouteEta() }
+        }
     }
     
     var statusColor: Color {
@@ -169,6 +200,37 @@ struct DriverDetailView: View {
         case .active, .onDuty: return AppColors.activeGreen
         case .onTrip: return AppColors.maintenanceOrange
         case .offDuty: return AppColors.criticalRed
+        }
+    }
+    
+    private func loadAssignment() async {
+        do {
+            try await dataManager.refreshVehicles()
+        } catch {
+            print("Failed to refresh vehicle assignment: \(error)")
+        }
+        await loadRouteEta()
+    }
+    
+    private func loadRouteEta() async {
+        guard let trip = assignedTrip else {
+            await MainActor.run { routeEta = "--" }
+            return
+        }
+        
+        if !trip.eta.isEmpty {
+            await MainActor.run { routeEta = trip.eta }
+        }
+        
+        do {
+            let route = try await FleetDirectionsService.shared.fetchDirections(
+                origin: trip.origin,
+                destination: trip.destination
+            )
+            await MainActor.run { routeEta = route.eta }
+        } catch {
+            await MainActor.run { routeEta = trip.eta.isEmpty ? "--" : trip.eta }
+            print("Failed to load assignment ETA: \(error)")
         }
     }
 }
