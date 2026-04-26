@@ -16,19 +16,106 @@ export class Trip {
         }
 
         const data = result.data;
+        const [vehicle, driver] = await Promise.all([
+            prisma.vehicle.findFirst({
+                where: {
+                    createdById: userId,
+                    OR: [
+                        { id: data.vehicle },
+                        { registrationNumber: data.vehicle },
+                    ],
+                },
+                select: { id: true },
+            }),
+            prisma.driver.findFirst({
+                where: {
+                    OR: [
+                        { id: data.driver },
+                        { user: { username: data.driver } },
+                    ],
+                },
+                select: { id: true },
+            }),
+        ]);
 
-        const trip = await prisma.trips.create({
-            data: {
-                sourceLocation: data.sourceLocation,
-                destinationLocation: data.destinationLocation,
-                productType: data.productType,
-                unit: data.unit,
-                amount: data.amount,
-                vehicle: data.vehicle,
-                driver: data.driver,
-                departureTime: data.departureTime,
-                createdById: userId,
-            },
+        if (!vehicle) {
+            return c.json({ err: 'Vehicle not found' }, 404);
+        }
+
+        if (!driver) {
+            return c.json({ err: 'Driver not found' }, 404);
+        }
+
+        const trip = await prisma.$transaction(async (tx) => {
+            const newTrip = await tx.trips.create({
+                data: {
+                    sourceLocation: data.sourceLocation,
+                    destinationLocation: data.destinationLocation,
+                    productType: data.productType,
+                    unit: data.unit,
+                    amount: data.amount,
+                    vehicle: vehicle.id,
+                    driver: driver.id,
+                    departureTime: data.departureTime,
+                    createdById: userId,
+                },
+            });
+
+            await tx.vehicle.updateMany({
+                where: {
+                    assignedDriverId: driver.id,
+                    id: { not: vehicle.id },
+                },
+                data: { assignedDriverId: null },
+            });
+
+            await tx.vehicle.update({
+                where: { id: vehicle.id },
+                data: {
+                    status: 'IN_TRANSIT',
+                    assignedDriverId: driver.id,
+                },
+            });
+
+            await tx.vehicleTrip.upsert({
+                where: { vehicleId: vehicle.id },
+                update: {
+                    origin: data.sourceLocation,
+                    destination: data.destinationLocation,
+                    progress: 0.0,
+                    eta: null,
+                    date: data.departureTime,
+                    distance: null,
+                    duration: null,
+                    costEstimate: null,
+                    startTime: new Date(),
+                    status: 'IN_TRANSIT',
+                    productType: data.productType,
+                    loadAmount: `${data.amount} ${data.unit}`,
+                },
+                create: {
+                    vehicleId: vehicle.id,
+                    origin: data.sourceLocation,
+                    destination: data.destinationLocation,
+                    progress: 0.0,
+                    eta: null,
+                    date: data.departureTime,
+                    distance: null,
+                    duration: null,
+                    costEstimate: null,
+                    startTime: new Date(),
+                    status: 'IN_TRANSIT',
+                    productType: data.productType,
+                    loadAmount: `${data.amount} ${data.unit}`,
+                }
+            });
+
+            await tx.driver.update({
+                where: { id: driver.id },
+                data: { status: 'ON_TRIP' },
+            });
+
+            return newTrip;
         });
 
         return c.json({ message: 'Trip created successfully', trip }, 201);
