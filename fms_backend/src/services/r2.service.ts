@@ -9,7 +9,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 type UploadScope =
   | { role: 'driver'; userId: string }
   | { role: 'maintenance'; userId: string; vehicleId: string }
-  | { role: 'manager'; userId: string; documentType: 'dl' | 'rc' };
+  | { role: 'manager'; userId: string; documentType: 'dl' | 'rc' | 'vehicle' };
 
 export class R2Service {
   private client: S3Client;
