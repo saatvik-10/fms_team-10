@@ -30,6 +30,14 @@ export const createDriverSchema = z.object({
     .min(1, 'License number is required')
     .max(15, 'License number is required'),
   expiryDate: expiryDateSchema,
+  licenseFrontImage: z
+    .string()
+    .trim()
+    .min(1, 'Front license image is required'),
+  licenseBackImage: z
+    .string()
+    .trim()
+    .min(1, 'Back license image is required'),
   classes: z
     .array(z.string().trim().min(1, 'Class cannot be empty'))
     .min(1, 'At least one class is required')
@@ -40,6 +48,35 @@ export const createDriverSchema = z.object({
 });
 
 export type CreateDriverInput = z.infer<typeof createDriverSchema>;
+
+export const updateDriverSchema = z
+  .object({
+    fullName: z.string().trim().min(1, 'Full name is required').optional(),
+    email: z.string().trim().email('A valid email is required').optional(),
+    phone: z.string().trim().min(10, 'Phone number is required').optional(),
+    address: z.string().trim().min(1, 'Address is required').optional(),
+    licenseNumber: z
+      .string()
+      .trim()
+      .min(1, 'License number is required')
+      .max(15, 'License number is required')
+      .optional(),
+    expiryDate: expiryDateSchema.optional(),
+    classes: z
+      .array(z.string().trim().min(1, 'Class cannot be empty'))
+      .min(1, 'At least one class is required')
+      .refine(
+        (items) => new Set(items).size === items.length,
+        'Classes must not contain duplicates',
+      )
+      .optional(),
+  })
+  .refine(
+    (data) => Object.values(data).some((value) => value !== undefined),
+    'At least one field is required',
+  );
+
+export type UpdateDriverInput = z.infer<typeof updateDriverSchema>;
 
 export const updateVehicleDistanceSchema = z.object({
   vehicleId: z.string().trim().min(1, 'Vehicle id is required'),
