@@ -618,10 +618,11 @@ struct AddVehicleModalView: View {
     @State private var make: String
     @State private var model: String
     @State private var regNumber: String
-    @State private var plateNumber: String
     @State private var vin: String
-    @State private var odometer: String
     @State private var showingScanner = false
+    @State private var rcDocumentImageData: Data?
+    @State private var isSaving = false
+    @State private var saveError: String? = nil
 
     // VEHICLE IMAGE STATE
     @State private var selectedVehicleImage: UIImage?
@@ -637,9 +638,18 @@ struct AddVehicleModalView: View {
         _make = State(initialValue: vehicleToEdit?.make ?? "")
         _model = State(initialValue: vehicleToEdit?.model ?? "")
         _regNumber = State(initialValue: vehicleToEdit?.registrationNumber ?? "")
-        _plateNumber = State(initialValue: vehicleToEdit?.id ?? "")
-        _vin = State(initialValue: "")
-        _odometer = State(initialValue: vehicleToEdit?.odometer ?? "0")
+        _vin = State(initialValue: vehicleToEdit?.chassisNumber ?? "")
+    }
+
+    private var canSave: Bool {
+        let hasVehicleImage = selectedVehicleImage != nil || vehicleToEdit?.vehicleImageUrl != nil
+        let hasRcImage = rcDocumentImageData != nil || vehicleToEdit?.rcImageUrl != nil
+
+        return !make.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            !regNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            !vin.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            hasVehicleImage && hasRcImage
     }
     
     var body: some View {
@@ -673,6 +683,12 @@ struct AddVehicleModalView: View {
                             buttonTitle: "Upload Document",
                             action: { showingScanner = true }
                         )
+
+                        if rcDocumentImageData != nil || vehicleToEdit?.rcImageUrl != nil {
+                            Label("RC document ready", systemImage: "checkmark.circle.fill")
+                                .font(AppFonts.caption2)
+                                .foregroundColor(.green)
+                        }
                     }
                     
                     // Section 2: Vehicle Image (NEW)
@@ -697,44 +713,17 @@ struct AddVehicleModalView: View {
                                     .onTapGesture {
                                         showActionSheet = true
                                     }
+                            } else if let urlString = vehicleToEdit?.vehicleImageUrl, let url = URL(string: urlString) {
+                                asyncImageView(url: url)
                             } else {
-                                VStack(spacing: 15) {
-                                    Image(systemName: "camera.fill")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(AppTheme.primary)
-                                        .padding()
-                                        .background(Color.gray.opacity(0.1))
-                                        .cornerRadius(12)
-                                    
-                                    VStack(spacing: 4) {
-                                        Text("Upload Vehicle Image")
-                                            .font(.system(size: 16, weight: .bold))
-                                        Text("Take photo or choose from gallery")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.gray)
-                                    }
-                                    
-                                    Button(action: { showActionSheet = true }) {
-                                        HStack {
-                                            Image(systemName: "plus")
-                                            Text("Add Image")
-                                        }
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 40)
-                                        .padding(.vertical, 12)
-                                        .background(AppTheme.primary)
-                                        .cornerRadius(8)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 30)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
-                                        .foregroundColor(Color.gray.opacity(0.4))
-                                )
+                                placeholderUploadArea
                             }
+                        }
+
+                        if selectedVehicleImage != nil || vehicleToEdit?.vehicleImageUrl != nil {
+                            Label("Vehicle image ready", systemImage: "checkmark.circle.fill")
+                                .font(AppFonts.caption2)
+                                .foregroundColor(.green)
                         }
                     }
                     
@@ -752,11 +741,8 @@ struct AddVehicleModalView: View {
                         
                         HStack(spacing: 20) {
                             ModalFormField(label: "Registration Number", text: $regNumber)
-                            ModalFormField(label: "License Plate", text: $plateNumber)
+                            ModalFormField(label: "Chassis Number / VIN", text: $vin)
                         }
-                        ModalFormField(label: "Chassis Number / VIN", text: $vin)
-                        
-                        ModalFormField(label: "Total Odometer Run (MI)", text: $odometer)
                     }
                 }
                 .padding(.bottom, 30)
@@ -764,41 +750,28 @@ struct AddVehicleModalView: View {
             
             // Footer Buttons
             HStack(spacing: 15) {
-                Button(action: { 
-                    let newVehicle = Vehicle(
-                        id: regNumber,
-                        make: make,
-                        model: model,
-                        type: "Truck",
-                        status: .idle,
-                        imageName: "truck_freightliner_m2",
-                        year: "2024",
-                        color: "White",
-                        odometer: odometer,
-                        operationalStatus: "OPERATIONAL",
-                        currentTrip: nil as VehicleTrip?,
-                        assignedDriver: nil as Driver?,
-                        maintenance: VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
-                        history: [],
-                        reports: [],
-                        assessmentReason: nil as String?,
-                        plateNumber: plateNumber,
-                        registrationNumber: regNumber
-                    )
-                    dataManager.addVehicle(newVehicle)
-                    dismiss() 
+                Button(action: {
+                    Task { await saveVehicle() }
                 }) {
                     HStack {
-                        Text("Save Vehicle")
+                        Text(isSaving ? "Saving..." : (vehicleToEdit == nil ? "Save Vehicle" : "Update Vehicle"))
                     }
                     .font(AppFonts.button)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(AppTheme.primary)
+                    .background(canSave ? AppTheme.primary : Color.gray)
                     .cornerRadius(12)
                 }
+                .disabled(isSaving || !canSave)
 
+            }
+
+            if let saveError {
+                Text(saveError)
+                    .font(AppFonts.caption2)
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(30)
@@ -826,14 +799,223 @@ struct AddVehicleModalView: View {
             VehicleAppImagePicker(sourceType: imageSourceType, selectedImage: $selectedVehicleImage)
         }
         .sheet(isPresented: $showingScanner) {
-            RCScannerView(isPresented: $showingScanner) { owner, reg, model, chassis in
+            RCScannerView(isPresented: $showingScanner) { owner, reg, model, chassis, imageData in
                 self.regNumber = reg
                 self.model = model
                 self.vin = chassis
+                self.rcDocumentImageData = imageData
                 // Try to extract make from owner name or leave empty for user to fill
                 if !owner.isEmpty {
                     self.make = owner
                 }
+            }
+        }
+    }
+
+    private func saveVehicle() async {
+        saveError = nil
+
+        guard canSave else {
+            saveError = "Please fill all fields and upload both RC and vehicle images."
+            return
+        }
+
+        if let editingVehicle = vehicleToEdit {
+            await updateVehicle(editingVehicle)
+            return
+        }
+
+        // Process images if provided (optional but supported)
+        var rcBase64: String? = nil
+        if let rcData = rcDocumentImageData {
+            rcBase64 = rcData.base64EncodedString()
+        }
+        var vehicleBase64: String? = nil
+        if let vImg = selectedVehicleImage?.jpegData(compressionQuality: 0.7) {
+            vehicleBase64 = vImg.base64EncodedString()
+        }
+
+        let request = CreateVehicleRequest(
+            make: make,
+            model: model,
+            type: "Truck",
+            status: nil,
+            imageName: nil,
+            year: nil,
+            color: nil,
+            operationalStatus: nil,
+            assessmentReason: nil,
+            chassisNumber: vin,
+            registrationNumber: regNumber,
+            rcDocumentImage: rcBase64,
+            vehicleImage: vehicleBase64
+        )
+
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            let response = try await VehicleAPI.shared.createVehicleProfile(request)
+            let newVehicle = Vehicle(
+                id: response.vehicle.registrationNumber,
+                backendId: response.vehicle.id,
+                make: response.vehicle.make,
+                model: response.vehicle.model,
+                type: response.vehicle.type,
+                status: VehicleStatus(rawValue: response.vehicle.status) ?? .idle,
+                imageName: response.vehicle.imageName ?? "truck_freightliner_m2",
+                year: response.vehicle.year ?? "-",
+                color: response.vehicle.color ?? "-",
+                operationalStatus: response.vehicle.operationalStatus ?? "OPERATIONAL",
+                currentTrip: nil,
+                assignedDriver: nil,
+                maintenance: VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
+                history: [],
+                reports: [],
+                assessmentReason: response.vehicle.assessmentReason,
+                chassisNumber: response.vehicle.chassisNumber,
+                registrationNumber: response.vehicle.registrationNumber,
+                rcImageUrl: response.vehicle.rcImageUrl,
+                vehicleImageUrl: response.vehicle.vehicleImageUrl
+            )
+
+            await MainActor.run {
+                dataManager.upsertVehicle(newVehicle)
+                dismiss()
+            }
+        } catch {
+            await MainActor.run {
+                saveError = error.localizedDescription
+            }
+        }
+    }
+
+    private func updateVehicle(_ editingVehicle: Vehicle) async {
+        guard let backendId = editingVehicle.backendId else {
+            saveError = "Vehicle ID is missing for update."
+            return
+        }
+
+        var rcBase64: String? = nil
+        if let rcData = rcDocumentImageData {
+            rcBase64 = rcData.base64EncodedString()
+        }
+        var vehicleBase64: String? = nil
+        if let vImg = selectedVehicleImage?.jpegData(compressionQuality: 0.7) {
+            vehicleBase64 = vImg.base64EncodedString()
+        }
+
+        let request = UpdateVehicleRequest(
+            make: make,
+            model: model,
+            type: "Truck",
+            status: nil,
+            imageName: nil,
+            year: nil,
+            color: nil,
+            operationalStatus: nil,
+            assessmentReason: nil,
+            chassisNumber: vin,
+            registrationNumber: regNumber,
+            rcDocumentImage: rcBase64,
+            vehicleImage: vehicleBase64,
+            assignedDriverId: nil
+        )
+
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            let response = try await VehicleAPI.shared.updateVehicleProfile(id: backendId, request: request)
+            let vehicleStatus = VehicleStatus(rawValue: response.vehicle.status) ?? editingVehicle.status
+            let updatedVehicle = Vehicle(
+                id: response.vehicle.registrationNumber,
+                backendId: response.vehicle.id,
+                make: response.vehicle.make,
+                model: response.vehicle.model,
+                type: response.vehicle.type,
+                status: vehicleStatus,
+                imageName: response.vehicle.imageName ?? editingVehicle.imageName,
+                year: response.vehicle.year ?? editingVehicle.year,
+                color: response.vehicle.color ?? editingVehicle.color,
+                operationalStatus: response.vehicle.operationalStatus ?? editingVehicle.operationalStatus,
+                currentTrip: editingVehicle.currentTrip,
+                assignedDriver: editingVehicle.assignedDriver,
+                maintenance: editingVehicle.maintenance,
+                history: editingVehicle.history,
+                reports: editingVehicle.reports,
+                assessmentReason: response.vehicle.assessmentReason,
+                chassisNumber: response.vehicle.chassisNumber,
+                registrationNumber: response.vehicle.registrationNumber,
+                rcImageUrl: response.vehicle.rcImageUrl ?? editingVehicle.rcImageUrl,
+                vehicleImageUrl: response.vehicle.vehicleImageUrl ?? editingVehicle.vehicleImageUrl
+            )
+
+            await MainActor.run {
+                dataManager.upsertVehicle(updatedVehicle)
+                dismiss()
+            }
+        } catch {
+            await MainActor.run {
+                saveError = error.localizedDescription
+            }
+        }
+    }
+
+    private var placeholderUploadArea: some View {
+        VStack(spacing: 15) {
+            Image(systemName: "camera.fill")
+                .font(.system(size: 40))
+                .foregroundColor(AppTheme.primary)
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(12)
+            
+            VStack(spacing: 4) {
+                Text("Upload Vehicle Image")
+                    .font(.system(size: 16, weight: .bold))
+                Text("Take photo or choose from gallery")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+            }
+            
+            Button(action: { showActionSheet = true }) {
+                HStack {
+                    Image(systemName: "plus")
+                    Text("Add Image")
+                }
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 40)
+                .padding(.vertical, 12)
+                .background(AppTheme.primary)
+                .cornerRadius(8)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
+    }
+
+    @ViewBuilder
+    private func asyncImageView(url: URL) -> some View {
+        AsyncImage(url: url) { phase in
+            if let image = phase.image {
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity)
+                    .cornerRadius(12)
+                    .clipped()
+                    .onTapGesture {
+                        showActionSheet = true
+                    }
+            } else if phase.error != nil {
+                placeholderUploadArea
+            } else {
+                ProgressView().tint(AppTheme.primary)
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity)
             }
         }
     }
