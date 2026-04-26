@@ -16,6 +16,7 @@ final class AppSessionStore: ObservableObject {
         case authenticated(AppUserRole)
     }
     
+    @Published var currentRoleValue: AppUserRole = .none
     @Published private(set) var state: State = .restoring
     private(set) var managerProfile: ManagerProfileData?
     
@@ -31,6 +32,19 @@ final class AppSessionStore: ObservableObject {
             return role
         }
         return .none
+    }
+    
+    var currentRoleBinding: Binding<AppUserRole> {
+        Binding(
+            get: { self.currentRole },
+            set: { newRole in
+                if newRole == .none {
+                    self.logout()
+                } else {
+                    self.setAuthenticated(role: newRole)
+                }
+            }
+        )
     }
     
     func restoreSessionIfNeeded() async {
@@ -139,6 +153,7 @@ struct ContentView: View {
                     MaintenanceTabView(isLoggedIn: maintenanceLoggedInBinding)
                 case .manager:
                     FleetManagerMainView(profile: session.managerProfile)
+                        .environmentObject(session)
                 case .none:
                     LoginView(userRole: userRoleBinding, session: session)
                 }
