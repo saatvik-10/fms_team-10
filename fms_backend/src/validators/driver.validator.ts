@@ -23,7 +23,6 @@ export const createDriverSchema = z.object({
   fullName: z.string().trim().min(1, 'Full name is required'),
   email: z.string().trim().email('A valid email is required'),
   phone: z.string().trim().min(10, 'Phone number is required'),
-  address: z.string().trim().min(1, 'Address is required').optional(),
   licenseNumber: z
     .string()
     .trim()
@@ -54,7 +53,6 @@ export const updateDriverSchema = z
     fullName: z.string().trim().min(1, 'Full name is required').optional(),
     email: z.string().trim().email('A valid email is required').optional(),
     phone: z.string().trim().min(10, 'Phone number is required').optional(),
-    address: z.string().trim().min(1, 'Address is required').optional(),
     licenseNumber: z
       .string()
       .trim()

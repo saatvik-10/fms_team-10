@@ -103,7 +103,6 @@ export class Auth {
           select: {
             name: true,
             phone: true,
-            address: true,
             licenceNumber: true,
             expiryDate: true,
             classes: true,
@@ -149,7 +148,6 @@ export class Auth {
         ...profileData,
         name: user.driver.name,
         phone: user.driver.phone,
-        address: user.driver.address,
         licenceNumber: user.driver.licenceNumber,
         expiryDate: user.driver.expiryDate,
         classes: user.driver.classes,
@@ -303,7 +301,6 @@ export class Auth {
           select: {
             name: true,
             phone: true,
-            address: true,
             licenceNumber: true,
             expiryDate: true,
             classes: true,
@@ -334,13 +331,23 @@ export class Auth {
         address: user.manager.address,
       };
     } else if (role === 'DRIVER' && user.driver) {
+      let driverExpiryDate: string | null = null;
+
+      if (user.driver.expiryDate) {
+        const parts = user.driver.expiryDate.split('-');
+        if (parts.length === 3) {
+          driverExpiryDate = new Date(
+            `${parts[2]}-${parts[1]}-${parts[0]}T00:00:00.000Z`,
+          ).toISOString();
+        }
+      }
+
       profileData = {
         ...profileData,
         name: user.driver.name,
         phone: user.driver.phone,
-        address: user.driver.address,
         licenceNumber: user.driver.licenceNumber,
-        expiryDate: user.driver.expiryDate,
+        expiryDate: driverExpiryDate,
         classes: user.driver.classes,
       };
     } else if (role === 'MAINTENANCE' && user.maintenance) {
