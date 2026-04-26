@@ -4,7 +4,6 @@ struct CreateDriverRequest: Encodable {
   let fullName: String
   let email: String
   let phone: String
-  let address: String?
   let licenseNumber: String
   let expiryDate: String
   let classes: [String]
@@ -23,7 +22,6 @@ struct DriverItem: Decodable {
   let email: String?
   let username: String?
   let phone: String?
-  let address: String?
   let licenceNumber: String?
   let expiryDate: String?
   let classes: [String]?
@@ -50,7 +48,6 @@ struct UpdateDriverRequest: Encodable {
   let fullName: String?
   let email: String?
   let phone: String?
-  let address: String?
   let licenseNumber: String?
   let expiryDate: String?
   let classes: [String]?
