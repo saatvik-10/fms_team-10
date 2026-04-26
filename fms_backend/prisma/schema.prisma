@@ -57,6 +57,8 @@ model Driver {
   expiryDate    String?
   classes       String[]
   status        Status
+  dlFrontImageUrl String?
+  dlBackImageUrl  String?
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
