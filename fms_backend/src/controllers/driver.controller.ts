@@ -3,24 +3,15 @@ import { sendCredentialsMail } from '../services/resend.service';
 import {
   createDriverSchema,
   updateDriverSchema,
-  updateVehicleDistanceSchema,
 } from '../validators/driver.validator';
 import { nanoid } from 'nanoid';
 import { prisma } from '../../prisma';
 import { hashPassword } from '../lib/hashPassword';
 import { genPswd } from '../lib/genPswd';
 import { R2Service } from '../services/r2.service';
+import { decodeBase64Image, extractKeyFromUrl, deleteUploadedKeys } from '../lib/utils';
 
 const r2Service = new R2Service();
-
-function decodeBase64Image(input: string) {
-  const trimmed = input.trim();
-  const base64 = trimmed.includes('base64,')
-    ? trimmed.split('base64,').at(-1) ?? trimmed
-    : trimmed;
-
-  return Buffer.from(base64, 'base64');
-}
 
 function buildDriverTitle(classes: string[]) {
   return `${classes[0] ?? 'LMV-NT'} Certified Driver`;
@@ -49,24 +40,6 @@ async function uploadDriverLicenseImage(params: {
     key: upload.key,
     url,
   };
-}
-
-function extractKeyFromUrl(url: string | null | undefined) {
-  if (!url) {
-    return null;
-  }
-
-  try {
-    const parsed = new URL(url);
-    return parsed.pathname.split('/').filter(Boolean).slice(1).join('/');
-  } catch {
-    return null;
-  }
-}
-
-async function deleteUploadedKeys(keys: Array<string | null | undefined>) {
-  const validKeys = keys.filter((key): key is string => Boolean(key));
-  await Promise.allSettled(validKeys.map((key) => r2Service.deleteObject(key)));
 }
 
 export class Driver {
@@ -239,6 +212,7 @@ export class Driver {
         dlFrontImageUrl: true,
         dlBackImageUrl: true,
         createdAt: true,
+        status: true,
         user: {
           select: {
             username: true,
@@ -261,6 +235,7 @@ export class Driver {
         dlFrontImageUrl: driver.dlFrontImageUrl,
         dlBackImageUrl: driver.dlBackImageUrl,
         createdAt: driver.createdAt,
+        status: driver.status,
       })),
     });
   }
@@ -430,42 +405,5 @@ export class Driver {
     ]);
 
     return c.json({ message: 'Driver deleted successfully' });
-  }
-
-  async updateDistance(c: Context) {
-    const body = await c.req.json();
-    const result = updateVehicleDistanceSchema.safeParse(body);
-
-    if (!result.success) {
-      return c.json(
-        { err: 'Invalid input', details: result.error.flatten() },
-        400,
-      );
-    }
-
-    const { vehicleId, increment } = result.data;
-
-    try {
-      const vehicle = await prisma.vehicle.update({
-        where: { id: vehicleId },
-        data: {
-          totalDistance: {
-            increment,
-          },
-        },
-        select: {
-          id: true,
-          totalDistance: true,
-        },
-      });
-
-      return c.json({
-        message: 'Vehicle distance updated successfully',
-        vehicle,
-        increment,
-      });
-    } catch {
-      return c.json({ err: 'Vehicle not found' }, 404);
-    }
   }
 }
