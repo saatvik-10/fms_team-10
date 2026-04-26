@@ -81,7 +81,7 @@ struct FleetCreateTripModal: View {
                     Picker("Vehicle", selection: $selectedVehicleID) {
                         Text("Select Vehicle").tag("")
                         ForEach(dataManager.vehicles.filter { $0.status == .idle }) { vehicle in
-                            Text("\(vehicle.id) - \(vehicle.model)").tag(vehicle.backendId ?? vehicle.id)
+                            Text("\(vehicle.model)").tag(vehicle.backendId ?? vehicle.id)
                         }
                     }
                     
