@@ -101,58 +101,89 @@ actor FleetDirectionsService {
     // MARK: - Fetch directions between two place names
 
     func fetchDirections(origin: String, destination: String, waypointCoord: CLLocationCoordinate2D? = nil) async throws -> FleetDirectionsResult {
-        print("[FleetDirections] Resolving: \(origin) -> \(destination)")
-        
-        // Resolve coordinates
-        async let oRes = resolveCoordinate(for: origin)
-        async let dRes = resolveCoordinate(for: destination)
-        
-        var oCoord = await oRes
-        var dCoord = await dRes
-        
-        var finalOriginName = origin
-        var finalDestName = destination
+        let originAddress = commonAbbreviations[origin] ?? origin
+        let destinationAddress = commonAbbreviations[destination] ?? destination
 
-        // SAFE FALLBACK: If resolution fails, use nearby valid coordinates (Bangalore/Mysore defaults)
-        if oCoord == nil {
-            print("[FleetDirections] Fallback origin used for: \(origin)")
-            oCoord = placeCoordinates["BLR"]
-            finalOriginName = "Bangalore"
+        print("[FleetDirections] Requesting address route: \(originAddress) -> \(destinationAddress)")
+
+        var urlString =
+            "https://maps.googleapis.com/maps/api/directions/json" +
+            "?origin=\(originAddress)" +
+            "&destination=\(destinationAddress)"
+
+        if let wp = waypointCoord {
+            urlString += "&waypoints=\(wp.latitude),\(wp.longitude)"
         }
-        if dCoord == nil {
-            print("[FleetDirections] Fallback destination used for: \(destination)")
-            dCoord = placeCoordinates["MYS"]
-            finalDestName = "Mysore"
+
+        urlString += "&mode=driving&key=\(apiKey)"
+
+        guard let encoded = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: encoded) else {
+            throw URLError(.badURL)
         }
-        
-        guard let finalOrigin = oCoord, let finalDest = dCoord else {
-            throw NSError(domain: "FleetDirectionsService", code: 4,
-                          userInfo: [NSLocalizedDescriptionKey: "Could not resolve route endpoints"])
+
+        print("[FleetDirections] Requesting: \(encoded)")
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+        if let http = response as? HTTPURLResponse {
+            print("[FleetDirections] HTTP status: \(http.statusCode)")
         }
-        
-        // PREVENT INVALID ROUTES: Check distance (e.g. > 4000km implies cross-continental/error)
-        let dist = distanceBetween(finalOrigin, finalDest)
-        if dist > 4000000 { // 4000km in meters
-            print("[FleetDirections] Route too long (\(dist/1000)km), applying regional fallback")
-            // Fallback to BLR -> MYS for demo stability
-            return try await fetchDirections(
-                originCoord: placeCoordinates["BLR"]!,
-                destCoord: placeCoordinates["MYS"]!,
-                waypointCoord: waypointCoord,
-                originName: "Bangalore",
-                destName: "Mysore"
+
+        struct DResponse: Decodable {
+            let routes: [DRoute]
+            let status: String
+            let error_message: String?
+        }
+        struct DRoute: Decodable {
+            let legs: [DLeg]
+            let overview_polyline: DPolyline
+        }
+        struct DLeg: Decodable {
+            let duration: DItem
+            let distance: DItem
+            let start_location: DLocation
+            let end_location: DLocation
+        }
+        struct DItem: Decodable {
+            let text: String
+            let value: Int
+        }
+        struct DLocation: Decodable {
+            let lat: Double
+            let lng: Double
+        }
+        struct DPolyline: Decodable {
+            let points: String
+        }
+
+        let decoded = try JSONDecoder().decode(DResponse.self, from: data)
+
+        print("[FleetDirections] Directions API Status: \(decoded.status)")
+        if let msg = decoded.error_message {
+            print("[FleetDirections] API Error Message: \(msg)")
+        }
+
+        guard decoded.status == "OK",
+              let route = decoded.routes.first,
+              let leg = route.legs.first else {
+            throw NSError(
+                domain: "FleetDirectionsService",
+                code: 2,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Directions failed: \(decoded.status)\(decoded.error_message.map { " - \($0)" } ?? "")"
+                ]
             )
         }
 
-        return try await fetchDirections(originCoord: finalOrigin, destCoord: finalDest,
-                                         waypointCoord: waypointCoord,
-                                         originName: finalOriginName, destName: finalDestName)
-    }
-
-    private func distanceBetween(_ c1: CLLocationCoordinate2D, _ c2: CLLocationCoordinate2D) -> Double {
-        let loc1 = CLLocation(latitude: c1.latitude, longitude: c1.longitude)
-        let loc2 = CLLocation(latitude: c2.latitude, longitude: c2.longitude)
-        return loc1.distance(from: loc2)
+        return FleetDirectionsResult(
+            eta: leg.duration.text,
+            distance: leg.distance.text,
+            polyline: route.overview_polyline.points,
+            originCoord: CLLocationCoordinate2D(latitude: leg.start_location.lat, longitude: leg.start_location.lng),
+            destCoord: CLLocationCoordinate2D(latitude: leg.end_location.lat, longitude: leg.end_location.lng),
+            originName: origin,
+            destName: destination
+        )
     }
 
     // MARK: - Fetch directions between two coordinates
@@ -223,13 +254,18 @@ actor FleetDirectionsService {
             print("[FleetDirections] API Error Message: \(msg)")
         }
 
-        guard decoded.status == "OK" else {
-            throw NSError(domain: "FleetDirectionsService", code: 2,
-                          userInfo: [NSLocalizedDescriptionKey: "Route unavailable: \(decoded.status)\(decoded.error_message != nil ? " - " + decoded.error_message! : "")"])
-        }
-        guard let route = decoded.routes.first, let leg = route.legs.first else {
-            throw NSError(domain: "FleetDirectionsService", code: 3,
-                          userInfo: [NSLocalizedDescriptionKey: "No route returned"])
+        guard decoded.status == "OK",
+              let route = decoded.routes.first,
+              let leg = route.legs.first else {
+            return FleetDirectionsResult(
+                eta: "TBD",
+                distance: "TBD",
+                polyline: "",
+                originCoord: originCoord,
+                destCoord: destCoord,
+                originName: originName.isEmpty ? "Unknown Origin" : originName,
+                destName: destName.isEmpty ? "Unknown Destination" : destName
+            )
         }
 
         print("[FleetDirections] ETA: \(leg.duration.text), Distance: \(leg.distance.text)")
@@ -245,4 +281,3 @@ actor FleetDirectionsService {
         )
     }
 }
-
