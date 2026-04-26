@@ -10,6 +10,7 @@ struct TwoFactorView: View {
     @Binding var userRole: AppUserRole
     let otpEmail: String
     let roleToSet: AppUserRole
+    var onAuthenticated: (() -> Void)?
     @State private var otpDigits: [String] = Array(repeating: "", count: 6)
     @FocusState private var focusedIndex: Int?
     @State private var isVerifying = false
@@ -255,7 +256,8 @@ struct TwoFactorView: View {
             }
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
-                userRole = roleToSet
+                userRole = self.roleToSet
+                self.onAuthenticated?()
             }
         } catch {
             otpError = error.localizedDescription

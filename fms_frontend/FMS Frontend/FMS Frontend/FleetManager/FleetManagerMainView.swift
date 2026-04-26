@@ -1,11 +1,12 @@
 import SwiftUI
 
 struct FleetManagerMainView: View {
+    @EnvironmentObject var session: AppSessionStore
     @StateObject private var dataManager = FleetDataManager()
     @State private var selectedTab: Int = 0
     let profile: ManagerProfileData?
     
-init(profile: ManagerProfileData? = nil) {
+    init(profile: ManagerProfileData? = nil) {
         _dataManager = StateObject(wrappedValue: FleetDataManager())
         self.profile = profile
         

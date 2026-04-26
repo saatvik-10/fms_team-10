@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FleetManagerDashboardView: View {
     @EnvironmentObject var dataManager: FleetDataManager
+    @EnvironmentObject var session: AppSessionStore
     @State private var showingAddOrder = false
     @State private var showingManagerProfile = false
     @State private var showingAlertDetail = false
@@ -164,6 +165,7 @@ struct FleetManagerDashboardView: View {
         }
         .sheet(isPresented: $showingManagerProfile) {
             ManagerProfileView(profile: profile)
+                .environmentObject(session)
         }
         .sheet(item: $selectedAlert) { alert in
             FleetMaintenanceAlertDetailView(alert: alert)
@@ -343,6 +345,7 @@ struct FleetDashboardHeaderView: View {
     // MARK: - Manager Profile
     struct ManagerProfileView: View {
         @Environment(\.dismiss) var dismiss
+        @EnvironmentObject var session: AppSessionStore
         let profile: ManagerProfileData?
         
         init(profile: ManagerProfileData? = nil) {
@@ -424,7 +427,7 @@ struct FleetDashboardHeaderView: View {
         
         var signOutButton: some View {
             Button(action: {
-                AuthAPI.shared.logout()
+                session.logout()
                 dismiss()
             }) {
                 HStack {
