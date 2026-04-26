@@ -226,6 +226,7 @@ struct ActivityEvent: Identifiable {
 
 struct Vehicle: Identifiable {
     let id: String
+    let backendId: String?
     let make: String
     let model: String
     let type: String
@@ -235,7 +236,6 @@ struct Vehicle: Identifiable {
     // Detail View Fields (New)
     let year: String
     let color: String
-    let odometer: String
     let operationalStatus: String
     var currentTrip: VehicleTrip?
     let assignedDriver: Driver?
@@ -244,8 +244,54 @@ struct Vehicle: Identifiable {
     let reports: [VehicleReport]
     let assessmentReason: String? // Direct link to dashboard assessment logic
     
-    let plateNumber: String // New field
+    let chassisNumber: String
     let registrationNumber: String // New field
+    let rcImageUrl: String?
+    let vehicleImageUrl: String?
+
+    init(
+        id: String,
+        backendId: String? = nil,
+        make: String,
+        model: String,
+        type: String,
+        status: VehicleStatus,
+        imageName: String,
+        year: String,
+        color: String,
+        operationalStatus: String,
+        currentTrip: VehicleTrip?,
+        assignedDriver: Driver?,
+        maintenance: VehicleMaintenance,
+        history: [VehicleTrip],
+        reports: [VehicleReport],
+        assessmentReason: String?,
+        chassisNumber: String,
+        registrationNumber: String,
+        rcImageUrl: String? = nil,
+        vehicleImageUrl: String? = nil
+    ) {
+        self.id = id
+        self.backendId = backendId
+        self.make = make
+        self.model = model
+        self.type = type
+        self.status = status
+        self.imageName = imageName
+        self.year = year
+        self.color = color
+        self.operationalStatus = operationalStatus
+        self.currentTrip = currentTrip
+        self.assignedDriver = assignedDriver
+        self.maintenance = maintenance
+        self.history = history
+        self.reports = reports
+        self.assessmentReason = assessmentReason
+        self.chassisNumber = chassisNumber
+        self.registrationNumber = registrationNumber
+        self.rcImageUrl = rcImageUrl
+        self.vehicleImageUrl = vehicleImageUrl
+    }
 }
 
 enum FleetTripStatus: String, Codable {

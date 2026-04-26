@@ -89,7 +89,7 @@ struct FleetManagerMaintenanceListView: View {
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingAddPersonnel) {
-            AddMaintenancePersonnelModal()
+            AddMaintenancePersonnelModal().environmentObject(dataManager)
         }
         .task {
             await loadPersonnel()

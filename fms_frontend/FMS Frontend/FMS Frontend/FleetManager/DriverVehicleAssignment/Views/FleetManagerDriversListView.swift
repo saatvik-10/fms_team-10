@@ -92,7 +92,7 @@ struct FleetManagerDriversListView: View {
             .background(AppColors.background)
         }
         .navigationBarHidden(true)
-        .sheet(isPresented: $showingAddDriver) { DriverModalView() }
+        .sheet(isPresented: $showingAddDriver) { DriverModalView().environmentObject(dataManager) }
         .task {
             do {
                 try await dataManager.refreshDrivers()

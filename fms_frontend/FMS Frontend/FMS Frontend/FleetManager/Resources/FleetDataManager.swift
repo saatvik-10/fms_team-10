@@ -228,7 +228,117 @@ class FleetDataManager: ObservableObject {
     
     // Actions
     func addVehicle(_ vehicle: Vehicle) {
-        vehicles.append(vehicle)
+        if let backendId = vehicle.backendId,
+           let index = vehicles.firstIndex(where: { $0.backendId == backendId }) {
+            vehicles[index] = vehicle
+        } else if let index = vehicles.firstIndex(where: { $0.id == vehicle.id }) {
+            vehicles[index] = vehicle
+        } else {
+            vehicles.append(vehicle)
+        }
+    }
+
+    func upsertVehicle(_ vehicle: Vehicle) {
+        addVehicle(vehicle)
+    }
+
+    @MainActor
+    func refreshVehicles() async throws {
+        let response = try await VehicleAPI.shared.getVehicles()
+        vehicles = response.vehicles.map { item in
+            Vehicle(
+                id: item.registrationNumber,
+                backendId: item.id,
+                make: item.make,
+                model: item.model,
+                type: item.type,
+                status: {
+                    switch item.status {
+                    case "IN_TRANSIT": return .inTransit
+                    case "MAINTENANCE": return .maintenance
+                    default: return .idle
+                    }
+                }(),
+                imageName: item.imageName ?? "truck_freightliner_m2",
+                year: item.year ?? "-",
+                color: item.color ?? "-",
+                operationalStatus: item.operationalStatus ?? "OPERATIONAL",
+                currentTrip: item.currentTrip.map { trip in
+                    VehicleTrip(
+                        vehicleID: trip.vehicleId,
+                        origin: trip.origin,
+                        destination: trip.destination,
+                        progress: trip.progress,
+                        eta: trip.eta ?? "",
+                        date: trip.date ?? "",
+                        distance: trip.distance ?? "",
+                        duration: trip.duration ?? "",
+                        costEstimate: trip.costEstimate ?? "",
+                        startTime: trip.startTime,
+                        status: trip.status == "IN_TRANSIT" ? .inTransit : (trip.status == "COMPLETED" ? .completed : .scheduled),
+                        productType: trip.productType ?? "",
+                        loadAmount: trip.loadAmount ?? ""
+                    )
+                },
+                assignedDriver: item.assignedDriver.map { driver in
+                    Driver(
+                        id: driver.id,
+                        backendId: driver.id,
+                        name: driver.name,
+                        email: driver.phone ?? "",
+                        title: "Driver",
+                        licenseNum: driver.licenceNumber ?? "",
+                        licenseExp: "2025",
+                        status: .active,
+                        rating: 4.5,
+                        efficiency: "Good",
+                        totalTrips: 0,
+                        totalHours: 0,
+                        activityLog: [],
+                        currentVehicleID: nil,
+                        vehicleClasses: driver.classes ?? [],
+                        activeRoute: nil,
+                        eta: nil,
+                        phone: driver.phone ?? "",
+                        dlFrontImageUrl: nil,
+                        dlBackImageUrl: nil,
+                        dlFrontImageKey: nil,
+                        dlBackImageKey: nil
+                    )
+                },
+                maintenance: item.maintenance.map { maint in
+                    VehicleMaintenance(
+                        nextService: maint.nextService ?? "TBD",
+                        inspectionStatus: maint.inspectionStatus ?? "Verified",
+                        alerts: []
+                    )
+                } ?? VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
+                history: [],
+                reports: [],
+                assessmentReason: item.assessmentReason,
+                chassisNumber: item.chassisNumber,
+                registrationNumber: item.registrationNumber,
+                rcImageUrl: item.rcImageUrl,
+                vehicleImageUrl: item.vehicleImageUrl
+            )
+        }
+    }
+
+    @MainActor
+    func deleteVehicle(_ vehicle: Vehicle) async {
+        if let backendId = vehicle.backendId {
+            do {
+                _ = try await VehicleAPI.shared.deleteVehicle(id: backendId)
+            } catch {
+                print("Delete API failed for vehicle ID \(backendId): \(error)")
+            }
+        }
+
+        if let backendId = vehicle.backendId {
+            vehicles.removeAll(where: { $0.backendId == backendId })
+        } else {
+            vehicles.removeAll(where: { $0.id == vehicle.id })
+        }
     }
     
     func addDriver(_ driver: Driver) {
@@ -251,6 +361,15 @@ class FleetDataManager: ObservableObject {
         let response = try await DriverAPI.shared.getDrivers()
         drivers = response.drivers.map { item in
             let classes = item.classes ?? []
+            
+            let mappedStatus: DriverStatus
+            switch item.status {
+            case "ACTIVE": mappedStatus = .active
+            case "ON_TRIP": mappedStatus = .onTrip
+            case "OFF_DUTY": mappedStatus = .offDuty
+            default: mappedStatus = .active // Default to active so they appear in assignment pickers if unknown
+            }
+            
             return Driver(
                 id: item.username ?? item.id ?? "Driver",
                 backendId: item.id,
@@ -259,7 +378,7 @@ class FleetDataManager: ObservableObject {
                 title: "\(classes.first ?? "LMV-NT") Certified Driver",
                 licenseNum: item.licenceNumber ?? "-",
                 licenseExp: item.expiryDate ?? "-",
-                status: .offDuty,
+                status: mappedStatus,
                 rating: 5.0,
                 efficiency: "100%",
                 totalTrips: 0,

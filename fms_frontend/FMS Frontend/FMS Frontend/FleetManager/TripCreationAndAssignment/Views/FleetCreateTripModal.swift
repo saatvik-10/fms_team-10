@@ -81,14 +81,14 @@ struct FleetCreateTripModal: View {
                     Picker("Vehicle", selection: $selectedVehicleID) {
                         Text("Select Vehicle").tag("")
                         ForEach(dataManager.vehicles.filter { $0.status == .idle }) { vehicle in
-                            Text("\(vehicle.id) - \(vehicle.model)").tag(vehicle.id)
+                            Text("\(vehicle.id) - \(vehicle.model)").tag(vehicle.backendId ?? vehicle.id)
                         }
                     }
                     
                     Picker("Driver", selection: $selectedDriverID) {
                         Text("Select Driver").tag("")
                         ForEach(dataManager.drivers.filter { $0.status == .active }) { driver in
-                            Text(driver.name).tag(driver.id)
+                            Text(driver.name).tag(driver.backendId ?? driver.id)
                         }
                     }
                 }
@@ -229,30 +229,31 @@ struct FleetCreateTripModal: View {
     private func createTrip() {
         guard let src = sourceLocation, let dst = destinationLocation else { return }
         
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        
-        let newTrip = VehicleTrip(
-            vehicleID: selectedVehicleID,
-            origin: src.name,
-            destination: dst.name,
-            progress: 0.0,
-            eta: formatter.string(from: scheduledDate.addingTimeInterval(estimatedDuration * 3600)),
-            date: "Today",
-            distance: "\(Int(estimatedDistance)) KM",
-            duration: "\(Int(estimatedDuration)) HRS",
-            costEstimate: "₹\(String(format: "%.2f", estimatedCost))",
-            startTime: Date(),
-            status: .scheduled,
+        let request = CreateTripRequest(
+            sourceLocation: src.name,
+            destinationLocation: dst.name,
             productType: productName,
-            loadAmount: "\(loadAmount) \(loadUnit)"
+            unit: loadUnit,
+            amount: Int(loadAmount) ?? 0,
+            vehicle: selectedVehicleID,
+            driver: selectedDriverID,
+            departureTime: ISO8601DateFormatter().string(from: scheduledDate)
         )
         
-        if let vIndex = dataManager.vehicles.firstIndex(where: { $0.id == selectedVehicleID }) {
-            dataManager.vehicles[vIndex].currentTrip = newTrip
-            dataManager.vehicles[vIndex].status = .inTransit
+        Task {
+            do {
+                _ = try await TripAPI.shared.createTrip(request)
+                
+                // Refresh backend state
+                try? await dataManager.refreshVehicles()
+                try? await dataManager.refreshDrivers()
+                
+                await MainActor.run {
+                    isPresented = false
+                }
+            } catch {
+                print("Failed to create trip via API: \(error)")
+            }
         }
-        
-        isPresented = false
     }
 }

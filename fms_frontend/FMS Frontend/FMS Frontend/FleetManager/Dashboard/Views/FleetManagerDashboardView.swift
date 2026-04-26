@@ -171,6 +171,14 @@ struct FleetManagerDashboardView: View {
         .fullScreenCover(isPresented: $showingAllTrips) {
             AllTripsView()
         }
+        .task {
+            do {
+                try await dataManager.refreshVehicles()
+                try await dataManager.refreshDrivers()
+            } catch {
+                print("Failed to refresh dashboard data: \(error)")
+            }
+        }
     }
 }
 
