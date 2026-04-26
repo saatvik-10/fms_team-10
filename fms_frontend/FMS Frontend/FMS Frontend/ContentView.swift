@@ -19,6 +19,7 @@ final class AppSessionStore: ObservableObject {
     @Published var currentRoleValue: AppUserRole = .none
     @Published private(set) var state: State = .restoring
     private(set) var managerProfile: ManagerProfileData?
+    private(set) var driverProfile: UserProfile?
     
     private let authAPI: AuthAPI
     private var didRestoreSession = false
@@ -79,6 +80,8 @@ final class AppSessionStore: ObservableObject {
                     username: profile.username ?? "",
                     role: profile.role.rawValue
                 )
+            } else if profile.role == .driver {
+                driverProfile = profile
             }
             
             state = .authenticated(AppUserRole(profile.role))
@@ -149,6 +152,7 @@ struct ContentView: View {
                 switch role {
                 case .driver:
                     DashboardView(userRole: userRoleBinding)
+                        .environmentObject(session)
                 case .maintenance:
                     MaintenanceTabView(isLoggedIn: maintenanceLoggedInBinding)
                 case .manager:
