@@ -4,7 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -59,6 +59,8 @@ model Driver {
   status        Status
   dlFrontImageUrl String?
   dlBackImageUrl  String?
+  dlFrontImageKey String?
+  dlBackImageKey  String?
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -83,36 +85,92 @@ model Maintenance {
 
 model Vehicle {
   id              String @id @default(cuid())
-  ownerName       String
-  vehicleModel    String
-  registrationNum String @unique
-  chassisNum      String @unique
-  totalDistance   Int
+  make            String
+  model           String
+  type            String
+  status          VehicleStatus @default(AVAILABLE)
+  imageName       String?
+  year            String?
+  color           String?
+  operationalStatus String?   @default("OPERATIONAL")
+  assessmentReason  String?
+  chassisNumber  String   @unique @map("chassis_num")
+  registrationNumber String @unique @map("registration_num")
 
-  vehicleInfo VehicleInfo?
+  rcImageUrl      String?
+  vehicleImageUrl String?
+  rcImageKey      String?
+  vehicleImageKey String?
+
+  assignedDriverId String? @unique
 
   createdById String?
   createdBy   User?   @relation("UserCreatedVehicles", fields: [createdById], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("vehicles")
 }
 
-model VehicleInfo {
-  id        String  @id @default(cuid())
-  vehicleId String  @unique
-  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+model VehicleTrip {
+  id            String  @id @default(cuid())
+  vehicleId     String  @unique
 
-  distance           Int
-  brakeEvents        Int
-  sharpTurns         Int
-  cargoWeight        Float
-  weatherTemperature Float
-  humidity           Float
-  label              String
+  origin        String
+  destination   String
+  progress      Float
+  eta           String?
+  date          String?
+  distance      String?
+  duration      String?
+  costEstimate  String?
+  startTime     DateTime?
+  status        TripStatus @default(PENDING)
+  productType   String?
+  loadAmount    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("vehicle_trips")
+}
+
+model VehicleMaintenance {
+  id             String  @id @default(cuid())
+  vehicleId      String  @unique
+
+  nextService    String?
+  inspectionStatus String?
+  alerts        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("vehicle_maintenance")
+}
+
+model TripHistory {
+  id            String  @id @default(cuid())
+  vehicleId     String
+
+  vehicleID     String
+  origin       String
+  destination  String
+  progress     Float
+  eta          String?
+  date         String?
+  distance     String?
+  duration    String?
+  costEstimate String?
+  startTime    DateTime?
+  status      TripStatus @default(PENDING)
+  productType  String?
+  loadAmount   String?
+
+  createdAt DateTime @default(now())
+
+  @@map("trip_history")
 }
 
 model Trips {
@@ -142,4 +200,17 @@ enum Status {
   ACTIVE
   ON_TRIP
   OFF_DUTY
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  IN_TRANSIT
+  MAINTENANCE
+}
+
+enum TripStatus {
+  PENDING
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
 }
