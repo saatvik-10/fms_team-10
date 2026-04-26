@@ -122,6 +122,7 @@ struct HistoricalPoint: Identifiable {
 
 struct Driver: Identifiable {
     let id: String
+    let backendId: String?
     let name: String
     let email: String // New field for manual entry
     let title: String
@@ -140,6 +141,58 @@ struct Driver: Identifiable {
     let activeRoute: String?
     let eta: String?
     let phone: String // New field
+    let dlFrontImageUrl: String?
+    let dlBackImageUrl: String?
+    let dlFrontImageKey: String?
+    let dlBackImageKey: String?
+
+    init(
+        id: String,
+        backendId: String? = nil,
+        name: String,
+        email: String,
+        title: String,
+        licenseNum: String,
+        licenseExp: String,
+        status: DriverStatus,
+        rating: Double,
+        efficiency: String,
+        totalTrips: Int,
+        totalHours: Int,
+        activityLog: [ActivityEvent],
+        currentVehicleID: String?,
+        vehicleClasses: [String],
+        activeRoute: String?,
+        eta: String?,
+        phone: String,
+        dlFrontImageUrl: String? = nil,
+        dlBackImageUrl: String? = nil,
+        dlFrontImageKey: String? = nil,
+        dlBackImageKey: String? = nil
+    ) {
+        self.id = id
+        self.backendId = backendId
+        self.name = name
+        self.email = email
+        self.title = title
+        self.licenseNum = licenseNum
+        self.licenseExp = licenseExp
+        self.status = status
+        self.rating = rating
+        self.efficiency = efficiency
+        self.totalTrips = totalTrips
+        self.totalHours = totalHours
+        self.activityLog = activityLog
+        self.currentVehicleID = currentVehicleID
+        self.vehicleClasses = vehicleClasses
+        self.activeRoute = activeRoute
+        self.eta = eta
+        self.phone = phone
+        self.dlFrontImageUrl = dlFrontImageUrl
+        self.dlBackImageUrl = dlBackImageUrl
+        self.dlFrontImageKey = dlFrontImageKey
+        self.dlBackImageKey = dlBackImageKey
+    }
     
     var identifier: UUID { UUID() }
 }

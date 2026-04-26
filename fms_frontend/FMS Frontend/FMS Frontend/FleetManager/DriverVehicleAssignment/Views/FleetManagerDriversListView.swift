@@ -47,37 +47,59 @@ struct FleetManagerDriversListView: View {
             
             // MARK: - Table
             ScrollView {
-                VStack(spacing: 0) {
-                    // Column Headers
-                    HStack {
-                        Text("DRIVER IDENTITY")
-                            .padding(.leading, 55)
-                            .frame(width: 250, alignment: .leading)
-                        Text("LICENSE DETAILS").frame(width: 200, alignment: .leading)
-                        Spacer()
-                        Text("STATUS")
+                if filteredDrivers.isEmpty {
+                    VStack(spacing: 10) {
+                        Text(emptyStateTitle)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(AppColors.primary)
+                        Text(emptyStateSubtitle)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
                     }
-                    .font(AppFonts.caption2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.gray)
-                    .padding(.horizontal, 70)
-                    .padding(.vertical, 20)
-                    
-                    VStack(spacing: 12) {
-                        ForEach(filteredDrivers) { driver in
-                            NavigationLink(destination: DriverDetailView(driver: driver)) {
-                                DriverRowView(driver: driver)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 25)
+                    .padding(.top, 80)
+                } else {
+                    VStack(spacing: 0) {
+                        // Column Headers
+                        HStack {
+                            Text("DRIVER IDENTITY")
+                                .padding(.leading, 55)
+                                .frame(width: 250, alignment: .leading)
+                            Text("LICENSE DETAILS").frame(width: 200, alignment: .leading)
+                            Spacer()
+                            Text("STATUS")
+                        }
+                        .font(AppFonts.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 70)
+                        .padding(.vertical, 20)
+                        
+                        VStack(spacing: 12) {
+                            ForEach(filteredDrivers) { driver in
+                                NavigationLink(destination: DriverDetailView(driver: driver)) {
+                                    DriverRowView(driver: driver)
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
                     }
+                    .padding(.bottom, 100)
                 }
-                .padding(.bottom, 100)
             }
             .background(AppColors.background)
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingAddDriver) { DriverModalView() }
+        .task {
+            do {
+                try await dataManager.refreshDrivers()
+            } catch {
+                print("Failed to refresh drivers: \(error)")
+            }
+        }
     }
     
     private var filteredDrivers: [Driver] {
@@ -89,6 +111,16 @@ struct FleetManagerDriversListView: View {
                 $0.id.localizedCaseInsensitiveContains(searchText)
             }
         }
+    }
+
+    private var emptyStateTitle: String {
+        searchText.isEmpty ? "No drivers yet" : "No matching drivers found"
+    }
+
+    private var emptyStateSubtitle: String {
+        searchText.isEmpty
+            ? "No driver profiles are available right now. Add a driver to get started."
+            : "Try a different name, license, or status to find drivers."
     }
 }
 
