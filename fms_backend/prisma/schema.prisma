@@ -50,11 +50,10 @@ model Manager {
 model Driver {
   id            String   @id @default(cuid())
   name          String
-  phone         String?  @unique
-  address       String?
-  email         String?  @unique
-  licenceNumber String?  @unique
-  expiryDate    String?
+  phone         String  @unique
+  email         String  @unique
+  licenceNumber String  @unique
+  expiryDate    String
   classes       String[]
   status        Status
   dlFrontImageUrl String?
@@ -73,8 +72,8 @@ model Maintenance {
   id    String   @id @default(cuid())
   name  String
   dob   DateTime
-  phone String?  @unique
-  email String?  @unique
+  phone String  @unique
+  email String  @unique
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
