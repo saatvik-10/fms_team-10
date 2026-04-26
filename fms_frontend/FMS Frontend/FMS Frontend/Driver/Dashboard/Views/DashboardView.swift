@@ -351,8 +351,21 @@ struct DashboardView_Previews: PreviewProvider {
 }
 
 struct DriverProfileView: View {
-    let profile = UserProfile.mockDriver
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var session: AppSessionStore
     var onLogout: (() -> Void)? = nil
+    
+    var formattedExpiryDate: String {
+        guard let date = session.driverProfile?.expiryDate else { return "-" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd MMM yyyy"
+        return formatter.string(from: date)
+    }
+    
+    var formattedClasses: String {
+        guard let classes = session.driverProfile?.classes, !classes.isEmpty else { return "-" }
+        return classes.joined(separator: ", ")
+    }
     
     var body: some View {
         List {
@@ -364,7 +377,7 @@ struct DriverProfileView: View {
                         .foregroundColor(AppColors.primary)
                     
                     VStack(spacing: 4) {
-                        Text(profile.name)
+                        Text(session.driverProfile?.name ?? "Driver")
                             .font(.title2.bold())
                         Text("Certified Commercial Driver")
                             .font(.subheadline)
@@ -377,17 +390,20 @@ struct DriverProfileView: View {
             .listRowBackground(Color.clear)
             
             Section("Account Details") {
-                AppProfileInfoRow(label: "USERNAME", value: profile.username)
-                AppProfileInfoRow(label: "PHONE", value: profile.phone)
-                AppProfileInfoRow(label: "EMAIL", value: profile.email)
-                AppProfileInfoRow(label: "ADDRESS", value: profile.address)
-                AppProfileInfoRow(label: "ROLE", value: profile.role.rawValue)
-                AppProfileInfoRow(label: "JOINED", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
-                AppProfileInfoRow(label: "CUID", value: profile.id)
+                AppProfileInfoRow(label: "USERNAME", value: session.driverProfile?.username ?? "-")
+                AppProfileInfoRow(label: "PHONE", value: session.driverProfile?.phone ?? "-")
+                AppProfileInfoRow(label: "EMAIL", value: session.driverProfile?.email ?? "-")
+                AppProfileInfoRow(label: "DL NUMBER", value: session.driverProfile?.licenceNumber ?? "-")
+                AppProfileInfoRow(label: "EXPIRY DATE", value: formattedExpiryDate)
+                AppProfileInfoRow(label: "DL CLASSES", value: formattedClasses)
+                AppProfileInfoRow(label: "JOINED", value: session.driverProfile?.createdAt.formatted(date: .abbreviated, time: .omitted) ?? "-")
             }
             
             Section {
-                Button(action: { onLogout?() }) {
+                Button(action: {
+                    session.logout()
+                    onLogout?()
+                }) {
                     Text("Logout")
                         .foregroundColor(.red)
                         .frame(maxWidth: .infinity)
