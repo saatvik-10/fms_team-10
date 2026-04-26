@@ -32,6 +32,7 @@ struct DriverItem: Decodable {
   let dlFrontImageKey: String?
   let dlBackImageKey: String?
   let createdAt: Date?
+  let status: String?
 }
 
 struct CreateDriverResponse: Decodable {
