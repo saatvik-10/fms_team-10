@@ -271,7 +271,7 @@ struct DLData {
 
 struct RCScannerView: View {
     @Binding var isPresented: Bool
-    var didFinishScanning: (String, String, String, String) -> Void
+    var didFinishScanning: (String, String, String, String, Data?) -> Void
     
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
@@ -389,7 +389,8 @@ struct RCScannerView: View {
                     result.owner ?? "",
                     result.regNumber ?? "",
                     result.model ?? "",
-                    result.chassis ?? result.engineNumber ?? ""
+                    result.chassis ?? result.engineNumber ?? "",
+                    image.jpegData(compressionQuality: 0.7)
                 )
             }
         }
