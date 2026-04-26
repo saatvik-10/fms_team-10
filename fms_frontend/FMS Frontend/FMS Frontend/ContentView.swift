@@ -36,7 +36,10 @@ final class AppSessionStore: ObservableObject {
     func restoreSessionIfNeeded() async {
         guard !didRestoreSession else { return }
         didRestoreSession = true
-        
+        await fetchProfile()
+    }
+    
+    func fetchProfile() async {
         print("🟡 Checking for token...")
         
         guard let token = authAPI.getCurrentToken(), !token.isEmpty else {
@@ -67,12 +70,8 @@ final class AppSessionStore: ObservableObject {
             state = .authenticated(AppUserRole(profile.role))
         } catch {
             print("🔴 Session restore failed:", error)
-            if let existingToken = authAPI.getCurrentToken(), !existingToken.isEmpty {
-                state = .authenticated(.manager)
-            } else {
-                authAPI.logout()
-                state = .unauthenticated
-            }
+            authAPI.logout()
+            state = .unauthenticated
         }
     }
     
@@ -130,7 +129,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
             case .unauthenticated:
-                LoginView(userRole: userRoleBinding)
+                LoginView(userRole: userRoleBinding, session: session)
                 
             case let .authenticated(role):
                 switch role {
@@ -141,7 +140,7 @@ struct ContentView: View {
                 case .manager:
                     FleetManagerMainView(profile: session.managerProfile)
                 case .none:
-                    LoginView(userRole: userRoleBinding)
+                    LoginView(userRole: userRoleBinding, session: session)
                 }
             }
         }
