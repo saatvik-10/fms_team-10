@@ -80,7 +80,7 @@ struct LoginView: View {
                     roleToSet: pendingRole,
                     onAuthenticated: {
                         Task {
-                            await session.restoreSessionIfNeeded()
+                            await session.fetchProfile()
                         }
                     }
                 )
