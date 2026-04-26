@@ -15,7 +15,6 @@ driverRoute.post(
   controller.createDriver,
 );
 driverRoute.get('/get-drivers', proxyAuth, authRole, controller.getDrivers);
-driverRoute.patch('/update-distance', proxyAuth, driverRole, controller.updateDistance);
 driverRoute.patch('/:driverId', proxyAuth, authRole, controller.editDriver);
 driverRoute.delete('/:driverId', proxyAuth, authRole, controller.deleteDriver);
 
