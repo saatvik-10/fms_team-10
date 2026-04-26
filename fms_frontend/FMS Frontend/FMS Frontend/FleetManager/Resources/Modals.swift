@@ -494,7 +494,6 @@ struct DriverModalView: View {
             fullName: fullName,
             email: email,
             phone: phone,
-            address: nil,
             licenseNumber: licenseNumber,
             expiryDate: expiryDate,
             classes: finalVehicleClasses,
@@ -563,7 +562,6 @@ struct DriverModalView: View {
             fullName: fullName,
             email: email,
             phone: phone,
-            address: nil,
             licenseNumber: licenseNumber,
             expiryDate: expiryDate,
             classes: finalVehicleClasses
