@@ -152,10 +152,12 @@ struct DriverDetailView: View {
         .alert("Confirm Delete", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
-                if let index = dataManager.drivers.firstIndex(where: { $0.id == driver.id }) {
-                    dataManager.drivers.remove(at: index)
+                Task {
+                    await dataManager.deleteDriver(driver)
+                    await MainActor.run {
+                        dismiss()
+                    }
                 }
-                dismiss()
             }
         } message: {
             Text("Are you sure you want to delete this driver?")

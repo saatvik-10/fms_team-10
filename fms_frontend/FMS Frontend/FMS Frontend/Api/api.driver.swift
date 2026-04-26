@@ -8,6 +8,8 @@ struct CreateDriverRequest: Encodable {
   let licenseNumber: String
   let expiryDate: String
   let classes: [String]
+  let licenseFrontImage: Data
+  let licenseBackImage: Data
 }
 
 struct DriverCredentials: Decodable {
@@ -25,6 +27,10 @@ struct DriverItem: Decodable {
   let licenceNumber: String?
   let expiryDate: String?
   let classes: [String]?
+  let dlFrontImageUrl: String?
+  let dlBackImageUrl: String?
+  let dlFrontImageKey: String?
+  let dlBackImageKey: String?
   let createdAt: Date?
 }
 
@@ -37,6 +43,25 @@ struct CreateDriverResponse: Decodable {
 
 struct GetDriversResponse: Decodable {
   let drivers: [DriverItem]
+}
+
+struct UpdateDriverRequest: Encodable {
+  let fullName: String?
+  let email: String?
+  let phone: String?
+  let address: String?
+  let licenseNumber: String?
+  let expiryDate: String?
+  let classes: [String]?
+}
+
+struct UpdateDriverResponse: Decodable {
+  let message: String
+  let driver: DriverItem
+}
+
+struct DeleteDriverResponse: Decodable {
+  let message: String
 }
 
 final class DriverAPI {
@@ -61,6 +86,23 @@ final class DriverAPI {
     try await client.request(
       path: "/driver/get-drivers",
       method: .get,
+      requiresAuth: true
+    )
+  }
+
+  func updateDriverProfile(id: String, request: UpdateDriverRequest) async throws -> UpdateDriverResponse {
+    try await client.request(
+      path: "/driver/\(id)",
+      method: .patch,
+      body: request,
+      requiresAuth: true
+    )
+  }
+
+  func deleteDriver(id: String) async throws -> DeleteDriverResponse {
+    try await client.request(
+      path: "/driver/\(id)",
+      method: .delete,
       requiresAuth: true
     )
   }

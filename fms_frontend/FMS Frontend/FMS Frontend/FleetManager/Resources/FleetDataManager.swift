@@ -3,31 +3,40 @@ import SwiftUI
 import Foundation
 
 class FleetDataManager: ObservableObject {
-    @Published var dashboardStats = MockDataProvider.dashboardStats
-    @Published var shipments = MockDataProvider.shipments
-    @Published var fleetStatus = MockDataProvider.fleetStatus
-    @Published var assessments = MockDataProvider.assessments
-    @Published var maintenanceAlerts = MockDataProvider.maintenanceAlerts
-    @Published var emissionData = MockDataProvider.emissionData
-    @Published var mileageData = MockDataProvider.mileageData
-    @Published var fuelTrendData = MockDataProvider.fuelTrendData
+    @Published var dashboardStats = FleetManagerDashboardStats(
+        totalShipments: 0,
+        totalShipmentsTrend: "0%",
+        pendingPackages: 0,
+        pendingPackagesTrend: "0%",
+        deliveryShipments: 0,
+        deliveryShipmentsTrend: "0%",
+        maintenanceSummary: "No dashboard data available yet.",
+        criticalMass: 0
+    )
+    @Published var shipments: [ShipmentActivity] = []
+    @Published var fleetStatus = FleetVehicleStatus(active: 0, activeTrend: "0%", maintenance: 0, idle: 0, critical: 0)
+    @Published var assessments: [SmartFleetAssessment] = []
+    @Published var maintenanceAlerts: [FleetMaintenanceAlert] = []
+    @Published var emissionData: [EmissionData] = []
+    @Published var mileageData: [MileageData] = []
+    @Published var fuelTrendData: [FuelTrendData] = []
     
     // Performance Trends (New)
-    @Published var utilizationTrend = MockDataProvider.utilizationTrend
-    @Published var efficiencyTrend = MockDataProvider.efficiencyTrend
-    @Published var costTrend = MockDataProvider.costTrend
-    @Published var idleTrend = MockDataProvider.idleTrend
+    @Published var utilizationTrend: [HistoricalPoint] = []
+    @Published var efficiencyTrend: [HistoricalPoint] = []
+    @Published var costTrend: [HistoricalPoint] = []
+    @Published var idleTrend: [HistoricalPoint] = []
     
-    @Published var drivers = MockDataProvider.drivers
-    @Published var vehicles = MockDataProvider.vehicles
+    @Published var drivers: [Driver] = []
+    @Published var vehicles: [Vehicle] = []
     @Published var maintenancePersonnel: [MaintenancePersonnel] = []
     
     // New Analytics (New)
-    @Published var maintenanceCostPerVehicle = MockDataProvider.maintenanceCostPerVehicle
-    @Published var totalKmsTravelled = MockDataProvider.totalKmsTravelled
-    @Published var driverDistanceData = MockDataProvider.driverDistanceData
+    @Published var maintenanceCostPerVehicle: [HistoricalPoint] = []
+    @Published var totalKmsTravelled: Double = 0
+    @Published var driverDistanceData: [HistoricalPoint] = []
     
-    @Published var travelsHistory = MockDataProvider.travelsHistory
+    @Published var travelsHistory: [HistoricalPoint] = []
     var idleDriversCount: Int { idleDrivers.count }
     var idleDrivers: [Driver] { drivers.filter { $0.status == .active || $0.status == .offDuty } }
     
@@ -223,11 +232,76 @@ class FleetDataManager: ObservableObject {
     }
     
     func addDriver(_ driver: Driver) {
-        drivers.append(driver)
+        if let backendId = driver.backendId,
+           let index = drivers.firstIndex(where: { $0.backendId == backendId }) {
+            drivers[index] = driver
+        } else if let index = drivers.firstIndex(where: { $0.id == driver.id }) {
+            drivers[index] = driver
+        } else {
+            drivers.append(driver)
+        }
+    }
+
+    func upsertDriver(_ driver: Driver) {
+        addDriver(driver)
+    }
+
+    @MainActor
+    func refreshDrivers() async throws {
+        let response = try await DriverAPI.shared.getDrivers()
+        drivers = response.drivers.map { item in
+            let classes = item.classes ?? []
+            return Driver(
+                id: item.username ?? item.id ?? "Driver",
+                backendId: item.id,
+                name: item.name ?? "Driver",
+                email: item.email ?? "",
+                title: "\(classes.first ?? "LMV-NT") Certified Driver",
+                licenseNum: item.licenceNumber ?? "-",
+                licenseExp: item.expiryDate ?? "-",
+                status: .offDuty,
+                rating: 5.0,
+                efficiency: "100%",
+                totalTrips: 0,
+                totalHours: 0,
+                activityLog: [],
+                currentVehicleID: nil,
+                vehicleClasses: classes,
+                activeRoute: nil,
+                eta: nil,
+                phone: item.phone ?? "",
+                dlFrontImageUrl: item.dlFrontImageUrl,
+                dlBackImageUrl: item.dlBackImageUrl,
+                dlFrontImageKey: item.dlFrontImageKey,
+                dlBackImageKey: item.dlBackImageKey
+            )
+        }
     }
     
     func addMaintenancePersonnel(_ person: MaintenancePersonnel) {
         maintenancePersonnel.append(person)
+    }
+
+    @MainActor
+    func saveDriverFromAPI(_ driver: Driver) {
+        upsertDriver(driver)
+    }
+
+    @MainActor
+    func deleteDriver(_ driver: Driver) async {
+        if let backendId = driver.backendId {
+            do {
+                _ = try await DriverAPI.shared.deleteDriver(id: backendId)
+            } catch {
+                print("Delete API failed for driver ID \(backendId): \(error)")
+            }
+        }
+
+        if let backendId = driver.backendId {
+            drivers.removeAll(where: { $0.backendId == backendId })
+        } else {
+            drivers.removeAll(where: { $0.id == driver.id })
+        }
     }
 
     @MainActor
