@@ -8,6 +8,7 @@ import {
 import { jwtAuth } from '../lib/jwt';
 import { prisma } from '../../prisma';
 import { comparePassword, hashPassword } from '../lib/hashPassword';
+import { normalizeDriverExpiryDate } from '../lib/utils';
 import { verificationOTP } from '../services/resend.service';
 import {
   otpStore,
@@ -103,7 +104,6 @@ export class Auth {
           select: {
             name: true,
             phone: true,
-            address: true,
             licenceNumber: true,
             expiryDate: true,
             classes: true,
@@ -149,7 +149,6 @@ export class Auth {
         ...profileData,
         name: user.driver.name,
         phone: user.driver.phone,
-        address: user.driver.address,
         licenceNumber: user.driver.licenceNumber,
         expiryDate: user.driver.expiryDate,
         classes: user.driver.classes,
@@ -303,7 +302,6 @@ export class Auth {
           select: {
             name: true,
             phone: true,
-            address: true,
             licenceNumber: true,
             expiryDate: true,
             classes: true,
@@ -334,13 +332,14 @@ export class Auth {
         address: user.manager.address,
       };
     } else if (role === 'DRIVER' && user.driver) {
+      const driverExpiryDate = normalizeDriverExpiryDate(user.driver.expiryDate);
+
       profileData = {
         ...profileData,
         name: user.driver.name,
         phone: user.driver.phone,
-        address: user.driver.address,
         licenceNumber: user.driver.licenceNumber,
-        expiryDate: user.driver.expiryDate,
+        expiryDate: driverExpiryDate,
         classes: user.driver.classes,
       };
     } else if (role === 'MAINTENANCE' && user.maintenance) {
@@ -361,6 +360,7 @@ export class Auth {
         role: user.role,
         username: user.username,
         createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
     });
   }

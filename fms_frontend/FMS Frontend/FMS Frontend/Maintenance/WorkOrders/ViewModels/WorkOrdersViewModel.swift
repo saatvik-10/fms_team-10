@@ -57,10 +57,11 @@ class WorkOrdersViewModel: ObservableObject {
             orders = orders.filter { $0.serviceType == type }
         }
         
-        // Sorting: Critical first, then by date
+        // Sorting: priority order first, then by date
         self.filteredWorkOrders = orders.sorted {
-            if $0.priority == .critical && $1.priority != .critical { return true }
-            if $0.priority != .critical && $1.priority == .critical { return false }
+            if $0.priority.sortingOrder != $1.priority.sortingOrder {
+                return $0.priority.sortingOrder < $1.priority.sortingOrder
+            }
             return $0.scheduledDate > $1.scheduledDate
         }
     }

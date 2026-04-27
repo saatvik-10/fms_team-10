@@ -3,29 +3,38 @@ import SwiftUI
 import Foundation
 
 class FleetDataManager: ObservableObject {
-    @Published var dashboardStats = MockDataProvider.dashboardStats
-    @Published var shipments = MockDataProvider.shipments
-    @Published var fleetStatus = MockDataProvider.fleetStatus
-    @Published var assessments = MockDataProvider.assessments
-    @Published var maintenanceAlerts = MockDataProvider.maintenanceAlerts
-    @Published var emissionData = MockDataProvider.emissionData
-    @Published var mileageData = MockDataProvider.mileageData
-    @Published var fuelTrendData = MockDataProvider.fuelTrendData
+    @Published var dashboardStats = FleetManagerDashboardStats(
+        totalShipments: 0,
+        totalShipmentsTrend: "0%",
+        pendingPackages: 0,
+        pendingPackagesTrend: "0%",
+        deliveryShipments: 0,
+        deliveryShipmentsTrend: "0%",
+        maintenanceSummary: "No dashboard data available yet.",
+        criticalMass: 0
+    )
+    @Published var shipments: [ShipmentActivity] = []
+    @Published var fleetStatus = FleetVehicleStatus(active: 0, activeTrend: "0%", maintenance: 0, idle: 0, critical: 0)
+    @Published var assessments: [SmartFleetAssessment] = []
+    @Published var maintenanceAlerts: [FleetMaintenanceAlert] = []
+    @Published var emissionData: [EmissionData] = []
+    @Published var mileageData: [MileageData] = []
+    @Published var fuelTrendData: [FuelTrendData] = []
     
     // Performance Trends (New)
-    @Published var utilizationTrend = MockDataProvider.utilizationTrend
-    @Published var efficiencyTrend = MockDataProvider.efficiencyTrend
-    @Published var costTrend = MockDataProvider.costTrend
-    @Published var idleTrend = MockDataProvider.idleTrend
+    @Published var utilizationTrend: [HistoricalPoint] = []
+    @Published var efficiencyTrend: [HistoricalPoint] = []
+    @Published var costTrend: [HistoricalPoint] = []
+    @Published var idleTrend: [HistoricalPoint] = []
     
-    @Published var drivers = MockDataProvider.drivers
-    @Published var vehicles = MockDataProvider.vehicles
-    @Published var maintenancePersonnel = MockDataProvider.maintenancePersonnel
+    @Published var drivers: [Driver] = []
+    @Published var vehicles: [Vehicle] = []
+    @Published var maintenancePersonnel: [MaintenancePersonnel] = []
     
     // New Analytics (New)
-    @Published var maintenanceCostPerVehicle = MockDataProvider.maintenanceCostPerVehicle
-    @Published var totalKmsTravelled = MockDataProvider.totalKmsTravelled
-    @Published var driverDistanceData = MockDataProvider.driverDistanceData
+    @Published var maintenanceCostPerVehicle: [HistoricalPoint] = []
+    @Published var totalKmsTravelled: Double = 0
+    @Published var driverDistanceData: [HistoricalPoint] = []
     
     @Published var travelsHistory = MockDataProvider.travelsHistory
     @Published var geofenceAlerts: [GeofenceAlert] = []
@@ -355,19 +364,232 @@ class FleetDataManager: ObservableObject {
     
     // Actions
     func addVehicle(_ vehicle: Vehicle) {
-        vehicles.append(vehicle)
+        if let backendId = vehicle.backendId,
+           let index = vehicles.firstIndex(where: { $0.backendId == backendId }) {
+            vehicles[index] = vehicle
+        } else if let index = vehicles.firstIndex(where: { $0.id == vehicle.id }) {
+            vehicles[index] = vehicle
+        } else {
+            vehicles.append(vehicle)
+        }
+    }
+
+    func upsertVehicle(_ vehicle: Vehicle) {
+        addVehicle(vehicle)
+    }
+
+    @MainActor
+    func refreshVehicles() async throws {
+        let response = try await VehicleAPI.shared.getVehicles()
+        vehicles = response.vehicles.map { item in
+            Vehicle(
+                id: item.registrationNumber,
+                backendId: item.id,
+                make: item.make,
+                model: item.model,
+                type: item.type,
+                status: {
+                    switch item.status {
+                    case "IN_TRANSIT": return .inTransit
+                    case "MAINTENANCE": return .maintenance
+                    default: return .idle
+                    }
+                }(),
+                imageName: item.imageName ?? "truck_freightliner_m2",
+                year: item.year ?? "-",
+                color: item.color ?? "-",
+                operationalStatus: item.operationalStatus ?? "OPERATIONAL",
+                currentTrip: item.currentTrip.map { trip in
+                    VehicleTrip(
+                        vehicleID: trip.vehicleId,
+                        origin: trip.origin,
+                        destination: trip.destination,
+                        progress: trip.progress,
+                        eta: trip.eta ?? "",
+                        date: trip.date ?? "",
+                        distance: trip.distance ?? "",
+                        duration: trip.duration ?? "",
+                        costEstimate: trip.costEstimate ?? "",
+                        startTime: trip.startTime,
+                        status: trip.status == "IN_TRANSIT" ? .inTransit : (trip.status == "COMPLETED" ? .completed : .scheduled),
+                        productType: trip.productType ?? "",
+                        loadAmount: trip.loadAmount ?? ""
+                    )
+                },
+                assignedDriver: item.assignedDriver.map { driver in
+                    Driver(
+                        id: driver.id,
+                        backendId: driver.id,
+                        name: driver.name,
+                        email: driver.phone ?? "",
+                        title: "Driver",
+                        licenseNum: driver.licenceNumber ?? "",
+                        licenseExp: "2025",
+                        status: .active,
+                        rating: 4.5,
+                        efficiency: "Good",
+                        totalTrips: 0,
+                        totalHours: 0,
+                        activityLog: [],
+                        currentVehicleID: nil,
+                        vehicleClasses: driver.classes ?? [],
+                        activeRoute: nil,
+                        eta: nil,
+                        phone: driver.phone ?? "",
+                        dlFrontImageUrl: nil,
+                        dlBackImageUrl: nil,
+                        dlFrontImageKey: nil,
+                        dlBackImageKey: nil
+                    )
+                },
+                maintenance: item.maintenance.map { maint in
+                    VehicleMaintenance(
+                        nextService: maint.nextService ?? "TBD",
+                        inspectionStatus: maint.inspectionStatus ?? "Verified",
+                        alerts: []
+                    )
+                } ?? VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
+                history: [],
+                reports: [],
+                assessmentReason: item.assessmentReason,
+                chassisNumber: item.chassisNumber,
+                registrationNumber: item.registrationNumber,
+                rcImageUrl: item.rcImageUrl,
+                vehicleImageUrl: item.vehicleImageUrl
+            )
+        }
+    }
+
+    @MainActor
+    func deleteVehicle(_ vehicle: Vehicle) async {
+        if let backendId = vehicle.backendId {
+            do {
+                _ = try await VehicleAPI.shared.deleteVehicle(id: backendId)
+            } catch {
+                print("Delete API failed for vehicle ID \(backendId): \(error)")
+            }
+        }
+
+        if let backendId = vehicle.backendId {
+            vehicles.removeAll(where: { $0.backendId == backendId })
+        } else {
+            vehicles.removeAll(where: { $0.id == vehicle.id })
+        }
     }
     
     func addDriver(_ driver: Driver) {
-        drivers.append(driver)
+        if let backendId = driver.backendId,
+           let index = drivers.firstIndex(where: { $0.backendId == backendId }) {
+            drivers[index] = driver
+        } else if let index = drivers.firstIndex(where: { $0.id == driver.id }) {
+            drivers[index] = driver
+        } else {
+            drivers.append(driver)
+        }
+    }
+
+    func upsertDriver(_ driver: Driver) {
+        addDriver(driver)
+    }
+
+    @MainActor
+    func refreshDrivers() async throws {
+        let response = try await DriverAPI.shared.getDrivers()
+        drivers = response.drivers.map { item in
+            let classes = item.classes ?? []
+            
+            let mappedStatus: DriverStatus
+            switch item.status {
+            case "ACTIVE": mappedStatus = .active
+            case "ON_TRIP": mappedStatus = .onTrip
+            case "OFF_DUTY": mappedStatus = .offDuty
+            default: mappedStatus = .active // Default to active so they appear in assignment pickers if unknown
+            }
+            
+            return Driver(
+                id: item.username ?? item.id ?? "Driver",
+                backendId: item.id,
+                name: item.name ?? "Driver",
+                email: item.email ?? "",
+                title: "\(classes.first ?? "LMV-NT") Certified Driver",
+                licenseNum: item.licenceNumber ?? "-",
+                licenseExp: item.expiryDate ?? "-",
+                status: mappedStatus,
+                rating: 5.0,
+                efficiency: "100%",
+                totalTrips: 0,
+                totalHours: 0,
+                activityLog: [],
+                currentVehicleID: nil,
+                vehicleClasses: classes,
+                activeRoute: nil,
+                eta: nil,
+                phone: item.phone ?? "",
+                dlFrontImageUrl: item.dlFrontImageUrl,
+                dlBackImageUrl: item.dlBackImageUrl,
+                dlFrontImageKey: item.dlFrontImageKey,
+                dlBackImageKey: item.dlBackImageKey
+            )
+        }
     }
     
     func addMaintenancePersonnel(_ person: MaintenancePersonnel) {
         maintenancePersonnel.append(person)
     }
+
+    @MainActor
+    func saveDriverFromAPI(_ driver: Driver) {
+        upsertDriver(driver)
+    }
+
+    @MainActor
+    func deleteDriver(_ driver: Driver) async {
+        if let backendId = driver.backendId {
+            do {
+                _ = try await DriverAPI.shared.deleteDriver(id: backendId)
+            } catch {
+                print("Delete API failed for driver ID \(backendId): \(error)")
+            }
+        }
+
+        if let backendId = driver.backendId {
+            drivers.removeAll(where: { $0.backendId == backendId })
+        } else {
+            drivers.removeAll(where: { $0.id == driver.id })
+        }
+    }
+
+    @MainActor
+    func refreshMaintenancePersonnel() async throws {
+        let response = try await MaintenanceAPI.shared.getMaintenances()
+        maintenancePersonnel = response.maintenances.map { item in
+            MaintenancePersonnel(
+                backendId: item.id,
+                name: item.name ?? "To be integrated",
+                phone: item.phone ?? "To be integrated",
+                email: item.email ?? "To be integrated",
+                dob: item.dob ?? Date(),
+                age: item.age,
+                currentAssignment: nil
+            )
+        }
+    }
     
-    func deleteMaintenancePersonnel(_ person: MaintenancePersonnel) {
-        maintenancePersonnel.removeAll(where: { $0.id == person.id })
+    @MainActor
+    func deleteMaintenancePersonnel(_ person: MaintenancePersonnel) async {
+        if let targetId = person.backendId {
+            do {
+                _ = try await MaintenanceAPI.shared.deleteMaintenance(id: targetId)
+            } catch {
+                print("Delete API failed for maintenance ID \(targetId): \(error)")
+            }
+        }
+
+        if let targetId = person.backendId {
+            maintenancePersonnel.removeAll(where: { $0.backendId == targetId })
+        } else {
+            maintenancePersonnel.removeAll(where: { $0.id == person.id })
+        }
     }
     
     func addOrder(trip: VehicleTrip, vehicleID: String) {

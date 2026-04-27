@@ -15,7 +15,6 @@ struct PendingWorkOrdersListView: View {
 
     enum PriorityFilter: String, CaseIterable, Identifiable {
         case all      = "All"
-        case critical = "Critical"
         case high     = "High"
         case medium   = "Medium"
         case low      = "Low"
@@ -28,20 +27,18 @@ struct PendingWorkOrdersListView: View {
             .sorted { $0.priority.sortingOrder < $1.priority.sortingOrder }
 
         switch selectedFilter {
-        case .all:      return pending
-        case .critical: return pending.filter { $0.priority == .critical }
-        case .high:     return pending.filter { $0.priority == .high }
-        case .medium:   return pending.filter { $0.priority == .medium }
-        case .low:      return pending.filter { $0.priority == .low }
+        case .all:    return pending
+        case .high:   return pending.filter { $0.priority == .high }
+        case .medium: return pending.filter { $0.priority == .medium }
+        case .low:    return pending.filter { $0.priority == .low }
         }
     }
 
     private func priorityColor(for priority: WorkOrderPriority) -> Color {
         switch priority {
-        case .critical: return .red
-        case .high:     return .orange
-        case .medium:   return .blue
-        case .low:      return .green
+        case .high:   return .orange
+        case .medium: return .blue
+        case .low:    return .green
         }
     }
 

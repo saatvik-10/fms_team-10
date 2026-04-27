@@ -10,6 +10,7 @@ struct ReportIssueView: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var speechManager = SpeechManager()
+    @StateObject private var issueViewModel = IssueReportingViewModel()
 
     // MARK: Image state
     @State private var selectedImages: [UIImage] = []
@@ -23,6 +24,8 @@ struct ReportIssueView: View {
     // MARK: Submission state
     @State private var showSuccessAlert = false
     @State private var showImageSourcePopup = false
+
+    private let maxIssueImages = 6
 
     // MARK: - Derived
 
@@ -94,7 +97,9 @@ struct ReportIssueView: View {
                 .ignoresSafeArea()
         }
         .onChange(of: cameraImage) { img in
-            if let img = img { selectedImages.append(img) }
+            if let img = img, selectedImages.count < maxIssueImages {
+                selectedImages.append(img)
+            }
         }
         // ── PhotosPicker result ────────────────────────────────────────────
         .onChange(of: photoPickerItems) { items in
@@ -102,7 +107,11 @@ struct ReportIssueView: View {
                 for item in items {
                     if let data = try? await item.loadTransferable(type: Data.self),
                        let img  = UIImage(data: data) {
-                        await MainActor.run { selectedImages.append(img) }
+                        await MainActor.run {
+                            if selectedImages.count < maxIssueImages {
+                                selectedImages.append(img)
+                            }
+                        }
                     }
                 }
                 await MainActor.run { photoPickerItems = [] }
@@ -126,6 +135,20 @@ struct ReportIssueView: View {
             }
         } message: {
             Text("Your report has been recorded and the maintenance team has been notified.")
+        }
+        .alert(
+            "Issue Submission Failed",
+            isPresented: Binding(
+                get: { issueViewModel.errorMessage != nil },
+                set: { if !$0 { issueViewModel.errorMessage = nil } }
+            )
+        ) {
+            Button("Retry") {
+                Task { await submitIssue() }
+            }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(issueViewModel.errorMessage ?? "Please try again.")
         }
     }
 
@@ -267,7 +290,7 @@ struct ReportIssueView: View {
             .padding(.bottom, 8)
 
             PhotosPicker(selection: $photoPickerItems,
-                         maxSelectionCount: 10,
+                         maxSelectionCount: maxIssueImages,
                          matching: .images) {
                 Text("Photo Library")
                     .font(.body)
@@ -309,19 +332,21 @@ struct ReportIssueView: View {
 
     private var nextButton: some View {
         Button {
-            showSuccessAlert = true
+            Task {
+                await submitIssue()
+            }
         } label: {
-            Text("Submit Issue")
+            Text(issueViewModel.isSubmitting ? "Submitting..." : "Submit Issue")
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
-                .background(isNextEnabled ? Color(red: 10/255, green: 48/255, blue: 58/255) : Color(UIColor.systemGray3))
+                .background((isNextEnabled && !issueViewModel.isSubmitting) ? Color(red: 10/255, green: 48/255, blue: 58/255) : Color(UIColor.systemGray3))
                 .cornerRadius(16)
-                .animation(.easeInOut(duration: 0.2), value: isNextEnabled)
+                .animation(.easeInOut(duration: 0.2), value: isNextEnabled && !issueViewModel.isSubmitting)
         }
-        .disabled(!isNextEnabled)
+        .disabled(!isNextEnabled || issueViewModel.isSubmitting)
     }
 
     // MARK: - Helpers
@@ -351,6 +376,22 @@ struct ReportIssueView: View {
     private func handleCameraButton() {
         guard UIImagePickerController.isSourceTypeAvailable(.camera) else { return }
         showCamera = true
+    }
+
+    private func submitIssue() async {
+        let validTripId = trip.id.hasPrefix("c") ? trip.id : nil
+
+        let isSuccess = await issueViewModel.submitIssue(
+            tripId: validTripId,
+            transcript: speechManager.transcript,
+            incidentLocation: incidentLocation,
+            vehicleUnit: vehicleUnit,
+            images: selectedImages
+        )
+
+        if isSuccess {
+            showSuccessAlert = true
+        }
     }
 
     @ViewBuilder

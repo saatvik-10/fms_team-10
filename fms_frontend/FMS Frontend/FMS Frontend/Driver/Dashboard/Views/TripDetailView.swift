@@ -28,6 +28,10 @@ struct TripDetailView: View {
     @State private var estimatedArrival: String = "Loading..."
     @State private var routePolyline: String = ""
     @State private var isLoadingEta: Bool = true
+    @State private var resolvedDestinationCoordinate: CLLocationCoordinate2D?
+    
+    // Live tracking for Actual ETA
+    @StateObject private var locationManager = LocationManager()
 
     // ── Trips-tab state ───────────────────────────────────────────────────
     // TEAMMATE HOOK: Update distanceToDestinationMeters from your tracking
@@ -173,16 +177,48 @@ struct TripDetailView: View {
         }
         .task {
             do {
+                // Fetch static full-route for map polyline and total distance
                 let result = try await GoogleDirectionsService.shared.fetchDirections(trip: trip)
                 DispatchQueue.main.async {
-                    self.estimatedArrival = result.eta
                     self.routePolyline = result.polyline
+                    self.resolvedDestinationCoordinate = result.destinationCoordinate
+                    self.estimatedArrival = result.eta
                     self.isLoadingEta = false
+                    let totalDistance = result.distance
+                    print("--> New ETA (Static): \(result.eta), Total Direct Distance: \(totalDistance)")
                 }
             } catch {
                 DispatchQueue.main.async {
                     self.estimatedArrival = "Unavailable"
                     self.isLoadingEta = false
+                }
+                print("Failed to fetch static route")
+            }
+        }
+        // Track live location to calculate ACTUAL ETA from current coordinate to destination
+        .onChange(of: locationManager.location) { _, newLocation in
+            guard let currentLoc = newLocation else { return }
+            let destination = resolvedDestinationCoordinate ?? trip.destination.coordinate
+            guard CLLocationCoordinate2DIsValid(destination),
+                  !(destination.latitude == 0 && destination.longitude == 0) else {
+                return
+            }
+            Task {
+                do {
+                    let segmentResult = try await GoogleDirectionsService.shared.fetchSegmentDirections(
+                        origin: currentLoc.coordinate,
+                        destination: destination
+                    )
+                    DispatchQueue.main.async {
+                        self.estimatedArrival = segmentResult.eta
+                        self.isLoadingEta = false
+                        print("--> Actual Live ETA from current position: \(segmentResult.eta)")
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        self.estimatedArrival = "Unavailable"
+                        self.isLoadingEta = false
+                    }
                 }
             }
         }
@@ -528,7 +564,8 @@ struct GoogleTripMapView: UIViewRepresentable {
                     uiView.animate(with: GMSCameraUpdate.fit(bounds, withPadding: 40.0))
                 }
             }
-        } else if CLLocationCoordinate2DIsValid(activeStop.coordinate) {
+        } else if CLLocationCoordinate2DIsValid(activeStop.coordinate),
+                  !(activeStop.coordinate.latitude == 0 && activeStop.coordinate.longitude == 0) {
             // Fallback: center on active stop
             uiView.animate(to: GMSCameraPosition.camera(
                 withTarget: activeStop.coordinate, zoom: 14

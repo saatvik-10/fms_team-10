@@ -123,6 +123,7 @@ struct HistoricalPoint: Identifiable {
 
 struct Driver: Identifiable {
     let id: String
+    let backendId: String?
     let name: String
     let email: String // New field for manual entry
     let title: String
@@ -141,6 +142,58 @@ struct Driver: Identifiable {
     let activeRoute: String?
     let eta: String?
     let phone: String // New field
+    let dlFrontImageUrl: String?
+    let dlBackImageUrl: String?
+    let dlFrontImageKey: String?
+    let dlBackImageKey: String?
+
+    init(
+        id: String,
+        backendId: String? = nil,
+        name: String,
+        email: String,
+        title: String,
+        licenseNum: String,
+        licenseExp: String,
+        status: DriverStatus,
+        rating: Double,
+        efficiency: String,
+        totalTrips: Int,
+        totalHours: Int,
+        activityLog: [ActivityEvent],
+        currentVehicleID: String?,
+        vehicleClasses: [String],
+        activeRoute: String?,
+        eta: String?,
+        phone: String,
+        dlFrontImageUrl: String? = nil,
+        dlBackImageUrl: String? = nil,
+        dlFrontImageKey: String? = nil,
+        dlBackImageKey: String? = nil
+    ) {
+        self.id = id
+        self.backendId = backendId
+        self.name = name
+        self.email = email
+        self.title = title
+        self.licenseNum = licenseNum
+        self.licenseExp = licenseExp
+        self.status = status
+        self.rating = rating
+        self.efficiency = efficiency
+        self.totalTrips = totalTrips
+        self.totalHours = totalHours
+        self.activityLog = activityLog
+        self.currentVehicleID = currentVehicleID
+        self.vehicleClasses = vehicleClasses
+        self.activeRoute = activeRoute
+        self.eta = eta
+        self.phone = phone
+        self.dlFrontImageUrl = dlFrontImageUrl
+        self.dlBackImageUrl = dlBackImageUrl
+        self.dlFrontImageKey = dlFrontImageKey
+        self.dlBackImageKey = dlBackImageKey
+    }
     
     var identifier: UUID { UUID() }
 }
@@ -154,10 +207,12 @@ enum DriverStatus: String {
 
 struct MaintenancePersonnel: Identifiable {
     let id = UUID()
+    let backendId: String?
     let name: String
     let phone: String
     let email: String
     let dob: Date
+    let age: Int?
     let currentAssignment: String? // Vehicle ID
 }
 
@@ -172,6 +227,7 @@ struct ActivityEvent: Identifiable {
 
 struct Vehicle: Identifiable {
     let id: String
+    let backendId: String?
     let make: String
     let model: String
     let type: String
@@ -181,7 +237,6 @@ struct Vehicle: Identifiable {
     // Detail View Fields (New)
     let year: String
     let color: String
-    let odometer: String
     let operationalStatus: String
     var currentTrip: VehicleTrip?
     let assignedDriver: Driver?
@@ -190,8 +245,54 @@ struct Vehicle: Identifiable {
     let reports: [VehicleReport]
     let assessmentReason: String? // Direct link to dashboard assessment logic
     
-    let plateNumber: String // New field
+    let chassisNumber: String
     let registrationNumber: String // New field
+    let rcImageUrl: String?
+    let vehicleImageUrl: String?
+
+    init(
+        id: String,
+        backendId: String? = nil,
+        make: String,
+        model: String,
+        type: String,
+        status: VehicleStatus,
+        imageName: String,
+        year: String,
+        color: String,
+        operationalStatus: String,
+        currentTrip: VehicleTrip?,
+        assignedDriver: Driver?,
+        maintenance: VehicleMaintenance,
+        history: [VehicleTrip],
+        reports: [VehicleReport],
+        assessmentReason: String?,
+        chassisNumber: String,
+        registrationNumber: String,
+        rcImageUrl: String? = nil,
+        vehicleImageUrl: String? = nil
+    ) {
+        self.id = id
+        self.backendId = backendId
+        self.make = make
+        self.model = model
+        self.type = type
+        self.status = status
+        self.imageName = imageName
+        self.year = year
+        self.color = color
+        self.operationalStatus = operationalStatus
+        self.currentTrip = currentTrip
+        self.assignedDriver = assignedDriver
+        self.maintenance = maintenance
+        self.history = history
+        self.reports = reports
+        self.assessmentReason = assessmentReason
+        self.chassisNumber = chassisNumber
+        self.registrationNumber = registrationNumber
+        self.rcImageUrl = rcImageUrl
+        self.vehicleImageUrl = vehicleImageUrl
+    }
 }
 
 enum FleetTripStatus: String, Codable {
@@ -254,4 +355,14 @@ enum VehicleStatus: String {
     case inTransit = "IN TRANSIT"
     case idle = "IDLE"
     case maintenance = "UNDER MAINTENANCE"
+}
+
+struct ManagerProfileData: Identifiable {
+    let id: String
+    let name: String
+    let email: String
+    let phone: String?
+    let address: String?
+    let username: String
+    let role: String
 }

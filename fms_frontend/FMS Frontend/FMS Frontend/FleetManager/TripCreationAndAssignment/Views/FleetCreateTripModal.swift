@@ -76,14 +76,14 @@ struct FleetCreateTripModal: View {
                     Picker("Vehicle", selection: $viewModel.selectedVehicleID) {
                         Text("Select Vehicle").tag("")
                         ForEach(dataManager.vehicles.filter { $0.status == .idle }) { vehicle in
-                            Text("\(vehicle.id) - \(vehicle.model)").tag(vehicle.id)
+                            Text("\(vehicle.model)").tag(vehicle.backendId ?? vehicle.id)
                         }
                     }
                     
                     Picker("Driver", selection: $viewModel.selectedDriverID) {
                         Text("Select Driver").tag("")
                         ForEach(dataManager.drivers.filter { $0.status == .active }) { driver in
-                            Text(driver.name).tag(driver.id)
+                            Text(driver.name).tag(driver.backendId ?? driver.id)
                         }
                     }
                 }
@@ -154,10 +154,103 @@ struct FleetCreateTripModal: View {
         .sheet(isPresented: $viewModel.showingSourcePicker) {
             LocationPickerSheet(title: "Select Source", selectedLocation: $viewModel.sourceLocation, geofenceRadius: viewModel.geofenceRadius)
         }
-        .sheet(isPresented: $viewModel.showingDestinationPicker) {
-            LocationPickerSheet(title: "Select Destination", selectedLocation: $viewModel.destinationLocation, geofenceRadius: viewModel.geofenceRadius)
+        .sheet(isPresented: $showingDestinationPicker) {
+            LocationPickerSheet(title: "Select Destination", selectedLocation: $destinationLocation)
         }
-        .onChange(of: viewModel.sourceLocation) { _, _ in viewModel.fetchRealRoute() }
-        .onChange(of: viewModel.destinationLocation) { _, _ in viewModel.fetchRealRoute() }
+        .onChange(of: sourceLocation) { _, _ in fetchRealRoute() }
+        .onChange(of: destinationLocation) { _, _ in fetchRealRoute() }
+    }
+    
+    private var canCreate: Bool {
+        sourceLocation != nil && destinationLocation != nil && !selectedVehicleID.isEmpty && !selectedDriverID.isEmpty
+    }
+    
+    private func fetchRealRoute() {
+        guard let src = sourceLocation, let dst = destinationLocation else {
+            estimatedCost = 0
+            return
+        }
+        
+        isCalculatingRoute = true
+        
+        Task {
+            do {
+                let result = try await FleetDirectionsService.shared.fetchDirections(
+                    originCoord: src.coordinate,
+                    destCoord: dst.coordinate,
+                    originName: src.name,
+                    destName: dst.name
+                )
+                
+                // Parse distance and duration to numbers for cost calculation
+                // Distance string like "32.4 km"
+                let distStr = result.distance.replacingOccurrences(of: " km", with: "").replacingOccurrences(of: ",", with: "")
+                let dist = Double(distStr) ?? 50.0
+                
+                // Duration string like "45 mins" or "2 hours 15 mins"
+                var hours = 0.0
+                let durationParts = result.eta.components(separatedBy: " ")
+                if result.eta.contains("hour") {
+                    if let hrIndex = durationParts.firstIndex(where: { $0.contains("hour") }), hrIndex > 0 {
+                        hours += Double(durationParts[hrIndex - 1]) ?? 0.0
+                    }
+                    if let minIndex = durationParts.firstIndex(where: { $0.contains("min") }), minIndex > 0 {
+                        hours += (Double(durationParts[minIndex - 1]) ?? 0.0) / 60.0
+                    }
+                } else if let minIndex = durationParts.firstIndex(where: { $0.contains("min") }), minIndex > 0 {
+                    hours += (Double(durationParts[minIndex - 1]) ?? 0.0) / 60.0
+                }
+                if hours == 0 { hours = dist / 60.0 } // fallback
+                
+                await MainActor.run {
+                    self.estimatedDistance = dist
+                    self.estimatedDuration = hours
+                    self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
+                    self.isCalculatingRoute = false
+                }
+            } catch {
+                await MainActor.run {
+                    print("Route fetch error: \(error)")
+                    // Fallback to mock if API fails
+                    let dist = 100.0
+                    let hours = dist / 60.0
+                    self.estimatedDistance = dist
+                    self.estimatedDuration = hours
+                    self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
+                    self.isCalculatingRoute = false
+                }
+            }
+        }
+    }
+    
+    private func createTrip() {
+        guard let src = sourceLocation, let dst = destinationLocation else { return }
+        
+        let request = CreateTripRequest(
+            sourceLocation: src.name,
+            destinationLocation: dst.name,
+            productType: productName,
+            unit: loadUnit,
+            amount: Int(loadAmount) ?? 0,
+            vehicle: selectedVehicleID,
+            driver: selectedDriverID,
+            departureTime: ISO8601DateFormatter().string(from: scheduledDate)
+        )
+        
+        Task {
+            do {
+                _ = try await TripAPI.shared.createTrip(request)
+                
+                // Refresh backend state
+                try? await dataManager.refreshVehicles()
+                try? await dataManager.refreshDrivers()
+                
+                await MainActor.run {
+                    isPresented = false
+                }
+            } catch {
+                print("Failed to create trip via API: \(error)")
+            }
+        }
     }
 }

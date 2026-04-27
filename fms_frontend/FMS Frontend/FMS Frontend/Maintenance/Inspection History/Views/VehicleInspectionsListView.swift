@@ -228,7 +228,7 @@ struct VehicleInspectionsListView: View {
                     type: .maintenance,
                     vehicleType: .truck,
                     status: .completed,
-                    priority: .critical,
+                    priority: .high,
                     items: TripInspection.mockItems(for: .truck),
                     maintenanceStaffId: "STAFF-02"
                 )),

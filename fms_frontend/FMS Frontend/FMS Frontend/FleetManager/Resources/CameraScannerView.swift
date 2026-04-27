@@ -5,7 +5,7 @@ import CoreImage
 
 struct CameraScannerView: View {
     @Binding var isPresented: Bool
-    var didFinishScanning: (String, String, String, String) -> Void
+    var didFinishScanning: (String, String, String, String, Data?, Data?) -> Void
     
     @State private var frontItem: PhotosPickerItem?
     @State private var backItem: PhotosPickerItem?
@@ -130,7 +130,9 @@ struct CameraScannerView: View {
                     result.name ?? "",
                     result.dlNumber ?? "",
                     result.expiryDate ?? "",
-                    result.vehicleClasses ?? ""
+                    result.vehicleClasses ?? "",
+                    frontImage?.jpegData(compressionQuality: 0.7),
+                    backImage?.jpegData(compressionQuality: 0.7)
                 )
             }
         }
@@ -269,7 +271,7 @@ struct DLData {
 
 struct RCScannerView: View {
     @Binding var isPresented: Bool
-    var didFinishScanning: (String, String, String, String) -> Void
+    var didFinishScanning: (String, String, String, String, Data?) -> Void
     
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
@@ -387,7 +389,8 @@ struct RCScannerView: View {
                     result.owner ?? "",
                     result.regNumber ?? "",
                     result.model ?? "",
-                    result.chassis ?? result.engineNumber ?? ""
+                    result.chassis ?? result.engineNumber ?? "",
+                    image.jpegData(compressionQuality: 0.7)
                 )
             }
         }

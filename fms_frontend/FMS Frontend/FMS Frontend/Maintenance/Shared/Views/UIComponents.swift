@@ -75,7 +75,6 @@ struct PriorityBadge: View {
     
     var color: Color {
         switch priority.lowercased() {
-        case "critical": return AppColors.priorityCritical
         case "high": return AppColors.priorityHigh
         case "medium": return AppColors.priorityMedium
         default: return AppColors.priorityLow
@@ -127,7 +126,6 @@ struct WorkOrderTaskCard: View {
 
     private func priorityColor(_ priority: WorkOrderPriority) -> Color {
         switch priority {
-        case .critical: return .red
         case .high:     return .orange
         case .medium:   return .blue
         case .low:      return .gray
@@ -354,7 +352,6 @@ struct InspectionTaskCard: View {
 
     private func priorityColor(_ priority: WorkOrderPriority) -> Color {
         switch priority {
-        case .critical: return .red
         case .high:     return .orange
         case .medium:   return .blue
         case .low:      return .gray

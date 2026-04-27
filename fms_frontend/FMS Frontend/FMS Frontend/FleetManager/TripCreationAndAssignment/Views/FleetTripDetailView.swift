@@ -144,7 +144,7 @@ struct FleetTripDetailView: View {
                                     VStack(spacing: 0) {
                                         FleetDetailItemRow(icon: "tag", label: "Name", value: "\(vehicle.make) \(vehicle.model)", iconColor: .blue)
                                         Divider()
-                                        FleetDetailItemRow(icon: "number", label: "Plate", value: vehicle.plateNumber, iconColor: .orange)
+                                        FleetDetailItemRow(icon: "number", label: "Chassis", value: vehicle.chassisNumber, iconColor: .orange)
                                         Divider()
                                         FleetDetailItemRow(icon: "doc.text", label: "Reg", value: vehicle.registrationNumber, iconColor: .purple)
                                     }
@@ -213,8 +213,8 @@ struct FleetTripDetailView: View {
                                     sourceValue: trip.productType ?? "General",
                                     destLabel: "NET WEIGHT",
                                     destValue: trip.loadAmount ?? "TBD",
-                                    footerLabel: "Transit Category",
-                                    footerValue: (trip.productType ?? "GEN").prefix(3).uppercased()
+                                    footerLabel: nil,
+                                    footerValue: nil
                                 )
                             }
                             .padding(.horizontal, 2)
@@ -248,14 +248,7 @@ struct FleetTripDetailView: View {
             Text("Are you sure you want to end this trip? The vehicle will be marked as idle.")
         }
         .task {
-            locationManager.requestPermission()
             await loadRouteData()
-        }
-        .onChange(of: locationManager.lastLocation?.latitude) { _ in
-            // Re-fetch route if current location significantly changes and it is an active trip
-            if tripOverride == nil {
-                Task { await loadRouteData() }
-            }
         }
     }
     
@@ -263,14 +256,18 @@ struct FleetTripDetailView: View {
         if let trip = tripOverride {
             return "Trip Completed on \(trip.date ?? "Past")"
         }
-        if let trip = vehicle.currentTrip {
-            switch trip.status {
-            case .scheduled: return "Scheduled: \(trip.origin) to \(trip.destination)"
-            case .inTransit: return "\(vehicle.id) is currently In Transit"
-            case .completed: return "Trip Completed"
-            }
-        }
+        // if let trip = vehicle.currentTrip {
+        //     switch trip.status {
+        //     case .scheduled: return "Scheduled: \(trip.origin) to \(trip.destination)"
+        //     case .inTransit: return "\(vehicle.id) is currently In Transit"
+        //     case .completed: return "Trip Completed"
+        //     }
+        // }
         return "Vehicle is currently Idle"
+        guard let trip = displayTrip else {
+            return vehicle.id
+        }
+        return "\(vehicle.id): \(trip.origin) to \(trip.destination)"
     }
     
     private func loadRouteData() async {
@@ -297,19 +294,10 @@ struct FleetTripDetailView: View {
         do {
             let result: FleetDirectionsResult
             
-            // Fallback for older mock trips
-            if tripOverride == nil {
-                result = try await FleetDirectionsService.shared.fetchDirections(
-                    origin: "Bangalore",
-                    destination: "Coorg",
-                    waypointCoord: locationManager.lastLocation
-                )
-            } else {
-                result = try await FleetDirectionsService.shared.fetchDirections(
-                    origin: trip.origin,
-                    destination: trip.destination
-                )
-            }
+            result = try await FleetDirectionsService.shared.fetchDirections(
+                origin: trip.origin,
+                destination: trip.destination
+            )
             
             await MainActor.run {
                 self.encodedPolyline = result.polyline
@@ -370,8 +358,8 @@ struct LogisticsTicketCard: View {
     let sourceValue: String
     let destLabel: String
     let destValue: String
-    let footerLabel: String
-    let footerValue: String
+    let footerLabel: String?
+    let footerValue: String?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -441,24 +429,25 @@ struct LogisticsTicketCard: View {
                     }
                 }
                 
-                Divider()
-                
-                // Footer
-                HStack {
-                    HStack(spacing: 6) {
-                        Image(systemName: title == "ROUTE SUMMARY" ? "clock.fill" : "scalemass.fill")
+                if let footerLabel, let footerValue {
+                    Divider()
+                    
+                    HStack {
+                        HStack(spacing: 6) {
+                            Image(systemName: title == "ROUTE SUMMARY" ? "clock.fill" : "scalemass.fill")
+                                .font(AppFonts.caption2)
+                            Text(footerLabel)
+                                .font(AppFonts.caption2)
+                        }
+                        .foregroundColor(.gray)
+                        
+                        Spacer()
+                        
+                        Text(footerValue)
                             .font(AppFonts.caption2)
-                        Text(footerLabel)
-                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
+                            .foregroundColor(AppColors.primary)
                     }
-                    .foregroundColor(.gray)
-                    
-                    Spacer()
-                    
-                    Text(footerValue)
-                        .font(AppFonts.caption2)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppColors.primary)
                 }
             }
             .padding(20)

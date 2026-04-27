@@ -111,7 +111,7 @@ struct MaintenanceDashboardView: View {
             HStack(spacing: 12) {
                 NavigationLink(destination: PendingWorkOrdersListView()) {
                     FleetAnalysisCard(
-                        title: "Pending Orders",
+                        title: "Pending Work Orders",
                         count: "\(viewModel.pendingOrdersCount)",
                         color: AppColors.primary
                     )
@@ -151,7 +151,8 @@ struct MaintenanceDashboardView: View {
                     title: "Update Inventory",
                     icon: "shippingbox.fill",
                     color: .orange,
-                    action: { showingFileImporter = true }
+                    action: { showingFileImporter = true },
+                    emphasize: true
                 )
             }
             .padding(.horizontal, 20)

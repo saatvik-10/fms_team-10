@@ -10,16 +10,16 @@ import Combine
 
 @MainActor
 final class AppSessionStore: ObservableObject {
-    //    let objectWillChange: ObservableObjectPublisher
-    
-    
     enum State: Equatable {
         case restoring
         case unauthenticated
         case authenticated(AppUserRole)
     }
     
+    @Published var currentRoleValue: AppUserRole = .none
     @Published private(set) var state: State = .restoring
+    private(set) var managerProfile: ManagerProfileData?
+    private(set) var driverProfile: UserProfile?
     
     private let authAPI: AuthAPI
     private var didRestoreSession = false
@@ -35,10 +35,26 @@ final class AppSessionStore: ObservableObject {
         return .none
     }
     
+    var currentRoleBinding: Binding<AppUserRole> {
+        Binding(
+            get: { self.currentRole },
+            set: { newRole in
+                if newRole == .none {
+                    self.logout()
+                } else {
+                    self.setAuthenticated(role: newRole)
+                }
+            }
+        )
+    }
+    
     func restoreSessionIfNeeded() async {
         guard !didRestoreSession else { return }
         didRestoreSession = true
-        
+        await fetchProfile()
+    }
+    
+    func fetchProfile() async {
         print("🟡 Checking for token...")
         
         guard let token = authAPI.getCurrentToken(), !token.isEmpty else {
@@ -50,8 +66,24 @@ final class AppSessionStore: ObservableObject {
         print("🟢 Token found:", token)
         
         do {
-            let profile = try await authAPI.getProfile().profile
+            let profileResponse = try await authAPI.getProfile()
+            let profile = profileResponse.profile
             print("🟢 Profile fetched — role:", profile.role)
+            
+            if profile.role == .manager || profile.role == .superAdmin {
+                managerProfile = ManagerProfileData(
+                    id: profile.id,
+                    name: profile.name ?? "Manager",
+                    email: profile.email,
+                    phone: profile.phone,
+                    address: profile.address,
+                    username: profile.username ?? "",
+                    role: profile.role.rawValue
+                )
+            } else if profile.role == .driver {
+                driverProfile = profile
+            }
+            
             state = .authenticated(AppUserRole(profile.role))
         } catch {
             print("🔴 Session restore failed:", error)
@@ -59,6 +91,7 @@ final class AppSessionStore: ObservableObject {
             state = .unauthenticated
         }
     }
+    
     func setAuthenticated(role: AppUserRole) {
         guard role != .none else {
             logout()
@@ -69,6 +102,7 @@ final class AppSessionStore: ObservableObject {
     
     func logout() {
         authAPI.logout()
+        managerProfile = nil
         state = .unauthenticated
     }
 }
@@ -112,18 +146,20 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
             case .unauthenticated:
-                LoginView(userRole: userRoleBinding)
+                LoginView(userRole: userRoleBinding, session: session)
                 
             case let .authenticated(role):
                 switch role {
                 case .driver:
                     DashboardView(userRole: userRoleBinding)
+                        .environmentObject(session)
                 case .maintenance:
                     MaintenanceTabView(isLoggedIn: maintenanceLoggedInBinding)
                 case .manager:
-                    FleetManagerMainView()
+                    FleetManagerMainView(profile: session.managerProfile)
+                        .environmentObject(session)
                 case .none:
-                    LoginView(userRole: userRoleBinding)
+                    LoginView(userRole: userRoleBinding, session: session)
                 }
             }
         }

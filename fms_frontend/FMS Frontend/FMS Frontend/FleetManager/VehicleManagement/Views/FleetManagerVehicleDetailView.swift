@@ -28,29 +28,59 @@ private let cityCoordinates: [String: CLLocationCoordinate2D] = [
 ]
 
 // MARK: - Google Map (Vehicle Management local)
-private struct FleetVehicleMapView: UIViewRepresentable {
+struct AsyncFleetVehicleMap: View {
     let vehicle: Vehicle
-    func makeUIView(context: Context) -> GMSMapView {
-        let m = GMSMapView(options: GMSMapViewOptions())
-        m.isUserInteractionEnabled = false
-        m.settings.compassButton    = false
-        m.settings.myLocationButton = false
-        return m
+    @State private var routeResult: FleetDirectionsResult?
+    @State private var isLoading = false
+
+    var body: some View {
+        Group {
+            if isLoading {
+                ProgressView("Loading Map...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.white)
+            } else if let result = routeResult {
+                FleetGoogleMapView(
+                    encodedPolyline: result.polyline,
+                    originCoord: result.originCoord,
+                    destCoord: result.destCoord,
+                    originLabel: result.originName,
+                    destLabel: result.destName
+                )
+            } else {
+                // Fallback / Idle State
+                FleetGoogleMapView(
+                    encodedPolyline: "",
+                    originCoord: CLLocationCoordinate2D(latitude: 20.5937, longitude: 78.9629), // Center of India
+                    destCoord: nil,
+                    originLabel: "",
+                    destLabel: ""
+                )
+            }
+        }
+        .onAppear { loadRoute() }
+        .onChange(of: vehicle.currentTrip?.origin) { _, _ in loadRoute() }
     }
-    func updateUIView(_ uiView: GMSMapView, context: Context) {
-        uiView.clear()
-        let navy = UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1)
-        if let trip = vehicle.currentTrip,
-           let o = cityCoordinates[trip.origin],
-           let d = cityCoordinates[trip.destination] {
-            let om = GMSMarker(position: o); om.icon = GMSMarker.markerImage(with: .systemGray); om.map = uiView
-            let dm = GMSMarker(position: d); dm.icon = GMSMarker.markerImage(with: navy); dm.map = uiView
-            uiView.animate(with: GMSCameraUpdate.fit(
-                GMSCoordinateBounds(coordinate: o, coordinate: d), withPadding: 60))
-        } else {
-            let c = CLLocationCoordinate2D(latitude: 20.5937, longitude: 78.9629)
-            let mm = GMSMarker(position: c); mm.icon = GMSMarker.markerImage(with: navy); mm.map = uiView
-            uiView.animate(to: GMSCameraPosition.camera(withTarget: c, zoom: 4.5))
+
+    private func loadRoute() {
+        guard let trip = vehicle.currentTrip else { return }
+        isLoading = true
+        Task {
+            do {
+                let result = try await FleetDirectionsService.shared.fetchDirections(
+                    origin: trip.origin,
+                    destination: trip.destination
+                )
+                await MainActor.run {
+                    self.routeResult = result
+                    self.isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    print("Map load error: \(error)")
+                    self.isLoading = false
+                }
+            }
         }
     }
 }
@@ -100,6 +130,9 @@ struct FleetManagerVehicleDetailView: View {
     @EnvironmentObject var dataManager: FleetDataManager
     @State private var showingEditModal   = false
     @State private var showingDeleteAlert = false
+    @State private var routeEta: String = ""
+    @State private var routeDistance: String = ""
+    @State private var routeDuration: String = ""
 
     private var hasActiveTrip: Bool {
         vehicle.status == .inTransit && vehicle.currentTrip != nil
@@ -117,7 +150,7 @@ struct FleetManagerVehicleDetailView: View {
                     VStack(spacing: 20) {
 
                         // ── Map ────────────────────────────────────────────
-                        FleetVehicleMapView(vehicle: vehicle)
+                        AsyncFleetVehicleMap(vehicle: vehicle)
                             .frame(height: 230)
                             .cornerRadius(20)
                             .modifier(AppTheme.cardShadow())
@@ -125,31 +158,27 @@ struct FleetManagerVehicleDetailView: View {
                         // ── Row 1: Vehicle Info — always full width ────────
                         vehicleInfoCard
 
-                        // ── Row 2 ─────────────────────────────────────────
-                        // In-transit: Driver (50%) | [Active Trip + Maintenance stacked] (50%)
-                        // Idle / Maintenance: Maintenance full width
+                        // ── Row 2: Assigned Driver | Active Trip ──────────
                         if hasDriver, let driver = vehicle.assignedDriver {
                             HStack(alignment: .top, spacing: 18) {
-                                // Left: driver card fills full row height
                                 driverCard(driver: driver)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 205)
 
-                                // Right: active trip + maintenance stacked, share the same total height
-                                VStack(spacing: 18) {
-                                    if let trip = vehicle.currentTrip {
-                                        activeTripCard(trip: trip)
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    }
-                                    maintenanceCard
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                if let trip = vehicle.currentTrip {
+                                    activeTripCard(trip: trip)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 205)
                                 }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
-                        } else {
-                            maintenanceCard
                         }
 
-                        // ── Row 3: Recent History | Past Reports — always ─
+                        // ── Row 3: Next Service full width ────────────────
+                        maintenanceCard
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 150)
+
+                        // ── Row 4: Recent History | Past Reports — always ─
                         SideBySide(recentHistoryCard, pastReportsCard)
                     }
                     .padding(20)
@@ -162,13 +191,21 @@ struct FleetManagerVehicleDetailView: View {
         .alert("Delete Vehicle", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
-                if let idx = dataManager.vehicles.firstIndex(where: { $0.id == vehicle.id }) {
-                    dataManager.vehicles.remove(at: idx)
+                Task {
+                    await dataManager.deleteVehicle(vehicle)
+                    await MainActor.run {
+                        dismiss()
+                    }
                 }
-                dismiss()
             }
         } message: {
             Text("Permanently delete \(vmPlate(for: vehicle.id))? This cannot be undone.")
+        }
+        .task {
+            await loadRouteMetrics()
+        }
+        .onChange(of: vehicle.currentTrip?.origin) { _, _ in
+            Task { await loadRouteMetrics() }
         }
     }
 
@@ -202,7 +239,7 @@ struct FleetManagerVehicleDetailView: View {
         CardWrapper {
             VStack(alignment: .leading, spacing: 0) {
 
-                // ── Row A: Vehicle Number | Odometer ──────────────────
+                // ── Row A: Vehicle Number | Owner ──────────────────
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("VEHICLE NUMBER").cardLabel()
@@ -211,24 +248,24 @@ struct FleetManagerVehicleDetailView: View {
                             .tracking(0.8)
                     }
                     Spacer()
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("OWNER").cardLabel()
+                        Text(vehicle.make)
+                            .font(.system(size: 15, weight: .bold))
+                    }
                 }
                 .padding(22)
 
                 Divider().padding(.horizontal, 22)
 
-                // ── Row B: Model | Colour ─────────────────────────────
+                // ── Row B: Model ─────────────────────────────
                 HStack(alignment: .top, spacing: 0) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("MODEL").cardLabel()
-                        Text("\(vehicle.year) \(vehicle.make) \(vehicle.model)")
+                        Text(vehicle.model)
                             .font(.system(size: 15, weight: .bold))
                     }
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("COLOUR").cardLabel()
-                        Text(vehicle.color)
-                            .font(.system(size: 15, weight: .bold))
-                    }
                 }
                 .padding(22)
             }
@@ -243,11 +280,14 @@ struct FleetManagerVehicleDetailView: View {
                 HStack(alignment: .top) {
                     Text("ACTIVE TRIP").cardLabel()
                     Spacer()
-                    if !trip.eta.isEmpty {
+                    let etaValue = routeEta.isEmpty ? trip.eta : routeEta
+                    if !etaValue.isEmpty {
                         VStack(alignment: .trailing, spacing: 1) {
                             Text("ETA").cardLabel()
-                            Text(trip.eta)
-                                .font(.system(size: 22, weight: .black))
+                            Text(etaValue)
+                                .font(.system(size: 18, weight: .black))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                                 .foregroundColor(AppTheme.primary)
                         }
                     }
@@ -258,7 +298,9 @@ struct FleetManagerVehicleDetailView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("FROM").cardLabel()
                         Text(trip.origin)
-                            .font(.system(size: 26, weight: .black))
+                            .font(.system(size: 18, weight: .black))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.65)
                     }
                     Spacer()
                     Image(systemName: "arrow.right")
@@ -269,27 +311,21 @@ struct FleetManagerVehicleDetailView: View {
                     VStack(alignment: .trailing, spacing: 3) {
                         Text("TO").cardLabel()
                         Text(trip.destination)
-                            .font(.system(size: 26, weight: .black))
+                            .font(.system(size: 18, weight: .black))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.65)
                     }
                 }
-                // Distance / Duration row
-                if trip.distance != nil || trip.duration != nil {
-                    Divider()
-                    HStack(spacing: 24) {
-                        if let dist = trip.distance {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("DISTANCE").cardLabel()
-                                Text(dist).font(.system(size: 16, weight: .bold))
-                            }
-                        }
-                        if let dur = trip.duration {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("DURATION").cardLabel()
-                                Text(dur).font(.system(size: 16, weight: .bold))
-                            }
-                        }
-                        Spacer()
+                Divider()
+                HStack(spacing: 24) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("DISTANCE").cardLabel()
+                        Text(routeDistance.isEmpty ? (trip.distance ?? "Calculating") : routeDistance)
+                            .font(.system(size: 14, weight: .bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
+                    Spacer()
                 }
             }
             .padding(22)
@@ -312,7 +348,6 @@ struct FleetManagerVehicleDetailView: View {
                         )
                     VStack(alignment: .leading, spacing: 4) {
                         Text(driver.name).font(.system(size: 17, weight: .bold))
-                        Text(driver.id).font(.system(size: 11)).foregroundColor(.gray)
                         Text(driver.title.uppercased()).cardLabel()
                     }
                     Spacer()
@@ -336,6 +371,36 @@ struct FleetManagerVehicleDetailView: View {
                 }
             }
             .padding(22)
+        }
+    }
+
+    private func loadRouteMetrics() async {
+        guard let trip = vehicle.currentTrip else {
+            await MainActor.run {
+                routeEta = ""
+                routeDistance = ""
+                routeDuration = ""
+            }
+            return
+        }
+
+        do {
+            let route = try await FleetDirectionsService.shared.fetchDirections(
+                origin: trip.origin,
+                destination: trip.destination
+            )
+            await MainActor.run {
+                routeEta = route.eta
+                routeDistance = route.distance
+                routeDuration = route.eta
+            }
+        } catch {
+            await MainActor.run {
+                routeEta = trip.eta
+                routeDistance = trip.distance ?? ""
+                routeDuration = trip.duration ?? ""
+            }
+            print("Vehicle route metrics failed: \(error)")
         }
     }
 

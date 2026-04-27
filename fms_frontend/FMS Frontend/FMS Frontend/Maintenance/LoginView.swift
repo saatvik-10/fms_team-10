@@ -7,6 +7,7 @@ import SwiftUI
 
 struct LoginView: View {
     @Binding var userRole: AppUserRole
+    @ObservedObject var session: AppSessionStore
     
     @State private var username = ""
     @State private var password = ""
@@ -76,7 +77,12 @@ struct LoginView: View {
                 TwoFactorView(
                     userRole: $userRole,
                     otpEmail: pendingEmail,
-                    roleToSet: pendingRole
+                    roleToSet: pendingRole,
+                    onAuthenticated: {
+                        Task {
+                            await session.fetchProfile()
+                        }
+                    }
                 )
             }
             .onTapGesture {
@@ -289,5 +295,5 @@ struct LoginView: View {
 }
 
 #Preview {
-    LoginView(userRole: .constant(.none))
+    LoginView(userRole: .constant(.none), session: AppSessionStore())
 }

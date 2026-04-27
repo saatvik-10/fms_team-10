@@ -116,4 +116,76 @@ export class Maintenance {
       201,
     );
   }
+
+  async getMaintenances(c: Context) {
+    const userId = c.get('userId') as string;
+
+    const maintenances = await prisma.maintenance.findMany({
+      where: {
+        user: {
+          createdById: userId,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+
+    return c.json({
+      maintenances: maintenances.map((maintenance) => ({
+        id: maintenance.id,
+        name: maintenance.name,
+        email: maintenance.email,
+        username: maintenance.user.username,
+        phone: maintenance.phone,
+        dob: maintenance.dob,
+        age: calculateAge(maintenance.dob),
+        createdAt: maintenance.createdAt,
+      })),
+    });
+  }
+
+  async deleteMaintenance(c: Context) {
+    const managerId = c.get('userId') as string;
+    const maintenanceId = c.req.param('maintenanceId');
+
+    if (!maintenanceId) {
+      return c.json({ err: 'Maintenance id is required' }, 400);
+    }
+
+    const maintenance = await prisma.maintenance.findFirst({
+      where: {
+        id: maintenanceId,
+        user: {
+          createdById: managerId,
+        },
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+    if (!maintenance) {
+      return c.json({ err: 'Maintenance profile not found' }, 404);
+    }
+
+    await prisma.$transaction([
+      prisma.maintenance.delete({
+        where: {
+          id: maintenanceId,
+        },
+      }),
+      prisma.user.delete({
+        where: {
+          id: maintenance.userId,
+        },
+      }),
+    ]);
+
+    return c.json({ message: 'Maintenance profile deleted successfully' });
+  }
 }
