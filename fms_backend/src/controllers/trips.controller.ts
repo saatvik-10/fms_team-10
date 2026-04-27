@@ -124,17 +124,38 @@ export class Trip {
     async getTrip(c: Context) {
         const tripId = c.req.query('id');
         const userId = c.get('userId') as string;
+        const role = c.get('role') as string;
 
         if (!tripId) {
             return c.json({ err: 'Trip id is required as query param: ?id=' }, 400);
         }
 
-        const trip = await prisma.trips.findFirst({
-            where: {
-                id: tripId,
-                createdById: userId,
-            },
-        });
+        let trip = null;
+
+        if (role === 'MANAGER') {
+            trip = await prisma.trips.findFirst({
+                where: {
+                    id: tripId,
+                    createdById: userId,
+                },
+            });
+        } else if (role === 'DRIVER') {
+            const driver = await prisma.driver.findUnique({
+                where: { userId },
+                select: { id: true },
+            });
+
+            if (!driver) {
+                return c.json({ err: 'Driver profile not found' }, 404);
+            }
+
+            trip = await prisma.trips.findFirst({
+                where: {
+                    id: tripId,
+                    driver: driver.id,
+                },
+            });
+        }
 
         if (!trip) {
             return c.json({ err: 'Trip not found' }, 404);
@@ -155,5 +176,69 @@ export class Trip {
         });
 
         return c.json({ trips });
+    }
+
+    async getDriverTrips(c: Context) {
+        const userId = c.get('userId') as string;
+        const driver = await prisma.driver.findUnique({
+            where: { userId },
+            select: { id: true },
+        });
+
+        if (!driver) {
+            return c.json({ trips: [] });
+        }
+
+        const trips = await prisma.trips.findMany({
+            where: {
+                driver: driver.id,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+
+        const vehicleIds = Array.from(new Set(trips.map((trip) => trip.vehicle)));
+
+        const [vehicles, vehicleTrips] = await Promise.all([
+            prisma.vehicle.findMany({
+                where: { id: { in: vehicleIds } },
+                select: {
+                    id: true,
+                    registrationNumber: true,
+                },
+            }),
+            prisma.vehicleTrip.findMany({
+                where: { vehicleId: { in: vehicleIds } },
+                select: {
+                    vehicleId: true,
+                    status: true,
+                    loadAmount: true,
+                    date: true,
+                    distance: true,
+                },
+            }),
+        ]);
+
+        const vehicleById = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle]));
+        const tripByVehicleId = new Map(
+            vehicleTrips.map((vehicleTrip) => [vehicleTrip.vehicleId, vehicleTrip]),
+        );
+
+        const enrichedTrips = trips.map((trip) => {
+            const vehicle = vehicleById.get(trip.vehicle);
+            const vehicleTrip = tripByVehicleId.get(trip.vehicle);
+
+            return {
+                ...trip,
+                vehicleRegistrationNumber: vehicle?.registrationNumber ?? null,
+                status: vehicleTrip?.status ?? 'PENDING',
+                loadAmount: vehicleTrip?.loadAmount ?? null,
+                tripDate: vehicleTrip?.date ?? trip.departureTime,
+                tripDistance: vehicleTrip?.distance ?? null,
+            };
+        });
+
+        return c.json({ trips: enrichedTrips });
     }
 }
