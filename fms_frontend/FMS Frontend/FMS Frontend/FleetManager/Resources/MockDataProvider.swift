@@ -172,7 +172,6 @@ struct MockDataProvider {
             imageName: "truck_freightliner_m2",
             year: "2023",
             color: "Silver Birch Metallic",
-            odometer: "42,892",
             operationalStatus: "OPERATIONAL",
             currentTrip: VehicleTrip(vehicleID: "TRK-9042", origin: "DEL", destination: "JAI", progress: 0.72, eta: "4:15 PM", date: "Today", distance: "250 KM", duration: "4 HRS", costEstimate: "₹8500.00", startTime: Date(), status: .inTransit, productType: "Steel Coils", loadAmount: "25 Tons"),
             assignedDriver: drivers[0],
@@ -184,7 +183,7 @@ struct MockDataProvider {
             ],
             reports: [],
             assessmentReason: "Route Optimized: Fuel Savings +12%",
-            plateNumber: "DL 1C AB 9042",
+            chassisNumber: "CHS-9042-IND",
             registrationNumber: "REG-IND-442033"
         ),
         Vehicle(
@@ -196,7 +195,6 @@ struct MockDataProvider {
             imageName: "van_rivian",
             year: "2024",
             color: "Deep Blue",
-            odometer: "3,420",
             operationalStatus: "OPERATIONAL",
             currentTrip: nil,
             assignedDriver: drivers[1],
@@ -207,7 +205,7 @@ struct MockDataProvider {
             ],
             reports: [],
             assessmentReason: nil,
-            plateNumber: "KA 01 EV 9910",
+            chassisNumber: "CHS-9910-EV",
             registrationNumber: "REG-IND-112099"
         ),
         Vehicle(
@@ -219,7 +217,6 @@ struct MockDataProvider {
             imageName: "truck_freightliner_m2",
             year: "2022",
             color: "White",
-            odometer: "89,120",
             operationalStatus: "MAINTENANCE",
             currentTrip: nil,
             assignedDriver: drivers[2],
@@ -230,16 +227,16 @@ struct MockDataProvider {
             ],
             reports: [],
             assessmentReason: nil,
-            plateNumber: "MH 12 XB 1088",
+            chassisNumber: "CHS-1088-TRK",
             registrationNumber: "REG-IND-882012"
         )
     ]
     
     // MARK: - Maintenance Personnel Dataset
     static let maintenancePersonnel: [MaintenancePersonnel] = [
-        MaintenancePersonnel(name: "Arjun Mehta", phone: "+91 98765 43210", email: "arjun.m@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1989, month: 5, day: 15)) ?? Date(), currentAssignment: "TRK-9042"),
-        MaintenancePersonnel(name: "Sunita Deshmukh", phone: "+91 87654 32109", email: "sunita.d@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1994, month: 8, day: 22)) ?? Date(), currentAssignment: "EV-9910"),
-        MaintenancePersonnel(name: "Rajesh Khanna", phone: "+91 76543 21098", email: "rajesh.k@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1981, month: 12, day: 10)) ?? Date(), currentAssignment: nil),
-        MaintenancePersonnel(name: "Kavita Singh", phone: "+91 65432 10987", email: "kavita.s@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1992, month: 3, day: 30)) ?? Date(), currentAssignment: "VN-4209")
+        MaintenancePersonnel(backendId: nil, name: "Arjun Mehta", phone: "+91 98765 43210", email: "arjun.m@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1989, month: 5, day: 15)) ?? Date(), age: 37, currentAssignment: "TRK-9042"),
+        MaintenancePersonnel(backendId: nil, name: "Sunita Deshmukh", phone: "+91 87654 32109", email: "sunita.d@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1994, month: 8, day: 22)) ?? Date(), age: 31, currentAssignment: "EV-9910"),
+        MaintenancePersonnel(backendId: nil, name: "Rajesh Khanna", phone: "+91 76543 21098", email: "rajesh.k@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1981, month: 12, day: 10)) ?? Date(), age: 44, currentAssignment: nil),
+        MaintenancePersonnel(backendId: nil, name: "Kavita Singh", phone: "+91 65432 10987", email: "kavita.s@fms.com", dob: Calendar.current.date(from: DateComponents(year: 1992, month: 3, day: 30)) ?? Date(), age: 34, currentAssignment: "VN-4209")
     ]
 }
