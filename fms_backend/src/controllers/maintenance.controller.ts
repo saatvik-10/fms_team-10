@@ -1,5 +1,8 @@
 import type { Context } from 'hono';
-import { createMaintenanceSchema } from '../validators/maintenance.validator';
+import {
+  createMaintenanceSchema,
+  updateMaintenanceSchema,
+} from '../validators/maintenance.validator';
 import { nanoid } from 'nanoid';
 import { prisma } from '../../prisma';
 import { hashPassword } from '../lib/hashPassword';
@@ -187,5 +190,113 @@ export class Maintenance {
     ]);
 
     return c.json({ message: 'Maintenance profile deleted successfully' });
+  }
+
+  async updateMaintenance(c: Context) {
+    const managerId = c.get('userId') as string;
+    const maintenanceId = c.req.param('maintenanceId');
+
+    if (!maintenanceId) {
+      return c.json({ err: 'Maintenance id is required' }, 400);
+    }
+
+    const body = await c.req.json();
+    const result = updateMaintenanceSchema.safeParse(body);
+
+    if (!result.success) {
+      return c.json(
+        { err: 'Invalid input', details: result.error.flatten() },
+        400,
+      );
+    }
+
+    const { name, email, phone, dob } = result.data;
+
+    const existingMaintenance = await prisma.maintenance.findFirst({
+      where: {
+        id: maintenanceId,
+        user: {
+          createdById: managerId,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!existingMaintenance) {
+      return c.json({ err: 'Maintenance profile not found' }, 404);
+    }
+
+    if (email && email !== existingMaintenance.email) {
+      const existingEmail = await prisma.user.findUnique({
+        where: { email },
+      });
+      if (existingEmail) {
+        return c.json({ err: 'Email already in use' }, 409);
+      }
+    }
+
+    if (phone && phone !== existingMaintenance.phone) {
+      const existingPhone = await prisma.maintenance.findUnique({
+        where: { phone },
+      });
+      if (existingPhone) {
+        return c.json({ err: 'Phone already in use' }, 409);
+      }
+    }
+
+    const updateData: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      dob?: Date;
+      user?: {
+        update: {
+          email?: string;
+        };
+      };
+    } = {};
+
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+    if (dob) updateData.dob = new Date(dob);
+    if (email) {
+      updateData.email = email;
+      updateData.user = {
+        update: {
+          email,
+        },
+      };
+    }
+
+    const updated = await prisma.maintenance.update({
+      where: {
+        id: maintenanceId,
+      },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        dob: true,
+        age: true,
+        createdAt: true,
+      },
+    });
+
+    return c.json({
+      message: 'Maintenance profile updated successfully',
+      maintenance: {
+        ...updated,
+        age: calculateAge(updated.dob),
+      },
+    });
   }
 }

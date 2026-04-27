@@ -19,6 +19,13 @@ maintenanceRoute.get(
   controller.getMaintenances,
 );
 
+maintenanceRoute.patch(
+  '/update-maintenance/:maintenanceId',
+  proxyAuth,
+  requireRole(ROLES.MANAGER),
+  controller.updateMaintenance,
+);
+
 maintenanceRoute.delete(
   '/:maintenanceId',
   proxyAuth,
@@ -27,4 +34,3 @@ maintenanceRoute.delete(
 );
 
 export default maintenanceRoute;
-
