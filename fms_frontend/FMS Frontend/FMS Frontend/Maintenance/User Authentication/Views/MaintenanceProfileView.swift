@@ -47,7 +47,7 @@ struct MaintenanceProfileView: View {
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         
-                        Text("ID: \(profile.id)")
+                        Text("ID: \(profile?.id ?? "-")")
                             .font(.caption.monospaced())
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
@@ -56,11 +56,11 @@ struct MaintenanceProfileView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 12) {
-                        AppProfileInfoRow(label: "Username", value: profile.username)
-                        AppProfileInfoRow(label: "Email", value: profile.email)
-                        AppProfileInfoRow(label: "Phone", value: profile.phone)
-                        AppProfileInfoRow(label: "Address", value: profile.address ?? "Not Provided")
-                        AppProfileInfoRow(label: "Role", value: profile.role.rawValue)
+                        AppProfileInfoRow(label: "Username", value: profile?.username ?? "-")
+                        AppProfileInfoRow(label: "Email", value: profile?.email ?? "-")
+                        AppProfileInfoRow(label: "Phone", value: profile?.phone ?? "-")
+                        AppProfileInfoRow(label: "Address", value: profile?.address ?? "Not Provided")
+                        AppProfileInfoRow(label: "Role", value: profile?.role.rawValue ?? "-")
                     }
                     .padding(.top, 16)
                 }
