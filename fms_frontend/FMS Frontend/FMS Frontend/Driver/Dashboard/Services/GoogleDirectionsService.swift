@@ -252,4 +252,30 @@ guard let route = directionsResponse.routes.first,
             steps:    instructions
         )
     }
+
+    // MARK: - Reverse Geocoding
+
+    func reverseGeocode(coordinate: CLLocationCoordinate2D) async throws -> String {
+        let geocoder = CLGeocoder()
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        
+        let placemarks = try await geocoder.reverseGeocodeLocation(location)
+        guard let placemark = placemarks.first else {
+            throw NSError(domain: "GoogleDirectionsService", code: 3,
+                          userInfo: [NSLocalizedDescriptionKey: "No address found for coordinate"])
+        }
+        
+        let name = placemark.name ?? ""
+        let locality = placemark.locality ?? ""
+        let adminArea = placemark.administrativeArea ?? ""
+        let country = placemark.country ?? ""
+        
+        var components = [String]()
+        if !name.isEmpty { components.append(name) }
+        if !locality.isEmpty && locality != name { components.append(locality) }
+        if !adminArea.isEmpty && adminArea != locality && adminArea != name { components.append(adminArea) }
+        if !country.isEmpty { components.append(country) }
+        
+        return components.joined(separator: ", ")
+    }
 }
