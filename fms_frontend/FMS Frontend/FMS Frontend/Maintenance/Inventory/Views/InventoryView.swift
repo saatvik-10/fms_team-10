@@ -59,7 +59,7 @@ struct InventoryView: View {
                             let sortedInventoryItems = store.inventoryParts.sorted {
                                 $0.partName.localizedCaseInsensitiveCompare($1.partName) == .orderedAscending
                             }
-                            let itemsToDisplay = Array(sortedInventoryItems.prefix(5))
+                            let itemsToDisplay = Array(sortedInventoryItems.prefix(3))
 
                             if itemsToDisplay.isEmpty {
                                 HStack(spacing: 10) {
@@ -188,16 +188,12 @@ struct InventoryView: View {
                         .font(.system(size: 24, weight: .bold, design: .rounded))
                         .foregroundColor(AppColors.primaryText)
                     
-                    Spacer()
-                    
-                    Image(systemName: "chart.pie.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(AppColors.primary)
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, 16)
+                .padding(.horizontal, 20)
             }
         }
-        .padding(store.inventoryParts.isEmpty ? 0 : 20)
+        .padding(store.inventoryParts.isEmpty ? 0 : 0)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -218,7 +214,13 @@ struct InventoryView: View {
     }
 
     private func formatCurrency(_ value: Double) -> String {
-        String(format: "₹%.2f", value)
+        if value >= 10_000_000 { // 1 Crore = 100 Lakhs
+            return String(format: "₹%.2f C", value / 10_000_000)
+        } else if value >= 100_000 { // 1 Lakh
+            return String(format: "₹%.2f L", value / 100_000)
+        } else {
+            return String(format: "₹%.2f", value)
+        }
     }
 }
 
