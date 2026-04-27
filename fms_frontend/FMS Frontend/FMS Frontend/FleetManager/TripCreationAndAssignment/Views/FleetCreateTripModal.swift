@@ -16,9 +16,9 @@ struct FleetCreateTripModal: View {
     @State private var scheduledDate: Date = Date()
     @State private var productName: String = ""
     @State private var loadAmount: String = ""
-    @State private var loadUnit: String = "Tons"
+    @State private var loadUnit: String = "KG"
     
-    private let unitOptions = ["Tons", "KG", "Liters", "Units", "Pallets"]
+    private let unitOptions = ["KG", "Tons"]
     
     @State private var estimatedCost: Double = 0.0
     @State private var estimatedDistance: Double = 0.0
@@ -75,12 +75,18 @@ struct FleetCreateTripModal: View {
                     .padding(.vertical, 4)
                 }
                 
-                Section(header: Text("Cargo Details")) {
+                Section(header: Text("Cargo Details"), footer: Text("Enter total cargo weight in kg or tons.")) {
                     TextField("Product Type", text: $productName)
                     
                     HStack {
                         TextField("Amount", text: $loadAmount)
                             .keyboardType(.decimalPad)
+                            .onChange(of: loadAmount) { oldValue, newValue in
+                                let filtered = newValue.filter { "0123456789.".contains($0) }
+                                if filtered != newValue {
+                                    loadAmount = filtered
+                                }
+                            }
                         
                         Divider().frame(height: 20)
                         
@@ -96,13 +102,18 @@ struct FleetCreateTripModal: View {
                 Section(header: Text("Assignment")) {
                     Picker("Vehicle", selection: $selectedVehicleID) {
                         Text("Select Vehicle").tag("")
-                        ForEach(dataManager.vehicles.filter { $0.status == .idle }) { v in
-                            Text(v.model).tag(v.backendId ?? v.id)
+                        ForEach(dataManager.vehicles.filter { v in
+                            let amount = Double(loadAmount) ?? 0
+                            let weightInKG = convertToKG(amount: amount, unit: loadUnit)
+                            return v.status == .idle && weightInKG <= v.maxLoadCapacityKG
+                        }) { v in
+                            Text("\(v.model) (Max: \(Int(v.maxLoadCapacityKG))kg)").tag(v.backendId ?? v.id)
                         }
                     }
                     
                     Picker("Driver", selection: $selectedDriverID) {
                         Text("Select Driver").tag("")
+                        Text("Auto Assign (Random)").tag("AUTO_ASSIGN")
                         ForEach(dataManager.drivers.filter { $0.status == .active }) { d in
                             Text(d.name).tag(d.backendId ?? d.id)
                         }
@@ -171,7 +182,17 @@ struct FleetCreateTripModal: View {
         sourceLocation != nil &&
         destinationLocation != nil &&
         !selectedVehicleID.isEmpty &&
-        !selectedDriverID.isEmpty
+        !selectedDriverID.isEmpty &&
+        !(Double(loadAmount) ?? 0 <= 0) &&
+        !loadAmount.isEmpty
+    }
+    
+    private func convertToKG(amount: Double, unit: String) -> Double {
+        switch unit {
+        case "Tons": return amount * 1000.0
+        case "KG": return amount
+        default: return amount
+        }
     }
     
     private func fetchRealRoute() {
@@ -209,14 +230,20 @@ struct FleetCreateTripModal: View {
     private func createTrip() {
         guard let src = sourceLocation, let dst = destinationLocation else { return }
         
+        var finalDriverID = selectedDriverID
+        if finalDriverID == "AUTO_ASSIGN" {
+            let activeDrivers = dataManager.drivers.filter { $0.status == .active }
+            finalDriverID = activeDrivers.randomElement()?.backendId ?? activeDrivers.randomElement()?.id ?? ""
+        }
+        
         let request = CreateTripRequest(
             sourceLocation: src.name,
             destinationLocation: dst.name,
             productType: productName,
             unit: loadUnit,
-            amount: Int(loadAmount) ?? 0,
+            amount: Int(Double(loadAmount) ?? 0),
             vehicle: selectedVehicleID,
-            driver: selectedDriverID,
+            driver: finalDriverID,
             departureTime: ISO8601DateFormatter().string(from: scheduledDate),
             distance: "\(estimatedDistance) km"
         )

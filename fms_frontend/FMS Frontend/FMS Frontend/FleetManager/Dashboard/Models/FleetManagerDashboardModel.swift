@@ -249,6 +249,7 @@ struct Vehicle: Identifiable {
     let registrationNumber: String // New field
     let rcImageUrl: String?
     let vehicleImageUrl: String?
+    let maxLoadCapacityKG: Double // New field for assignment logic
 
     init(
         id: String,
@@ -270,7 +271,8 @@ struct Vehicle: Identifiable {
         chassisNumber: String,
         registrationNumber: String,
         rcImageUrl: String? = nil,
-        vehicleImageUrl: String? = nil
+        vehicleImageUrl: String? = nil,
+        maxLoadCapacityKG: Double = 5000.0
     ) {
         self.id = id
         self.backendId = backendId
@@ -292,6 +294,7 @@ struct Vehicle: Identifiable {
         self.registrationNumber = registrationNumber
         self.rcImageUrl = rcImageUrl
         self.vehicleImageUrl = vehicleImageUrl
+        self.maxLoadCapacityKG = maxLoadCapacityKG
     }
 }
 

@@ -455,7 +455,15 @@ class FleetDataManager: ObservableObject {
                 chassisNumber: item.chassisNumber,
                 registrationNumber: item.registrationNumber,
                 rcImageUrl: item.rcImageUrl,
-                vehicleImageUrl: item.vehicleImageUrl
+                vehicleImageUrl: item.vehicleImageUrl,
+                maxLoadCapacityKG: {
+                    switch item.type.lowercased() {
+                    case let t where t.contains("truck"): return 15000.0
+                    case let t where t.contains("van"): return 3000.0
+                    case let t where t.contains("bus"): return 5000.0
+                    default: return 5000.0
+                    }
+                }()
             )
         }
     }
