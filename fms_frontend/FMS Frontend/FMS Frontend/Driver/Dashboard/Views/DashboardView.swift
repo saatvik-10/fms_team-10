@@ -47,14 +47,138 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 }
 
 class DashboardViewModel: ObservableObject {
-    // Single source of truth — name comes from the shared UserProfile model
     @Published var userName: String = UserProfile.mockDriver.name
     @Published var activeTrip: Trip = Trip.mockTrip
+    @Published var activeLifecycleTrip: LifecycleTrip?
     @Published var vehicleName: String = "Tata Prima 4028.S"
     @Published var vehiclePlate: String = "MH 43 AB 1234"
     @Published var fuelLevel: String = "78%"
     @Published var maintenanceHealth: String = "Optimal"
     @Published var maintenanceProgress: Double = 0.8
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+
+    private let tripAPI: TripAPI
+
+    init(tripAPI: TripAPI = .shared) {
+        self.tripAPI = tripAPI
+    }
+
+    var missionStatusText: String {
+        guard let status = activeLifecycleTrip?.status else { return "IN TRANSIT" }
+        return status.rawValue
+    }
+
+    @MainActor
+    func loadActiveTrip() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response = try await tripAPI.getDriverTrips()
+            let lifecycleTrips = response.trips.compactMap(Self.mapTripItemToLifecycleTrip)
+
+            if let active = lifecycleTrips.first(where: { $0.status == .scheduled })
+                ?? lifecycleTrips.first(where: { $0.status == .assigned })
+                ?? lifecycleTrips.first {
+                activeLifecycleTrip = active
+                activeTrip = active.toTripModel()
+                vehiclePlate = active.vehicleNumber ?? "UNASSIGNED"
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    private static func mapTripItemToLifecycleTrip(_ trip: TripItem) -> LifecycleTrip? {
+        guard let id = trip.id,
+              let source = trip.sourceLocation,
+              let destination = trip.destinationLocation else {
+            return nil
+        }
+
+        let status = mapTripStatus(trip.status)
+        let loadInfo = trip.loadAmount ?? buildLoadInfo(amount: trip.amount, unit: trip.unit)
+        let departure = trip.tripDate ?? trip.departureTime
+
+        return LifecycleTrip(
+            id: id,
+            source: source,
+            destination: destination,
+            status: status,
+            dateValue: formatDateValue(from: departure),
+            timeLabel: status == .completed ? "Completion Time" : "Scheduled Start",
+            timeValue: formatTimeValue(from: departure),
+            loadInfo: loadInfo,
+            distance: parseDistanceKm(trip.tripDistance),
+            vehicleNumber: trip.vehicleRegistrationNumber,
+            cargoWeight: formatCargoWeight(amount: trip.amount, unit: trip.unit)
+        )
+    }
+
+    private static func mapTripStatus(_ rawStatus: String?) -> TripStatus {
+        switch rawStatus?.uppercased() {
+        case "COMPLETED":
+            return .completed
+        case "PENDING", "CANCELLED":
+            return .assigned
+        default:
+            return .scheduled
+        }
+    }
+
+    private static func buildLoadInfo(amount: Int?, unit: String?) -> String {
+        if let amount, let unit {
+            return "\(amount) \(unit)"
+        }
+        return "N/A"
+    }
+
+    private static func formatCargoWeight(amount: Int?, unit: String?) -> String {
+        guard let amount, let unit else { return "N/A" }
+        return "\(amount) \(unit)"
+    }
+
+    private static func parseDistanceKm(_ value: String?) -> Double {
+        guard let value, !value.isEmpty else { return 0.0 }
+        let filtered = value.filter { "0123456789.".contains($0) }
+        return Double(filtered) ?? 0.0
+    }
+
+    private static func formatDateValue(from raw: String?) -> String {
+        guard let raw, let date = parseDate(raw) else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return formatter.string(from: date)
+    }
+
+    private static func formatTimeValue(from raw: String?) -> String {
+        guard let raw, let date = parseDate(raw) else { return "TBD" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+
+    private static func parseDate(_ raw: String) -> Date? {
+        let isoWithFractional = ISO8601DateFormatter()
+        isoWithFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoWithFractional.date(from: raw) {
+            return date
+        }
+
+        let isoBasic = ISO8601DateFormatter()
+        isoBasic.formatOptions = [.withInternetDateTime]
+        if let date = isoBasic.date(from: raw) {
+            return date
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.date(from: raw)
+    }
 }
 
 // MARK: - Main Tab View
@@ -103,6 +227,23 @@ struct DashboardHomeView: View {
         }
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
         .navigationBarHidden(true)
+        .task {
+            await viewModel.loadActiveTrip()
+        }
+        .alert(
+            "Could not load active trip",
+            isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )
+        ) {
+            Button("Retry") {
+                Task { await viewModel.loadActiveTrip() }
+            }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "Please try again.")
+        }
         .navigationDestination(isPresented: $showProfile) {
             DriverProfileView(onLogout: {
                 AuthAPI.shared.logout()
@@ -160,7 +301,7 @@ struct MissionCardView: View {
                     
                     Spacer()
                     
-                    Text("IN TRANSIT")
+                    Text(viewModel.missionStatusText)
                         .font(.caption2)
                         .fontWeight(.bold)
                         .padding(.horizontal, 8)
@@ -187,7 +328,12 @@ struct MissionCardView: View {
                 RouteDetailRow(label: "PICKUP", value: viewModel.activeTrip.pickup.name)
                 RouteDetailRow(label: "DESTINATION", value: viewModel.activeTrip.destination.name)
                 
-                NavigationLink(destination: TripDetailView(trip: viewModel.activeTrip)) {
+                NavigationLink(
+                    destination: TripDetailView(
+                        trip: viewModel.activeTrip,
+                        lifecycleTrip: viewModel.activeLifecycleTrip
+                    )
+                ) {
                     HStack {
                         Text("View Trip")
                     }
