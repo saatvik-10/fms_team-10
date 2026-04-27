@@ -60,6 +60,16 @@ struct FleetManagerMainView: View {
             }
             .tag(3)
             
+            // --- CHAT INTEGRATION ---
+            NavigationView {
+                ChatListView()
+            }
+            .navigationViewStyle(.stack)
+            .tabItem {
+                Label("Messages", systemImage: "message.fill")
+            }
+            .tag(4)
+            // ------------------------
         }
         .accentColor(AppColors.primary)
         .environmentObject(dataManager)

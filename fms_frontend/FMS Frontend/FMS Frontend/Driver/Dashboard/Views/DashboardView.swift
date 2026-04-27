@@ -183,6 +183,7 @@ class DashboardViewModel: ObservableObject {
 
 // MARK: - Main Tab View
 
+
 struct DashboardView: View {
     @Binding var userRole: AppUserRole
 
@@ -199,10 +200,20 @@ struct DashboardView: View {
             .tabItem {
                 Label("Trips", systemImage: "map.fill")
             }
+            
+            // --- CHAT INTEGRATION ---
+            NavigationStack {
+                ChatListView()
+            }
+            .tabItem {
+                Label("Messages", systemImage: "message.fill")
+            }
+            // ------------------------
         }
         .accentColor(AppColors.primary)
     }
 }
+
 
 // MARK: - Dashboard Content
 

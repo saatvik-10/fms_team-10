@@ -43,6 +43,15 @@ struct MaintenanceTabView: View {
             .tabItem {
                 Label("Inspections", systemImage: "clipboard.fill")
             }
+            
+            // --- CHAT INTEGRATION ---
+            NavigationStack {
+                ChatListView()
+            }
+            .tabItem {
+                Label("Messages", systemImage: "message.fill")
+            }
+            // ------------------------
         }
         .environmentObject(store)
         .accentColor(AppColors.primary)
