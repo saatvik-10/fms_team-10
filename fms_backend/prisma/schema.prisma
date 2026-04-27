@@ -23,10 +23,10 @@ model User {
   driver      Driver?
   maintenance Maintenance?
 
-  createdUsers    User[]    @relation("UserCreatedUsers")
+  createdUsers    User[]        @relation("UserCreatedUsers")
   createdById     String?
-  createdBy       User?     @relation("UserCreatedUsers", fields: [createdById], references: [id])
-  createdVehicles Vehicle[] @relation("UserCreatedVehicles")
+  createdBy       User?         @relation("UserCreatedUsers", fields: [createdById], references: [id])
+  createdVehicles Vehicle[]     @relation("UserCreatedVehicles")
   issueReports    IssueReport[] @relation("UserIssueReports")
 
   createdAt DateTime @default(now())
@@ -47,14 +47,14 @@ model Manager {
 }
 
 model Driver {
-  id            String   @id @default(cuid())
-  name          String
-  phone         String  @unique
-  email         String  @unique
-  licenceNumber String  @unique
-  expiryDate    String
-  classes       String[]
-  status        Status
+  id              String   @id @default(cuid())
+  name            String
+  phone           String   @unique
+  email           String   @unique
+  licenceNumber   String   @unique
+  expiryDate      String
+  classes         String[]
+  status          Status
   dlFrontImageUrl String?
   dlBackImageUrl  String?
   dlFrontImageKey String?
@@ -71,8 +71,10 @@ model Maintenance {
   id    String   @id @default(cuid())
   name  String
   dob   DateTime
-  phone String  @unique
-  email String  @unique
+  phone String   @unique
+  email String   @unique
+
+  workOrder WorkOrder[]
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -81,19 +83,37 @@ model Maintenance {
   updatedAt DateTime @updatedAt
 }
 
+model WorkOrder {
+  id          String @id @default(cuid())
+  vehicleName String
+  title       String
+
+  priority Priority
+
+  date           DateTime
+  taskDetails    String
+  workOrderMedia String[]
+
+  maintenanceId String
+  maintenance   Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Vehicle {
-  id              String @id @default(cuid())
-  make            String
-  model           String
-  type            String
-  status          VehicleStatus @default(AVAILABLE)
-  imageName       String?
-  year            String?
-  color           String?
-  operationalStatus String?   @default("OPERATIONAL")
-  assessmentReason  String?
-  chassisNumber  String   @unique @map("chassis_num")
-  registrationNumber String @unique @map("registration_num")
+  id                 String        @id @default(cuid())
+  make               String
+  model              String
+  type               String
+  status             VehicleStatus @default(AVAILABLE)
+  imageName          String?
+  year               String?
+  color              String?
+  operationalStatus  String?       @default("OPERATIONAL")
+  assessmentReason   String?
+  chassisNumber      String        @unique @map("chassis_num")
+  registrationNumber String        @unique @map("registration_num")
 
   rcImageUrl      String?
   vehicleImageUrl String?
@@ -112,21 +132,21 @@ model Vehicle {
 }
 
 model VehicleTrip {
-  id            String  @id @default(cuid())
-  vehicleId     String  @unique
+  id        String @id @default(cuid())
+  vehicleId String @unique
 
-  origin        String
-  destination   String
-  progress      Float
-  eta           String?
-  date          String?
-  distance      String?
-  duration      String?
-  costEstimate  String?
-  startTime     DateTime?
-  status        TripStatus @default(PENDING)
-  productType   String?
-  loadAmount    String?
+  origin       String
+  destination  String
+  progress     Float
+  eta          String?
+  date         String?
+  distance     String?
+  duration     String?
+  costEstimate String?
+  startTime    DateTime?
+  status       TripStatus @default(PENDING)
+  productType  String?
+  loadAmount   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -135,12 +155,12 @@ model VehicleTrip {
 }
 
 model VehicleMaintenance {
-  id             String  @id @default(cuid())
-  vehicleId      String  @unique
+  id        String @id @default(cuid())
+  vehicleId String @unique
 
-  nextService    String?
+  nextService      String?
   inspectionStatus String?
-  alerts        String?
+  alerts           String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -149,20 +169,20 @@ model VehicleMaintenance {
 }
 
 model TripHistory {
-  id            String  @id @default(cuid())
-  vehicleId     String
+  id        String @id @default(cuid())
+  vehicleId String
 
-  vehicleID     String
+  vehicleID    String
   origin       String
   destination  String
   progress     Float
   eta          String?
   date         String?
   distance     String?
-  duration    String?
+  duration     String?
   costEstimate String?
   startTime    DateTime?
-  status      TripStatus @default(PENDING)
+  status       TripStatus @default(PENDING)
   productType  String?
   loadAmount   String?
 
@@ -188,7 +208,7 @@ model Trips {
 }
 
 model IssueReport {
-  id               String @id @default(cuid())
+  id               String            @id @default(cuid())
   driverUserId     String
   tripId           String?
   transcript       String
@@ -235,4 +255,10 @@ enum TripStatus {
 enum IssueReportStatus {
   OPEN
   RESOLVED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
 }
