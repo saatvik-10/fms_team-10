@@ -8,41 +8,54 @@ struct FleetManagerDriversListView: View {
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - Header
-            HStack(spacing: 20) {
-                Text("Drivers Management")
-                    .font(AppFonts.title3)
-                
-                // Search Bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                    TextField("Search by name, license or status...", text: $searchText)
-                        .font(AppFonts.body)
-                }
-                .padding(.horizontal, 15)
-                .padding(.vertical, 10)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
-                .frame(maxWidth: .infinity)
+            HStack(alignment: .center, spacing: 16) {
+                Text("Drivers")
+                    .font(AppFonts.title1)
+                    .foregroundColor(AppColors.primaryText)
                 
                 Spacer()
                 
-                HStack(spacing: 20) {
-                    Button(action: { showingAddDriver = true }) {
-                        HStack {
-                            Image(systemName: "plus")
-                            Text("Add Driver")
-                        }
-                        .font(AppFonts.button)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(AppColors.primary)
-                        .cornerRadius(8)
+                Button(action: { showingAddDriver = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .bold))
+                        Text("Add Driver")
+                            .font(.system(size: 15, weight: .bold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 11)
+                    .background(AppColors.primary)
+                    .cornerRadius(10)
+                }
+            }
+            .padding(.horizontal, 30)
+            .padding(.top, 28)
+            .padding(.bottom, 16)
+            .background(Color.white)
+            
+            // MARK: - Search Bar
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.gray)
+                TextField("Search by name, license or status...", text: $searchText)
+                    .font(.system(size: 16))
+                    .autocorrectionDisabled()
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 16))
                     }
                 }
             }
-            .padding(25)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+            .padding(.horizontal, 30)
+            .padding(.bottom, 18)
             .background(Color.white)
             
             // MARK: - Table
@@ -173,8 +186,10 @@ struct DriverRowView: View {
         .padding(.horizontal, 40)
         .padding(.vertical, 20)
         .background(Color.white)
-        .cornerRadius(8)
+        .cornerRadius(14) // Matching vehicle card radius
+        .modifier(AppColors.cardShadow())
         .padding(.horizontal, 30)
+        .padding(.vertical, 6) // Spacing between rows
     }
     
     var statusColor: Color {

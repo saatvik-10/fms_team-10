@@ -42,8 +42,8 @@ struct FleetManagerVehiclesListView: View {
             // MARK: - Header Row
             HStack(alignment: .center, spacing: 16) {
                 Text("Vehicles")
-                    .font(.system(size: 26, weight: .black))
-                    .foregroundColor(.primary)
+                    .font(AppFonts.title1)
+                    .foregroundColor(AppColors.primaryText)
 
                 Spacer()
 
@@ -220,12 +220,13 @@ struct VehicleGridCard: View {
             // Vehicle Info
             VStack(alignment: .leading, spacing: 5) {
                 Text(vehicle.registrationNumber)
-                    .font(.system(size: 22, weight: .black))
-                    .foregroundColor(.primary)
+                    .font(AppFonts.title2)
+                    .foregroundColor(AppColors.primaryText)
                     .tracking(0.5)
 
                 Text("\(vehicle.make) \(vehicle.model)".uppercased())
-                    .font(.system(size: 12, weight: .bold))
+                    .font(AppFonts.caption2)
+                    .fontWeight(.bold)
                     .foregroundColor(.gray)
             }
             .padding(.horizontal, 14)
