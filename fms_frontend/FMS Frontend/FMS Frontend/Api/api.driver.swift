@@ -62,6 +62,41 @@ struct DeleteDriverResponse: Decodable {
   let message: String
 }
 
+struct CreateIssueReportRequest: Encodable {
+  let tripId: String?
+  let transcript: String
+  let incidentLocation: String
+  let vehicleUnit: String
+  let images: [Data]
+}
+
+struct IssueReportItem: Decodable {
+  let id: String
+  let driverUserId: String
+  let tripId: String?
+  let transcript: String
+  let incidentLocation: String
+  let vehicleUnit: String
+  let imageKeys: [String]
+  let imageUrls: [String]?
+  let status: String
+  let createdAt: Date
+  let updatedAt: Date
+}
+
+struct CreateIssueReportResponse: Decodable {
+  let message: String
+  let issue: IssueReportItem
+}
+
+struct GetIssueReportsResponse: Decodable {
+  let issues: [IssueReportItem]
+}
+
+struct GetIssueReportResponse: Decodable {
+  let issue: IssueReportItem
+}
+
 final class DriverAPI {
   static let shared = DriverAPI()
 
@@ -101,6 +136,31 @@ final class DriverAPI {
     try await client.request(
       path: "/driver/\(id)",
       method: .delete,
+      requiresAuth: true
+    )
+  }
+
+  func createIssueReport(_ request: CreateIssueReportRequest) async throws -> CreateIssueReportResponse {
+    try await client.request(
+      path: "/issue/report",
+      method: .post,
+      body: request,
+      requiresAuth: true
+    )
+  }
+
+  func getMyIssueReports(limit: Int = 20) async throws -> GetIssueReportsResponse {
+    try await client.request(
+      path: "/issue/my-reports?limit=\(limit)",
+      method: .get,
+      requiresAuth: true
+    )
+  }
+
+  func getIssueReport(id: String) async throws -> GetIssueReportResponse {
+    try await client.request(
+      path: "/issue/my-reports/\(id)",
+      method: .get,
       requiresAuth: true
     )
   }
