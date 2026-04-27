@@ -54,42 +54,42 @@ struct InventoryView: View {
                     }
                     .padding(.horizontal, 20)
 
-                    NavigationLink(destination: FullInventoryListView()) {
-                        VStack(spacing: 0) {
-                            let sortedInventoryItems = store.inventoryParts.sorted {
-                                $0.partName.localizedCaseInsensitiveCompare($1.partName) == .orderedAscending
+                    VStack(spacing: 0) {
+                        let sortedInventoryItems = store.inventoryParts.sorted {
+                            $0.partName.localizedCaseInsensitiveCompare($1.partName) == .orderedAscending
+                        }
+                        let itemsToDisplay = Array(sortedInventoryItems.prefix(3))
+
+                        if itemsToDisplay.isEmpty {
+                            HStack(spacing: 10) {
+                                Image(systemName: "shippingbox.fill")
+                                    .font(.title3)
+                                    .foregroundColor(.secondary)
+                                Text("No inventory parts available yet.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                Spacer()
                             }
-                            let itemsToDisplay = Array(sortedInventoryItems.prefix(3))
-
-                            if itemsToDisplay.isEmpty {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "shippingbox.fill")
-                                        .font(.title3)
-                                        .foregroundColor(.secondary)
-                                    Text("No inventory parts available yet.")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                    Spacer()
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 18)
-                            } else {
-                                ForEach(Array(itemsToDisplay.enumerated()), id: \.element.id) { index, part in
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 18)
+                        } else {
+                            ForEach(Array(itemsToDisplay.enumerated()), id: \.element.id) { index, part in
+                                NavigationLink(destination: InventoryDetailView(part: part)) {
                                     InventoryAlertRow(part: part)
+                                }
+                                .buttonStyle(PlainButtonStyle())
 
-                                    if index < itemsToDisplay.count - 1 {
-                                        Divider()
-                                            .padding(.leading, 70)
-                                    }
+                                if index < itemsToDisplay.count - 1 {
+                                    Divider()
+                                        .padding(.leading, 70)
                                 }
                             }
                         }
-                        .background(Color.white)
-                        .cornerRadius(20)
-                        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-                        .padding(.horizontal, 20)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .background(Color.white)
+                    .cornerRadius(20)
+                    .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+                    .padding(.horizontal, 20)
                 }
                 
                 Spacer(minLength: 48)
