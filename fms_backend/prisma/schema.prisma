@@ -19,12 +19,10 @@ model User {
   passwordHash String?
   role         Role
 
-  // Role-specific relationships
   manager     Manager?
   driver      Driver?
   maintenance Maintenance?
 
-  // Audit trail
   createdUsers    User[]    @relation("UserCreatedUsers")
   createdById     String?
   createdBy       User?     @relation("UserCreatedUsers", fields: [createdById], references: [id])
