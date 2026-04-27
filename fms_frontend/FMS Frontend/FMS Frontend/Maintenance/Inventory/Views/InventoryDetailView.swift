@@ -44,7 +44,7 @@ struct InventoryDetailView: View {
             
             Section("Financials") {
                 detailRow(title: "Unit Price", value: "₹\(part.unitPriceInr, default: "%.2f")")
-                detailRow(title: "Total Valuation", value: "₹\(part.totalValue, default: "%.2f")", color: AppColors.primary)
+                detailRow(title: "Total Inventory Cost", value: "₹\(part.totalValue, default: "%.2f")", color: AppColors.primary)
             }
             
             Section("Supply & Logistics") {
