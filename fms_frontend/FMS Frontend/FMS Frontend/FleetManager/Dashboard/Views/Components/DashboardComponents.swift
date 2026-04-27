@@ -950,16 +950,16 @@ struct FleetHealthStatusStackedBar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("Fleet Health Index")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFonts.headline)
                 .foregroundColor(AppTheme.primary)
             
             Chart {
                 BarMark(x: .value("Status", healthy))
-                    .foregroundStyle(AppTheme.deepSeaGreen)
+                    .foregroundStyle(AppColors.activeGreen)
                 BarMark(x: .value("Status", warning))
-                    .foregroundStyle(AppTheme.mediumSeaGreen)
+                    .foregroundStyle(AppColors.maintenanceOrange)
                 BarMark(x: .value("Status", critical))
-                    .foregroundStyle(AppTheme.lightSeaGreen)
+                    .foregroundStyle(AppColors.criticalRed)
             }
             .frame(height: 48)
             .chartXAxis(.hidden)
@@ -967,22 +967,22 @@ struct FleetHealthStatusStackedBar: View {
             
             HStack(spacing: 20) {
                 HStack(spacing: 6) {
-                    Circle().fill(AppTheme.deepSeaGreen).frame(width: 8, height: 8)
+                    Circle().fill(AppColors.activeGreen).frame(width: 8, height: 8)
                     Text("Healthy: \(healthy)")
-                        .font(AppFonts.caption2)
-                        .foregroundColor(.gray)
+                        .font(AppFonts.headline)
+                        .foregroundColor(AppColors.primaryText)
                 }
                 HStack(spacing: 6) {
-                    Circle().fill(AppTheme.mediumSeaGreen).frame(width: 8, height: 8)
+                    Circle().fill(AppColors.maintenanceOrange).frame(width: 8, height: 8)
                     Text("Warning: \(warning)")
-                        .font(AppFonts.caption2)
-                        .foregroundColor(.gray)
+                        .font(AppFonts.headline)
+                        .foregroundColor(AppColors.primaryText)
                 }
                 HStack(spacing: 6) {
-                    Circle().fill(AppTheme.lightSeaGreen).frame(width: 8, height: 8)
+                    Circle().fill(AppColors.criticalRed).frame(width: 8, height: 8)
                     Text("Critical: \(critical)")
-                        .font(AppFonts.caption2)
-                        .foregroundColor(.gray)
+                        .font(AppFonts.headline)
+                        .foregroundColor(AppColors.primaryText)
                 }
             }
         }

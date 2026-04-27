@@ -15,40 +15,55 @@ struct FleetManagerMaintenanceListView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // MARK: - Header (Matching Drivers Style)
-            HStack(spacing: 20) {
-                Text("Maintenance Team")
-                    .font(.system(size: 20, weight: .black))
-                
-                // Search Bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                    TextField("Search by name or email...", text: $searchText)
-                        .font(.system(size: 14))
-                }
-                .padding(.horizontal, 15)
-                .padding(.vertical, 10)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
-                .frame(maxWidth: .infinity)
+            // MARK: - Header
+            HStack(alignment: .center, spacing: 16) {
+                Text("Maintenance")
+                    .font(AppFonts.title1)
+                    .foregroundColor(AppColors.primaryText)
                 
                 Spacer()
                 
                 Button(action: { showingAddPersonnel = true }) {
-                    HStack {
+                    HStack(spacing: 6) {
                         Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .bold))
                         Text("Add Personnel")
+                            .font(.system(size: 15, weight: .bold))
                     }
-                    .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 11)
                     .background(AppTheme.primary)
-                    .cornerRadius(8)
+                    .cornerRadius(10)
                 }
             }
-            .padding(25)
+            .padding(.horizontal, 30)
+            .padding(.top, 28)
+            .padding(.bottom, 16)
+            .background(Color.white)
+            
+            // MARK: - Search Bar
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.gray)
+                TextField("Search by name or email...", text: $searchText)
+                    .font(.system(size: 16))
+                    .autocorrectionDisabled()
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 16))
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+            .padding(.horizontal, 30)
+            .padding(.bottom, 18)
             .background(Color.white)
             
             // MARK: - Grid Content
@@ -152,17 +167,24 @@ struct MaintenancePersonnelCard: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(person.name)
-                        .font(.system(size: 18, weight: .bold))
+                        .font(AppFonts.headline)
                         .foregroundColor(AppTheme.textPrimary)
                 }
                 Spacer()
                 
-                Button(action: { showingDeleteAlert = true }) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
-                        .font(.system(size: 16))
+                Menu {
+                    Button(action: { /* Rename action */ }) {
+                        Label("Rename", systemImage: "pencil")
+                    }
+                    Button(role: .destructive, action: { showingDeleteAlert = true }) {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.gray)
                         .padding(10)
-                        .background(Color.red.opacity(0.1))
+                        .background(Color.gray.opacity(0.1))
                         .clipShape(Circle())
                 }
                 .disabled(isDeleting)
