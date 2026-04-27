@@ -40,7 +40,7 @@ struct MaintenanceProfileView: View {
                         AppProfileInfoRow(label: "Username", value: profile.username)
                         AppProfileInfoRow(label: "Email", value: profile.email)
                         AppProfileInfoRow(label: "Phone", value: profile.phone)
-                        AppProfileInfoRow(label: "Address", value: profile.address)
+                        AppProfileInfoRow(label: "Address", value: profile.address ?? "Not Provided")
                         AppProfileInfoRow(label: "Role", value: profile.role.rawValue)
                     }
                     .padding(.top, 16)
