@@ -6,6 +6,7 @@ struct FleetManagerMaintenanceListView: View {
     @State private var showingAddPersonnel = false
     @State private var isLoadingPersonnel = false
     @State private var loadError: String?
+    @State private var selectedPerson: MaintenancePersonnel? = nil
     
     // Grid layout for 2 cards per row
     private let columns = [
@@ -93,7 +94,10 @@ struct FleetManagerMaintenanceListView: View {
                 } else {
                     LazyVGrid(columns: columns, spacing: 20) {
                         ForEach(filteredPersonnel) { person in
-                            MaintenancePersonnelCard(person: person)
+                            MaintenancePersonnelCard(
+                                person: person,
+                                onEdit: { selectedPerson = person }
+                            )
                         }
                     }
                     .padding(25)
@@ -105,6 +109,9 @@ struct FleetManagerMaintenanceListView: View {
         .navigationBarHidden(true)
         .sheet(isPresented: $showingAddPersonnel) {
             AddMaintenancePersonnelModal().environmentObject(dataManager)
+        }
+        .sheet(item: $selectedPerson) { person in
+            EditMaintenancePersonnelModal(person: person).environmentObject(dataManager)
         }
         .task {
             await loadPersonnel()
@@ -157,6 +164,7 @@ struct FleetManagerMaintenanceListView: View {
 
 struct MaintenancePersonnelCard: View {
     let person: MaintenancePersonnel
+    let onEdit: () -> Void
     @EnvironmentObject var dataManager: FleetDataManager
     @State private var showingDeleteAlert = false
     @State private var isDeleting = false
@@ -173,8 +181,8 @@ struct MaintenancePersonnelCard: View {
                 Spacer()
                 
                 Menu {
-                    Button(action: { /* Rename action */ }) {
-                        Label("Rename", systemImage: "pencil")
+                    Button(action: { onEdit() }) {
+                        Label("Edit", systemImage: "pencil")
                     }
                     Button(role: .destructive, action: { showingDeleteAlert = true }) {
                         Label("Delete", systemImage: "trash")
@@ -357,6 +365,131 @@ struct AddMaintenancePersonnelModal: View {
 
                 // Try to sync with backend list if endpoint is available.
                 try? await dataManager.refreshMaintenancePersonnel()
+                dismiss()
+            } catch {
+                isLoading = false
+            }
+        }
+    }
+}
+
+struct EditMaintenancePersonnelModal: View {
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var dataManager: FleetDataManager
+    
+    let person: MaintenancePersonnel
+    
+    @State private var name: String
+    @State private var phone: String
+    @State private var email: String
+    @State private var dob: Date
+    @State private var isLoading = false
+    
+    init(person: MaintenancePersonnel) {
+        self.person = person
+        _name = State(initialValue: person.name)
+        _phone = State(initialValue: person.phone)
+        _email = State(initialValue: person.email)
+        _dob = State(initialValue: person.dob)
+    }
+    
+    private var isFormValid: Bool {
+        (name != person.name ||
+         phone != person.phone ||
+         email != person.email ||
+         !Calendar.current.isDate(dob, inSameDayAs: person.dob)) &&
+        !name.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !phone.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !email.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Edit Maintenance Personnel")
+                    .font(.system(size: 24, weight: .bold))
+                Spacer()
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark")
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(25)
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    ModalFormField(label: "Full Name", text: $name)
+                    ModalFormField(label: "Phone Number", text: $phone)
+                    ModalFormField(label: "Email Address", text: $email)
+                    
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("DATE OF BIRTH")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.gray)
+                        
+                        DatePicker("", selection: $dob, in: ...Date(), displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(10)
+                    }
+                    
+                    Spacer(minLength: 40)
+                    
+                    Button(action: updatePersonnel) {
+                        Text(isLoading ? "Updating..." : "Update Personnel")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 15)
+                            .background(isFormValid ? AppTheme.primary : Color.gray)
+                            .cornerRadius(10)
+                    }
+                    .disabled(!isFormValid || isLoading)
+                }
+                .padding(25)
+            }
+        }
+    }
+    
+    private func updatePersonnel() {
+        guard let id = person.backendId else { return }
+        isLoading = true
+        
+        let formatter = ISO8601DateFormatter()
+        let dobString = formatter.string(from: dob)
+        
+        Task {
+            do {
+                let request = UpdateMaintenancePersonnelRequest(
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    dob: dobString
+                )
+                
+                let response = try await MaintenanceAPI.shared.updateMaintenance(
+                    id: id,
+                    request: request
+                )
+                
+                let updated = MaintenancePersonnel(
+                    backendId: response.maintenance.id,
+                    name: response.maintenance.name ?? name,
+                    phone: response.maintenance.phone ?? phone,
+                    email: response.maintenance.email ?? email,
+                    dob: response.maintenance.dob ?? dob,
+                    age: response.maintenance.age,
+                    currentAssignment: nil
+                )
+                
+                await MainActor.run {
+                    dataManager.updateMaintenancePersonnel(updated)
+                }
+                
                 dismiss()
             } catch {
                 isLoading = false

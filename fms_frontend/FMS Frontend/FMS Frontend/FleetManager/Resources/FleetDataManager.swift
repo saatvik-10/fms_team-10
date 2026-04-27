@@ -395,10 +395,17 @@ class FleetDataManager: ObservableObject {
                 dlBackImageKey: item.dlBackImageKey
             )
         }
-    }
-    
+}
+
     func addMaintenancePersonnel(_ person: MaintenancePersonnel) {
         maintenancePersonnel.append(person)
+    }
+
+    @MainActor
+    func updateMaintenancePersonnel(_ person: MaintenancePersonnel) {
+        if let index = maintenancePersonnel.firstIndex(where: { $0.backendId == person.backendId }) {
+            maintenancePersonnel[index] = person
+        }
     }
 
     @MainActor
