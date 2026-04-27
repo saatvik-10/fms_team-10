@@ -12,6 +12,9 @@ class MaintenanceStore: ObservableObject {
     @Published var workOrders: [WorkOrder] = []
     @Published var inspections: [TripInspection] = []
     @Published var inventoryParts: [InventoryPart] = []
+    @Published var currentProfile: UserProfile? = nil
+    @Published var isLoadingProfile = false
+    @Published var profileError: String?
     
     // Dashboard Metrics
     var lowStockCount: Int {
@@ -351,5 +354,42 @@ class MaintenanceStore: ObservableObject {
                 inspections[idx].imageAnalyses[index] = analysis
             }
         }
+    }
+    
+    // MARK: - Profile
+    func loadProfile() async {
+        isLoadingProfile = true
+        profileError = nil
+        
+        do {
+            let response = try await AuthAPI.shared.getProfile()
+            await MainActor.run {
+                self.currentProfile = UserProfile(
+                    id: response.profile.id,
+                    name: response.profile.name,
+                    username: response.profile.username,
+                    phone: response.profile.phone,
+                    email: response.profile.email,
+                    role: response.profile.role,
+                    createdAt: response.profile.createdAt,
+                    updatedAt: response.profile.updatedAt,
+                    address: response.profile.address,
+                    licenceNumber: response.profile.licenceNumber,
+                    expiryDate: response.profile.expiryDate,
+                    classes: response.profile.classes
+                )
+                self.isLoadingProfile = false
+            }
+        } catch {
+            await MainActor.run {
+                self.profileError = "Failed to load profile"
+                self.isLoadingProfile = false
+            }
+        }
+    }
+    
+    func logout() {
+        AuthAPI.shared.logout()
+        currentProfile = nil
     }
 }

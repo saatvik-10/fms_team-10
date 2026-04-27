@@ -7,16 +7,31 @@ import SwiftUI
 
 struct MaintenanceProfileView: View {
     @Binding var isLoggedIn: Bool
-
-    private var profile: UserProfile {
-        UserProfile.mockMaintenance
+    @StateObject private var store = MaintenanceStore()
+    
+    private var profile: UserProfile? {
+        store.currentProfile
     }
-
+    
     private var joinedDate: String {
-        profile.createdAt.formatted(date: .abbreviated, time: .omitted)
+        profile?.createdAt.formatted(date: .abbreviated, time: .omitted) ?? "-"
     }
     
     var body: some View {
+        Group {
+            if store.isLoadingProfile {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                mainContent
+            }
+        }
+        .task {
+            await store.loadProfile()
+        }
+    }
+    
+    private var mainContent: some View {
         List {
             Section {
                 VStack(spacing: 16) {
@@ -26,7 +41,7 @@ struct MaintenanceProfileView: View {
                         .foregroundColor(AppColors.primary)
                     
                     VStack(spacing: 4) {
-                        Text(profile.name)
+                        Text(profile?.name ?? "Maintenance")
                             .font(.title2.bold())
                     }
                 }
@@ -34,17 +49,18 @@ struct MaintenanceProfileView: View {
                 .padding(.vertical, 16)
             }
             .listRowBackground(Color.clear)
-
+            
             Section("Account Details") {
-                AppProfileInfoRow(label: "USERNAME", value: profile.username)
-                AppProfileInfoRow(label: "PHONE", value: profile.phone)
-                AppProfileInfoRow(label: "EMAIL", value: profile.email)
-                AppProfileInfoRow(label: "ROLE", value: profile.role.rawValue)
+                AppProfileInfoRow(label: "USERNAME", value: profile?.username ?? "-")
+                AppProfileInfoRow(label: "PHONE", value: profile?.phone ?? "-")
+                AppProfileInfoRow(label: "EMAIL", value: profile?.email ?? "-")
+                AppProfileInfoRow(label: "ROLE", value: profile?.role.rawValue.uppercased() ?? "MAINTENANCE")
                 AppProfileInfoRow(label: "JOINED", value: joinedDate)
             }
-
+            
             Section {
                 Button(action: {
+                    store.logout()
                     withAnimation {
                         isLoggedIn = false
                     }
