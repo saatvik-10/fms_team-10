@@ -28,6 +28,39 @@ struct LifecycleTrip: Identifiable {
     let loadInfo: String
     let distance: Double
     let vehicleNumber: String?
+    let cargoWeight: String
+    let sourceCoordinate: CLLocationCoordinate2D?
+    let destinationCoordinate: CLLocationCoordinate2D?
+
+    init(
+        id: String,
+        source: String,
+        destination: String,
+        status: TripStatus,
+        dateValue: String,
+        timeLabel: String,
+        timeValue: String,
+        loadInfo: String,
+        distance: Double,
+        vehicleNumber: String?,
+        cargoWeight: String = "N/A",
+        sourceCoordinate: CLLocationCoordinate2D? = nil,
+        destinationCoordinate: CLLocationCoordinate2D? = nil
+    ) {
+        self.id = id
+        self.source = source
+        self.destination = destination
+        self.status = status
+        self.dateValue = dateValue
+        self.timeLabel = timeLabel
+        self.timeValue = timeValue
+        self.loadInfo = loadInfo
+        self.distance = distance
+        self.vehicleNumber = vehicleNumber
+        self.cargoWeight = cargoWeight
+        self.sourceCoordinate = sourceCoordinate
+        self.destinationCoordinate = destinationCoordinate
+    }
     
     var segment: TripSegment {
         switch status {
@@ -47,13 +80,13 @@ extension LifecycleTrip {
             tripDate: self.dateValue,
             pickup: TripStop(
                 name: self.source,
-                coordinate: CLLocationCoordinate2D(latitude: 18.9499, longitude: 72.9525),
+                coordinate: self.sourceCoordinate ?? CLLocationCoordinate2D(latitude: 0, longitude: 0),
                 time: "08:00 AM",
                 status: .active
             ),
             destination: TripStop(
                 name: self.destination,
-                coordinate: CLLocationCoordinate2D(latitude: 28.4815, longitude: 77.0736),
+                coordinate: self.destinationCoordinate ?? CLLocationCoordinate2D(latitude: 0, longitude: 0),
                 time: "10:00 PM",
                 status: .upcoming
             ),
@@ -65,7 +98,7 @@ extension LifecycleTrip {
 //                    status: .upcoming
 //                )
 //            ],
-            cargoWeight: "18.4t",
+            cargoWeight: self.cargoWeight,
             cargoUnits: self.loadInfo
         )
     }

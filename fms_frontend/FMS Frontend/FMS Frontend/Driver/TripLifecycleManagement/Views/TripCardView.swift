@@ -94,7 +94,7 @@ struct TripCardView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fontWeight(.medium)
-                    Text(String(format: "%.1f km", trip.distance * 1.60934))
+                    Text(String(format: "%.1f km", trip.distance))
                         .font(.headline)
                         .foregroundColor(.primary)
                         .fontWeight(.bold)

@@ -4,13 +4,133 @@ import Combine
 class TripsViewModel: ObservableObject {
     @Published var selectedSegment: TripSegment = .assigned
     @Published var trips: [LifecycleTrip] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+
+    private let tripAPI: TripAPI
     
-    init() {
-        loadMockData()
+    init(tripAPI: TripAPI = .shared) {
+        self.tripAPI = tripAPI
+        Task {
+            await loadDriverTrips()
+        }
     }
     
     var filteredTrips: [LifecycleTrip] {
         trips.filter { $0.segment == selectedSegment }
+    }
+
+    @MainActor
+    func loadDriverTrips() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response = try await tripAPI.getDriverTrips()
+            let mappedTrips = response.trips.compactMap(Self.mapTripItemToLifecycleTrip)
+
+            if mappedTrips.isEmpty {
+                trips = []
+            } else {
+                trips = mappedTrips
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            loadMockData()
+        }
+
+        isLoading = false
+    }
+
+    private static func mapTripItemToLifecycleTrip(_ trip: TripItem) -> LifecycleTrip? {
+        guard let id = trip.id,
+              let source = trip.sourceLocation,
+              let destination = trip.destinationLocation else {
+            return nil
+        }
+
+        let status = mapTripStatus(trip.status)
+        let loadInfo = trip.loadAmount ?? buildLoadInfo(amount: trip.amount, unit: trip.unit)
+        let departure = trip.tripDate ?? trip.departureTime
+
+        return LifecycleTrip(
+            id: id,
+            source: source,
+            destination: destination,
+            status: status,
+            dateValue: formatDateValue(from: departure),
+            timeLabel: status == .completed ? "Completion Time" : "Scheduled Start",
+            timeValue: formatTimeValue(from: departure),
+            loadInfo: loadInfo,
+            distance: parseDistanceKm(trip.tripDistance),
+            vehicleNumber: trip.vehicleRegistrationNumber,
+            cargoWeight: formatCargoWeight(amount: trip.amount, unit: trip.unit),
+            sourceCoordinate: nil,
+            destinationCoordinate: nil
+        )
+    }
+
+    private static func mapTripStatus(_ rawStatus: String?) -> TripStatus {
+        switch rawStatus?.uppercased() {
+        case "COMPLETED":
+            return .completed
+        case "PENDING", "CANCELLED":
+            return .assigned
+        default:
+            return .scheduled
+        }
+    }
+
+    private static func buildLoadInfo(amount: Int?, unit: String?) -> String {
+        if let amount, let unit {
+            return "\(amount) \(unit)"
+        }
+        return "N/A"
+    }
+
+    private static func formatCargoWeight(amount: Int?, unit: String?) -> String {
+        guard let amount, let unit else { return "N/A" }
+        let shortUnit = unit.lowercased().contains("kg") ? "kg" : unit
+        return "\(amount) \(shortUnit)"
+    }
+
+    private static func parseDistanceKm(_ value: String?) -> Double {
+        guard let value, !value.isEmpty else { return 0.0 }
+        let filtered = value.filter { "0123456789.".contains($0) }
+        return Double(filtered) ?? 0.0
+    }
+
+    private static func formatDateValue(from raw: String?) -> String {
+        guard let raw, let date = parseDate(raw) else { return "Today" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return formatter.string(from: date)
+    }
+
+    private static func formatTimeValue(from raw: String?) -> String {
+        guard let raw, let date = parseDate(raw) else { return "TBD" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+
+    private static func parseDate(_ raw: String) -> Date? {
+        let isoWithFractional = ISO8601DateFormatter()
+        isoWithFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoWithFractional.date(from: raw) {
+            return date
+        }
+
+        let isoBasic = ISO8601DateFormatter()
+        isoBasic.formatOptions = [.withInternetDateTime]
+        if let date = isoBasic.date(from: raw) {
+            return date
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.date(from: raw)
     }
     
     private func loadMockData() {
