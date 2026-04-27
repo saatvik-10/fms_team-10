@@ -20,7 +20,7 @@ class DrowsinessDetector: NSObject, ObservableObject {
     // MARK: - Private
     private var captureSession: AVCaptureSession?
     private var drowsyFrameCount = 0
-    private let drowsyFrameThreshold = 20
+    private let drowsyFrameThreshold = 10
     private var frameSkipCounter = 0
     private var alertSoundTimer: Timer?
     
