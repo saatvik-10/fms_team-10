@@ -180,7 +180,7 @@ struct InventoryView: View {
             } else {
                 // Valuation on one line
                 HStack(spacing: 12) {
-                    Text("Total Valuation:")
+                    Text("Total Inventory Cost:")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.secondary)
                     
