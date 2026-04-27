@@ -941,57 +941,6 @@ struct FuelPerformanceChart: View {
     }
 }
 
-// MARK: - Fleet Health Status Stacked Bar
-struct FleetHealthStatusStackedBar: View {
-    let healthy: Int
-    let warning: Int
-    let critical: Int
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            Text("Fleet Health Index")
-                .font(AppFonts.headline)
-                .foregroundColor(AppTheme.primary)
-            
-            Chart {
-                BarMark(x: .value("Status", healthy))
-                    .foregroundStyle(AppColors.activeGreen)
-                BarMark(x: .value("Status", warning))
-                    .foregroundStyle(AppColors.maintenanceOrange)
-                BarMark(x: .value("Status", critical))
-                    .foregroundStyle(AppColors.criticalRed)
-            }
-            .frame(height: 48)
-            .chartXAxis(.hidden)
-            .cornerRadius(10)
-            
-            HStack(spacing: 20) {
-                HStack(spacing: 6) {
-                    Circle().fill(AppColors.activeGreen).frame(width: 8, height: 8)
-                    Text("Healthy: \(healthy)")
-                        .font(AppFonts.headline)
-                        .foregroundColor(AppColors.primaryText)
-                }
-                HStack(spacing: 6) {
-                    Circle().fill(AppColors.maintenanceOrange).frame(width: 8, height: 8)
-                    Text("Warning: \(warning)")
-                        .font(AppFonts.headline)
-                        .foregroundColor(AppColors.primaryText)
-                }
-                HStack(spacing: 6) {
-                    Circle().fill(AppColors.criticalRed).frame(width: 8, height: 8)
-                    Text("Critical: \(critical)")
-                        .font(AppFonts.headline)
-                        .foregroundColor(AppColors.primaryText)
-                }
-            }
-        }
-        .padding(24)
-        .background(Color.white)
-        .cornerRadius(16)
-        .modifier(AppTheme.cardShadow())
-    }
-}
 
 // MARK: - Trip Status Breakdown (Donut)
 struct TripStatusDonutChart: View {

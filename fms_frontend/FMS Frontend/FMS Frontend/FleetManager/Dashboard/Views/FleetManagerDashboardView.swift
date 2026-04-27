@@ -45,13 +45,6 @@ struct FleetManagerDashboardView: View {
                                 maintenance: dataManager.maintenanceCount,
                                 scheduled: dataManager.scheduledCount
                             )
-                            
-                            FleetHealthStatusStackedBar(
-                                healthy: dataManager.healthyCount,
-                                warning: dataManager.warningCount,
-                                critical: dataManager.criticalCount
-                            )
-                            .frame(maxWidth: .infinity)
                         }
                         
                         // MARK: - Section 2: Active Logistics
