@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct ChatListView: View {
-    @StateObject private var viewModel = ChatViewModel()
+    @EnvironmentObject var viewModel: ChatViewModel
     @State private var searchText = ""
     
     var body: some View {
@@ -76,7 +76,7 @@ struct NewChatView: View {
     ]
     
     private var availableContacts: [(String, String, String, String)] {
-        allContacts.filter { $0.3 != "mock_user_id" }
+        allContacts.filter { $0.3 != (viewModel.currentUserId ?? "") }
     }
     
     var body: some View {
@@ -127,6 +127,7 @@ struct NewChatView: View {
 }
 
 struct ChatRoomRow: View {
+    @EnvironmentObject var viewModel: ChatViewModel
     let room: ChatRoom
     
     var body: some View {
@@ -135,7 +136,7 @@ struct ChatRoomRow: View {
             ZStack {
                 Circle()
                     .fill(AppColors.secondaryBackground)
-                Text(room.displayInitials(for: "mock_user_id"))
+                Text(room.displayInitials(for: viewModel.currentUserId ?? ""))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppColors.primary)
             }
@@ -143,7 +144,7 @@ struct ChatRoomRow: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(room.displayName(for: "mock_user_id"))
+                    Text(room.displayName(for: viewModel.currentUserId ?? ""))
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.primary)
                     Spacer()

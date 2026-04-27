@@ -1,57 +1,102 @@
 
-//
-//  ChatService.swift
-//  FMS Chat — Chat Module
-//
-//  ✅ DRAG THIS FILE (inside Chat/ folder) into the main project.
-//
-//  Integration note:
-//  Replace the placeholder URLSession stubs with your existing APIClient calls.
-//  See Api/api.chat.swift for the endpoint definitions.
-//
-
 import Foundation
 import Combine
 
 final class ChatService {
+    private let client = APIClient.shared
+    // Point to your local Node.js server for testing
+    // Change this to your production URL (e.g. Render/Vercel) when you deploy
+    private let chatBaseURL = "http://127.0.0.1:3000/api"
 
     // MARK: - Fetch Rooms
 
-    /// GET /api/chat/rooms
+    /// GET /chat/rooms
     func fetchRooms() -> AnyPublisher<[ChatRoom], Error> {
-        // TODO: Replace with APIClient.shared.request(.chatRooms)
-        return Just([ChatRoom]())
-            .setFailureType(to: Error.self)
-            .eraseToAnyPublisher()
+        return Future { [weak self] promise in
+            Task {
+                do {
+                    let rooms: [ChatRoom] = try await self?.client.request(
+                        path: "/chat/rooms",
+                        method: .get,
+                        requiresAuth: false, // 👈 Disabled for local testing
+                        baseURL: self?.chatBaseURL
+                    ) ?? []
+                    promise(.success(rooms))
+                } catch {
+                    print("❌ ChatService Error (Rooms): \(error)")
+                    promise(.failure(error))
+                }
+            }
+        }
+        .eraseToAnyPublisher()
     }
 
     // MARK: - Fetch Messages
 
-    /// GET /api/chat/rooms/{roomId}/messages
+    /// GET /chat/rooms/{roomId}/messages
     func fetchMessages(for roomId: UUID) -> AnyPublisher<[ChatMessage], Error> {
-        // TODO: Replace with APIClient.shared.request(.chatMessages(roomId: roomId))
-        return Just([ChatMessage]())
-            .setFailureType(to: Error.self)
-            .eraseToAnyPublisher()
+        return Future { [weak self] promise in
+            Task {
+                do {
+                    let messages: [ChatMessage] = try await self?.client.request(
+                        path: "/chat/rooms/\(roomId.uuidString)/messages",
+                        method: .get,
+                        requiresAuth: false, // 👈 Disabled for local testing
+                        baseURL: self?.chatBaseURL
+                    ) ?? []
+                    promise(.success(messages))
+                } catch {
+                    print("❌ ChatService Error (Messages): \(error)")
+                    promise(.failure(error))
+                }
+            }
+        }
+        .eraseToAnyPublisher()
     }
 
     // MARK: - Send Message
 
-    /// POST /api/chat/rooms/{roomId}/messages
+    /// POST /chat/rooms/{roomId}/messages
     func sendMessage(_ message: ChatMessage) -> AnyPublisher<ChatMessage, Error> {
-        // TODO: Replace with APIClient.shared.request(.sendMessage(message))
-        return Just(message)
-            .setFailureType(to: Error.self)
-            .eraseToAnyPublisher()
+        return Future { [weak self] promise in
+            Task {
+                do {
+                    let sentMessage: ChatMessage = try await self?.client.request(
+                        path: "/chat/rooms/\(message.roomId.uuidString)/messages",
+                        method: .post,
+                        body: message,
+                        requiresAuth: false, // 👈 Disabled for local testing
+                        baseURL: self?.chatBaseURL
+                    ) ?? message
+                    promise(.success(sentMessage))
+                } catch {
+                    print("❌ ChatService Error (Send): \(error)")
+                    promise(.failure(error))
+                }
+            }
+        }
+        .eraseToAnyPublisher()
     }
 
     // MARK: - Mark Read
 
-    /// PUT /api/chat/rooms/{roomId}/read
+    /// PUT /chat/rooms/{roomId}/read
     func markRead(roomId: UUID) -> AnyPublisher<Void, Error> {
-        // TODO: Replace with APIClient.shared.request(.markChatRead(roomId: roomId))
-        return Just(())
-            .setFailureType(to: Error.self)
-            .eraseToAnyPublisher()
+        return Future { [weak self] promise in
+            Task {
+                do {
+                    let _: EmptyResponse = try await self?.client.request(
+                        path: "/chat/rooms/\(roomId.uuidString)/read",
+                        method: .put,
+                        requiresAuth: false, // 👈 Disabled for local testing
+                        baseURL: self?.chatBaseURL
+                    ) ?? EmptyResponse()
+                    promise(.success(()))
+                } catch {
+                    promise(.failure(error))
+                }
+            }
+        }
+        .eraseToAnyPublisher()
     }
 }

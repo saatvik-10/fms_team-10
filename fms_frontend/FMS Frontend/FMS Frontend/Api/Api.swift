@@ -69,7 +69,7 @@ private struct APIErrorResponse: Decodable {
 	let message: String?
 }
 
-struct EmptyResponse: Encodable {}
+struct EmptyResponse: Codable {}
 
 struct MailStatus: Decodable {
 	let sent: Bool
@@ -181,6 +181,7 @@ final class APIClient {
 		path: String,
 		method: HTTPMethod,
 		requiresAuth: Bool = true,
+		baseURL: String? = nil,
 		responseType: T.Type = T.self
 	) async throws -> T {
 		try await request(
@@ -188,6 +189,7 @@ final class APIClient {
 			method: method,
 			body: Optional<EmptyResponse>.none,
 			requiresAuth: requiresAuth,
+			baseURL: baseURL,
 			responseType: responseType
 		)
 	}
@@ -209,9 +211,11 @@ final class APIClient {
 		method: HTTPMethod,
 		body: B? = nil,
 		requiresAuth: Bool = true,
+		baseURL: String? = nil,
 		responseType: T.Type = T.self
 	) async throws -> T {
-		guard let url = URL(string: APIConfig.baseURL + path) else {
+		let base = baseURL ?? APIConfig.baseURL
+		guard let url = URL(string: base + path) else {
 			throw APIError.invalidURL
 		}
 

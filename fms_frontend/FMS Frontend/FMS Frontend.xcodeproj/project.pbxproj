@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		2C2ACB4A2F90C20B005FC85A /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = 2C2ACB492F90C20B005FC85A /* GoogleMaps */; };
 		2CC1CC7C2F92590800FB9453 /* map_style.json in Resources */ = {isa = PBXBuildFile; fileRef = 2CC1CC7B2F92590800FB9453 /* map_style.json */; };
+		BFFAD0522F9FD3B700212149 /* PusherSwift in Frameworks */ = {isa = PBXBuildFile; productRef = BFFAD0512F9FD3B700212149 /* PusherSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,7 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				2C2ACB4A2F90C20B005FC85A /* GoogleMaps in Frameworks */,
+				BFFAD0522F9FD3B700212149 /* PusherSwift in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -70,6 +72,7 @@
 			name = "FMS Frontend";
 			packageProductDependencies = (
 				2C2ACB492F90C20B005FC85A /* GoogleMaps */,
+				BFFAD0512F9FD3B700212149 /* PusherSwift */,
 			);
 			productName = "FMS Frontend";
 			productReference = BF4D0FB62F90972D00D2DCFD /* FMS Frontend.app */;
@@ -101,6 +104,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				2C2ACB482F90C20B005FC85A /* XCRemoteSwiftPackageReference "ios-maps-sdk" */,
+				BFFAD0502F9FD3B700212149 /* XCRemoteSwiftPackageReference "pusher-websocket-swift" */,
 			);
 			preferredProjectObjectVersion = 100;
 			productRefGroup = BF4D0FB72F90972D00D2DCFD /* Products */;
@@ -351,6 +355,14 @@
 				minimumVersion = 10.12.0;
 			};
 		};
+		BFFAD0502F9FD3B700212149 /* XCRemoteSwiftPackageReference "pusher-websocket-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pusher/pusher-websocket-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.1.10;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -358,6 +370,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2C2ACB482F90C20B005FC85A /* XCRemoteSwiftPackageReference "ios-maps-sdk" */;
 			productName = GoogleMaps;
+		};
+		BFFAD0512F9FD3B700212149 /* PusherSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BFFAD0502F9FD3B700212149 /* XCRemoteSwiftPackageReference "pusher-websocket-swift" */;
+			productName = PusherSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

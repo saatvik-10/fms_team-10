@@ -100,6 +100,29 @@ final class AppSessionStore: ObservableObject {
         state = .authenticated(role)
     }
     
+    func bypassLogin(role: AppUserRole) {
+        switch role {
+        case .driver:
+            driverProfile = UserProfile.mockDriver
+        case .manager:
+            managerProfile = ManagerProfileData(
+                id: UserProfile.mockManager.id,
+                name: UserProfile.mockManager.name,
+                email: UserProfile.mockManager.email,
+                phone: UserProfile.mockManager.phone,
+                address: UserProfile.mockManager.address,
+                username: UserProfile.mockManager.username,
+                role: "MANAGER"
+            )
+        case .maintenance:
+            // For maintenance, we can use a mock profile too
+            driverProfile = UserProfile.mockMaintenance
+        case .none:
+            break
+        }
+        state = .authenticated(role)
+    }
+    
     func logout() {
         authAPI.logout()
         managerProfile = nil
@@ -171,6 +194,29 @@ struct ContentView: View {
             }
             .task {
                 await session.restoreSessionIfNeeded()
+            }
+            .onChange(of: session.state) { newState in
+                if case let .authenticated(role) = newState {
+                    let userId: String
+                    let name: String
+                    
+                    if let manager = session.managerProfile {
+                        userId = manager.id
+                        name = manager.name
+                    } else if let driver = session.driverProfile {
+                        userId = driver.id
+                        name = driver.name
+                    } else {
+                        userId = "unknown"
+                        name = "User"
+                    }
+                    
+                    chatViewModel.configure(
+                        userId: userId,
+                        name: name,
+                        role: String(describing: role)
+                    )
+                }
             }
             // --- CHAT MODIFIERS ---
             .environmentObject(chatViewModel)

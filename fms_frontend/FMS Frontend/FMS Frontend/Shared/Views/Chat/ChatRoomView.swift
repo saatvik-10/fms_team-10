@@ -25,7 +25,7 @@ struct ChatRoomView: View {
                             ForEach(messages) { message in
                                 ChatBubbleView(
                                     message: message,
-                                    isCurrentUser: message.senderId == "mock_user_id"
+                                    isCurrentUser: message.senderId == (viewModel.currentUserId ?? "")
                                 )
                                 .id(message.id)
                             }
@@ -86,7 +86,7 @@ struct ChatRoomView: View {
             }
         }
         .background(Color.white)
-        .navigationTitle(room.displayName(for: "mock_user_id"))
+        .navigationTitle(room.displayName(for: viewModel.currentUserId ?? ""))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             ChatViewModel.activeRoomId = room.id

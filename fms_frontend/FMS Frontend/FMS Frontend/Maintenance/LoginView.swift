@@ -49,6 +49,20 @@ struct LoginView: View {
                         Color.clear.frame(height: 32)
                         
                         actionButtonSection
+                        
+                        // MARK: - BYPASS BUTTONS (FOR TESTING)
+                        VStack(spacing: 12) {
+                            Text("DEV BYPASS (TEST CHAT)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white.opacity(0.4))
+                                .padding(.top, 20)
+                            
+                            HStack(spacing: 12) {
+                                bypassButton(title: "Driver", role: .driver)
+                                bypassButton(title: "Manager", role: .manager)
+                                bypassButton(title: "Maint", role: .maintenance)
+                            }
+                        }
                     }
                     .padding(32)
                     .frame(maxWidth: 400) // Fixed max width for consistent card look
@@ -240,6 +254,26 @@ struct LoginView: View {
         }
         .disabled(isLoggingIn || username.isEmpty || password.isEmpty)
         .opacity(isLoggingIn || username.isEmpty || password.isEmpty ? 0.7 : 1.0)
+    }
+
+    @ViewBuilder
+    private func bypassButton(title: String, role: AppUserRole) -> some View {
+        Button(action: {
+            userRole = role
+            session.bypassLogin(role: role)
+        }) {
+            Text(title)
+                .font(.system(size: 13, weight: .bold))
+                .padding(.vertical, 10)
+                .padding(.horizontal, 15)
+                .background(Color.white.opacity(0.1))
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+        }
     }
 
     @MainActor

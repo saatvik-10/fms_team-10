@@ -1,22 +1,9 @@
 
-//
-//  ChatViewModel.swift
-//  FMS Chat — Chat Module
-//
-//  ✅ DRAG THIS FILE (inside Chat/ folder) into the main project.
-//
-
 import SwiftUI
 import Combine
 import UserNotifications
 
-
-
 class ChatViewModel: ObservableObject {
-    // Shared store for the simulation so role switching doesn't wipe data
-    private static var sharedRooms: [ChatRoom] = []
-    private static var sharedMessages: [UUID: [ChatMessage]] = [:]
-    
     @Published var rooms: [ChatRoom] = []
     @Published var messages: [UUID: [ChatMessage]] = [:] // RoomID -> Messages
     @Published var isLoading = false
@@ -26,137 +13,143 @@ class ChatViewModel: ObservableObject {
     @Published var latestNotification: ChatMessage?
     @Published var showNotification = false
     
+    // Track current user
+    @Published var currentUserId: String?
+    private var currentUserName: String?
+    private var currentUserRole: String?
+    
     // Track current active room to avoid notifying for the room the user is in
     static var activeRoomId: UUID?
     
     private let chatService = ChatService()
+    private let pusher = PusherService.shared
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        // Initialize from shared store if not empty, otherwise load mocks
-        if ChatViewModel.sharedRooms.isEmpty {
-            ChatViewModel.sharedRooms = getMockRooms()
-        }
-        syncWithStore()
+        setupPusherSubscription()
     }
     
-    private func syncWithStore() {
-        self.rooms = ChatViewModel.sharedRooms
-        self.messages = ChatViewModel.sharedMessages
+    func configure(userId: String, name: String, role: String) {
+        self.currentUserId = userId
+        self.currentUserName = name
+        self.currentUserRole = role
+        
+        pusher.connect(userId: userId)
+        loadRooms()
     }
     
-    private func updateStore() {
-        ChatViewModel.sharedRooms = self.rooms
-        ChatViewModel.sharedMessages = self.messages
+    private func setupPusherSubscription() {
+        pusher.messagePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in
+                self?.handleIncomingMessage(message)
+            }
+            .store(in: &cancellables)
     }
     
-    // MARK: - Simulation Actions
-    
-    func startNewConversation(with name: String, initials: String, role: String, targetId: String, initialMessage: String) {
-        let roomId = UUID()
-        let currentUserId = "mock_user_id"
-        let currentUserName = "Mock User"
-        let currentUserRole = "driver"
-        
-        let newRoom = ChatRoom(
-            id: roomId,
-            name: name,
-            avatarInitials: initials,
-            roomType: .direct,
-            participants: [currentUserId, targetId],
-            participantNames: [
-                currentUserId: currentUserName,
-                targetId: name
-            ]
-        )
-        
-        let firstMsg = ChatMessage(
-            roomId: roomId,
-            senderId: currentUserId,
-            senderName: currentUserName,
-            senderRole: currentUserRole,
-            content: initialMessage
-        )
-        
-        // Add to store
-        ChatViewModel.sharedRooms.insert(newRoom, at: 0)
-        ChatViewModel.sharedMessages[roomId] = [firstMsg]
-        
-        // Update local room with last message
-        if let index = ChatViewModel.sharedRooms.firstIndex(where: { $0.id == roomId }) {
-            ChatViewModel.sharedRooms[index].lastMessage = firstMsg
+    private func handleIncomingMessage(_ message: ChatMessage) {
+        // 1. Update messages list
+        var roomMessages = messages[message.roomId] ?? []
+        if !roomMessages.contains(where: { $0.id == message.id }) {
+            roomMessages.append(message)
+            messages[message.roomId] = roomMessages
+            print("📩 ChatViewModel: Added live message to room \(message.roomId)")
         }
         
-        syncWithStore()
-    }
-    
-    func deleteRoom(at offsets: IndexSet) {
-        offsets.forEach { index in
-            let room = self.rooms[index]
-            ChatViewModel.sharedRooms.removeAll(where: { $0.id == room.id })
-            ChatViewModel.sharedMessages.removeValue(forKey: room.id)
+        // 2. Update room's last message and activity
+        if let index = rooms.firstIndex(where: { $0.id == message.roomId }) {
+            rooms[index].lastMessage = message
+            rooms[index].lastActivity = message.timestamp
+            
+            // Increment unread count if not active room
+            if message.roomId != ChatViewModel.activeRoomId && message.senderId != currentUserId {
+                rooms[index].unreadCount += 1
+            }
+            
+            // Re-sort rooms
+            rooms.sort(by: { $0.lastActivity > $1.lastActivity })
         }
-        syncWithStore()
-    }
-    
-    func toggleStar(for messageId: UUID, in roomId: UUID) {
-        if let roomMessages = ChatViewModel.sharedMessages[roomId],
-           let index = roomMessages.firstIndex(where: { $0.id == messageId }) {
-            ChatViewModel.sharedMessages[roomId]?[index].isStarred.toggle()
-            syncWithStore()
+        
+        // 3. Post internal notification if not in the room
+        if message.roomId != ChatViewModel.activeRoomId && message.senderId != currentUserId {
+            NotificationKit.shared.postNotification(
+                title: message.senderName,
+                subtitle: message.senderRole.capitalized,
+                body: message.content,
+                userInfo: ["roomId": message.roomId.uuidString, "senderId": message.senderId]
+            )
         }
     }
     
     // MARK: - API Actions
     
     func loadRooms() {
+        guard currentUserId != nil else { return }
+        
         isLoading = true
-        // If we have simulation rooms, we'll keep them
-        if ChatViewModel.sharedRooms.isEmpty {
-            ChatViewModel.sharedRooms = getMockRooms()
-        }
-        syncWithStore()
-        isLoading = false
+        chatService.fetchRooms()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] completion in
+                self?.isLoading = false
+                if case .failure(let error) = completion {
+                    self?.errorMessage = error.localizedDescription
+                }
+            } receiveValue: { [weak self] rooms in
+                self?.rooms = rooms.sorted(by: { $0.lastActivity > $1.lastActivity })
+            }
+            .store(in: &cancellables)
     }
     
     func loadMessages(for roomId: UUID) {
-        if ChatViewModel.sharedMessages[roomId] == nil {
-            ChatViewModel.sharedMessages[roomId] = getMockMessages(for: roomId)
-        }
-        syncWithStore()
+        isLoading = true
+        pusher.subscribeToRoom(roomId: roomId)
+        
+        chatService.fetchMessages(for: roomId)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] completion in
+                self?.isLoading = false
+                if case .failure(let error) = completion {
+                    self?.errorMessage = error.localizedDescription
+                }
+            } receiveValue: { [weak self] messages in
+                self?.messages[roomId] = messages
+            }
+            .store(in: &cancellables)
     }
     
     func sendMessage(content: String, in roomId: UUID) {
-        let currentUserId = "mock_user_id"
-        let currentUserName = "Mock User"
-        let currentUserRole = "driver"
+        guard let userId = currentUserId,
+              let userName = currentUserName,
+              let userRole = currentUserRole else { return }
         
         let newMessage = ChatMessage(
             roomId: roomId,
-            senderId: currentUserId,
-            senderName: currentUserName,
-            senderRole: currentUserRole,
+            senderId: userId,
+            senderName: userName,
+            senderRole: userRole,
             content: content
         )
         
-        // Update shared store
-        ChatViewModel.sharedMessages[roomId]?.append(newMessage)
-        
-        if let index = ChatViewModel.sharedRooms.firstIndex(where: { $0.id == roomId }) {
-            ChatViewModel.sharedRooms[index].lastMessage = newMessage
-            ChatViewModel.sharedRooms[index].lastActivity = Date()
-            ChatViewModel.sharedRooms.sort(by: { $0.lastActivity > $1.lastActivity })
+        // Optimistic UI update
+        if var roomMessages = messages[roomId] {
+            roomMessages.append(newMessage)
+            messages[roomId] = roomMessages
         }
         
-        // Simulation: Use NotificationKit to alert other roles
-        NotificationKit.shared.postNotification(
-            title: newMessage.senderName,
-            subtitle: newMessage.senderRole.capitalized,
-            body: newMessage.content,
-            userInfo: ["roomId": roomId.uuidString, "senderId": newMessage.senderId]
-        )
-        
-        syncWithStore()
+        chatService.sendMessage(newMessage)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] completion in
+                if case .failure(let error) = completion {
+                    self?.errorMessage = "Failed to send: \(error.localizedDescription)"
+                    // Ideally: remove the optimistic message or show error state
+                }
+            } receiveValue: { [weak self] sentMessage in
+                // Update with server-confirmed message if needed (e.g. real timestamp/ID)
+                if let index = self?.messages[roomId]?.firstIndex(where: { $0.id == newMessage.id }) {
+                    self?.messages[roomId]?[index] = sentMessage
+                }
+            }
+            .store(in: &cancellables)
     }
     
     func markAsRead(roomId: UUID) {
@@ -169,138 +162,25 @@ class ChatViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
-    // MARK: - Mock Data
-    
-    private func getMockRooms() -> [ChatRoom] {
-        let role = "driver"
-        
-        var rooms: [ChatRoom] = []
-        
-        // Common System Broadcast for all
-        let systemId = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
-        rooms.append(ChatRoom(
-            id: systemId,
-            name: "Fleet System Alerts",
-            avatarInitials: "!!",
-            roomType: .broadcast,
-            lastMessage: ChatMessage(roomId: systemId, senderId: "system", senderName: "System", senderRole: "manager", content: "Severe weather warning for Northern Route. Drive safe."),
-            unreadCount: 0,
-            lastActivity: Date().addingTimeInterval(-3600)
-        ))
-        
-        if role == "driver" {
-            let mgrId = UUID()
-            rooms.append(ChatRoom(
-                id: mgrId,
-                name: "Sarah (Fleet Manager)",
-                avatarInitials: "SM",
-                roomType: .direct,
-                participants: ["chad_user", "manager_user"],
-                participantNames: ["chad_user": "Chad", "manager_user": "Sarah (Fleet Manager)"],
-                lastMessage: ChatMessage(roomId: mgrId, senderId: "manager_user", senderName: "Sarah Manager", senderRole: "manager", content: "Confirming your pickup at Dock 4."),
-                unreadCount: 1,
-                lastActivity: Date().addingTimeInterval(-600)
-            ))
-            
-            let maintId = UUID()
-            rooms.append(ChatRoom(
-                id: maintId,
-                name: "Main Shop (Support)",
-                avatarInitials: "MS",
-                roomType: .group,
-                participants: ["chad_user", "maint_1"],
-                participantNames: ["chad_user": "Chad", "maint_1": "Main Shop (Support)"],
-                lastMessage: ChatMessage(roomId: maintId, senderId: "maint_1", senderName: "Mike Mechanic", senderRole: "maintenance", content: "Truck #202 is ready for you."),
-                unreadCount: 0,
-                lastActivity: Date().addingTimeInterval(-1200)
-            ))
-        } else if role == "maintenance" {
-            let teamId = UUID()
-            rooms.append(ChatRoom(
-                id: teamId,
-                name: "Night Shift Team",
-                avatarInitials: "NS",
-                roomType: .group,
-                participants: ["john_user", "maint_2"],
-                participantNames: ["john_user": "John", "maint_2": "Night Shift Team"],
-                lastMessage: ChatMessage(roomId: teamId, senderId: "maint_2", senderName: "Pete", senderRole: "maintenance", content: "Inventory updated for the brake pads."),
-                unreadCount: 3,
-                lastActivity: Date().addingTimeInterval(-300)
-            ))
-            
-            let driverId = UUID()
-            rooms.append(ChatRoom(
-                id: driverId,
-                name: "Dave (Driver #402)",
-                avatarInitials: "DD",
-                roomType: .direct,
-                participants: ["john_user", "driver_1"],
-                participantNames: ["john_user": "John", "driver_1": "Dave (Driver #402)"],
-                lastMessage: ChatMessage(roomId: driverId, senderId: "driver_1", senderName: "Dave", senderRole: "driver", content: "The steering feels a bit loose today."),
-                unreadCount: 0,
-                lastActivity: Date().addingTimeInterval(-1800)
-            ))
-        } else if role == "manager" {
-            let opsId = UUID()
-            rooms.append(ChatRoom(
-                id: opsId,
-                name: "Operations Hub",
-                avatarInitials: "OH",
-                roomType: .group,
-                participants: ["manager_user", "ops_1"],
-                participantNames: ["manager_user": "Fleet Manager", "ops_1": "Operations Hub"],
-                lastMessage: ChatMessage(roomId: opsId, senderId: "ops_1", senderName: "Dispatch", senderRole: "manager", content: "All routes for today have been assigned."),
-                unreadCount: 0,
-                lastActivity: Date().addingTimeInterval(-150)
-            ))
-            
-            let urgentId = UUID()
-            rooms.append(ChatRoom(
-                id: urgentId,
-                name: "Urgent: Breakdown Support",
-                avatarInitials: "!!",
-                roomType: .group,
-                participants: ["manager_user", "driver_2"],
-                participantNames: ["manager_user": "Fleet Manager", "driver_2": "Urgent: Breakdown Support"],
-                lastMessage: ChatMessage(roomId: urgentId, senderId: "driver_2", senderName: "Alex", senderRole: "driver", content: "Engine overheating on I-95."),
-                unreadCount: 5,
-                lastActivity: Date().addingTimeInterval(-60)
-            ))
-        }
-        
-        return rooms.sorted(by: { $0.lastActivity > $1.lastActivity })
+    func startNewConversation(with name: String, initials: String, role: String, targetId: String, initialMessage: String) {
+        // In a "proper" setup, this would be a POST to /chat/rooms/create
+        // For now, we'll stick to the existing rooms or handle creation if the API supports it.
+        print("Creating new conversation with \(name)...")
     }
     
-    private func getMockMessages(for roomId: UUID) -> [ChatMessage] {
-        let role = "driver"
-        let room = rooms.first(where: { $0.id == roomId })
-        let name = room?.name ?? ""
-        
-        if name.contains("Sarah") {
-            return [
-                ChatMessage(roomId: roomId, senderId: "current_user", senderName: "Driver", senderRole: "driver", content: "Hey Sarah, I'm at the terminal now.", timestamp: Date().addingTimeInterval(-1200)),
-                ChatMessage(roomId: roomId, senderId: "manager_id", senderName: "Sarah Manager", senderRole: "manager", content: "Great. Proceed to Dock 4 for the electronics shipment.", timestamp: Date().addingTimeInterval(-1100)),
-                ChatMessage(roomId: roomId, senderId: "current_user", senderName: "Driver", senderRole: "driver", content: "Got it. Documents are ready?", timestamp: Date().addingTimeInterval(-1000)),
-                ChatMessage(roomId: roomId, senderId: "manager_id", senderName: "Sarah Manager", senderRole: "manager", content: "Yes, they are with the gate officer.", timestamp: Date().addingTimeInterval(-900)),
-                ChatMessage(roomId: roomId, senderId: "manager_id", senderName: "Sarah Manager", senderRole: "manager", content: "Confirming your pickup at Dock 4.", timestamp: Date().addingTimeInterval(-600), status: .read)
-            ]
-        } else if name.contains("Night Shift") {
-            return [
-                ChatMessage(roomId: roomId, senderId: "maint_1", senderName: "John", senderRole: "maintenance", content: "Did we get the shipment for the air filters?", timestamp: Date().addingTimeInterval(-3600)),
-                ChatMessage(roomId: roomId, senderId: "current_user", senderName: "Pete", senderRole: "maintenance", content: "Checking the log now...", timestamp: Date().addingTimeInterval(-3400)),
-                ChatMessage(roomId: roomId, senderId: "current_user", senderName: "Pete", senderRole: "maintenance", content: "Yes, arrived at 4 PM. 20 units.", timestamp: Date().addingTimeInterval(-3200)),
-                ChatMessage(roomId: roomId, senderId: "maint_2", senderName: "Pete", senderRole: "maintenance", content: "Inventory updated for the brake pads.", timestamp: Date().addingTimeInterval(-300))
-            ]
-        } else if name.contains("Breakdown") {
-            return [
-                ChatMessage(roomId: roomId, senderId: "driver_2", senderName: "Alex", senderRole: "driver", content: "Truck #109 is losing power.", timestamp: Date().addingTimeInterval(-600)),
-                ChatMessage(roomId: roomId, senderId: "current_user", senderName: "Manager", senderRole: "manager", content: "Copy that Alex. What is your current location?", timestamp: Date().addingTimeInterval(-550)),
-                ChatMessage(roomId: roomId, senderId: "driver_2", senderName: "Alex", senderRole: "driver", content: "Just passed Mile Marker 42 on I-95 North.", timestamp: Date().addingTimeInterval(-500)),
-                ChatMessage(roomId: roomId, senderId: "current_user", senderName: "Manager", senderRole: "manager", content: "Stay with the vehicle. Dispatching a tow and a relief driver now.", timestamp: Date().addingTimeInterval(-400)),
-                ChatMessage(roomId: roomId, senderId: "driver_2", senderName: "Alex", senderRole: "driver", content: "Engine overheating on I-95.", timestamp: Date().addingTimeInterval(-60))
-            ]
+    func deleteRoom(at offsets: IndexSet) {
+        // TODO: Implement DELETE /chat/rooms/{id}
+        offsets.forEach { index in
+            let room = self.rooms[index]
+            self.rooms.remove(at: index)
+            self.messages.removeValue(forKey: room.id)
         }
-        
-        return []
+    }
+    
+    func toggleStar(for messageId: UUID, in roomId: UUID) {
+        if let index = messages[roomId]?.firstIndex(where: { $0.id == messageId }) {
+            messages[roomId]?[index].isStarred.toggle()
+            // TODO: API call to sync starred status
+        }
     }
 }
