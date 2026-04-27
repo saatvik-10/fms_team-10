@@ -96,19 +96,6 @@ struct DashboardHomeView: View {
                 
                 // Active Mission Section
                 MissionCardView(viewModel: viewModel, locationManager: locationManager)
-                
-                // Vehicle Details Section
-                VehicleCardView(viewModel: viewModel)
-                
-                // Bottom Request Trip Action
-                PrimaryButton(
-                    title: "Request Trip",
-                    icon: "exclamationmark.triangle.fill",
-                    backgroundColor: AppColors.cardBackground,
-                    textColor: Color(white: 0.2)
-                ) {
-                    // Action handler
-                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -183,7 +170,7 @@ struct MissionCardView: View {
                         .cornerRadius(6)
                 }
                 
-                Text("Route #\(viewModel.activeTrip.routeNumber)")
+                Text(viewModel.vehiclePlate)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.black)
@@ -354,6 +341,7 @@ struct DriverProfileView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var session: AppSessionStore
     var onLogout: (() -> Void)? = nil
+    @State private var isOffDuty: Bool = false
     
     var formattedExpiryDate: String {
         guard let date = session.driverProfile?.expiryDate else { return "-" }
@@ -397,6 +385,17 @@ struct DriverProfileView: View {
                 AppProfileInfoRow(label: "EXPIRY DATE", value: formattedExpiryDate)
                 AppProfileInfoRow(label: "DL CLASSES", value: formattedClasses)
                 AppProfileInfoRow(label: "JOINED", value: session.driverProfile?.createdAt.formatted(date: .abbreviated, time: .omitted) ?? "-")
+
+                HStack {
+                    Text("TURN ON OFFDUTY")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Toggle("", isOn: $isOffDuty)
+                        .labelsHidden()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 4)
             }
             
             Section {
