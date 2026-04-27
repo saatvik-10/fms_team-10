@@ -189,6 +189,9 @@ struct WorkOrderDetailsView: View {
                                                     Text(inventoryPart.partId)
                                                         .font(.caption)
                                                         .foregroundColor(.secondary)
+                                                    Text("Total ₹\(String(format: "%.2f", inventoryPart.unitPriceInr * Double(usage.quantity)))")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
                                                 }
 
                                                 Spacer()
