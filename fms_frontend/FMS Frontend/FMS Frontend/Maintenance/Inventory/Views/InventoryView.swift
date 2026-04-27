@@ -126,37 +126,89 @@ struct InventoryView: View {
     }
     
     private var prominentValuationCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Total Valuation")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(AppColors.primary.opacity(0.8))
-                        .textCase(.uppercase)
+        VStack(alignment: .leading, spacing: 12) {
+            if store.inventoryParts.isEmpty {
+                // CSV Requirements Box
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(AppColors.primary)
+                        Text("CSV Import Requirements")
+                            .font(.system(size: 16, weight: .bold))
+                    }
                     
-                    Text(String(format: "₹%.2f", store.totalInventoryValue))
-                        .font(.system(size: 40, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.primaryText)
+                    Text("To upload your inventory, ensure your CSV file contains these headers:")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        headerRequirementRow(title: "Required", fields: "Name, SKU, Category, Stock, Cost")
+                        headerRequirementRow(title: "Optional", fields: "Supplier, Vehicle Type, Location, Min Stock")
+                    }
+                    .padding(.top, 4)
+                    
+                    Button(action: { showingFileImporter = true }) {
+                        Text("Upload CSV Now")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(AppColors.primary)
+                            .cornerRadius(12)
+                    }
+                    .padding(.top, 8)
                 }
-                Spacer()
-                
-                ZStack {
-                    Circle()
-                        .fill(AppColors.primary.opacity(0.1))
-                        .frame(width: 56, height: 56)
+                .padding(20)
+                .background(AppColors.primary.opacity(0.05))
+                .cornerRadius(20)
+            } else {
+                // Valuation on one line
+                HStack(spacing: 12) {
+                    Text("Total Valuation:")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.secondary)
+                    
+                    Text(formatCurrency(store.totalInventoryValue))
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.primaryText)
+                    
+                    Spacer()
+                    
                     Image(systemName: "chart.pie.fill")
-                        .font(.system(size: 24))
+                        .font(.system(size: 20))
                         .foregroundColor(AppColors.primary)
                 }
+                .padding(.vertical, 8)
             }
         }
-        .padding(20)
+        .padding(store.inventoryParts.isEmpty ? 0 : 20)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color.white)
                 .shadow(color: Color.black.opacity(0.05), radius: 15, x: 0, y: 5)
         )
+    }
+
+    private func headerRequirementRow(title: String, fields: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.system(size: 11, weight: .black))
+                .foregroundColor(AppColors.primary.opacity(0.7))
+            Text(fields)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.primary)
+        }
+    }
+
+    private func formatCurrency(_ value: Double) -> String {
+        if value >= 10_000_000 { // 1 Crore = 100 Lakhs
+            return String(format: "₹%.2f C", value / 10_000_000)
+        } else if value >= 100_000 { // 1 Lakh
+            return String(format: "₹%.2f L", value / 100_000)
+        } else {
+            return String(format: "₹%.2f", value)
+        }
     }
     
     private var mockAlerts: [InventoryPart] {

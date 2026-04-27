@@ -64,6 +64,14 @@ struct TripInspection: Identifiable, Codable {
     var imagesData: [Data] = []
     var imageAnalyses: [String] = []
     
+    // Parity with WorkOrder
+    var taskDetails: String = "Comprehensive vehicle safety audit and multi-point technical inspection."
+    var technicianNotes: String = ""
+    var voiceTranscript: String? = nil
+    var driverMediaImages: [Data] = []
+    var proofOfWorkImages: [Data] = []
+    var consumedParts: [WorkOrderPartUsage] = []
+    
     var completionPercentage: Double {
         let checked = items.filter { $0.result != .pending }.count
         return Double(checked) / Double(items.count)

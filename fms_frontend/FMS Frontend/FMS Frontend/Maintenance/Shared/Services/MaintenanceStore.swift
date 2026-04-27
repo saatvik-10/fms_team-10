@@ -267,19 +267,25 @@ class MaintenanceStore: ObservableObject {
         }
         
         let inspection = TripInspection(
-            title: order.title,
-            vehicleId: "V-HIST",
+            title: "WO Completion: \(order.title)",
+            vehicleId: order.orderID,
             unitName: order.vehicleName,
             unitVIN: order.vehicleVIN,
             driverId: "SYSTEM",
             timestamp: Date(),
             type: .maintenance,
-            vehicleType: order.vehicleName.contains("Bus") ? .car : .truck,
+            vehicleType: order.vehicleName.lowercased().contains("bus") ? .car : .truck,
             status: .completed,
             priority: order.priority,
             items: checklistItems,
-            notes: "Maintenance completed by \(order.technicianId). Notes: \(order.technicianNotes)",
-            maintenanceStaffId: order.technicianId
+            notes: order.technicianNotes,
+            maintenanceStaffId: order.technicianId,
+            taskDetails: order.taskDetails,
+            technicianNotes: order.technicianNotes,
+            voiceTranscript: order.voiceTranscript,
+            driverMediaImages: order.driverMediaImages,
+            proofOfWorkImages: order.proofOfWorkImages,
+            consumedParts: order.consumedParts
         )
         addInspection(inspection)
     }

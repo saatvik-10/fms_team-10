@@ -152,7 +152,7 @@ struct MaintenanceDashboardView: View {
                     icon: "shippingbox.fill",
                     color: .orange,
                     action: { showingFileImporter = true },
-                    emphasize: true
+                    emphasize: false
                 )
             }
             .padding(.horizontal, 20)
