@@ -286,7 +286,6 @@ export class Maintenance {
         email: true,
         phone: true,
         dob: true,
-        age: true,
         createdAt: true,
       },
     });
