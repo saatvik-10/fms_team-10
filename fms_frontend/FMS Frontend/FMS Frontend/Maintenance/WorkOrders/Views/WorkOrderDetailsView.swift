@@ -119,25 +119,25 @@ struct WorkOrderDetailsView: View {
                             }
                         }
                         
-                        Divider().padding(.vertical, 12)
+                        // Divider().padding(.vertical, 12)
                         
                         // Task Details Card
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "TASK DETAILS", icon: "doc.text.fill")
+                        // VStack(alignment: .leading, spacing: 12) {
+                        //     SectionHeader(title: "TASK DETAILS", icon: "doc.text.fill")
                             
-                            VStack(alignment: .leading, spacing: 12) {
-                                ForEach(taskPoints, id: \.self) { point in
-                                    Text(point)
-                                        .font(.body)
-                                        .foregroundColor(.primary)
-                                }
-                            }
-                            .padding(20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white)
-                            .cornerRadius(16)
-                            .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-                        }
+                        //     VStack(alignment: .leading, spacing: 12) {
+                        //         ForEach(taskPoints, id: \.self) { point in
+                        //             Text(point)
+                        //                 .font(.body)
+                        //                 .foregroundColor(.primary)
+                        //         }
+                        //     }
+                        //     .padding(20)
+                        //     .frame(maxWidth: .infinity, alignment: .leading)
+                        //     .background(Color.white)
+                        //     .cornerRadius(16)
+                        //     .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+                        // }
                         
                         // Driver Notes Card
                         VStack(alignment: .leading, spacing: 12) {
