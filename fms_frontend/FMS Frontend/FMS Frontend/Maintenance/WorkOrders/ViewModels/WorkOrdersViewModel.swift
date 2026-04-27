@@ -10,7 +10,7 @@ class WorkOrdersViewModel: ObservableObject {
     private var store: MaintenanceStore
     @Published var filteredWorkOrders: [WorkOrder] = []
     @Published var searchText: String = ""
-    @Published var selectedStatus: WorkOrderStatus? = .pending
+    @Published var selectedStatus: WorkOrderStatus? = nil
     @Published var selectedPriority: WorkOrderPriority? = nil
     @Published var selectedServiceType: String? = nil
     
@@ -35,7 +35,7 @@ class WorkOrdersViewModel: ObservableObject {
     }
     
     func filterOrders() {
-        var orders = store.workOrders
+        var orders = store.workOrders.filter { $0.status != .completed }
         
         if !searchText.isEmpty {
             orders = orders.filter { 
