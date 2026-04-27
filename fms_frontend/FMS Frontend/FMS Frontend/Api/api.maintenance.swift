@@ -7,6 +7,13 @@ struct CreateMaintenanceRequest: Encodable {
   let phone: String
 }
 
+struct UpdateMaintenancePersonnelRequest: Encodable {
+  let name: String?
+  let email: String?
+  let phone: String?
+  let dob: String?
+}
+
 struct MaintenanceCredentials: Decodable {
   let username: String
   let password: String
@@ -32,6 +39,11 @@ struct CreateMaintenanceResponse: Decodable {
 
 struct GetMaintenancesResponse: Decodable {
   let maintenances: [MaintenanceItem]
+}
+
+struct UpdateMaintenancePersonnelResponse: Decodable {
+  let message: String
+  let maintenance: MaintenanceItem
 }
 
 final class MaintenanceAPI {
@@ -64,6 +76,15 @@ final class MaintenanceAPI {
     try await client.request(
       path: "/maintenance/\(id)",
       method: .delete,
+      requiresAuth: true
+    )
+  }
+
+  func updateMaintenance(id: String, request: UpdateMaintenancePersonnelRequest) async throws -> UpdateMaintenancePersonnelResponse {
+    try await client.request(
+      path: "/maintenance/update-maintenance/\(id)",
+      method: .patch,
+      body: request,
       requiresAuth: true
     )
   }
