@@ -85,23 +85,16 @@ struct FleetManagerDashboardView: View {
                             }
                         }
                         
-                        // MARK: - Section 3: Maintenance Cost Analytics
+                        // MARK: - Section 3: Maintenance Cost Analysis
                         VStack(alignment: .leading, spacing: 15) {
-                            DashboardSectionHeader(title: "Maintenance Analytics")
+                            DashboardSectionHeader(title: "Maintenance Cost Analysis")
                             
-                            // Weekly trend + Per vehicle side by side
-                            HStack(alignment: .top, spacing: 15) {
-                                OperationalCostChart(trend: dataManager.costTrend)
-                                    .frame(maxWidth: .infinity)
-                                
-                                MaintenanceCostPerVehicleChart(data: dataManager.maintenanceCostPerVehicle)
-                                    .frame(maxWidth: .infinity)
-                            }
+                            UnifiedMaintenanceCostCard(perVehicleCost: dataManager.maintenanceCostPerVehicle)
                         }
                         
-                        // MARK: - Section 4: Fleet Intelligence
+                        // MARK: - Section 4: Operational Insights
                         VStack(alignment: .leading, spacing: 15) {
-                            DashboardSectionHeader(title: "Fleet Intelligence")
+                            DashboardSectionHeader(title: "Operational Insights")
                             
                             // Outer card wrapping all Fleet Intelligence content
                             VStack(spacing: 16) {
@@ -133,19 +126,13 @@ struct FleetManagerDashboardView: View {
                             .frame(height: 1)
                             .padding(.vertical, 4)
                         
-                        // MARK: - Section 5: Maintenance & History
-                        HStack(alignment: .top, spacing: 20) {
-                            MaintenanceAlertCard(alerts: dataManager.maintenanceAlerts, onSelect: { alert in
-                                selectedAlert = alert
-                                showingAlertDetail = true
-                            })
-                            
-                            TripHistoryCard(trips: dataManager.allHistory, onSelect: { trip in
-                                selectedHistoryTrip = trip
-                            }, onViewAll: {
-                                showingAllTrips = true
-                            })
-                        }
+                        // MARK: - Section 5: Trip History
+                        TripHistoryCard(trips: dataManager.allHistory, onSelect: { trip in
+                            selectedHistoryTrip = trip
+                        }, onViewAll: {
+                            showingAllTrips = true
+                        })
+                        .frame(maxWidth: .infinity)
                         
                         // Bottom padding for tab bar
                         Spacer().frame(height: 100)

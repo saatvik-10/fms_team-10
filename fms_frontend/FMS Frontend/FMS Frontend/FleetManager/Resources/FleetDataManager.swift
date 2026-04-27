@@ -36,7 +36,7 @@ class FleetDataManager: ObservableObject {
     @Published var totalKmsTravelled: Double = 0
     @Published var driverDistanceData: [HistoricalPoint] = []
     
-    @Published var travelsHistory = MockDataProvider.travelsHistory
+    @Published var travelsHistory: [HistoricalPoint] = []
     @Published var geofenceAlerts: [GeofenceAlert] = []
     
     private var cancellables = Set<AnyCancellable>()

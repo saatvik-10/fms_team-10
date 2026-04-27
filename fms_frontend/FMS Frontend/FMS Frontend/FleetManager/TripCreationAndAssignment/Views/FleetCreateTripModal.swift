@@ -147,9 +147,13 @@ struct FleetCreateTripModal: View {
                 }
                 
                 Section {
-                    Button("Create Trip") {
-                        createTrip()
+                    Button(action: { createTrip() }) {
+                        Text("Create Trip")
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .fontWeight(.bold)
+                            .foregroundColor(canCreate ? .white : .gray)
                     }
+                    .listRowBackground(canCreate ? AppTheme.primary : Color(.systemGroupedBackground))
                     .disabled(!canCreate)
                 }
             }
@@ -183,6 +187,7 @@ struct FleetCreateTripModal: View {
         destinationLocation != nil &&
         !selectedVehicleID.isEmpty &&
         !selectedDriverID.isEmpty &&
+        !productName.trimmingCharacters(in: .whitespaces).isEmpty &&
         !(Double(loadAmount) ?? 0 <= 0) &&
         !loadAmount.isEmpty
     }
