@@ -185,7 +185,7 @@ struct CreateWorkOrderModal: View {
                 VStack(alignment: .leading, spacing: 12) {
                     if driverMediaImages.isEmpty {
                         HStack(spacing: 10) {
-                            Image(systemName: "photo.on.rectangle.angled")
+                            Image(systemName: "camera.fill")
                                 .font(.title3)
                                 .foregroundColor(.secondary)
                             Text("No driver media attached.")
@@ -199,7 +199,7 @@ struct CreateWorkOrderModal: View {
 
                     Button(action: { showingDriverMediaPicker = true }) {
                         HStack(spacing: 8) {
-                            Image(systemName: "plus.circle.fill")
+                            Image(systemName: "camera.fill")
                                 .font(.subheadline)
                             Text("Add Driver Media")
                                 .font(.subheadline.weight(.semibold))

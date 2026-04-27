@@ -150,7 +150,7 @@ struct MaintenanceDashboardView: View {
                 QuickActionButton(
                     title: "Update Inventory",
                     icon: "shippingbox.fill",
-                    color: .orange,
+                    color: AppColors.primary,
                     action: { showingFileImporter = true },
                     emphasize: false
                 )

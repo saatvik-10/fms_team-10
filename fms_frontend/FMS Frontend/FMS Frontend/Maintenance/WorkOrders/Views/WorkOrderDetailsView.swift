@@ -147,7 +147,7 @@ struct WorkOrderDetailsView: View {
                         
                         // Driver Media Card
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "DRIVER MEDIA", icon: "photo.on.rectangle.angled")
+                            SectionHeader(title: "DRIVER MEDIA", icon: "camera.fill")
                             driverMediaContent
                         }
                         
@@ -277,7 +277,7 @@ struct WorkOrderDetailsView: View {
                                     
                                     Button(action: { showingProofSource = true }) {
                                         VStack(spacing: 4) {
-                                            Image(systemName: "plus.circle.fill")
+                                            Image(systemName: "camera.fill")
                                                 .font(.title3)
                                             Text("Capture")
                                                 .font(.caption2.weight(.bold))
@@ -481,11 +481,19 @@ struct WorkOrderDetailsView: View {
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 if workOrder.status != .completed {
-                    Button(action: { showingCompleteAlert = true }) {
+                    Button(action: {
+                        guard isChecklistComplete else {
+                            showingChecklistIncompleteAlert = true
+                            return
+                        }
+                        showingCompleteAlert = true
+                    }) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 17, weight: .bold))
                             .foregroundColor(AppColors.primary)
                     }
+                    .disabled(!isChecklistComplete)
+                    .opacity(isChecklistComplete ? 1 : 0.45)
                 }
             }
         }
@@ -540,7 +548,7 @@ struct WorkOrderDetailsView: View {
         VStack(alignment: .leading, spacing: 16) {
             if workOrder.driverMediaImages.isEmpty {
                 HStack(spacing: 10) {
-                    Image(systemName: "photo.on.rectangle.angled")
+                    Image(systemName: "camera.fill")
                         .font(.title3)
                         .foregroundColor(.secondary.opacity(0.6))
                     Text("No driver media uploaded.")
@@ -704,6 +712,11 @@ struct WorkOrderDetailsView: View {
     }
 
     private func completeAndShiftToInspection() {
+        guard isChecklistComplete else {
+            showingChecklistIncompleteAlert = true
+            return
+        }
+
         // 1. Update Work Order Status - Store automatically generates Inspection record on completion
         var updatedOrder = workOrder
         updatedOrder.status = .completed
