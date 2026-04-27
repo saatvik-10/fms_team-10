@@ -46,3 +46,38 @@ export async function deleteUploadedKeys(keys: Array<string | null | undefined>)
   const validKeys = keys.filter((key): key is string => Boolean(key));
   await Promise.allSettled(validKeys.map((key) => r2.deleteObject(key)));
 }
+
+export function normalizeDriverExpiryDate(date: Date | string | null | undefined): string | null {
+  if (!date) {
+    return null;
+  }
+
+  const trimmed = typeof date === 'string' ? date.trim() : date.toISOString();
+
+  const isoParsed = new Date(trimmed);
+  if (!Number.isNaN(isoParsed.getTime())) {
+    return isoParsed.toISOString();
+  }
+
+  const ddmmyyyy = /^(\d{2})-(\d{2})-(\d{4})$/;
+  const ddmmyyyyMatch = trimmed.match(ddmmyyyy);
+  if (ddmmyyyyMatch) {
+    const [, day, month, year] = ddmmyyyyMatch;
+    const converted = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+    if (!Number.isNaN(converted.getTime())) {
+      return converted.toISOString();
+    }
+  }
+
+  const yyyymmdd = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const yyyymmddMatch = trimmed.match(yyyymmdd);
+  if (yyyymmddMatch) {
+    const [, year, month, day] = yyyymmddMatch;
+    const converted = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+    if (!Number.isNaN(converted.getTime())) {
+      return converted.toISOString();
+    }
+  }
+
+  return null;
+}

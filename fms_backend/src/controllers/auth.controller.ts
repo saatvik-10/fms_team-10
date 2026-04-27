@@ -8,6 +8,7 @@ import {
 import { jwtAuth } from '../lib/jwt';
 import { prisma } from '../../prisma';
 import { comparePassword, hashPassword } from '../lib/hashPassword';
+import { normalizeDriverExpiryDate } from '../lib/utils';
 import { verificationOTP } from '../services/resend.service';
 import {
   otpStore,
@@ -331,16 +332,7 @@ export class Auth {
         address: user.manager.address,
       };
     } else if (role === 'DRIVER' && user.driver) {
-      let driverExpiryDate: string | null = null;
-
-      if (user.driver.expiryDate) {
-        const parts = user.driver.expiryDate.split('-');
-        if (parts.length === 3) {
-          driverExpiryDate = new Date(
-            `${parts[2]}-${parts[1]}-${parts[0]}T00:00:00.000Z`,
-          ).toISOString();
-        }
-      }
+      const driverExpiryDate = normalizeDriverExpiryDate(user.driver.expiryDate);
 
       profileData = {
         ...profileData,
@@ -368,6 +360,7 @@ export class Auth {
         role: user.role,
         username: user.username,
         createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
     });
   }
