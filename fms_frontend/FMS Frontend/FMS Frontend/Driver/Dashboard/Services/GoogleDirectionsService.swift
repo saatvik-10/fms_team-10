@@ -102,6 +102,37 @@ class GoogleDirectionsService {
 
     // MARK: - Full Trip Directions (used by TripDetailView preview)
 
+    func fetchDirections(origin: String, destination: String) async throws -> (eta: String, polyline: String, steps: [NavigationInstruction], distance: String, destinationCoordinate: CLLocationCoordinate2D) {
+        let originParams = origin.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? origin
+        let destParams = destination.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? destination
+        
+        let urlString = "https://maps.googleapis.com/maps/api/directions/json"
+            + "?origin=\(originParams)&destination=\(destParams)&key=\(apiKey)"
+        
+        guard let url = URL(string: urlString) else {
+            throw URLError(.badURL)
+        }
+        
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let directionsResponse = try JSONDecoder().decode(DirectionsResponse.self, from: data)
+        
+guard let route = directionsResponse.routes.first,
+              let leg = route.legs.first,
+              let endLocation = leg.end_location else {
+            throw URLError(.badServerResponse)
+        }
+
+        let distanceText = leg.distance.text
+        let steps = leg.steps.map { makeInstruction(from: $0) }
+
+        let destinationCoord = CLLocationCoordinate2D(
+            latitude: endLocation.lat,
+            longitude: endLocation.lng
+        )
+        
+        return (eta: leg.duration.text, polyline: route.overview_polyline.points, steps: steps, distance: distanceText, destinationCoordinate: destinationCoord)
+    }
+
     func fetchDirections(trip: Trip) async throws -> (eta: String, polyline: String, steps: [NavigationInstruction], distance: String, destinationCoordinate: CLLocationCoordinate2D) {
         print("--- DEBUG Directions API ---")
 
