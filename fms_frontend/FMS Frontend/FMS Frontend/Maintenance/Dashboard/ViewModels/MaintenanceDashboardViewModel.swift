@@ -69,21 +69,7 @@ class MaintenanceDashboardViewModel: ObservableObject {
                 )
             }
 
-        let inventoryAlerts = inventoryParts
-            .filter { $0.isLowStock }
-            .map { part in
-                DashboardAlertItem(
-                    id: "inv-\(part.partId)",
-                    source: .inventory,
-                    title: part.partName,
-                    subtitle: "\(part.partId) • Stock: \(part.stockQty)/\(part.minStock)",
-                    sortOrder: 0,
-                    workOrderId: nil,
-                    inventoryPartId: part.partId
-                )
-            }
-
-        alertItems = (workOrderAlerts + inventoryAlerts)
+        alertItems = workOrderAlerts
             .sorted { lhs, rhs in
                 if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
                 return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending

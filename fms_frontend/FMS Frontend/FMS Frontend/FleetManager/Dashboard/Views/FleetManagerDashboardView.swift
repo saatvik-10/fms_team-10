@@ -65,11 +65,10 @@ struct FleetManagerDashboardView: View {
                                         Text("Create Trip")
                                     }
                                     .font(AppFonts.button)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppTheme.primary)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 8)
-                                    .background(AppTheme.primary)
-                                    .clipShape(Capsule())
+                                    .background(Capsule().stroke(AppTheme.primary, lineWidth: 1))
                                 }
                             }
                             
@@ -199,7 +198,7 @@ struct DashboardSectionHeader: View {
     
     var body: some View {
         Text(title)
-            .font(.system(size: 22, weight: .bold))
+            .font(AppFonts.title2)
             .foregroundColor(AppTheme.primary)
     }
 }
@@ -218,7 +217,7 @@ struct FleetDashboardHeaderView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Dashboard")
-                    .font(AppFonts.largeTitle)
+                    .font(AppFonts.title1)
                     .foregroundColor(AppTheme.primary)
             }
             Spacer()

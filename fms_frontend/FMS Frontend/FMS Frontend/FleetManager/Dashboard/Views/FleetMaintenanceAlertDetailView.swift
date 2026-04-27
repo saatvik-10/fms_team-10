@@ -139,34 +139,6 @@ struct FleetMaintenanceAlertDetailView: View {
                     }
                 }
                 
-                // Actions
-                Section {
-                    Button(action: {
-                        acceptAlert()
-                    }) {
-                        Text("Accept & Send to Maintenance")
-                            .font(AppFonts.button)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(AppColors.primary)
-                            .cornerRadius(10)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Text("Decline")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.red)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
             }
             .listStyle(InsetGroupedListStyle())
             .navigationTitle("Alert Details")

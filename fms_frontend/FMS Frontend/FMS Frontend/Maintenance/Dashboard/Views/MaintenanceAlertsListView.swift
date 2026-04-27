@@ -35,21 +35,7 @@ struct MaintenanceAlertsListView: View {
                 )
             }
 
-        let inventoryAlerts = store.inventoryParts
-            .filter { $0.isLowStock }
-            .map { part in
-                DashboardAlertItem(
-                    id: "inv-\(part.partId)",
-                    source: .inventory,
-                    title: part.partName,
-                    subtitle: "\(part.partId) • Stock: \(part.stockQty)/\(part.minStock)",
-                    sortOrder: 0,
-                    workOrderId: nil,
-                    inventoryPartId: part.partId
-                )
-            }
-
-        return (workOrderAlerts + inventoryAlerts)
+        return workOrderAlerts
             .sorted { lhs, rhs in
                 if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
                 return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending

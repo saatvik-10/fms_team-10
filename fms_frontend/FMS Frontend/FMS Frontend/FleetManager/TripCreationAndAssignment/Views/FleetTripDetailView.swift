@@ -142,7 +142,7 @@ struct FleetTripDetailView: View {
                                     .padding(.bottom, 15)
                                     
                                     VStack(spacing: 0) {
-                                        FleetDetailItemRow(icon: "tag", label: "Name", value: "\(vehicle.make) \(vehicle.model)", iconColor: .blue)
+                                        FleetDetailItemRow(icon: "tag", label: "Name", value: "\(vehicle.model)", iconColor: .blue)
                                         Divider()
                                         FleetDetailItemRow(icon: "number", label: "Chassis", value: vehicle.chassisNumber, iconColor: .orange)
                                         Divider()

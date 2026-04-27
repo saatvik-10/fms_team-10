@@ -108,15 +108,52 @@ class PDFService {
             
             currentY += 50
             
-            // 5. ADDITIONAL NOTES
-            drawSectionHeader(title: "ADDITIONAL NOTES", at: &currentY, in: context)
-            let notesText = inspection.notes ?? "No additional notes provided."
-            notesText.draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 60), withAttributes: [
+            currentY += 40
+            
+            // 5. DRIVER NOTES & VOICE TRANSCRIPT
+            if let transcript = inspection.voiceTranscript, !transcript.isEmpty {
+                drawSectionHeader(title: "DRIVER VOICE TRANSCRIPT", at: &currentY, in: context)
+                "\"\(transcript)\"".draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 60), withAttributes: [
+                    .font: UIFont.systemFont(ofSize: 10, weight: .medium).italic,
+                    .foregroundColor: UIColor.secondaryLabel
+                ])
+                currentY += 70
+            }
+            
+            // 6. AUDIT SCOPE (TASK DETAILS)
+            drawSectionHeader(title: "AUDIT SCOPE & OBJECTIVES", at: &currentY, in: context)
+            inspection.taskDetails.draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 80), withAttributes: [
                 .font: UIFont.systemFont(ofSize: 10),
                 .foregroundColor: UIColor.label
             ])
+            currentY += 90
             
-            currentY += 40
+            // START PAGE 2 (Early if needed)
+            if currentY > pageHeight - 150 {
+                drawFooter(pageNum: 1, context: context)
+                context.beginPage()
+                currentY = 60
+            }
+
+            // 7. PARTS REPLACED
+            if !inspection.consumedParts.isEmpty {
+                drawSectionHeader(title: "PARTS REPLACED DURING AUDIT", at: &currentY, in: context)
+                var partLines: [(String, String)] = []
+                for usage in inspection.consumedParts {
+                    partLines.append((usage.inventoryPartId, "Qty: \(usage.quantity)"))
+                }
+                drawKeyValueGrid(info: partLines, at: &currentY, context: context)
+                currentY += 20
+            }
+
+            // 8. AUDITOR NOTES
+            drawSectionHeader(title: "AUDITOR TECHNICAL NOTES", at: &currentY, in: context)
+            let notesText = inspection.technicianNotes.isEmpty ? "No auditor notes provided." : inspection.technicianNotes
+            notesText.draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 100), withAttributes: [
+                .font: UIFont.systemFont(ofSize: 10),
+                .foregroundColor: UIColor.label
+            ])
+            currentY += 110
             
             // Footer (Page 1)
             drawFooter(pageNum: 1, context: context)
@@ -263,6 +300,13 @@ class PDFService {
         case .pending: return .systemGray
         }
     }
+}
+
+extension UIFont {
+    var italic: UIFont {
+        return UIFont(descriptor: self.fontDescriptor.withSymbolicTraits(.traitItalic) ?? self.fontDescriptor, size: self.pointSize)
+    }
+}
     
     private func getResultCounts(items: [InspectionItem]) -> (good: Int, repair: Int, alert: Int, pending: Int) {
         var g = 0, r = 0, a = 0, p = 0
@@ -276,4 +320,4 @@ class PDFService {
         }
         return (g, r, a, p)
     }
-}
+

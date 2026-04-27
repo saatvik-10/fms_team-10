@@ -139,31 +139,6 @@ struct DriverDetailView: View {
                     .background(Color.white)
                     .cornerRadius(14)
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("RECENT ACTIVITY")
-                            .font(AppFonts.caption2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.gray)
-
-                        if driver.activityLog.isEmpty {
-                            Text("No recent activity")
-                                .font(AppFonts.body)
-                                .foregroundColor(.gray)
-                                .padding(.vertical, 8)
-                        } else {
-                            ScrollView {
-                                VStack(spacing: 14) {
-                                    ForEach(driver.activityLog) { event in
-                                        ActivityRow(event: event)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding(20)
-                    .frame(maxWidth: .infinity, minHeight: infoCardHeight, maxHeight: infoCardHeight, alignment: .topLeading)
-                    .background(Color.white)
-                    .cornerRadius(14)
                 }
                 .padding(16)
                 .padding(.bottom, 24)

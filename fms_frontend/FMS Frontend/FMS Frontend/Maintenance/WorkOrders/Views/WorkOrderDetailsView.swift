@@ -23,6 +23,7 @@ struct WorkOrderDetailsView: View {
     @State private var showingChecklistIncompleteAlert = false
     @State private var recentlyUpdatedPartId: String?
     @State private var pendingSelectedPartIds: Set<String> = []
+    @State private var showingCompleteAlert = false
     
     private var taskPoints: [String] {
         workOrder.taskDetails.components(separatedBy: ".")
@@ -146,7 +147,7 @@ struct WorkOrderDetailsView: View {
                         
                         // Driver Media Card
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "DRIVER MEDIA", icon: "photo.on.rectangle.angled")
+                            SectionHeader(title: "DRIVER MEDIA", icon: "camera.fill")
                             driverMediaContent
                         }
                         
@@ -276,7 +277,7 @@ struct WorkOrderDetailsView: View {
                                     
                                     Button(action: { showingProofSource = true }) {
                                         VStack(spacing: 4) {
-                                            Image(systemName: "plus.circle.fill")
+                                            Image(systemName: "camera.fill")
                                                 .font(.title3)
                                             Text("Capture")
                                                 .font(.caption2.weight(.bold))
@@ -309,55 +310,11 @@ struct WorkOrderDetailsView: View {
                                     }
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 16)
-                                    .background(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [Color.green, Color.green.opacity(0.85)]),
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
+                                    .background(AppColors.primary)
                                     .foregroundColor(.white)
                                     .cornerRadius(14)
-                                    .shadow(color: Color.green.opacity(0.3), radius: 8, x: 0, y: 4)
+                                    .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
                                 }
-                            }
-                            
-                            HStack(spacing: 16) {
-                                if canReschedule {
-                                    Button(action: { showingDatePicker = true }) {
-                                        Text("Schedule Later")
-                                            .font(.system(size: 15, weight: .bold))
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 16)
-                                            .background(Color.white)
-                                            .foregroundColor(.primary)
-                                            .cornerRadius(14)
-                                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.1), lineWidth: 1))
-                                    }
-                                }
-                                
-                                Button(action: {
-                                    guard isChecklistComplete else {
-                                        showingChecklistIncompleteAlert = true
-                                        return
-                                    }
-                                    var updated = workOrder
-                                    updated.status = .completed
-                                    store.updateWorkOrder(updated)
-                                    workOrder = updated
-                                    dismiss()
-                                }) {
-                                    Text("Complete Task")
-                                        .font(.system(size: 15, weight: .bold))
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 16)
-                                        .background(AppColors.primary)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(14)
-                                        .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
-                                }
-                                .disabled(!isChecklistComplete)
-                                .opacity(isChecklistComplete ? 1 : 0.55)
                             }
                         }
                         .padding(.top, 32)
@@ -522,6 +479,31 @@ struct WorkOrderDetailsView: View {
                         .foregroundColor(AppColors.primary)
                 }
             }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if workOrder.status != .completed {
+                    Button(action: {
+                        guard isChecklistComplete else {
+                            showingChecklistIncompleteAlert = true
+                            return
+                        }
+                        showingCompleteAlert = true
+                    }) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(AppColors.primary)
+                    }
+                    .disabled(!isChecklistComplete)
+                    .opacity(isChecklistComplete ? 1 : 0.45)
+                }
+            }
+        }
+        .alert("Complete Task", isPresented: $showingCompleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Complete", role: .none) {
+                completeAndShiftToInspection()
+            }
+        } message: {
+            Text("Confirm that all maintenance activities are finished. This will close the work order.")
         }
     }
     
@@ -566,7 +548,7 @@ struct WorkOrderDetailsView: View {
         VStack(alignment: .leading, spacing: 16) {
             if workOrder.driverMediaImages.isEmpty {
                 HStack(spacing: 10) {
-                    Image(systemName: "photo.on.rectangle.angled")
+                    Image(systemName: "camera.fill")
                         .font(.title3)
                         .foregroundColor(.secondary.opacity(0.6))
                     Text("No driver media uploaded.")
@@ -727,5 +709,21 @@ struct WorkOrderDetailsView: View {
         updated.acceptedByTechnicianId = updated.technicianId == "Unassigned" ? "TECH-\(String(format: "%04d", Int.random(in: 1...9999)))" : updated.technicianId
         store.updateWorkOrder(updated)
         workOrder = updated
+    }
+
+    private func completeAndShiftToInspection() {
+        guard isChecklistComplete else {
+            showingChecklistIncompleteAlert = true
+            return
+        }
+
+        // 1. Update Work Order Status - Store automatically generates Inspection record on completion
+        var updatedOrder = workOrder
+        updatedOrder.status = .completed
+        store.updateWorkOrder(updatedOrder)
+        
+        // 2. Update local state and dismiss
+        workOrder = updatedOrder
+        dismiss()
     }
 }

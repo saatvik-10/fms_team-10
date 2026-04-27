@@ -74,6 +74,17 @@ struct VehicleMaintenanceItem: Decodable {
     let alerts: String?
 }
 
+struct UpdateMaintenanceRequest: Encodable {
+    let nextService: String?
+    let inspectionStatus: String?
+    let alerts: String?
+}
+
+struct UpdateMaintenanceResponse: Decodable {
+    let message: String
+    let maintenance: VehicleMaintenanceItem
+}
+
 struct TripHistoryItem: Decodable {
     let id: String
     let vehicleId: String
@@ -153,13 +164,13 @@ struct UpdateCurrentTripResponse: Decodable {
     let trip: VehicleTripItem
 }
 
-struct UpdateMaintenanceRequest: Encodable {
+struct UpdateVehicleMaintenanceRequest: Encodable {
     let nextService: String?
     let inspectionStatus: String?
     let alerts: String?
 }
 
-struct UpdateMaintenanceResponse: Decodable {
+struct UpdateVehicleMaintenanceResponse: Decodable {
     let message: String
     let maintenance: VehicleMaintenanceItem
 }

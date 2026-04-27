@@ -12,6 +12,9 @@ class MaintenanceStore: ObservableObject {
     @Published var workOrders: [WorkOrder] = []
     @Published var inspections: [TripInspection] = []
     @Published var inventoryParts: [InventoryPart] = []
+    @Published var currentProfile: UserProfile? = nil
+    @Published var isLoadingProfile = false
+    @Published var profileError: String?
     
     // Dashboard Metrics
     var lowStockCount: Int {
@@ -267,19 +270,25 @@ class MaintenanceStore: ObservableObject {
         }
         
         let inspection = TripInspection(
-            title: order.title,
-            vehicleId: "V-HIST",
+            title: "WO Completion: \(order.title)",
+            vehicleId: order.orderID,
             unitName: order.vehicleName,
             unitVIN: order.vehicleVIN,
             driverId: "SYSTEM",
             timestamp: Date(),
             type: .maintenance,
-            vehicleType: order.vehicleName.contains("Bus") ? .car : .truck,
+            vehicleType: order.vehicleName.lowercased().contains("bus") ? .car : .truck,
             status: .completed,
             priority: order.priority,
             items: checklistItems,
-            notes: "Maintenance completed by \(order.technicianId). Notes: \(order.technicianNotes)",
-            maintenanceStaffId: order.technicianId
+            notes: order.technicianNotes,
+            maintenanceStaffId: order.technicianId,
+            taskDetails: order.taskDetails,
+            technicianNotes: order.technicianNotes,
+            voiceTranscript: order.voiceTranscript,
+            driverMediaImages: order.driverMediaImages,
+            proofOfWorkImages: order.proofOfWorkImages,
+            consumedParts: order.consumedParts
         )
         addInspection(inspection)
     }
@@ -345,5 +354,42 @@ class MaintenanceStore: ObservableObject {
                 inspections[idx].imageAnalyses[index] = analysis
             }
         }
+    }
+    
+    // MARK: - Profile
+    func loadProfile() async {
+        isLoadingProfile = true
+        profileError = nil
+        
+        do {
+            let response = try await AuthAPI.shared.getProfile()
+            await MainActor.run {
+                self.currentProfile = UserProfile(
+                    id: response.profile.id,
+                    name: response.profile.name,
+                    username: response.profile.username,
+                    phone: response.profile.phone,
+                    email: response.profile.email,
+                    role: response.profile.role,
+                    createdAt: response.profile.createdAt,
+                    updatedAt: response.profile.updatedAt,
+                    address: response.profile.address,
+                    licenceNumber: response.profile.licenceNumber,
+                    expiryDate: response.profile.expiryDate,
+                    classes: response.profile.classes
+                )
+                self.isLoadingProfile = false
+            }
+        } catch {
+            await MainActor.run {
+                self.profileError = "Failed to load profile"
+                self.isLoadingProfile = false
+            }
+        }
+    }
+    
+    func logout() {
+        AuthAPI.shared.logout()
+        currentProfile = nil
     }
 }
