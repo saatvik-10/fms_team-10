@@ -47,6 +47,21 @@ export async function deleteUploadedKeys(keys: Array<string | null | undefined>)
   await Promise.allSettled(validKeys.map((key) => r2.deleteObject(key)));
 }
 
+export function getImageMeta(base64Image: string) {
+  const matched = base64Image.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
+  const contentType = matched?.[1] ?? 'image/jpeg';
+
+  if (contentType === 'image/png') {
+    return { contentType, extension: 'png' };
+  }
+
+  if (contentType === 'image/webp') {
+    return { contentType, extension: 'webp' };
+  }
+
+  return { contentType, extension: 'jpg' };
+}
+
 export function normalizeDriverExpiryDate(date: Date | string | null | undefined): string | null {
   if (!date) {
     return null;
