@@ -48,7 +48,7 @@ struct APIConfig {
 			 !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
 			return value
 		}
-		return "https://fms-team-10.onrender.com"
+		return "http://localhost:8080"
 	}()
 }
 

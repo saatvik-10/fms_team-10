@@ -9,6 +9,7 @@ struct CreateTripRequest: Encodable {
   let vehicle: String
   let driver: String
   let departureTime: String
+  let distance: String?
 }
 
 struct TripItem: Decodable {
@@ -25,6 +26,7 @@ struct TripItem: Decodable {
   let loadAmount: String?
   let tripDate: String?
   let tripDistance: String?
+  let distanceKm: String?
   let vehicleRegistrationNumber: String?
   let createdById: String?
   let createdAt: Date?
