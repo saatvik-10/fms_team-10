@@ -226,6 +226,8 @@ struct FleetCreateTripModal: View {
     private func createTrip() {
         guard let src = sourceLocation, let dst = destinationLocation else { return }
         
+        let distanceString = estimatedDistance > 0 ? String(format: "%.1f km", estimatedDistance) : nil
+        
         let request = CreateTripRequest(
             sourceLocation: src.name,
             destinationLocation: dst.name,
@@ -234,7 +236,8 @@ struct FleetCreateTripModal: View {
             amount: Int(loadAmount) ?? 0,
             vehicle: selectedVehicleID,
             driver: selectedDriverID,
-            departureTime: ISO8601DateFormatter().string(from: scheduledDate)
+            departureTime: ISO8601DateFormatter().string(from: scheduledDate),
+            distance: distanceString
         )
         
         Task {

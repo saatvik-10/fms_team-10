@@ -62,7 +62,7 @@ class TripsViewModel: ObservableObject {
             timeLabel: status == .completed ? "Completion Time" : "Scheduled Start",
             timeValue: formatTimeValue(from: departure),
             loadInfo: loadInfo,
-            distance: parseDistanceKm(trip.tripDistance),
+            distance: parseDistanceKm(trip.distanceKm ?? trip.tripDistance),
             vehicleNumber: trip.vehicleRegistrationNumber,
             cargoWeight: formatCargoWeight(amount: trip.amount, unit: trip.unit),
             sourceCoordinate: nil,

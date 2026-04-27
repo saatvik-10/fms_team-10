@@ -85,7 +85,7 @@ export class Trip {
                     progress: 0.0,
                     eta: null,
                     date: data.departureTime,
-                    distance: null,
+                    distance: data.distance ?? null,
                     duration: null,
                     costEstimate: null,
                     startTime: new Date(),
@@ -100,7 +100,7 @@ export class Trip {
                     progress: 0.0,
                     eta: null,
                     date: data.departureTime,
-                    distance: null,
+                    distance: data.distance ?? null,
                     duration: null,
                     costEstimate: null,
                     startTime: new Date(),
@@ -236,6 +236,7 @@ export class Trip {
                 loadAmount: vehicleTrip?.loadAmount ?? null,
                 tripDate: vehicleTrip?.date ?? trip.departureTime,
                 tripDistance: vehicleTrip?.distance ?? null,
+                distanceKm: vehicleTrip?.distance ?? null,
             };
         });
 

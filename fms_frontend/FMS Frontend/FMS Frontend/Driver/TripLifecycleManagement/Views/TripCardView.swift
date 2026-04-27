@@ -3,6 +3,9 @@ import SwiftUI
 struct TripCardView: View {
     let trip: LifecycleTrip
     
+    @State private var routeDistance: String = ""
+    @State private var isFetchingDistance = false
+    
     
     // Callbacks for button actions
     var onAccept: (() -> Void)? = nil
@@ -94,7 +97,7 @@ struct TripCardView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fontWeight(.medium)
-                    Text(String(format: "%.1f km", trip.distance))
+                    Text(!routeDistance.isEmpty ? routeDistance : (trip.distance > 0 ? String(format: "%.1f km", trip.distance) : "Calculating"))
                         .font(.headline)
                         .foregroundColor(.primary)
                         .fontWeight(.bold)
@@ -155,5 +158,19 @@ struct TripCardView: View {
         .background(Color(UIColor.systemBackground))
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 5)
+        .task {
+            guard trip.distance <= 0 else { return }
+            isFetchingDistance = true
+            do {
+                let result = try await GoogleDirectionsService.shared.fetchDirections(
+                    origin: trip.source,
+                    destination: trip.destination
+                )
+                routeDistance = result.distance
+            } catch {
+                print("Trip card distance fetch error: \(error)")
+            }
+            isFetchingDistance = false
+        }
     }
 }
