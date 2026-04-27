@@ -29,6 +29,7 @@ model User {
   createdById     String?
   createdBy       User?     @relation("UserCreatedUsers", fields: [createdById], references: [id])
   createdVehicles Vehicle[] @relation("UserCreatedVehicles")
+  issueReports    IssueReport[] @relation("UserIssueReports")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -188,6 +189,25 @@ model Trips {
   updatedAt DateTime @updatedAt
 }
 
+model IssueReport {
+  id               String @id @default(cuid())
+  driverUserId     String
+  tripId           String?
+  transcript       String
+  incidentLocation String
+  vehicleUnit      String
+  imageKeys        String[]
+  status           IssueReportStatus @default(OPEN)
+
+  driverUser User @relation("UserIssueReports", fields: [driverUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([driverUserId])
+  @@map("issue_reports")
+}
+
 enum Role {
   SUPER_ADMIN
   MANAGER
@@ -212,4 +232,9 @@ enum TripStatus {
   IN_TRANSIT
   COMPLETED
   CANCELLED
+}
+
+enum IssueReportStatus {
+  OPEN
+  RESOLVED
 }
