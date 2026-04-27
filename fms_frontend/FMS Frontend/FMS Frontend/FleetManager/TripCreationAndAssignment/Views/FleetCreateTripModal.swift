@@ -4,48 +4,70 @@ struct FleetCreateTripModal: View {
     @Binding var isPresented: Bool
     @EnvironmentObject var dataManager: FleetDataManager
     
-    @StateObject private var viewModel = FleetCreateTripViewModel()
+    @State private var sourceLocation: PickedLocation? = nil
+    @State private var destinationLocation: PickedLocation? = nil
+    
+    @State private var showingSourcePicker = false
+    @State private var showingDestinationPicker = false
+    @State private var isCalculatingRoute = false
+    
+    @State private var selectedVehicleID: String = ""
+    @State private var selectedDriverID: String = ""
+    @State private var scheduledDate: Date = Date()
+    @State private var productName: String = ""
+    @State private var loadAmount: String = ""
+    @State private var loadUnit: String = "Tons"
+    
+    private let unitOptions = ["Tons", "KG", "Liters", "Units", "Pallets"]
+    
+    @State private var estimatedCost: Double = 0.0
+    @State private var estimatedDistance: Double = 0.0
+    @State private var estimatedDuration: Double = 0.0
+    
+    // ✅ NEW: Geofence
+    @State private var geofenceRadius: Double = 500
+    
+    // Enterprise Constants
+    private let baseFee: Double = 1500.0
+    private let ratePerKM: Double = 18.0
+    private let hourlyRate: Double = 250.0
     
     var body: some View {
         NavigationView {
             Form {
                 Section(header: Text("Location Details")) {
-                    Button(action: { viewModel.showingSourcePicker = true }) {
+                    Button(action: { showingSourcePicker = true }) {
                         HStack {
                             Text("Source Location")
-                                .foregroundColor(.primary)
                             Spacer()
-                            Text(viewModel.sourceLocation?.name ?? "Tap to select")
-                                .foregroundColor(viewModel.sourceLocation == nil ? .gray : AppColors.primary)
+                            Text(sourceLocation?.name ?? "Tap to select")
+                                .foregroundColor(sourceLocation == nil ? .gray : AppColors.primary)
                                 .lineLimit(1)
-                                .truncationMode(.tail)
                         }
                     }
                     
-                    Button(action: { viewModel.showingDestinationPicker = true }) {
+                    Button(action: { showingDestinationPicker = true }) {
                         HStack {
                             Text("Destination Location")
-                                .foregroundColor(.primary)
                             Spacer()
-                            Text(viewModel.destinationLocation?.name ?? "Tap to select")
-                                .foregroundColor(viewModel.destinationLocation == nil ? .gray : AppColors.primary)
+                            Text(destinationLocation?.name ?? "Tap to select")
+                                .foregroundColor(destinationLocation == nil ? .gray : AppColors.primary)
                                 .lineLimit(1)
-                                .truncationMode(.tail)
                         }
                     }
                     
-                    // Geofence Slider
+                    // ✅ Geofence Slider
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("Geofence Radius")
-                                .foregroundColor(.primary)
                             Spacer()
-                            Text("\(Int(viewModel.geofenceRadius)) m")
+                            Text("\(Int(geofenceRadius)) m")
                                 .fontWeight(.bold)
                                 .foregroundColor(AppColors.primary)
                         }
-                        Slider(value: $viewModel.geofenceRadius, in: 100...5000, step: 100)
-                            .accentColor(AppColors.primary)
+                        
+                        Slider(value: $geofenceRadius, in: 100...5000, step: 100)
+                        
                         Text("Triggers alerts when entering/exiting this zone.")
                             .font(.caption2)
                             .foregroundColor(.gray)
@@ -54,18 +76,17 @@ struct FleetCreateTripModal: View {
                 }
                 
                 Section(header: Text("Cargo Details")) {
-                    TextField("Product Type (e.g. Steel Coils)", text: $viewModel.productName)
+                    TextField("Product Type", text: $productName)
                     
                     HStack {
-                        TextField("Amount", text: $viewModel.loadAmount)
+                        TextField("Amount", text: $loadAmount)
                             .keyboardType(.decimalPad)
                         
-                        Divider()
-                            .frame(height: 20)
+                        Divider().frame(height: 20)
                         
-                        Picker("Unit", selection: $viewModel.loadUnit) {
-                            ForEach(viewModel.unitOptions, id: \.self) { unit in
-                                Text(unit).tag(unit)
+                        Picker("Unit", selection: $loadUnit) {
+                            ForEach(unitOptions, id: \.self) {
+                                Text($0)
                             }
                         }
                         .pickerStyle(.menu)
@@ -73,96 +94,84 @@ struct FleetCreateTripModal: View {
                 }
                 
                 Section(header: Text("Assignment")) {
-                    Picker("Vehicle", selection: $viewModel.selectedVehicleID) {
+                    Picker("Vehicle", selection: $selectedVehicleID) {
                         Text("Select Vehicle").tag("")
-                        ForEach(dataManager.vehicles.filter { $0.status == .idle }) { vehicle in
-                            Text("\(vehicle.model)").tag(vehicle.backendId ?? vehicle.id)
+                        ForEach(dataManager.vehicles.filter { $0.status == .idle }) { v in
+                            Text(v.model).tag(v.backendId ?? v.id)
                         }
                     }
                     
-                    Picker("Driver", selection: $viewModel.selectedDriverID) {
+                    Picker("Driver", selection: $selectedDriverID) {
                         Text("Select Driver").tag("")
-                        ForEach(dataManager.drivers.filter { $0.status == .active }) { driver in
-                            Text(driver.name).tag(driver.backendId ?? driver.id)
+                        ForEach(dataManager.drivers.filter { $0.status == .active }) { d in
+                            Text(d.name).tag(d.backendId ?? d.id)
                         }
                     }
                 }
                 
                 Section(header: Text("Schedule")) {
-                    DatePicker("Departure Time", selection: $viewModel.scheduledDate, displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("Departure Time", selection: $scheduledDate, displayedComponents: [.date, .hourAndMinute])
                 }
                 
-                if viewModel.estimatedCost > 0 || viewModel.isCalculatingRoute {
-                    Section(header: Text("Cost Estimation (INR)")) {
-                        if viewModel.isCalculatingRoute {
-                            HStack {
-                                Spacer()
-                                ProgressView("Calculating route...")
-                                Spacer()
-                            }
-                            .padding(.vertical, 8)
+                if estimatedCost > 0 || isCalculatingRoute {
+                    Section(header: Text("Cost Estimation")) {
+                        if isCalculatingRoute {
+                            ProgressView("Calculating...")
                         } else {
                             HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Total Estimated Cost")
-                                        .font(AppFonts.caption1)
-                                        .foregroundColor(.gray)
-                                    Text("₹\(String(format: "%.2f", viewModel.estimatedCost))")
-                                        .font(AppFonts.headline)
+                                VStack(alignment: .leading) {
+                                    Text("₹\(String(format: "%.2f", estimatedCost))")
+                                        .font(.headline)
                                         .foregroundColor(AppColors.primary)
                                 }
                                 Spacer()
-                                VStack(alignment: .trailing, spacing: 4) {
-                                    Text("\(Int(viewModel.estimatedDistance)) km")
-                                        .font(AppFonts.headline)
-                                    Text("Est. \(Int(viewModel.estimatedDuration)) hrs")
-                                        .font(AppFonts.caption1)
-                                        .foregroundColor(.gray)
+                                VStack(alignment: .trailing) {
+                                    Text("\(Int(estimatedDistance)) km")
+                                    Text("\(Int(estimatedDuration)) hrs")
+                                        .font(.caption)
                                 }
                             }
-                            .padding(.vertical, 8)
                         }
                     }
                 }
                 
                 Section {
-                    Button(action: {
-                        viewModel.createTrip(dataManager: dataManager) {
-                            isPresented = false
-                        }
-                    }) {
-                        Text("Create Trip")
-                            .font(AppFonts.button)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(viewModel.canCreate ? AppColors.primary : Color.gray)
-                            .cornerRadius(10)
+                    Button("Create Trip") {
+                        createTrip()
                     }
-                    .disabled(!viewModel.canCreate)
+                    .disabled(!canCreate)
                 }
-                .listRowBackground(Color.clear)
             }
             .navigationTitle("New Trip")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { isPresented = false }
                 }
             }
         }
-        .sheet(isPresented: $viewModel.showingSourcePicker) {
-            LocationPickerSheet(title: "Select Source", selectedLocation: $viewModel.sourceLocation, geofenceRadius: viewModel.geofenceRadius)
+        .sheet(isPresented: $showingSourcePicker) {
+            LocationPickerSheet(
+                title: "Select Source",
+                selectedLocation: $sourceLocation,
+                geofenceRadius: geofenceRadius
+            )
         }
         .sheet(isPresented: $showingDestinationPicker) {
-            LocationPickerSheet(title: "Select Destination", selectedLocation: $destinationLocation)
+            LocationPickerSheet(
+                title: "Select Destination",
+                selectedLocation: $destinationLocation,
+                geofenceRadius: geofenceRadius
+            )
         }
         .onChange(of: sourceLocation) { _, _ in fetchRealRoute() }
         .onChange(of: destinationLocation) { _, _ in fetchRealRoute() }
     }
     
     private var canCreate: Bool {
-        sourceLocation != nil && destinationLocation != nil && !selectedVehicleID.isEmpty && !selectedDriverID.isEmpty
+        sourceLocation != nil &&
+        destinationLocation != nil &&
+        !selectedVehicleID.isEmpty &&
+        !selectedDriverID.isEmpty
     }
     
     private func fetchRealRoute() {
@@ -182,51 +191,23 @@ struct FleetCreateTripModal: View {
                     destName: dst.name
                 )
                 
-                // Parse distance and duration to numbers for cost calculation
-                // Distance string like "32.4 km"
-                let distStr = result.distance.replacingOccurrences(of: " km", with: "").replacingOccurrences(of: ",", with: "")
-                let dist = Double(distStr) ?? 50.0
-                
-                // Duration string like "45 mins" or "2 hours 15 mins"
-                var hours = 0.0
-                let durationParts = result.eta.components(separatedBy: " ")
-                if result.eta.contains("hour") {
-                    if let hrIndex = durationParts.firstIndex(where: { $0.contains("hour") }), hrIndex > 0 {
-                        hours += Double(durationParts[hrIndex - 1]) ?? 0.0
-                    }
-                    if let minIndex = durationParts.firstIndex(where: { $0.contains("min") }), minIndex > 0 {
-                        hours += (Double(durationParts[minIndex - 1]) ?? 0.0) / 60.0
-                    }
-                } else if let minIndex = durationParts.firstIndex(where: { $0.contains("min") }), minIndex > 0 {
-                    hours += (Double(durationParts[minIndex - 1]) ?? 0.0) / 60.0
-                }
-                if hours == 0 { hours = dist / 60.0 } // fallback
+                let dist = Double(result.distance.replacingOccurrences(of: " km", with: "")) ?? 50
+                let hours = dist / 60
                 
                 await MainActor.run {
-                    self.estimatedDistance = dist
-                    self.estimatedDuration = hours
-                    self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
-                    self.isCalculatingRoute = false
+                    estimatedDistance = dist
+                    estimatedDuration = hours
+                    estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
+                    isCalculatingRoute = false
                 }
             } catch {
-                await MainActor.run {
-                    print("Route fetch error: \(error)")
-                    // Fallback to mock if API fails
-                    let dist = 100.0
-                    let hours = dist / 60.0
-                    self.estimatedDistance = dist
-                    self.estimatedDuration = hours
-                    self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
-                    self.isCalculatingRoute = false
-                }
+                isCalculatingRoute = false
             }
         }
     }
     
     private func createTrip() {
         guard let src = sourceLocation, let dst = destinationLocation else { return }
-        
-        let distanceString = estimatedDistance > 0 ? String(format: "%.1f km", estimatedDistance) : nil
         
         let request = CreateTripRequest(
             sourceLocation: src.name,
@@ -237,22 +218,17 @@ struct FleetCreateTripModal: View {
             vehicle: selectedVehicleID,
             driver: selectedDriverID,
             departureTime: ISO8601DateFormatter().string(from: scheduledDate),
-            distance: distanceString
+            distance: "\(estimatedDistance) km"
         )
         
         Task {
             do {
                 _ = try await TripAPI.shared.createTrip(request)
-                
-                // Refresh backend state
                 try? await dataManager.refreshVehicles()
                 try? await dataManager.refreshDrivers()
-                
-                await MainActor.run {
-                    isPresented = false
-                }
+                isPresented = false
             } catch {
-                print("Failed to create trip via API: \(error)")
+                print(error)
             }
         }
     }
