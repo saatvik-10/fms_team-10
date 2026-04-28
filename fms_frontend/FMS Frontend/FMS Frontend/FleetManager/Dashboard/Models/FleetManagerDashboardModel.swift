@@ -316,6 +316,7 @@ enum FleetTripStatus: String, Codable {
 
 struct VehicleTrip: Identifiable {
     let id = UUID()
+    var backendId: String? = nil
     let vehicleID: String // Link to the owning vehicle
     let origin: String
     let destination: String
