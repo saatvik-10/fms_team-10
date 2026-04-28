@@ -10,42 +10,32 @@ struct PDFPreviewView: View {
     let url: URL
     let title: String
     @Environment(\.dismiss) var dismiss
-    
-    @State private var pdfDocument: PDFDocument? = nil
-    @State private var isLoading = true
     @State private var showShareSheet = false
-    
+    @State private var pdfDocument: PDFDocument?
+    @State private var loadFailed = false
+
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color(.systemGroupedBackground).ignoresSafeArea()
-                
-                if isLoading {
+            Group {
+                if let document = pdfDocument {
+                    PDFKitDocumentView(document: document)
+                        .ignoresSafeArea(edges: .bottom)
+                } else if loadFailed {
                     VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 48))
+                            .foregroundColor(.orange)
+                        Text("Failed to load PDF")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                    }
+                } else {
+                    VStack(spacing: 12) {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle())
-                            .scaleEffect(1.4)
+                            .scaleEffect(1.2)
                         Text("Loading Report…")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                    }
-                } else if let doc = pdfDocument {
-                    PDFKitDocumentView(document: doc)
-                        .ignoresSafeArea(edges: .bottom)
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 40))
-                            .foregroundColor(.orange)
-                        Text("Could not load report")
-                            .font(.headline)
-                        Text("The PDF file may have been removed from temporary storage.")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
-                        Button("Dismiss") { dismiss() }
-                            .padding(.top, 8)
                     }
                 }
             }
@@ -71,37 +61,31 @@ struct PDFPreviewView: View {
             }
         }
         .task {
-            // Load off the main thread so the view can animate in first
             let doc = await Task.detached(priority: .userInitiated) {
                 PDFDocument(url: url)
             }.value
-            
-            self.pdfDocument = doc
-            self.isLoading = false
+            if let doc = doc {
+                pdfDocument = doc
+            } else {
+                loadFailed = true
+            }
         }
     }
 }
 
-/// A dedicated PDFView wrapper that takes an already-loaded PDFDocument.
-/// This guarantees autoScales is applied after the view is laid out.
 struct PDFKitDocumentView: UIViewRepresentable {
     let document: PDFDocument
-    
+
     func makeUIView(context: Context) -> PDFView {
         let pdfView = PDFView()
-        pdfView.backgroundColor = .secondarySystemBackground
-        pdfView.displayMode = .singlePageContinuous
-        pdfView.displayDirection = .vertical
-        pdfView.usePageViewController(false, withViewOptions: nil)
         pdfView.document = document
         pdfView.autoScales = true
+        pdfView.displayMode = .singlePageContinuous
+        pdfView.displayDirection = .vertical
         return pdfView
     }
-    
+
     func updateUIView(_ uiView: PDFView, context: Context) {
-        if uiView.document !== document {
-            uiView.document = document
-            uiView.autoScales = true
-        }
+        // No-op: document is set once in makeUIView
     }
 }

@@ -43,7 +43,13 @@ struct MaintenanceProfileView: View {
                     VStack(spacing: 4) {
                         Text(profile?.name ?? "Maintenance")
                             .font(.title2.bold())
+                        Text("Senior Maintenance Technician")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
                     }
+                    
+
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)

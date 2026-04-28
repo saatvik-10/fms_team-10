@@ -17,6 +17,8 @@ export const createVehicleSchema = z.object({
   registrationNumber: z.string().min(1, 'Registration number is required'),
   rcDocumentImage: z.string().trim().min(1, 'RC document image is required').optional(),
   vehicleImage: z.string().trim().min(1, 'Vehicle image is required').optional(),
+  maxLoadCapacity: z.number().nonnegative().optional(),
+  capacityUnit: z.enum(['KG', 'Tons']).optional(),
 });
 
 export type CreateVehicleType = z.infer<typeof createVehicleSchema>;
@@ -37,6 +39,8 @@ export const updateVehicleSchema = z
     rcDocumentImage: z.string().trim().min(1).optional(),
     vehicleImage: z.string().trim().min(1).optional(),
     assignedDriverId: z.string().optional(),
+    maxLoadCapacity: z.number().nonnegative().optional(),
+    capacityUnit: z.enum(['KG', 'Tons']).optional(),
   })
   .refine(
     (data) => Object.values(data).some((value) => value !== undefined),

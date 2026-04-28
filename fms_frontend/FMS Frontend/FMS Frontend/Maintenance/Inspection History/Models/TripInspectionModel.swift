@@ -17,7 +17,7 @@ enum VehicleType: String, Codable {
 }
 
 enum InspectionStatus: String, Codable {
-    case pending = "Pending"
+    case progress = "Progress"
     case completed = "Completed"
 }
 
@@ -40,6 +40,7 @@ struct InspectionItem: Identifiable, Codable, Equatable {
 
 struct TripInspection: Identifiable, Codable {
     var id = UUID()
+    var backendId: String? = nil
     var title: String = ""
     let vehicleId: String
     let unitName: String
@@ -62,6 +63,7 @@ struct TripInspection: Identifiable, Codable {
     var engineHours: String = "4,821 hrs"
     var imageAsset: String? = nil
     var imagesData: [Data] = []
+    var imageUrls: [String] = []
     var imageAnalyses: [String] = []
     
     // Parity with WorkOrder
@@ -98,5 +100,41 @@ struct TripInspection: Identifiable, Codable {
                 InspectionItem(name: "External Signals", verificationCriteria: "Check indicators, brake lights, and reverse alarm.", result: .pending, isImageRequired: false)
             ]
         }
+    }
+}
+
+extension TripInspection {
+    init(apiItem: InspectionAPIItem) {
+        let inspectionType = InspectionType(rawValue: apiItem.type) ?? .postTrip
+        let vehicleType = VehicleType(rawValue: apiItem.vehicleType) ?? .truck
+        let inspectionStatus = InspectionStatus(rawValue: apiItem.status) ?? .completed
+        let priority = WorkOrderPriority(apiValue: apiItem.priority)
+        let taskDetails = apiItem.taskDetails ?? ""
+        let imageUrls = apiItem.imageUrls ?? []
+        let consumedParts = apiItem.consumedParts ?? []
+
+        self.init(
+            id: UUID(),
+            backendId: apiItem.id,
+            title: apiItem.title,
+            vehicleId: apiItem.vehicleId,
+            unitName: apiItem.unitName,
+            unitVIN: apiItem.unitVIN,
+            driverId: apiItem.driverId,
+            timestamp: apiItem.timestamp,
+            type: inspectionType,
+            vehicleType: vehicleType,
+            status: inspectionStatus,
+            priority: priority,
+            items: apiItem.items,
+            notes: apiItem.notes,
+            maintenanceStaffId: apiItem.maintenanceStaffId,
+            isEmergency: apiItem.isEmergency,
+            odometer: apiItem.odometer,
+            fuelLevel: apiItem.fuelLevel,
+            imageUrls: imageUrls,
+            taskDetails: taskDetails,
+            consumedParts: consumedParts
+        )
     }
 }

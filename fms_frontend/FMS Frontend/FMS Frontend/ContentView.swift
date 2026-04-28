@@ -166,9 +166,6 @@ struct ContentView: View {
     var body: some View {
         ZStack(alignment: .top) {
             Group {
-                
-                FleetManagerMainView()
-                
                 switch session.state {
                 case .restoring:
                     ProgressView("Restoring session...")

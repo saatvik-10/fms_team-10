@@ -829,226 +829,125 @@ struct DriverBehaviorRankedList: View {
     }
 }
 
-// MARK: - Operational Cost Chart (Area)
-struct OperationalCostChart: View {
-    let trend: [HistoricalPoint]
+// MARK: - Unified Maintenance Cost Card
+struct UnifiedMaintenanceCostCard: View {
+    let perVehicleCost: [HistoricalPoint]
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Maintenance Cost Trends")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(AppTheme.primary)
-                Text("Weekly")
-                    .font(AppFonts.caption1)
-                    .foregroundColor(.gray)
-            }
-            
-            Chart(trend) { point in
-                AreaMark(
-                    x: .value("Day", point.label),
-                    y: .value("Cost (₹)", point.value)
-                )
-                .foregroundStyle(LinearGradient(
-                    colors: [AppTheme.primary.opacity(0.28), AppTheme.primary.opacity(0)],
-                    startPoint: .top, endPoint: .bottom
-                ))
-                .interpolationMethod(.catmullRom)
-                
-                LineMark(
-                    x: .value("Day", point.label),
-                    y: .value("Cost (₹)", point.value)
-                )
-                .foregroundStyle(AppTheme.primary)
-                .lineStyle(StrokeStyle(lineWidth: 2.5))
-                .interpolationMethod(.catmullRom)
-                
-                PointMark(
-                    x: .value("Day", point.label),
-                    y: .value("Cost (₹)", point.value)
-                )
-                .foregroundStyle(AppTheme.primary)
-                .symbolSize(20)
-            }
-            .chartXAxis {
-                AxisMarks { value in
-                    AxisValueLabel {
-                        if let label = value.as(String.self) {
-                            Text(label).font(AppFonts.caption2).foregroundColor(.gray)
-                        }
-                    }
-                }
-            }
-            .chartYAxis {
-                AxisMarks { value in
-                    AxisValueLabel {
-                        if let v = value.as(Double.self) {
-                            Text("₹\(Int(v / 1000))k").font(AppFonts.caption2).foregroundColor(.gray)
-                        }
-                    }
-                }
-            }
-            .frame(height: 130)
-            
-            Spacer(minLength: 0)
-        }
-        .padding(20)
-        .frame(height: 260)
-        .background(Color.white)
-        .cornerRadius(16)
-        .modifier(AppTheme.cardShadow())
+    var totalMonthlyCost: Double {
+        perVehicleCost.reduce(0) { $0 + $1.value }
     }
-}
-
-// MARK: - Fuel Performance Comparison
-struct FuelPerformanceChart: View {
-    let data: [(vehicleID: String, efficiency: Double)]
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text("Fuel Efficiency (L/100km)")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(AppTheme.primary)
-            
-            Chart(data, id: \.vehicleID) { item in
-                BarMark(
-                    x: .value("Vehicle", item.vehicleID),
-                    y: .value("Efficiency", item.efficiency)
-                )
-                .foregroundStyle(AppTheme.primary.gradient)
-                .cornerRadius(4)
-            }
-            .chartXAxis {
-                AxisMarks { value in
-                    AxisValueLabel {
-                        if let id = value.as(String.self) {
-                            Text(id).font(AppFonts.caption2).foregroundColor(.gray)
-                        }
-                    }
-                }
-            }
-            .frame(height: 100)
-            
-            Text("Lower is better • Peer average: 18.2L")
-                .font(AppFonts.caption2)
-                .foregroundColor(.gray)
-        }
-        .padding(24)
-        .frame(height: 300)
-        .background(Color.white)
-        .cornerRadius(16)
-        .modifier(AppTheme.cardShadow())
-    }
-}
-
-// MARK: - Fleet Health Status Stacked Bar
-struct FleetHealthStatusStackedBar: View {
-    let healthy: Int
-    let warning: Int
-    let critical: Int
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            Text("Fleet Health Index")
-                .font(AppFonts.headline)
-                .foregroundColor(AppTheme.primary)
-            
-            Chart {
-                BarMark(x: .value("Status", healthy))
-                    .foregroundStyle(AppColors.activeGreen)
-                BarMark(x: .value("Status", warning))
-                    .foregroundStyle(AppColors.maintenanceOrange)
-                BarMark(x: .value("Status", critical))
-                    .foregroundStyle(AppColors.criticalRed)
-            }
-            .frame(height: 48)
-            .chartXAxis(.hidden)
-            .cornerRadius(10)
-            
-            HStack(spacing: 20) {
-                HStack(spacing: 6) {
-                    Circle().fill(AppColors.activeGreen).frame(width: 8, height: 8)
-                    Text("Healthy: \(healthy)")
-                        .font(AppFonts.headline)
-                        .foregroundColor(AppColors.primaryText)
-                }
-                HStack(spacing: 6) {
-                    Circle().fill(AppColors.maintenanceOrange).frame(width: 8, height: 8)
-                    Text("Warning: \(warning)")
-                        .font(AppFonts.headline)
-                        .foregroundColor(AppColors.primaryText)
-                }
-                HStack(spacing: 6) {
-                    Circle().fill(AppColors.criticalRed).frame(width: 8, height: 8)
-                    Text("Critical: \(critical)")
-                        .font(AppFonts.headline)
-                        .foregroundColor(AppColors.primaryText)
-                }
-            }
-        }
-        .padding(24)
-        .background(Color.white)
-        .cornerRadius(16)
-        .modifier(AppTheme.cardShadow())
-    }
-}
-
-// MARK: - Trip Status Breakdown (Donut)
-struct TripStatusDonutChart: View {
-    let active: Int
-    let scheduled: Int
-    let maintenance: Int
-    
-    private var data: [(status: String, count: Int, color: Color)] {
-        [
-            ("In Transit", active, AppTheme.primary),
-            ("Scheduled", scheduled, AppTheme.primary.opacity(0.6)),
-            ("Maintenance", maintenance, AppTheme.primary.opacity(0.3))
-        ]
+    var topVehicles: [HistoricalPoint] {
+        Array(perVehicleCost.sorted(by: { $0.value > $1.value }).prefix(5))
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Trip Status Overview")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(AppTheme.primary)
-            
-            ZStack {
-                Chart(data, id: \.status) { item in
-                    SectorMark(
-                        angle: .value("Count", item.count),
-                        innerRadius: .ratio(0.65),
-                        angularInset: 2
-                    )
-                    .foregroundStyle(item.color)
-                    .cornerRadius(5)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Maintenance Expenditure")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(AppTheme.primary)
                 }
-                .frame(height: 160)
-                
-                VStack(spacing: 0) {
-                    Text("\(active + scheduled + maintenance)")
-                        .font(AppFonts.title1)
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("₹\(Int(totalMonthlyCost).formatted())")
+                        .font(AppFonts.title2)
                         .fontWeight(.bold)
                         .foregroundColor(AppTheme.primary)
-                    Text("TOTAL")
-                        .font(AppFonts.caption2)
-                        .foregroundColor(.gray)
+                    Text("TOTAL FLEET COST")
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundColor(.gray.opacity(0.8))
+                        .tracking(1)
                 }
             }
             
-            VStack(spacing: 8) {
-                ForEach(data, id: \.status) { item in
-                    HStack {
-                        Circle().fill(item.color).frame(width: 8, height: 8)
-                        Text(item.status).font(AppFonts.caption2).foregroundColor(.gray)
-                        Spacer()
-                        Text("\(item.count)").font(AppFonts.caption2).fontWeight(.bold)
+            if topVehicles.isEmpty {
+                // Empty state for when no data is available
+                VStack(spacing: 12) {
+                    Chart {
+                        // Empty BarMarks to keep the axis visible
+                        BarMark(x: .value("Vehicle", "V1"), y: .value("Cost", 0))
+                        BarMark(x: .value("Vehicle", "V2"), y: .value("Cost", 0))
+                        BarMark(x: .value("Vehicle", "V3"), y: .value("Cost", 0))
+                        BarMark(x: .value("Vehicle", "V4"), y: .value("Cost", 0))
+                        BarMark(x: .value("Vehicle", "V5"), y: .value("Cost", 0))
+                    }
+                    .chartYAxis {
+                        AxisMarks(values: [0, 5000, 10000, 15000]) { value in
+                            AxisValueLabel {
+                                if let v = value.as(Double.self) {
+                                    Text("₹\(Int(v/1000))k").font(AppFonts.caption2).foregroundColor(.gray.opacity(0.5))
+                                }
+                            }
+                        }
+                    }
+                    .chartXAxis {
+                        AxisMarks { _ in
+                            AxisValueLabel {
+                                Text("-").font(AppFonts.caption2).foregroundColor(.gray.opacity(0.3))
+                            }
+                        }
+                    }
+                    .frame(height: 150)
+                    .opacity(0.3)
+                    .overlay(
+                        Text("No billing data available for this month")
+                            .font(AppFonts.caption1)
+                            .foregroundColor(.gray)
+                            .padding(8)
+                            .background(Color.white.opacity(0.8))
+                            .cornerRadius(8)
+                    )
+                }
+            } else {
+                Chart(topVehicles) { item in
+                    BarMark(
+                        x: .value("Vehicle", item.label),
+                        y: .value("Cost (₹)", item.value)
+                    )
+                    .foregroundStyle(AppTheme.primary.gradient)
+                    .cornerRadius(6)
+                    .annotation(position: .top) {
+                        Text("₹\(Int(item.value / 1000))k")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(AppTheme.primary)
                     }
                 }
+                .chartXAxis {
+                    AxisMarks { value in
+                        AxisValueLabel {
+                            if let label = value.as(String.self) {
+                                Text(label)
+                                    .font(AppFonts.caption2)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks { value in
+                        AxisValueLabel {
+                            if let v = value.as(Double.self) {
+                                Text("₹\(Int(v / 1000))k")
+                                    .font(AppFonts.caption2)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                }
+                .frame(height: 150)
             }
+            
+            // HStack {
+            //     Label("Monthly aggregated", systemImage: "calendar")
+            //     Spacer()
+            //     Text("Values in Indian Rupees (₹)")
+            // }
+            // .font(.system(size: 10))
+            // .foregroundColor(.gray)
         }
         .padding(24)
-        .frame(height: 350)
         .background(Color.white)
         .cornerRadius(16)
         .modifier(AppTheme.cardShadow())
@@ -1099,63 +998,6 @@ struct MaintenanceAlertCard: View {
     }
 }
 
-// MARK: - Maintenance Cost Per Vehicle (Monthly)
-struct MaintenanceCostPerVehicleChart: View {
-    let data: [HistoricalPoint]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Per Vehicle Cost")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(AppTheme.primary)
-                Text("Monthly")
-                    .font(AppFonts.caption1)
-                    .foregroundColor(.gray)
-            }
-            
-            Chart(data) { item in
-                BarMark(
-                    x: .value("Vehicle", item.label),
-                    y: .value("Cost (₹)", item.value)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [AppTheme.primary, AppTheme.mediumSeaGreen],
-                        startPoint: .bottom, endPoint: .top
-                    )
-                )
-                .cornerRadius(5)
-                .annotation(position: .top) {
-                    Text("₹\(Int(item.value / 1000))k")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(AppTheme.primary)
-                }
-            }
-            .chartXAxis {
-                AxisMarks { value in
-                    AxisValueLabel {
-                        if let label = value.as(String.self) {
-                            Text(label).font(AppFonts.caption2).foregroundColor(.gray)
-                        }
-                    }
-                }
-            }
-            .chartYAxis(.hidden)
-            .frame(height: 130)
-            
-            Text("Monthly aggregated • Values in ₹")
-                .font(AppFonts.caption2)
-                .foregroundColor(.gray)
-        }
-        .padding(20)
-        .frame(height: 260)
-        .background(Color.white)
-        .cornerRadius(16)
-        .modifier(AppTheme.cardShadow())
-    }
-}
-
 // MARK: - Travel Analytics Card (Premium Theme)
 struct TravelAnalyticsCard: View {
     let totalKms: Double
@@ -1165,63 +1007,78 @@ struct TravelAnalyticsCard: View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Travels")
                 .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(AppTheme.primary)
             
             HStack(spacing: 30) {
-                Chart(history) { point in
-                    AreaMark(
-                        x: .value("Month", point.label),
-                        y: .value("Kms", point.value)
-                    )
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: "00bcd4").opacity(0.6), Color(hex: "00bcd4").opacity(0.1)], startPoint: .top, endPoint: .bottom))
-                    .interpolationMethod(.catmullRom)
-                    
-                    LineMark(
-                        x: .value("Month", point.label),
-                        y: .value("Kms", point.value)
-                    )
-                    .foregroundStyle(Color(hex: "00bcd4"))
-                    .lineStyle(StrokeStyle(lineWidth: 3))
-                    .interpolationMethod(.catmullRom)
-                }
-                .chartXAxis {
-                    AxisMarks { value in
-                        AxisValueLabel {
-                            if let label = value.as(String.self) {
-                                Text(label).font(.system(size: 10)).foregroundColor(.white.opacity(0.7))
+                if history.isEmpty {
+                    VStack(spacing: 10) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 30))
+                            .foregroundColor(AppTheme.primary.opacity(0.1))
+                        Text("No travel data available yet")
+                            .font(AppFonts.caption2)
+                            .foregroundColor(AppTheme.primary.opacity(0.3))
+                    }
+                    .frame(height: 100)
+                    .frame(maxWidth: .infinity)
+                    .background(AppTheme.primary.opacity(0.02))
+                    .cornerRadius(12)
+                } else {
+                    Chart(history) { point in
+                        AreaMark(
+                            x: .value("Month", point.label),
+                            y: .value("Kms", point.value)
+                        )
+                        .foregroundStyle(LinearGradient(colors: [AppTheme.primary.opacity(0.3), AppTheme.primary.opacity(0.05)], startPoint: .top, endPoint: .bottom))
+                        .interpolationMethod(.catmullRom)
+                        
+                        LineMark(
+                            x: .value("Month", point.label),
+                            y: .value("Kms", point.value)
+                        )
+                        .foregroundStyle(AppTheme.primary)
+                        .lineStyle(StrokeStyle(lineWidth: 3))
+                        .interpolationMethod(.catmullRom)
+                    }
+                    .chartXAxis {
+                        AxisMarks { value in
+                            AxisValueLabel {
+                                if let label = value.as(String.self) {
+                                    Text(label).font(.system(size: 10)).foregroundColor(AppTheme.primary.opacity(0.7))
+                                }
                             }
                         }
                     }
-                }
-                .chartYAxis {
-                    AxisMarks { value in
-                        AxisValueLabel {
-                            if let val = value.as(Double.self) {
-                                Text("\(Int(val))").font(.system(size: 10)).foregroundColor(.white.opacity(0.7))
+                    .chartYAxis {
+                        AxisMarks { value in
+                            AxisValueLabel {
+                                if let val = value.as(Double.self) {
+                                    Text("\(Int(val))").font(.system(size: 10)).foregroundColor(AppTheme.primary.opacity(0.7))
+                                }
                             }
                         }
                     }
+                    .frame(height: 100)
                 }
-                .frame(height: 100)
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Rectangle()
-                        .fill(Color.white.opacity(0.3))
+                        .fill(AppTheme.primary.opacity(0.1))
                         .frame(height: 1)
                     
                     Text("Total Travels")
                         .font(AppFonts.headline)
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(AppTheme.primary.opacity(0.7))
                     
                     Text("\(Int(totalKms).formatted()) km")
                         .font(.system(size: 42, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppTheme.primary)
                 }
                 .frame(width: 250)
             }
         }
         .padding(35)
-        .background(Color(red: 0.04, green: 0.19, blue: 0.23))
+        .background(Color.white)
         .cornerRadius(24)
         .modifier(AppTheme.cardShadow())
     }
@@ -1345,10 +1202,10 @@ struct IdleDriversAnalytic: View {
                 Circle()
                     .fill(AppTheme.activeGreen)
                     .frame(width: 7, height: 7)
-                Text("\(drivers.count) ready for dispatch")
-                    .font(AppFonts.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(AppTheme.activeGreen)
+                // Text("\(drivers.count) ready for dispatch")
+                //     .font(AppFonts.caption2)
+                //     .fontWeight(.semibold)
+                //     .foregroundColor(AppTheme.activeGreen)
                 Spacer()
             }
         }
@@ -1450,5 +1307,82 @@ struct LeastTravelledVehiclesChart: View {
         .background(Color.white)
         .cornerRadius(16)
         .modifier(AppTheme.cardShadow())
+    }
+}
+// MARK: - Geofence Alert Banner
+struct GeofenceAlertBanner: View {
+    let alert: FleetDataManager.GeofenceAlert
+    var onDismiss: () -> Void
+    
+    private var alertColor: Color {
+        switch alert.type {
+        case .arrival: return AppTheme.activeGreen
+        case .departure: return Color.orange
+        case .deviation: return Color.red
+        }
+    }
+    
+    private var alertIcon: String {
+        switch alert.type {
+        case .arrival: return "mappin.and.ellipse"
+        case .departure: return "figure.walk.departure"
+        case .deviation: return "exclamationmark.triangle.fill"
+        }
+    }
+    
+    private var alertTitle: String {
+        switch alert.type {
+        case .arrival: return "NEW ARRIVAL"
+        case .departure: return "NEW DEPARTURE"
+        case .deviation: return "ROUTE DEVIATION"
+        }
+    }
+    
+    var body: some View {
+        HStack(spacing: 15) {
+            ZStack {
+                Circle()
+                    .fill(alertColor.opacity(0.2))
+                    .frame(width: 40, height: 40)
+                
+                Image(systemName: alertIcon)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(alertColor)
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(alertTitle)
+                    .font(AppFonts.caption2)
+                    .fontWeight(.black)
+                    .tracking(1)
+                    .foregroundColor(alertColor)
+                
+                Text(alert.message)
+                    .font(AppFonts.body)
+                    .fontWeight(.bold)
+                    .foregroundColor(AppTheme.primary)
+                    .lineLimit(2)
+                
+                Text("\(alert.timestamp, style: .time)")
+                    .font(AppFonts.caption2)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.gray)
+                    .padding(8)
+                    .background(Color.gray.opacity(0.1))
+                    .clipShape(Circle())
+            }
+        }
+        .padding(15)
+        .background(Color.white)
+        .cornerRadius(16)
+        .modifier(AppTheme.cardShadow())
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 }

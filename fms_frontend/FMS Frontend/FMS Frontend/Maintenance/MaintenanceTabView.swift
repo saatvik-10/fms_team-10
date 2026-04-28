@@ -54,6 +54,7 @@ struct MaintenanceTabView: View {
             // ------------------------
         }
         .environmentObject(store)
+        .tint(AppColors.primary)
         .accentColor(AppColors.primary)
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
             store.refreshWorkOrderStatuses()

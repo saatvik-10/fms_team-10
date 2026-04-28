@@ -11,6 +11,10 @@ struct ReportIssueView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var speechManager = SpeechManager()
     @StateObject private var issueViewModel = IssueReportingViewModel()
+    @StateObject private var locationManager = LocationManager()
+
+    // MARK: Location state
+    @State private var currentAddress: String = "Fetching location..."
 
     // MARK: Image state
     @State private var selectedImages: [UIImage] = []
@@ -36,7 +40,7 @@ struct ReportIssueView: View {
 
     // Incident info derived from trip
     private var incidentLocation: String {
-        "En route – \(trip.source) → \(trip.destination)"
+        currentAddress
     }
     private var vehicleUnit: String {
         trip.vehicleNumber ?? "Unassigned"
@@ -149,6 +153,28 @@ struct ReportIssueView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(issueViewModel.errorMessage ?? "Please try again.")
+        }
+        .onChange(of: locationManager.location) { _, newLocation in
+            guard let loc = newLocation else { return }
+            Task {
+                do {
+                    let address = try await GoogleDirectionsService.shared.reverseGeocode(coordinate: loc.coordinate)
+                    await MainActor.run {
+                        self.currentAddress = address
+                    }
+                } catch {
+                    print("Failed to reverse geocode: \(error)")
+                }
+            }
+        }
+        .onAppear {
+            if let loc = locationManager.location {
+                Task {
+                    if let address = try? await GoogleDirectionsService.shared.reverseGeocode(coordinate: loc.coordinate) {
+                        await MainActor.run { self.currentAddress = address }
+                    }
+                }
+            }
         }
     }
 

@@ -91,8 +91,12 @@ struct WorkOrderDetailsView: View {
                                 .font(.largeTitle.weight(.heavy))
                                 .foregroundColor(.primary)
                             
+                            Text(workOrder.vehicleNum)
+                                .font(.title3.weight(.bold))
+                                .foregroundColor(.secondary)
+                            
                             // Scheduled Date Subtitle
-                            Text("Scheduled for: \(workOrder.scheduledDate.formatted(date: .long, time: .shortened))")
+                            Text("Scheduled for: \(workOrder.scheduledDate.formatted(date: .long, time: .omitted))")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                              
@@ -119,25 +123,25 @@ struct WorkOrderDetailsView: View {
                             }
                         }
                         
-                        Divider().padding(.vertical, 12)
+                        // Divider().padding(.vertical, 12)
                         
                         // Task Details Card
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "TASK DETAILS", icon: "doc.text.fill")
+                        // VStack(alignment: .leading, spacing: 12) {
+                        //     SectionHeader(title: "TASK DETAILS", icon: "doc.text.fill")
                             
-                            VStack(alignment: .leading, spacing: 12) {
-                                ForEach(taskPoints, id: \.self) { point in
-                                    Text(point)
-                                        .font(.body)
-                                        .foregroundColor(.primary)
-                                }
-                            }
-                            .padding(20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white)
-                            .cornerRadius(16)
-                            .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-                        }
+                        //     VStack(alignment: .leading, spacing: 12) {
+                        //         ForEach(taskPoints, id: \.self) { point in
+                        //             Text(point)
+                        //                 .font(.body)
+                        //                 .foregroundColor(.primary)
+                        //         }
+                        //     }
+                        //     .padding(20)
+                        //     .frame(maxWidth: .infinity, alignment: .leading)
+                        //     .background(Color.white)
+                        //     .cornerRadius(16)
+                        //     .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+                        // }
                         
                         // Driver Notes Card
                         VStack(alignment: .leading, spacing: 12) {
@@ -147,7 +151,7 @@ struct WorkOrderDetailsView: View {
                         
                         // Driver Media Card
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "DRIVER MEDIA", icon: "camera.fill")
+                            SectionHeader(title: "MEDIA", icon: "camera.fill")
                             driverMediaContent
                         }
                         
@@ -188,6 +192,9 @@ struct WorkOrderDetailsView: View {
                                                         .font(.system(size: 15, weight: .bold))
                                                     Text(inventoryPart.partId)
                                                         .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                    Text("Total ₹\(String(format: "%.2f", inventoryPart.unitPriceInr * Double(usage.quantity)))")
+                                                        .font(.caption2)
                                                         .foregroundColor(.secondary)
                                                 }
 
@@ -297,26 +304,26 @@ struct WorkOrderDetailsView: View {
                         }
                         
                         // Action Buttons (Now part of the scroll content)
-                        VStack(spacing: 16) {
-                            if !workOrder.isAccepted {
-                                Button(action: {
-                                    acceptWorkOrder()
-                                }) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "checkmark.shield.fill")
-                                            .font(.system(size: 16, weight: .bold))
-                                        Text("Accept Work Order")
-                                            .font(.system(size: 15, weight: .bold))
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
-                                    .background(AppColors.primary)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(14)
-                                    .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
-                                }
-                            }
-                        }
+                        // VStack(spacing: 16) {
+                        //     if !workOrder.isAccepted {
+                        //         Button(action: {
+                        //             acceptWorkOrder()
+                        //         }) {
+                        //             HStack(spacing: 8) {
+                        //                 Image(systemName: "checkmark.shield.fill")
+                        //                     .font(.system(size: 16, weight: .bold))
+                        //                 Text("Accept Work Order")
+                        //                     .font(.system(size: 15, weight: .bold))
+                        //             }
+                        //             .frame(maxWidth: .infinity)
+                        //             .padding(.vertical, 16)
+                        //             .background(AppColors.primary)
+                        //             .foregroundColor(.white)
+                        //             .cornerRadius(14)
+                        //             .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
+                        //         }
+                        //     }
+                        // }
                         .padding(.top, 32)
                         .padding(.bottom, 40)
                     }
@@ -352,7 +359,7 @@ struct WorkOrderDetailsView: View {
         .sheet(isPresented: $showingDatePicker) {
             NavigationStack {
                 VStack {
-                    DatePicker("Select New Date", selection: $selectedDate, in: Date()..., displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("Select New Date", selection: $selectedDate, in: Date()..., displayedComponents: [.date])
                         .datePickerStyle(.graphical)
                         .padding()
                     Spacer()
@@ -369,15 +376,16 @@ struct WorkOrderDetailsView: View {
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button(action: {
-                            let now = Date()
-                            guard selectedDate >= now else {
-                                selectedDate = now
+                            let selectedDay = Calendar.current.startOfDay(for: selectedDate)
+                            let today = Calendar.current.startOfDay(for: Date())
+                            guard selectedDay >= today else {
+                                selectedDate = Date()
                                 showingScheduleValidationAlert = true
                                 return
                             }
 
                             var updated = workOrder
-                            updated.scheduledDate = selectedDate
+                            updated.scheduledDate = selectedDay
                             updated.hasBeenRescheduled = true
                             store.updateWorkOrder(updated)
                             workOrder = updated
@@ -456,12 +464,12 @@ struct WorkOrderDetailsView: View {
         .alert("Success", isPresented: $showingScheduleSuccess) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Work order for \(workOrder.vehicleName) has been rescheduled to \(selectedDate.formatted(date: .abbreviated, time: .shortened)).")
+            Text("Work order for \(workOrder.vehicleName) has been rescheduled to \(selectedDate.formatted(date: .abbreviated, time: .omitted)).")
         }
         .alert("Invalid Schedule", isPresented: $showingScheduleValidationAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Scheduled date and time cannot be before the current time.")
+            Text("Scheduled date cannot be before today.")
         }
         .alert("Checklist Incomplete", isPresented: $showingChecklistIncompleteAlert) {
             Button("OK", role: .cancel) { }
@@ -488,12 +496,10 @@ struct WorkOrderDetailsView: View {
                         }
                         showingCompleteAlert = true
                     }) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 17, weight: .bold))
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundColor(AppColors.primary)
                     }
-                    .disabled(!isChecklistComplete)
-                    .opacity(isChecklistComplete ? 1 : 0.45)
                 }
             }
         }
@@ -504,6 +510,11 @@ struct WorkOrderDetailsView: View {
             }
         } message: {
             Text("Confirm that all maintenance activities are finished. This will close the work order.")
+        }
+        .alert("Incomplete Checklist", isPresented: $showingChecklistIncompleteAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Please ensure all system checklist items are marked as complete before closing this work order.")
         }
     }
     
@@ -548,10 +559,7 @@ struct WorkOrderDetailsView: View {
         VStack(alignment: .leading, spacing: 16) {
             if workOrder.driverMediaImages.isEmpty {
                 HStack(spacing: 10) {
-                    Image(systemName: "camera.fill")
-                        .font(.title3)
-                        .foregroundColor(.secondary.opacity(0.6))
-                    Text("No driver media uploaded.")
+                    Text("No media uploaded.")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -717,13 +725,42 @@ struct WorkOrderDetailsView: View {
             return
         }
 
-        // 1. Update Work Order Status - Store automatically generates Inspection record on completion
-        var updatedOrder = workOrder
-        updatedOrder.status = .completed
-        store.updateWorkOrder(updatedOrder)
-        
-        // 2. Update local state and dismiss
-        workOrder = updatedOrder
-        dismiss()
+        var totalCost: Double = 0
+        for usage in workOrder.consumedParts {
+            if let part = store.inventoryParts.first(where: { $0.partId == usage.inventoryPartId }) {
+                totalCost += Double(usage.quantity) * part.unitPriceInr
+            }
+        }
+
+        let base64Images = workOrder.proofOfWorkImages.map { "data:image/jpeg;base64," + $0.base64EncodedString() }
+
+        Task {
+            do {
+                if let backendId = workOrder.backendId {
+                    let request = CompleteWorkOrderRequest(
+                        totalCost: totalCost,
+                        technicianNotes: workOrder.technicianNotes,
+                        checklist: workOrder.checklist,
+                        consumedParts: workOrder.consumedParts,
+                        workOrderMedia: base64Images,
+                        isEmergency: workOrder.priority == .high,
+                        odometer: workOrder.odometer,
+                        fuelLevel: nil, // Fuel level isn't in WO model currently
+                        taskDetails: workOrder.taskDetails
+                    )
+                    _ = try await MaintenanceAPI(client: .shared).completeWorkOrder(id: backendId, request: request)
+                }
+                
+                await MainActor.run {
+                    var updatedOrder = workOrder
+                    updatedOrder.status = .completed
+                    store.updateWorkOrder(updatedOrder)
+                    workOrder = updatedOrder
+                    dismiss()
+                }
+            } catch {
+                print("Failed to complete work order: \(error)")
+            }
+        }
     }
 }

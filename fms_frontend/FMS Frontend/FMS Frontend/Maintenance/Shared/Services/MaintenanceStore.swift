@@ -10,6 +10,7 @@ import Combine
 
 class MaintenanceStore: ObservableObject {
     @Published var workOrders: [WorkOrder] = []
+    @Published var completedWorkOrders: [WorkOrder] = []
     @Published var inspections: [TripInspection] = []
     @Published var inventoryParts: [InventoryPart] = []
     @Published var currentProfile: UserProfile? = nil
@@ -93,136 +94,37 @@ class MaintenanceStore: ObservableObject {
     }
     
     func loadMockData() {
-        self.workOrders = [
-            WorkOrder(
-                title: "Hydraulic Leak Repair",
-                vehicleName: "JCB 3DX",
-                vehicleVIN: "JCB123456789",
-                serviceType: "Emergency",
-                priority: .high,
-                status: .pending,
-                taskDetails: "Major hydraulic fluid leak detected in the main boom cylinder.",
-                scheduledDate: Date(),
-                technicianId: "Arjun-M",
-                technicianNotes: "Need to replace seals.",
-                partsNeeded: [
-                    Part(name: "Hydraulic Seal Kit", description: "Standard seal kit", iconName: "wrench.and.screwdriver.fill")
-                ],
-                imageAsset: "engine_part",
-                checklist: WorkOrder.standardChecklist
-            ),
-            WorkOrder.mock,
-            WorkOrder(
-                title: "Tire Calibration",
-                vehicleName: "Tata Prima",
-                vehicleVIN: "3VWCP1192BM00",
-                serviceType: "Routine",
-                priority: .medium,
-                status: .pending,
-                taskDetails: "Standard calibration required.",
-                scheduledDate: Date().addingTimeInterval(172800),
-                technicianId: "Arjun-M",
-                technicianNotes: "Verified all tires.",
-                partsNeeded: [
-                    Part(name: "Air Valve Caps", description: "Replacement", iconName: "gearshape.fill", imageAsset: "tire_part")
-                ],
-                imageAsset: "tire_part",
-                checklist: WorkOrder.standardChecklist
-            )
-        ]
-        
-        self.inspections = [
-            TripInspection(
-                title: "Emergency Brake Failure",
-                vehicleId: "V-901",
-                unitName: "Eicher Pro 6037",
-                unitVIN: "9VWCP1192BM99",
-                driverId: "DRV-Suresh",
-                timestamp: Date(),
-                type: .preTrip,
-                vehicleType: .truck,
-                status: .completed,
-                priority: .high,
-                items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "Arjun-S",
-                isEmergency: true,
-                imageAsset: "brake_part"
-            ),
-            TripInspection(
-                title: "Pre-Trip Audit",
-                vehicleId: "V-842",
-                unitName: "Ashok Leyland Captain",
-                unitVIN: "1HGCM8263JA05",
-                driverId: "DRV-Rahul",
-                timestamp: Date(),
-                type: .preTrip,
-                vehicleType: .truck,
-                status: .completed,
-                priority: .high,
-                items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "Arjun-S",
-                imageAsset: "truck_main",
-                imagesData: [UIImage(named: "truck_main")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemBlue.image().jpegData(compressionQuality: 0.1)!],
-                imageAnalyses: ["Analysis: Within operational standards."]
-            ),
-            TripInspection(
-                title: "Daily Pre-Trip",
-                vehicleId: "V-115",
-                unitName: "BharatBenz 3523R",
-                unitVIN: "JTMBU4230L901",
-                driverId: "DRV-Amit",
-                timestamp: Date(),
-                type: .preTrip,
-                vehicleType: .truck,
-                status: .completed,
-                priority: .medium,
-                items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "Arjun-S",
-                imageAsset: "truck_main",
-                imagesData: [UIImage(named: "engine_part")?.jpegData(compressionQuality: 0.5) ?? UIColor.systemRed.image().jpegData(compressionQuality: 0.1)!],
-                imageAnalyses: ["Analysis: Manifold signature uniform."]
-            ),
-            TripInspection(
-                title: "Hydraulic System Audit",
-                vehicleId: "V-902",
-                unitName: "JCB 3DX",
-                unitVIN: "JCB123456789",
-                driverId: "DRV-Suresh",
-                timestamp: Date(),
-                type: .maintenance,
-                vehicleType: .truck,
-                status: .pending,
-                priority: .high,
-                items: [
-                    InspectionItem(name: "Brake System", verificationCriteria: "Pad thickness and rotor condition", result: .good, isImageRequired: true),
-                    InspectionItem(name: "Tire Condition", verificationCriteria: "Tread depth and pressure", result: .pending, isImageRequired: true),
-                    InspectionItem(name: "Fluid Levels", verificationCriteria: "Oil, coolant, and brake fluid", result: .pending, isImageRequired: false)
-                ],
-                maintenanceStaffId: "Arjun-M",
-                imageAsset: "engine_part"
-            ),
-            TripInspection(
-                title: "Chassis Integrity Check",
-                vehicleId: "V-903",
-                unitName: "JCB 3DX",
-                unitVIN: "JCB123456789",
-                driverId: "DRV-Suresh",
-                timestamp: Date().addingTimeInterval(3600),
-                type: .maintenance,
-                vehicleType: .truck,
-                status: .pending,
-                priority: .medium,
-                items: TripInspection.mockItems(for: .truck),
-                maintenanceStaffId: "Arjun-M"
-            )
-        ]
+        self.workOrders = []
+        self.completedWorkOrders = []
+        self.inspections = []
     }
     
     func addWorkOrder(_ order: WorkOrder) {
         var normalizedOrder = order
         normalizedOrder.status = autoStatus(for: normalizedOrder)
-        workOrders.insert(normalizedOrder, at: 0)
+        if let backendId = normalizedOrder.backendId,
+           let index = workOrders.firstIndex(where: { $0.backendId == backendId }) {
+            workOrders[index] = normalizedOrder
+        } else {
+            workOrders.insert(normalizedOrder, at: 0)
+        }
         reconcileInventoryForWorkOrderChange(oldParts: [], newParts: order.consumedParts)
+    }
+
+    @MainActor
+    func refreshWorkOrders() async throws {
+        // Fetch PROGRESS work orders
+        let progressResponse = try await MaintenanceAPI.shared.getWorkOrders(status: "PROGRESS")
+        let apiOrders = progressResponse.workOrders.map { WorkOrder(apiItem: $0) }
+        
+        // Fetch COMPLETED work orders
+        let completedResponse = try await MaintenanceAPI.shared.getWorkOrders(status: "COMPLETED")
+        let completedApiOrders = completedResponse.workOrders.map { WorkOrder(apiItem: $0) }
+        
+        let localOnlyOrders = workOrders.filter { $0.backendId == nil }
+        workOrders = apiOrders + localOnlyOrders
+        completedWorkOrders = completedApiOrders
+        refreshWorkOrderStatuses()
     }
     
     func updateWorkOrder(_ order: WorkOrder) {
@@ -234,9 +136,12 @@ class MaintenanceStore: ObservableObject {
             workOrders[index] = normalizedOrder
             reconcileInventoryForWorkOrderChange(oldParts: oldOrder.consumedParts, newParts: normalizedOrder.consumedParts)
             
-            // If status changed to completed, generate an inspection record for the log
+            // If status changed to completed, append to completedWorkOrders
             if oldStatus != .completed && normalizedOrder.status == .completed {
-                generateInspectionFromWorkOrder(normalizedOrder)
+                completedWorkOrders.insert(normalizedOrder, at: 0)
+                Task {
+                    try? await refreshInspections()
+                }
             }
         }
     }
@@ -249,7 +154,7 @@ class MaintenanceStore: ObservableObject {
             if current.status == .completed {
                 nextStatus = .completed
             } else {
-                nextStatus = current.scheduledDate <= referenceDate ? .inProgress : .pending
+                nextStatus = .progress
             }
 
             if current.status != nextStatus {
@@ -263,40 +168,34 @@ class MaintenanceStore: ObservableObject {
         }
     }
     
-    private func generateInspectionFromWorkOrder(_ order: WorkOrder) {
-        // Use the Work Order's checklist for the inspection record
-        let checklistItems = !order.checklist.isEmpty ? order.checklist : order.partsNeeded.map { 
-            InspectionItem(name: $0.name, verificationCriteria: $0.description, result: .good, isImageRequired: false)
-        }
-        
-        let inspection = TripInspection(
-            title: "WO Completion: \(order.title)",
-            vehicleId: order.orderID,
-            unitName: order.vehicleName,
-            unitVIN: order.vehicleVIN,
-            driverId: "SYSTEM",
-            timestamp: Date(),
-            type: .maintenance,
-            vehicleType: order.vehicleName.lowercased().contains("bus") ? .car : .truck,
-            status: .completed,
-            priority: order.priority,
-            items: checklistItems,
-            notes: order.technicianNotes,
-            maintenanceStaffId: order.technicianId,
-            taskDetails: order.taskDetails,
-            technicianNotes: order.technicianNotes,
-            voiceTranscript: order.voiceTranscript,
-            driverMediaImages: order.driverMediaImages,
-            proofOfWorkImages: order.proofOfWorkImages,
-            consumedParts: order.consumedParts
-        )
-        addInspection(inspection)
+    @MainActor
+    func refreshInspections() async throws {
+        let response = try await MaintenanceAPI.shared.getInspections()
+        self.inspections = response.inspections.map { TripInspection(apiItem: $0) }
     }
     
     func addInspection(_ inspection: TripInspection) {
         inspections.insert(inspection, at: 0)
+        // Add POST API call here if needed
     }
     
+    func updateInspection(_ inspection: TripInspection) {
+        if let index = inspections.firstIndex(where: { $0.id == inspection.id }) {
+            inspections[index] = inspection
+            
+            if let backendId = inspection.backendId {
+                Task {
+                    let request = UpdateInspectionRequest(
+                        notes: inspection.technicianNotes,
+                        items: inspection.items,
+                        reportUrl: nil
+                    )
+                    _ = try? await MaintenanceAPI.shared.updateInspection(id: backendId, request: request)
+                }
+            }
+        }
+    }
+
     func deleteInspections(forUnit unitName: String) {
         inspections.removeAll { $0.unitName == unitName }
     }
@@ -335,18 +234,14 @@ class MaintenanceStore: ObservableObject {
         if order.status == .completed {
             return .completed
         }
-        return order.scheduledDate <= referenceDate ? .inProgress : .pending
+        return .progress
     }
 
     func deleteInspection(_ inspection: TripInspection) {
         inspections.removeAll { $0.id == inspection.id }
     }
 
-    func updateInspection(_ inspection: TripInspection) {
-        if let index = inspections.firstIndex(where: { $0.id == inspection.id }) {
-            inspections[index] = inspection
-        }
-    }
+
 
     func updateInspectionAnalysis(id: UUID, index: Int, analysis: String) {
         if let idx = inspections.firstIndex(where: { $0.id == id }) {

@@ -168,7 +168,7 @@ struct MaintenanceDashboardView: View {
                 .padding(.horizontal, 20)
 
             if viewModel.alertItems.isEmpty {
-                MaintenanceEmptyCard(message: "No active work orders", icon: "checkmark.circle.fill")
+                MaintenanceEmptyCard(message: "No alerts", icon: "checkmark.circle.fill")
                     .padding(.horizontal, 20)
             } else {
                 VStack(spacing: 0) {

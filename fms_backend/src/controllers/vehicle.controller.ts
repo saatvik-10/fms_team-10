@@ -122,6 +122,8 @@ export class Vehicle {
           vehicleImageUrl: vehicleImgUrl,
           rcImageKey: rcKey,
           vehicleImageKey: vehicleKey,
+          maxLoadCapacity: data.maxLoadCapacity,
+          capacityUnit: data.capacityUnit,
           createdById: userId,
         },
       });
@@ -239,6 +241,8 @@ export class Vehicle {
           ...(data.chassisNumber ? { chassisNumber: data.chassisNumber } : {}),
           ...(data.registrationNumber ? { registrationNumber: data.registrationNumber } : {}),
           ...(data.assignedDriverId ? { assignedDriverId: data.assignedDriverId } : {}),
+          ...(data.maxLoadCapacity !== undefined ? { maxLoadCapacity: data.maxLoadCapacity } : {}),
+          ...(data.capacityUnit ? { capacityUnit: data.capacityUnit } : {}),
           rcImageUrl: nextRcImageUrl,
           vehicleImageUrl: nextVehicleImageUrl,
           rcImageKey: newRcKey ?? existingVehicle.rcImageKey,
@@ -295,10 +299,31 @@ export class Vehicle {
 
   async getVehicles(c: Context) {
     const userId = c.get('userId') as string;
+    const role = c.get('role') as string | undefined;
+    let ownerId = userId;
+
+    if (role === 'MAINTENANCE') {
+      const maintenance = await prisma.maintenance.findUnique({
+        where: { userId },
+        select: {
+          user: {
+            select: {
+              createdById: true,
+            },
+          },
+        },
+      });
+
+      if (!maintenance?.user.createdById) {
+        return c.json({ err: 'Maintenance profile not found' }, 404);
+      }
+
+      ownerId = maintenance.user.createdById;
+    }
 
     const vehicles = await prisma.vehicle.findMany({
       where: {
-        createdById: userId,
+        createdById: ownerId,
       },
     });
 
@@ -317,7 +342,7 @@ export class Vehicle {
 
         const latestStoredTrip = await prisma.trips.findFirst({
           where: {
-            createdById: userId,
+            createdById: ownerId,
             OR: [{ vehicle: v.id }, { vehicle: v.registrationNumber }],
           },
           orderBy: { createdAt: 'desc' },

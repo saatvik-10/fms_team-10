@@ -40,9 +40,9 @@ class MaintenanceDashboardViewModel: ObservableObject {
 
     private func computeSystemStatus(workOrders: [WorkOrder], inspections: [TripInspection]) {
         let highPriorityWOs     = workOrders.filter   { $0.priority == .high && $0.status != .completed }.count
-        let emergencyPending    = inspections.filter  { $0.isEmergency && $0.status == .pending }.count
+        let emergencyPending    = inspections.filter  { $0.isEmergency && $0.status == .progress }.count
         criticalAlertsCount     = highPriorityWOs + emergencyPending
-        pendingOrdersCount      = workOrders.filter { $0.status == .pending }.count
+        pendingOrdersCount      = workOrders.filter { $0.status == .progress }.count
     }
 
     private func computePriorityFeed(workOrders: [WorkOrder]) {
@@ -91,7 +91,7 @@ class MaintenanceDashboardViewModel: ObservableObject {
 
     private func computeActiveStaff(workOrders: [WorkOrder]) {
         activeStaff = workOrders
-            .filter { $0.status == .inProgress }
+            .filter { $0.status == .progress }
             .map { ActiveStaffItem(technicianId: $0.technicianId, taskTitle: $0.title, vehicleName: $0.vehicleName) }
     }
 }

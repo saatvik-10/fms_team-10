@@ -86,7 +86,8 @@ struct FleetTripDetailView: View {
                                 originCoord: originCoord,
                                 destCoord: destCoord,
                                 originLabel: displayTrip?.origin ?? "Origin",
-                                destLabel: displayTrip?.destination ?? "Destination"
+                                destLabel: displayTrip?.destination ?? "Destination",
+                                geofenceRadius: displayTrip?.geofenceRadius ?? 1000.0
                             )
                             .frame(height: 300)
                             .cornerRadius(16)
@@ -192,7 +193,7 @@ struct FleetTripDetailView: View {
                             .padding(.horizontal, 2)
                             
                             // Logistics Overview Section
-                            HStack(alignment: .top, spacing: 20) {
+                            VStack(spacing: 20) {
                                 LogisticsTicketCard(
                                     title: "ROUTE SUMMARY",
                                     icon: "truck.box.fill",
@@ -255,6 +256,14 @@ struct FleetTripDetailView: View {
         if let trip = tripOverride {
             return "Trip Completed on \(trip.date ?? "Past")"
         }
+        // if let trip = vehicle.currentTrip {
+        //     switch trip.status {
+        //     case .scheduled: return "Scheduled: \(trip.origin) to \(trip.destination)"
+        //     case .inTransit: return "\(vehicle.id) is currently In Transit"
+        //     case .completed: return "Trip Completed"
+        //     }
+        // }
+        return "Vehicle is currently Idle"
         guard let trip = displayTrip else {
             return vehicle.id
         }
@@ -266,6 +275,21 @@ struct FleetTripDetailView: View {
         
         isLoadingRoute = true
         routeError = nil
+        
+        // If the trip already has precise coordinates and polyline saved (from Trip Creation), use them!
+        if let polyline = trip.encodedPolyline, let oCoord = trip.originCoordinate, let dCoord = trip.destCoordinate {
+            await MainActor.run {
+                self.encodedPolyline = polyline
+                self.originCoord = oCoord
+                self.destCoord = dCoord
+                self.originName = trip.origin
+                self.destName = trip.destination
+                self.apiEta = trip.duration ?? "TBD"
+                self.apiDistance = trip.distance ?? "TBD"
+                self.isLoadingRoute = false
+            }
+            return
+        }
         
         do {
             let result: FleetDirectionsResult
@@ -365,8 +389,6 @@ struct LogisticsTicketCard: View {
                         Text(sourceValue)
                             .font(AppFonts.title3)
                             .foregroundColor(AppColors.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
                     }
                     
                     Spacer()
@@ -384,11 +406,11 @@ struct LogisticsTicketCard: View {
                             Rectangle()
                                 .fill(AppColors.primary.opacity(0.2))
                                 .frame(height: 1)
+                                .frame(width: 50) // Fixed width for arrow connector to keep alignment stable
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 8, weight: .black))
                                 .foregroundColor(AppColors.primary)
                         }
-                        .frame(width: sourceValue.count > 10 ? 40 : 60)
                         .padding(.top, 4)
                     }
                     
@@ -398,14 +420,12 @@ struct LogisticsTicketCard: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(destLabel.uppercased())
                             .font(AppFonts.caption2)
-                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                         Text(destValue)
-                            .font(AppFonts.title2)
-                            .fontWeight(.black)
+                            .font(AppFonts.title3)
+                            .fontWeight(.bold)
                             .foregroundColor(AppColors.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
+                            .multilineTextAlignment(.trailing)
                     }
                 }
                 

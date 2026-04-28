@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import CoreLocation
 
 // MARK: - Dashboard
 struct FleetManagerDashboardStats {
@@ -240,7 +241,7 @@ struct Vehicle: Identifiable {
     var currentTrip: VehicleTrip?
     let assignedDriver: Driver?
     let maintenance: VehicleMaintenance
-    let history: [VehicleTrip]
+    var history: [VehicleTrip]
     let reports: [VehicleReport]
     let assessmentReason: String? // Direct link to dashboard assessment logic
     
@@ -248,6 +249,15 @@ struct Vehicle: Identifiable {
     let registrationNumber: String // New field
     let rcImageUrl: String?
     let vehicleImageUrl: String?
+    let maxLoadCapacity: Double // New field for assignment logic
+    let capacityUnit: String
+    
+    var capacityInKG: Double {
+        if capacityUnit.lowercased() == "tons" {
+            return maxLoadCapacity * 1000
+        }
+        return maxLoadCapacity
+    }
 
     init(
         id: String,
@@ -269,7 +279,9 @@ struct Vehicle: Identifiable {
         chassisNumber: String,
         registrationNumber: String,
         rcImageUrl: String? = nil,
-        vehicleImageUrl: String? = nil
+        vehicleImageUrl: String? = nil,
+        maxLoadCapacity: Double = 0.0,
+        capacityUnit: String = "KG"
     ) {
         self.id = id
         self.backendId = backendId
@@ -291,6 +303,8 @@ struct Vehicle: Identifiable {
         self.registrationNumber = registrationNumber
         self.rcImageUrl = rcImageUrl
         self.vehicleImageUrl = vehicleImageUrl
+        self.maxLoadCapacity = maxLoadCapacity
+        self.capacityUnit = capacityUnit
     }
 }
 
@@ -317,6 +331,12 @@ struct VehicleTrip: Identifiable {
     // Cargo Details (New)
     let productType: String?
     let loadAmount: String?
+    
+    // Geofencing (New)
+    var geofenceRadius: Double? = 1000.0
+    var originCoordinate: CLLocationCoordinate2D? = nil
+    var destCoordinate: CLLocationCoordinate2D? = nil
+    var encodedPolyline: String? = nil
 }
 
 struct VehicleMaintenance {
