@@ -300,22 +300,13 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-<<<<<<< HEAD
 				DEVELOPMENT_TEAM = QJ5443JB92;
-=======
-				DEVELOPMENT_TEAM = HKZ6DWLB2X;
->>>>>>> origin/main
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs your camera to capture images\n";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location for navigation\n";
-<<<<<<< HEAD
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to the Microphone to capture your voice for dictation.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We need access to Speech Recognition to translate your voice into text messages";
-=======
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app needs your microphone\n";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app needs your  speech Recognition permission\n";
->>>>>>> origin/main
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -327,11 +318,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-<<<<<<< HEAD
 				PRODUCT_BUNDLE_IDENTIFIER = com.gargee.fmsf;
-=======
-				PRODUCT_BUNDLE_IDENTIFIER = com.mrunal;
->>>>>>> origin/main
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
