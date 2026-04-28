@@ -12,7 +12,7 @@ enum TripStatus: String, CaseIterable {
 enum TripSegment: String, CaseIterable {
 //    case assigned = "Assigned"
     case accepted = "Upcoming"
-    case past = "Past"
+    case past = "Completed"
 }
 
 // MARK: - Model
