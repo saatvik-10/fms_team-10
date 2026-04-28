@@ -153,7 +153,7 @@ struct TripDetailView: View {
         .navigationTitle("Trip Details")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showNavigationMap) {
-            CustomNavigationView(trip: trip)
+            CustomNavigationView(trip: trip, resolvedDestinationCoordinate: resolvedDestinationCoordinate)
         }
         // ── Report Issue push navigation ──────────────────────────────────
         .navigationDestination(isPresented: $showReportIssue) {
