@@ -263,15 +263,15 @@ struct DashboardHomeView: View {
             
             Spacer()
             
-            Button(action: {}) {
-                Image(systemName: "bell.fill")
-                    .font(.title3)
-                    .foregroundColor(.black)
-                    .padding(12)
-                    .background(Color.white)
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
-            }
+//            Button(action: {}) {
+//                Image(systemName: "bell.fill")
+//                    .font(.title3)
+//                    .foregroundColor(.black)
+//                    .padding(12)
+//                    .background(Color.white)
+//                    .clipShape(Circle())
+//                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+//            }
             
             Button(action: { showProfile = true }) {
                 Image(systemName: "person.crop.circle.fill")

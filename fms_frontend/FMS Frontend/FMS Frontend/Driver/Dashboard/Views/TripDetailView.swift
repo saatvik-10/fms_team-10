@@ -3,26 +3,18 @@ import GoogleMaps
 import CoreLocation
 
 // MARK: - Trip Progress State (Trips Tab Only)
-// Drives the Start Trip / End Trip button UI.
-// Teammate: inject real CLLocationDistance into distanceToDestinationMeters
-// from your location/tracking layer to trigger state transitions.
 enum TripProgressState {
-    case notStarted      // Driver has not yet tapped "Start Trip"
-    case inProgress      // Trip is underway; destination is far (>100 m)
-    case nearDestination // CONSTRAINT: distance <= 100 m → "End Trip" unlocks
-    case ended           // Trip completed (manually or auto-triggered)
+    case notStarted
+    case inProgress
+    case nearDestination
+    case ended
 }
 
 struct TripDetailView: View {
     let trip: Trip
 
-    // Set true when navigating from the Trips tab (TripsView).
-    // Keeps the Home tab's "Continue Navigation" button completely unchanged.
     var showTripControls: Bool = false
-
-    // Passed from TripsView so ReportIssueView gets the full LifecycleTrip model.
     var lifecycleTrip: LifecycleTrip? = nil
-    
     var onTripEnded: (() -> Void)? = nil
 
     @State private var estimatedArrival: String = "Loading..."
@@ -30,45 +22,43 @@ struct TripDetailView: View {
     @State private var isLoadingEta: Bool = true
     @State private var resolvedDestinationCoordinate: CLLocationCoordinate2D?
     
-    // Live tracking for Actual ETA
     @StateObject private var locationManager = LocationManager()
 
-    // ── Trips-tab state ───────────────────────────────────────────────────
-    // TEAMMATE HOOK: Update distanceToDestinationMeters from your tracking
-    // ViewModel/service. The UI reacts to its value automatically.
-    @State var distanceToDestinationMeters: Double = 999  // stub — far by default
+    @State var distanceToDestinationMeters: Double = 999
     @State private var tripProgressState: TripProgressState = .notStarted
 
-    // CONSTRAINT: "End Trip" button is enabled when distance ≤ 100 m
     private var isEndTripEnabled: Bool {
         distanceToDestinationMeters <= 100
     }
 
-    // CONSTRAINT: Auto-end trip when distance reaches 0 m (exact destination)
     private var hasReachedDestination: Bool {
         distanceToDestinationMeters <= 0
     }
 
-    // ── Home-tab gate (unchanged behaviour) ───────────────────────────────
-    // Date-gate: Compare today's date against trip date (e.g. "Oct 18")
     private var isNavigationEnabled: Bool {
-        guard !trip.tripDate.isEmpty else { return true } // No lock if date is blank
+        guard !trip.tripDate.isEmpty else { return true }
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"
         let todayString = formatter.string(from: Date())
         return todayString == trip.tripDate
     }
 
-    // Extracted shared padding for precise alignment
     @State private var showMap = false
     @State private var showNavigationMap = false
     @State private var showReportIssue = false
 
     private let horizontalPadding: CGFloat = 20
-    
-//    private var isNavigationEnabled: Bool {
-//        !isLoadingEta && !routePolyline.isEmpty
-//    }
+
+    // MARK: - ETA Formatter
+
+    private func formatETA(_ eta: String) -> String {
+        return eta
+            .replacingOccurrences(of: " hours", with: " hrs")
+            .replacingOccurrences(of: " hour", with: " hr")
+            .replacingOccurrences(of: " mins", with: " min")
+            .replacingOccurrences(of: " minutes", with: " min")
+            .replacingOccurrences(of: " minute", with: " min")
+    }
     
     var body: some View {
         ScrollView {
@@ -102,8 +92,6 @@ struct TripDetailView: View {
                     .padding(.horizontal, horizontalPadding)
                     .shadow(color: AppColors.shadow, radius: 8, x: 0, y: 4)
                 
-                // ROUTE PROGRESS card removed (UI only) — TimelineView & stop data unchanged
-                
                 VStack(alignment: .leading, spacing: 16) {
                     RouteDetailRow(label: "PICKUP", value: trip.pickup.name)
                     RouteDetailRow(label: "DESTINATION", value: trip.destination.name)
@@ -115,12 +103,9 @@ struct TripDetailView: View {
                 .padding(.horizontal, horizontalPadding)
                 .shadow(color: AppColors.shadow, radius: 10, x: 0, y: 4)
                 
-                // ACTION BUTTONS
                 if showTripControls {
-                    // ── TRIPS TAB: State-driven Start / End Trip ──────────
                     tripActionButtons
                 } else {
-                    // ── HOME TAB: Original "Continue Navigation" (unchanged) ──
                     VStack(spacing: 16) {
                         ZStack {
                             PrimaryButton(
@@ -153,14 +138,12 @@ struct TripDetailView: View {
         .navigationTitle("Trip Details")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showNavigationMap) {
-            CustomNavigationView(trip: trip)
+            CustomNavigationView(trip: trip, resolvedDestinationCoordinate: resolvedDestinationCoordinate)
         }
-        // ── Report Issue push navigation ──────────────────────────────────
         .navigationDestination(isPresented: $showReportIssue) {
             if let lt = lifecycleTrip {
                 ReportIssueView(trip: lt)
             } else {
-                // Synthesize a LifecycleTrip if navigating from the Home tab
                 ReportIssueView(trip: LifecycleTrip(
                     id: trip.routeNumber,
                     source: trip.pickup.name,
@@ -177,15 +160,13 @@ struct TripDetailView: View {
         }
         .task {
             do {
-                // Fetch static full-route for map polyline and total distance
                 let result = try await GoogleDirectionsService.shared.fetchDirections(trip: trip)
                 DispatchQueue.main.async {
                     self.routePolyline = result.polyline
                     self.resolvedDestinationCoordinate = result.destinationCoordinate
-                    self.estimatedArrival = result.eta
+                    self.estimatedArrival = self.formatETA(result.eta)
                     self.isLoadingEta = false
-                    let totalDistance = result.distance
-                    print("--> New ETA (Static): \(result.eta), Total Direct Distance: \(totalDistance)")
+                    print("--> New ETA (Static): \(result.eta)")
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -195,14 +176,11 @@ struct TripDetailView: View {
                 print("Failed to fetch static route")
             }
         }
-        // Track live location to calculate ACTUAL ETA from current coordinate to destination
         .onChange(of: locationManager.location) { _, newLocation in
             guard let currentLoc = newLocation else { return }
             let destination = resolvedDestinationCoordinate ?? trip.destination.coordinate
             guard CLLocationCoordinate2DIsValid(destination),
-                  !(destination.latitude == 0 && destination.longitude == 0) else {
-                return
-            }
+                  !(destination.latitude == 0 && destination.longitude == 0) else { return }
             Task {
                 do {
                     let segmentResult = try await GoogleDirectionsService.shared.fetchSegmentDirections(
@@ -210,9 +188,9 @@ struct TripDetailView: View {
                         destination: destination
                     )
                     DispatchQueue.main.async {
-                        self.estimatedArrival = segmentResult.eta
+                        self.estimatedArrival = self.formatETA(segmentResult.eta)
                         self.isLoadingEta = false
-                        print("--> Actual Live ETA from current position: \(segmentResult.eta)")
+                        print("--> Actual Live ETA: \(segmentResult.eta)")
                     }
                 } catch {
                     DispatchQueue.main.async {
@@ -222,19 +200,15 @@ struct TripDetailView: View {
                 }
             }
         }
-        // CONSTRAINT: Watch distance and auto-end when destination reached
         .onChange(of: distanceToDestinationMeters) { _, newDistance in
             guard showTripControls else { return }
             if tripProgressState == .inProgress || tripProgressState == .nearDestination {
                 if newDistance <= 0 {
-                    // AUTO-END: Driver has reached exact destination
                     tripProgressState = .ended
                     onTripEnded?()
                 } else if newDistance <= 100 {
-                    // NEAR DESTINATION: Unlock "End Trip" button (50–100 m range)
                     tripProgressState = .nearDestination
                 } else {
-                    // Back in progress if somehow distance increases (edge case)
                     tripProgressState = .inProgress
                 }
             }
@@ -249,9 +223,6 @@ struct TripDetailView: View {
             switch tripProgressState {
 
             case .notStarted:
-                // ── START TRIP button ─────────────────────────────────────
-                // CONSTRAINT: Only enabled on the scheduled trip date.
-                // Reuses the same date-gate as the Home tab's Continue Navigation.
                 if !isNavigationEnabled && !trip.tripDate.isEmpty {
                     HStack(spacing: 6) {
                         Image(systemName: "calendar.badge.clock")
@@ -271,13 +242,11 @@ struct TripDetailView: View {
                         backgroundColor: Color(hex: "0a303a"),
                         textColor: .white
                     ) {
-                        // TEAMMATE: trigger your navigation/tracking start here
                         guard isNavigationEnabled else { return }
                         tripProgressState = .inProgress
                     }
                     .allowsHitTesting(isNavigationEnabled)
 
-                    // Disabled overlay when trip date hasn't arrived
                     if !isNavigationEnabled {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color(UIColor.systemBackground).opacity(0.45))
@@ -286,19 +255,15 @@ struct TripDetailView: View {
                 }
                 .opacity(isNavigationEnabled ? 1.0 : 0.45)
 
-
             case .inProgress:
-                // ── END TRIP button (locked — too far from destination) ───
                 distanceHintLabel
                 endTripButton(enabled: false)
 
             case .nearDestination:
-                // ── END TRIP button (unlocked — within 100 m) ─────────────
                 distanceHintLabel
                 endTripButton(enabled: true)
 
             case .ended:
-                // ── TRIP ENDED confirmation banner ────────────────────────
                 HStack(spacing: 10) {
                     Image(systemName: "checkmark.seal.fill")
                         .foregroundColor(AppColors.success)
@@ -314,7 +279,6 @@ struct TripDetailView: View {
                 .cornerRadius(12)
             }
             
-            // NOTE: Extracted outside switch for testing so it's always accessible
             reportIssueButton
         }
         .padding(.horizontal, horizontalPadding)
@@ -323,7 +287,6 @@ struct TripDetailView: View {
 
     // MARK: - Sub-views
 
-    /// Small hint showing how far the driver still is from the destination
     private var distanceHintLabel: some View {
         HStack(spacing: 6) {
             Image(systemName: "location.fill")
@@ -338,7 +301,6 @@ struct TripDetailView: View {
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
-    /// "End Trip" button — appearance changes based on enabled state
     @ViewBuilder
     private func endTripButton(enabled: Bool) -> some View {
         ZStack {
@@ -349,13 +311,11 @@ struct TripDetailView: View {
                 textColor: enabled ? .white : AppColors.secondaryText
             ) {
                 guard enabled else { return }
-                // TEAMMATE: trigger your trip-end / stop-tracking logic here
                 tripProgressState = .ended
                 onTripEnded?()
             }
             .allowsHitTesting(enabled)
 
-            // Blocked overlay when disabled
             if !enabled {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.clear)
@@ -365,9 +325,6 @@ struct TripDetailView: View {
         .opacity(enabled ? 1.0 : 0.45)
     }
 
-    // MARK: - Report Issue Button
-
-    /// Visible in all trip states for testing, now including the Home tab.
     private var reportIssueButton: some View {
         Button {
             showReportIssue = true
@@ -411,6 +368,8 @@ struct MetricCardView: View {
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             
             Text(subtext)
@@ -524,9 +483,6 @@ struct TimelineView: View {
 
 // MARK: - Google Maps SDK Wrapper
 
-// MARK: - Google Maps SDK Wrapper (Navigation-aware preview)
-// Replace the existing GoogleTripMapView struct with this one.
-
 struct GoogleTripMapView: UIViewRepresentable {
     let trip: Trip
     let encodedPolyline: String
@@ -541,7 +497,6 @@ struct GoogleTripMapView: UIViewRepresentable {
     func updateUIView(_ uiView: GMSMapView, context: Context) {
         uiView.clear()
 
-        // Destination marker — route goes directly to trip.destination
         let activeStop = trip.destination
 
         let destMarker = GMSMarker(position: activeStop.coordinate)
@@ -550,14 +505,12 @@ struct GoogleTripMapView: UIViewRepresentable {
         destMarker.icon = GMSMarker.markerImage(with: navyColor)
         destMarker.map = uiView
 
-        // Draw current-segment polyline only
         if !encodedPolyline.isEmpty, let path = GMSPath(fromEncodedPath: encodedPolyline) {
             let polyline = GMSPolyline(path: path)
             polyline.strokeColor = navyColor
             polyline.strokeWidth = 6.0
             polyline.map = uiView
 
-            // Static overview: fit to polyline bounds (this is a preview, not live nav)
             let bounds = GMSCoordinateBounds(path: path)
             if bounds.isValid {
                 DispatchQueue.main.async {
@@ -566,7 +519,6 @@ struct GoogleTripMapView: UIViewRepresentable {
             }
         } else if CLLocationCoordinate2DIsValid(activeStop.coordinate),
                   !(activeStop.coordinate.latitude == 0 && activeStop.coordinate.longitude == 0) {
-            // Fallback: center on active stop
             uiView.animate(to: GMSCameraPosition.camera(
                 withTarget: activeStop.coordinate, zoom: 14
             ))
