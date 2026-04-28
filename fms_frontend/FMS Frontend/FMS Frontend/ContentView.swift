@@ -100,29 +100,6 @@ final class AppSessionStore: ObservableObject {
         state = .authenticated(role)
     }
     
-    func bypassLogin(role: AppUserRole) {
-        switch role {
-        case .driver:
-            driverProfile = UserProfile.mockDriver
-        case .manager:
-            managerProfile = ManagerProfileData(
-                id: UserProfile.mockManager.id,
-                name: UserProfile.mockManager.name,
-                email: UserProfile.mockManager.email,
-                phone: UserProfile.mockManager.phone,
-                address: UserProfile.mockManager.address,
-                username: UserProfile.mockManager.username,
-                role: "MANAGER"
-            )
-        case .maintenance:
-            // For maintenance, we can use a mock profile too
-            driverProfile = UserProfile.mockMaintenance
-        case .none:
-            break
-        }
-        state = .authenticated(role)
-    }
-    
     func logout() {
         authAPI.logout()
         managerProfile = nil
