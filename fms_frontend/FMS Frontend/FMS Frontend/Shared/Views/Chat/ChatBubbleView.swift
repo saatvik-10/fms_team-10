@@ -12,6 +12,10 @@ struct ChatBubbleView: View {
     let message: ChatMessage
     let isCurrentUser: Bool
     
+    @State private var translatedText: String?
+    @State private var isTranslating = false
+    @State private var targetLanguage: String = Locale.current.localizedString(forLanguageCode: Locale.current.language.languageCode?.identifier ?? "en") ?? "English"
+    
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
             if isCurrentUser { Spacer(minLength: 60) }
@@ -25,23 +29,44 @@ struct ChatBubbleView: View {
                         .padding(.leading, 12)
                 }
                 
-                Text(message.content)
-                    .font(.system(size: 16))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(isCurrentUser ? AppColors.primary : Color(white: 0.92))
-                    .foregroundColor(isCurrentUser ? .white : .black)
-                    .cornerRadius(20)
-                    // Tail effect via masked corners
-                    .background(
-                        BubbleTail(isCurrentUser: isCurrentUser)
-                            .fill(isCurrentUser ? AppColors.primary : Color(white: 0.92))
-                    )
-                    .onLongPressGesture {
-                        // We'll need access to the ViewModel here, 
-                        // or better, handle it in ChatRoomView via a callback or environment
-                        NotificationCenter.default.post(name: NSNotification.Name("ToggleStar"), object: message)
+                VStack(alignment: isCurrentUser ? .trailing : .leading, spacing: 2) {
+                    Text(message.content)
+                        .font(.system(size: 16))
+                    
+                    if let translated = translatedText {
+                        Divider()
+                            .background(isCurrentUser ? Color.white.opacity(0.5) : Color.gray.opacity(0.3))
+                        Text(translated)
+                            .font(.system(size: 15, weight: .regular))
+                            .italic()
+                    } else if isTranslating {
+                        ProgressView()
+                            .scaleEffect(0.7)
                     }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(isCurrentUser ? AppColors.primary : Color(white: 0.92))
+                .foregroundColor(isCurrentUser ? .white : .black)
+                .cornerRadius(20)
+                // Tail effect via masked corners
+                .background(
+                    BubbleTail(isCurrentUser: isCurrentUser)
+                        .fill(isCurrentUser ? AppColors.primary : Color(white: 0.92))
+                )
+                .contextMenu {
+                    Button(action: {
+                        NotificationCenter.default.post(name: NSNotification.Name("ToggleStar"), object: message)
+                    }) {
+                        Label(message.isStarred ? "Unstar" : "Star", systemImage: message.isStarred ? "star.slash" : "star")
+                    }
+                    
+                    Button(action: {
+                        translateMessage()
+                    }) {
+                        Label("Translate", systemImage: "globe")
+                    }
+                }
                 
                 HStack(spacing: 4) {
                     if message.isStarred {
@@ -62,6 +87,28 @@ struct ChatBubbleView: View {
             if !isCurrentUser { Spacer(minLength: 60) }
         }
         .padding(.horizontal, 10)
+    }
+    
+    private func translateMessage() {
+        guard translatedText == nil else {
+            translatedText = nil // Toggle translation off
+            return
+        }
+        
+        isTranslating = true
+        Task {
+            do {
+                let result = try await TranslationService.shared.translate(message.content, to: targetLanguage)
+                DispatchQueue.main.async {
+                    self.translatedText = result
+                    self.isTranslating = false
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.isTranslating = false
+                }
+            }
+        }
     }
 }
 

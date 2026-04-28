@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import Speech
 
 struct ChatRoomView: View {
     @ObservedObject var viewModel: ChatViewModel
@@ -14,6 +15,20 @@ struct ChatRoomView: View {
     
     @State private var messageText: String = ""
     @Environment(\.dismiss) var dismiss
+    
+    @StateObject private var speechService = SpeechService()
+    @State private var isTranslatingInput = false
+
+    
+    // Dynamically load all supported Apple Speech languages
+    var availableLanguages: [(String, String)] {
+        SFSpeechRecognizer.supportedLocales()
+            .map { locale in
+                let name = Locale.current.localizedString(forIdentifier: locale.identifier) ?? locale.identifier
+                return (name, locale.identifier)
+            }
+            .sorted { $0.0 < $1.0 }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -63,13 +78,54 @@ struct ChatRoomView: View {
                         .foregroundColor(AppColors.primaryText)
                         .lineLimit(1...5)
                     
-                    if messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Button(action: { /* Voice record */ }) {
+                    if speechService.isRecording {
+                        Button(action: { speechService.stopRecording() }) {
+                            Image(systemName: "stop.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.red)
+                        }
+                    } else if messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Menu {
+                            ForEach(availableLanguages, id: \.1) { lang in
+                                Button(action: {
+                                    speechService.updateLocale(lang.1)
+                                    try? speechService.startRecording()
+                                }) {
+                                    HStack {
+                                        Text(lang.0)
+                                        if speechService.selectedLocale.identifier == lang.1 {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
                             Image(systemName: "mic.fill")
                                 .font(.system(size: 20))
                                 .foregroundColor(AppColors.primary)
                         }
                     } else {
+                        if isTranslatingInput {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .padding(.horizontal, 4)
+                        } else {
+                            Menu {
+                                ForEach(availableLanguages, id: \.1) { lang in
+                                    Button(action: {
+                                        // Pass the human-readable language name (lang.0) to the LLM instead of locale code
+                                        translateInput(to: lang.0)
+                                    }) {
+                                        Text(lang.0)
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: "globe")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(AppColors.primary)
+                            }
+                        }
+                        
                         Button(action: sendMessage) {
                             Image(systemName: "paperplane.fill")
                                 .font(.system(size: 18, weight: .semibold))
@@ -99,6 +155,11 @@ struct ChatRoomView: View {
                 viewModel.toggleStar(for: msg.id, in: room.id)
             }
         }
+        .onChange(of: speechService.recognizedText) { newText in
+            if speechService.isRecording && !newText.isEmpty {
+                messageText = newText
+            }
+        }
     }
     
     private func sendMessage() {
@@ -113,6 +174,26 @@ struct ChatRoomView: View {
         guard let messages = viewModel.messages[room.id], let last = messages.last else { return }
         withAnimation(.easeOut(duration: 0.2)) {
             proxy.scrollTo(last.id, anchor: .bottom)
+        }
+    }
+    
+    private func translateInput(to language: String) {
+        let text = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        
+        isTranslatingInput = true
+        Task {
+            do {
+                let result = try await TranslationService.shared.translate(text, to: language)
+                DispatchQueue.main.async {
+                    self.messageText = result
+                    self.isTranslatingInput = false
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.isTranslatingInput = false
+                }
+            }
         }
     }
 }
