@@ -29,6 +29,7 @@ struct VehicleInspectionsListView: View {
     @State private var showPDF = false
     @State private var selectedPDFURL: URL?
     @State private var selectedReportTitle: String = ""
+    @State private var isGeneratingPDF = false
 
     private var filteredInspections: [TripInspection] {
         inspections.filter { inspection in
@@ -106,11 +107,10 @@ struct VehicleInspectionsListView: View {
                             // Show Completed Store Inspections First
                             ForEach(completedFromStore.sorted(by: { $0.timestamp > $1.timestamp })) { inspection in
                                 Button(action: {
-                                    if let url = PDFService.shared.generateInspectionReport(inspection: inspection) {
-                                        selectedPDFURL = url
-                                        selectedReportTitle = inspection.title.isEmpty ? inspection.type.rawValue : inspection.title
-                                        showPDF = true
-                                    }
+                                    generateAndShowPDF(
+                                        for: inspection,
+                                        title: inspection.title.isEmpty ? inspection.type.rawValue : inspection.title
+                                    )
                                 }) {
                                     historyRow(title: inspection.title.isEmpty ? inspection.type.rawValue : inspection.title, date: inspection.timestamp)
                                 }
@@ -120,11 +120,7 @@ struct VehicleInspectionsListView: View {
                             // Then Show Mock History Entries
                             ForEach(filteredHistory) { entry in
                                 Button(action: {
-                                    if let url = PDFService.shared.generateInspectionReport(inspection: entry.inspection) {
-                                        selectedPDFURL = url
-                                        selectedReportTitle = entry.title
-                                        showPDF = true
-                                    }
+                                    generateAndShowPDF(for: entry.inspection, title: entry.title)
                                 }) {
                                     historyRow(title: entry.title, date: entry.inspection.timestamp)
                                 }
@@ -148,6 +144,25 @@ struct VehicleInspectionsListView: View {
                 } label: {
                     Image(systemName: filter == .all ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
                         .foregroundColor(AppColors.primary)
+                }
+            }
+        }
+        // PDF loading overlay
+        .overlay {
+            if isGeneratingPDF {
+                ZStack {
+                    Color.black.opacity(0.35).ignoresSafeArea()
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.4)
+                        Text("Generating Report…")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(32)
+                    .background(Color(.systemGray3).opacity(0.85))
+                    .cornerRadius(20)
                 }
             }
         }
@@ -263,6 +278,25 @@ struct VehicleInspectionsListView: View {
             let inspectionToDelete = sorted[index]
             withAnimation {
                 store.deleteInspection(inspectionToDelete)
+            }
+        }
+    }
+    
+    /// Generates an inspection PDF asynchronously and then presents the preview.
+    private func generateAndShowPDF(for inspection: TripInspection, title: String) {
+        isGeneratingPDF = true
+        selectedReportTitle = title
+        
+        Task {
+            let url = await Task.detached(priority: .userInitiated) {
+                PDFService.shared.generateInspectionReport(inspection: inspection)
+            }.value
+            
+            // Back on the main actor
+            isGeneratingPDF = false
+            if let url = url {
+                selectedPDFURL = url
+                showPDF = true
             }
         }
     }

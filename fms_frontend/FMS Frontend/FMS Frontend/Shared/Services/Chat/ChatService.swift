@@ -4,9 +4,10 @@ import Combine
 
 final class ChatService {
     private let client = APIClient.shared
-    // Point to your local Node.js server for testing
-    // Change this to your production URL (e.g. Render/Vercel) when you deploy
-    private let chatBaseURL = "http://127.0.0.1:3000/api"
+    // Local Node.js chat server.
+    // 127.0.0.1 only works on Simulator. For a real device use your Mac's LAN IP.
+    // Run `ipconfig getifaddr en0` in Terminal to get the current IP if it changes.
+    private let chatBaseURL = "http://10.105.191.51:3000/api"
 
     // MARK: - Fetch Rooms
 

@@ -52,29 +52,26 @@ final class TripReportGenerator {
     // MARK: ── Public entry point ──────────────────────────────────────────
 
     func generate(from data: TripReportData) -> Data {
-        let pdfData = NSMutableData()
-        UIGraphicsBeginPDFContextToData(
-            pdfData,
-            CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight),
-            nil
-        )
-        UIGraphicsBeginPDFPage()
+        let format = UIGraphicsPDFRendererFormat()
+        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight), format: format)
 
-        y = 0
-        drawHeader(data: data)
-        drawMetaBanner(data: data)
-        y += 16
+        return renderer.pdfData { context in
+            context.beginPage()
+            
+            y = 0
+            drawHeader(data: data)
+            drawMetaBanner(data: data)
+            y += 16
 
-        // Combine all rows into one unified section
-        var allRows = tripInfoRows(data)
-        allRows.append(contentsOf: fuelRows(data))
-        allRows.append(contentsOf: performanceRows(data))
+            // Combine all rows into one unified section
+            var allRows = tripInfoRows(data)
+            allRows.append(contentsOf: fuelRows(data))
+            allRows.append(contentsOf: performanceRows(data))
 
-        drawBlock(title: "TRIP INFORMATION", rows: allRows)
+            drawBlock(title: "TRIP INFORMATION", rows: allRows, context: context)
 
-        drawFooter()
-        UIGraphicsEndPDFContext()
-        return pdfData as Data
+            drawFooter()
+        }
     }
 
     // MARK: ── Header ──────────────────────────────────────────────────────
@@ -125,11 +122,11 @@ final class TripReportGenerator {
 
     // MARK: ── Section block (single-pass, bg drawn before text) ──────────
 
-    private func drawBlock(title: String, rows: [RowItem]) {
+    private func drawBlock(title: String, rows: [RowItem], context: UIGraphicsPDFRendererContext) {
         // Page-break guard
         let totalH = 40 + 12 + rows.reduce(0) { $0 + $1.height } + 12
         if y + totalH > pageHeight - 36 {
-            UIGraphicsBeginPDFPage()
+            context.beginPage()
             y = 36
         }
 

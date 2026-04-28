@@ -19,7 +19,7 @@ struct PDFKitView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> PDFView {
         let pdfView = PDFView()
-        pdfView.autoScales = true
+        pdfView.backgroundColor = .secondarySystemBackground
         
         if let document = document {
             pdfView.document = document
@@ -27,16 +27,20 @@ struct PDFKitView: UIViewRepresentable {
             pdfView.document = PDFDocument(url: url)
         }
         
+        pdfView.autoScales = true
         return pdfView
     }
 
     func updateUIView(_ uiView: PDFView, context: Context) {
         if let document = document {
-            uiView.document = document
+            if uiView.document != document {
+                uiView.document = document
+                uiView.autoScales = true
+            }
         } else if let url = url {
-            // Only update if document changed or to avoid redundant loads
             if uiView.document?.documentURL != url {
                 uiView.document = PDFDocument(url: url)
+                uiView.autoScales = true
             }
         }
     }

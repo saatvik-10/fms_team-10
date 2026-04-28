@@ -18,5 +18,21 @@
 	<string>FMS needs camera access to capture photos of the reported issue.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>FMS needs photo library access to attach images to your issue report.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Allow HTTP to local development server on Mac (reachable over LAN from real device) -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>10.105.191.51</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<false/>
+			</dict>
+		</dict>
+	</dict>
 </dict>
 </plist>

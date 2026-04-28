@@ -202,6 +202,14 @@ struct DetailedInspectionView: View {
                 }
             }
         }
+        .alert("Complete Audit?", isPresented: $showingDoneAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Complete & Generate Report") {
+                submitAndGeneratePDF()
+            }
+        } message: {
+            Text("This will finalize the inspection and generate a PDF report. You won't be able to edit it afterwards.")
+        }
         .confirmationDialog("Evidence Source", isPresented: $showingProofSource) {
             Button("Camera") { showingCamera = true }
             Button("Photo Library") { showingImagePicker = true }

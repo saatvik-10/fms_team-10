@@ -48,29 +48,38 @@ class ChatViewModel: ObservableObject {
     }
     
     private func handleIncomingMessage(_ message: ChatMessage) {
-        // 1. Update messages list
+        // Get the current list for this room
         var roomMessages = messages[message.roomId] ?? []
-        if !roomMessages.contains(where: { $0.id == message.id }) {
-            roomMessages.append(message)
-            messages[message.roomId] = roomMessages
-            print("📩 ChatViewModel: Added live message to room \(message.roomId)")
-        }
         
-        // 2. Update room's last message and activity
+        // Dedup — don't add if already present
+        guard !roomMessages.contains(where: { $0.id == message.id }) else { return }
+        roomMessages.append(message)
+        
+        // ⚡ CRITICAL: Reassign the entire dictionary (not just a subscript value).
+        // SwiftUI's @Published observation can miss nested dictionary mutations via subscript.
+        // A full assignment guarantees objectWillChange fires and the view re-renders.
+        objectWillChange.send()
+        var updated = messages
+        updated[message.roomId] = roomMessages
+        messages = updated
+        
+        print("📩 ChatViewModel: Added live message to room \(message.roomId) — total: \(roomMessages.count)")
+        
+        // Update room's last message and re-sort
         if let index = rooms.firstIndex(where: { $0.id == message.roomId }) {
-            rooms[index].lastMessage = message
-            rooms[index].lastActivity = message.timestamp
+            var updatedRooms = rooms
+            updatedRooms[index].lastMessage = message
+            updatedRooms[index].lastActivity = message.timestamp
             
-            // Increment unread count if not active room
+            // Increment unread count only if not the active room and not sent by us
             if message.roomId != ChatViewModel.activeRoomId && message.senderId != currentUserId {
-                rooms[index].unreadCount += 1
+                updatedRooms[index].unreadCount += 1
             }
             
-            // Re-sort rooms
-            rooms.sort(by: { $0.lastActivity > $1.lastActivity })
+            rooms = updatedRooms.sorted(by: { $0.lastActivity > $1.lastActivity })
         }
         
-        // 3. Post internal notification if not in the room
+        // Post notification only if not currently in the room
         if message.roomId != ChatViewModel.activeRoomId && message.senderId != currentUserId {
             NotificationKit.shared.postNotification(
                 title: message.senderName,
