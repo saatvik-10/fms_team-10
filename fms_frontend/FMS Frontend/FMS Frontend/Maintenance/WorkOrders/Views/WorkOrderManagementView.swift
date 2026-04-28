@@ -94,5 +94,8 @@ struct WorkOrderManagementView: View {
         .sheet(isPresented: $showingCreateModal) {
             CreateWorkOrderModal()
         }
+        .task {
+            try? await store.refreshWorkOrders()
+        }
     }
 }

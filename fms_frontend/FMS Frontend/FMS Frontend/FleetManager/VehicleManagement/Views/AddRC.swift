@@ -70,19 +70,23 @@ struct AddRC: View {
                     PhotosPicker(selection: $selectedItem, matching: .images) {
                         Label("Pick Photo", systemImage: "photo.on.rectangle")
                             .frame(maxWidth: .infinity)
+                            .frame(height: 44)
                     }
                     .buttonStyle(.bordered)
                     
                     Button(action: runOCR) {
-                        if isProcessing {
-                            ProgressView().tint(.white)
-                        } else {
-                            Label("Scan RC", systemImage: "barcode.viewfinder")
+                        Group {
+                            if isProcessing {
+                                ProgressView().tint(.white)
+                            } else {
+                                Label("Scan RC", systemImage: "barcode.viewfinder")
+                            }
                         }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(selectedImage == nil || isProcessing)
-                    .frame(maxWidth: .infinity)
                 }
                 .padding()
                 

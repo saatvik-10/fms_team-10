@@ -37,6 +37,142 @@ class FleetDataManager: ObservableObject {
     @Published var driverDistanceData: [HistoricalPoint] = []
     
     @Published var travelsHistory: [HistoricalPoint] = []
+    @Published var geofenceAlerts: [GeofenceAlert] = []
+    
+    private var cancellables = Set<AnyCancellable>()
+    
+    struct GeofenceAlert: Identifiable {
+        let id = UUID()
+        let tripID: String
+        let vehicleID: String
+        let message: String
+        let timestamp: Date
+        let type: GeofenceAlertType
+    }
+    
+    enum GeofenceAlertType {
+        case departure, arrival, deviation
+    }
+    
+    init() {
+        setupGeofenceObservers()
+    }
+    
+    private func setupGeofenceObservers() {
+        NotificationCenter.default.publisher(for: .geofenceEntered)
+            .sink { [weak self] notification in
+                self?.handleGeofenceEvent(notification: notification, type: .arrival)
+            }
+            .store(in: &cancellables)
+            
+        NotificationCenter.default.publisher(for: .geofenceExited)
+            .sink { [weak self] notification in
+                self?.handleGeofenceEvent(notification: notification, type: .departure)
+            }
+            .store(in: &cancellables)
+            
+        NotificationCenter.default.publisher(for: .routeDeviationDetected)
+            .sink { [weak self] notification in
+                self?.handleDeviationEvent(notification: notification)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func handleGeofenceEvent(notification: Notification, type: GeofenceAlertType) {
+        guard let regionID = notification.userInfo?["region"] as? String else { return }
+        
+        // regionID format: trip_UUID_origin or trip_UUID_destination
+        let components = regionID.components(separatedBy: "_")
+        guard components.count >= 3 else { return }
+        
+        let tripID = components[1]
+        let locationType = components[2] // origin or destination
+        
+        // Find the vehicle with this trip
+        if let vIndex = vehicles.firstIndex(where: { $0.currentTrip?.id.uuidString == tripID }) {
+            let vehicle = vehicles[vIndex]
+            let trip = vehicle.currentTrip!
+            
+            var message = ""
+            var statusUpdate: FleetTripStatus? = nil
+            
+            if type == .departure && locationType == "origin" {
+                message = "Vehicle \(vehicle.id) has departed from \(trip.origin)"
+                statusUpdate = .inTransit
+            } else if type == .arrival && locationType == "destination" {
+                message = "Vehicle \(vehicle.id) has arrived at \(trip.destination)"
+                statusUpdate = .completed
+            }
+            
+            if !message.isEmpty {
+                DispatchQueue.main.async {
+                    // Update status
+                    if let newStatus = statusUpdate {
+                        self.vehicles[vIndex].currentTrip?.status = newStatus
+                        if newStatus == .completed {
+                            // Move to history
+                            var completedTrip = self.vehicles[vIndex].currentTrip!
+                            completedTrip.status = .completed
+                            self.vehicles[vIndex].history.insert(completedTrip, at: 0)
+                            
+                            // Stop route tracking
+                            FleetRouteTracker.shared.stopTracking(tripID: tripID)
+                            
+                            self.vehicles[vIndex].currentTrip = nil
+                            self.vehicles[vIndex].status = .idle
+                        } else if newStatus == .inTransit {
+                            self.vehicles[vIndex].status = .inTransit
+                            
+                            // Start route tracking
+                            if let trip = self.vehicles[vIndex].currentTrip {
+                                FleetRouteTracker.shared.startTracking(trip: trip)
+                            }
+                        }
+                    }
+                    
+                    // Add alert
+                    let alert = GeofenceAlert(
+                        tripID: tripID,
+                        vehicleID: vehicle.id,
+                        message: message,
+                        timestamp: Date(),
+                        type: type
+                    )
+                    self.geofenceAlerts.insert(alert, at: 0)
+                    
+                    // Keep only last 10 alerts
+                    if self.geofenceAlerts.count > 10 {
+                        self.geofenceAlerts.removeLast()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func handleDeviationEvent(notification: Notification) {
+        guard let tripID = notification.userInfo?["tripID"] as? String else { return }
+        
+        if let vIndex = vehicles.firstIndex(where: { $0.currentTrip?.id.uuidString == tripID }) {
+            let vehicle = vehicles[vIndex]
+            let message = "⚠️ ROUTE DEVIATION: Vehicle \(vehicle.id) has left the assigned corridor!"
+            
+            DispatchQueue.main.async {
+                let alert = GeofenceAlert(
+                    tripID: tripID,
+                    vehicleID: vehicle.id,
+                    message: message,
+                    timestamp: Date(),
+                    type: .deviation
+                )
+                self.geofenceAlerts.insert(alert, at: 0)
+                
+                if self.geofenceAlerts.count > 10 {
+                    self.geofenceAlerts.removeLast()
+                }
+            }
+        }
+    }
+    
     var idleDriversCount: Int { idleDrivers.count }
     var idleDrivers: [Driver] { drivers.filter { $0.status == .active || $0.status == .offDuty } }
     
@@ -319,7 +455,15 @@ class FleetDataManager: ObservableObject {
                 chassisNumber: item.chassisNumber,
                 registrationNumber: item.registrationNumber,
                 rcImageUrl: item.rcImageUrl,
-                vehicleImageUrl: item.vehicleImageUrl
+                vehicleImageUrl: item.vehicleImageUrl,
+                maxLoadCapacityKG: {
+                    switch item.type.lowercased() {
+                    case let t where t.contains("truck"): return 15000.0
+                    case let t where t.contains("van"): return 3000.0
+                    case let t where t.contains("bus"): return 5000.0
+                    default: return 5000.0
+                    }
+                }()
             )
         }
     }

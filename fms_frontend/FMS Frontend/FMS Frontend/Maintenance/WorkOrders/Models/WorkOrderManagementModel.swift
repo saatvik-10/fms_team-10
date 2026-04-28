@@ -6,8 +6,7 @@
 import Foundation
 
 enum WorkOrderStatus: String, Codable, CaseIterable {
-    case pending = "Pending"
-    case inProgress = "In Progress"
+    case progress = "Progress"
     case completed = "Completed"
 }
 
@@ -41,9 +40,11 @@ struct WorkOrderPartUsage: Identifiable, Codable, Hashable {
 
 struct WorkOrder: Identifiable, Codable {
     var id = UUID()
+    var backendId: String? = nil
     var orderID: String = "WO-\(Int.random(in: 1000...9999))"
     var title: String
     var vehicleName: String
+    var vehicleNum: String
     var vehicleVIN: String
     var odometer: String = "142,503 mi"
     var serviceType: String
@@ -56,6 +57,7 @@ struct WorkOrder: Identifiable, Codable {
     var technicianNotes: String = ""
     var partsNeeded: [Part] = []
     var consumedParts: [WorkOrderPartUsage] = []
+    var mediaUrls: [String] = []
     var imageURL: String? = nil
     var imageAsset: String? = nil
     var voiceTranscript: String? = nil
@@ -80,11 +82,12 @@ struct WorkOrder: Identifiable, Codable {
     static var mock: WorkOrder {
         WorkOrder(
             title: "Brake Pad Replacement",
-            vehicleName: "Mercedes-Benz Actros (Truck)",
+            vehicleName: "Actros",
+            vehicleNum: "KA-01-AB-1234",
             vehicleVIN: "1HGCM8263JA05",
             serviceType: "Routine PM",
             priority: .high,
-            status: .inProgress,
+            status: .progress,
             taskDetails: "Driver reports: Squealing sounds coming from front passenger side and noticeably decreased braking efficiency under load. Inspection of rotors required for scoring or heat damage.",
             scheduledDate: Date().addingTimeInterval(86400),
             technicianId: "TECH-01",
@@ -96,6 +99,48 @@ struct WorkOrder: Identifiable, Codable {
             ],
             imageAsset: "brake_part",
             voiceTranscript: "Hey, it started happening around mile marker 40. Every time I hit the brakes, there's this high-pitched metal-on-metal sound. The stopping distance feels a bit longer than usual, especially when I'm fully loaded. Sending some photos of the wheel area now.",
+            checklist: WorkOrder.standardChecklist
+        )
+    }
+}
+
+extension WorkOrderPriority {
+    var apiValue: String {
+        switch self {
+        case .high: return "HIGH"
+        case .medium: return "MEDIUM"
+        case .low: return "LOW"
+        }
+    }
+
+    init(apiValue: String) {
+        switch apiValue {
+        case "HIGH": self = .high
+        case "LOW": self = .low
+        default: self = .medium
+        }
+    }
+}
+
+extension WorkOrder {
+    init(apiItem: WorkOrderAPIItem, localMediaImages: [Data] = []) {
+        self.init(
+            backendId: apiItem.id,
+            orderID: "WO-\(apiItem.id.prefix(6).uppercased())",
+            title: apiItem.title,
+            vehicleName: apiItem.vehicleName,
+            vehicleNum: apiItem.vehicleNum,
+            vehicleVIN: apiItem.vehicleId ?? "-",
+            serviceType: apiItem.serviceType ?? "Maintenance",
+            priority: WorkOrderPriority(apiValue: apiItem.priority),
+            status: apiItem.status == "COMPLETED" ? .completed : .progress,
+            taskDetails: apiItem.taskDetails,
+            scheduledDate: apiItem.date,
+            technicianId: apiItem.maintenanceId,
+            mediaUrls: apiItem.mediaUrls ?? [],
+            driverMediaImages: localMediaImages,
+            createdAt: apiItem.createdAt ?? Date(),
+            updatedAt: apiItem.updatedAt ?? Date(),
             checklist: WorkOrder.standardChecklist
         )
     }

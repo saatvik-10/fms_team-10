@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import CoreLocation
 
 // MARK: - Dashboard
 struct FleetManagerDashboardStats {
@@ -240,7 +241,7 @@ struct Vehicle: Identifiable {
     var currentTrip: VehicleTrip?
     let assignedDriver: Driver?
     let maintenance: VehicleMaintenance
-    let history: [VehicleTrip]
+    var history: [VehicleTrip]
     let reports: [VehicleReport]
     let assessmentReason: String? // Direct link to dashboard assessment logic
     
@@ -248,6 +249,7 @@ struct Vehicle: Identifiable {
     let registrationNumber: String // New field
     let rcImageUrl: String?
     let vehicleImageUrl: String?
+    let maxLoadCapacityKG: Double // New field for assignment logic
 
     init(
         id: String,
@@ -269,7 +271,8 @@ struct Vehicle: Identifiable {
         chassisNumber: String,
         registrationNumber: String,
         rcImageUrl: String? = nil,
-        vehicleImageUrl: String? = nil
+        vehicleImageUrl: String? = nil,
+        maxLoadCapacityKG: Double = 5000.0
     ) {
         self.id = id
         self.backendId = backendId
@@ -291,6 +294,7 @@ struct Vehicle: Identifiable {
         self.registrationNumber = registrationNumber
         self.rcImageUrl = rcImageUrl
         self.vehicleImageUrl = vehicleImageUrl
+        self.maxLoadCapacityKG = maxLoadCapacityKG
     }
 }
 
@@ -317,6 +321,12 @@ struct VehicleTrip: Identifiable {
     // Cargo Details (New)
     let productType: String?
     let loadAmount: String?
+    
+    // Geofencing (New)
+    var geofenceRadius: Double? = 1000.0
+    var originCoordinate: CLLocationCoordinate2D? = nil
+    var destCoordinate: CLLocationCoordinate2D? = nil
+    var encodedPolyline: String? = nil
 }
 
 struct VehicleMaintenance {

@@ -171,7 +171,9 @@ struct LoginView: View {
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(focusedField == .username ? Color.white.opacity(0.5) : Color.white.opacity(0.1), lineWidth: 1)
                     )
-                    .autocapitalization(.none)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                    .keyboardType(.asciiCapable)
             }
             
             // Password Field
@@ -203,6 +205,9 @@ struct LoginView: View {
                     RoundedRectangle(cornerRadius: 14)
                         .stroke(focusedField == .password ? Color.white.opacity(0.5) : Color.white.opacity(0.1), lineWidth: 1)
                 )
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled(true)
+                .keyboardType(.asciiCapable)
             }
         }
     }
