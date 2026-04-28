@@ -29,6 +29,7 @@ struct VehicleInspectionsListView: View {
     @State private var showPDF = false
     @State private var selectedPDFURL: URL?
     @State private var selectedReportTitle: String = ""
+    @State private var isGeneratingPDF = false
 
     private var filteredInspections: [TripInspection] {
         inspections.filter { inspection in
@@ -52,8 +53,8 @@ struct VehicleInspectionsListView: View {
         VStack(spacing: 0) {
             // Segmented Control
             Picker("Selection", selection: $selectedSegment) {
-                Text("Inspection").tag(0)
-                Text("History").tag(1)
+                Text("History").tag(0)
+                Text("Reports").tag(1)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
@@ -97,11 +98,8 @@ struct VehicleInspectionsListView: View {
                             // Show Completed Store Inspections First
                             ForEach(completedFromStore.sorted(by: { $0.timestamp > $1.timestamp })) { inspection in
                                 Button(action: {
-                                    if let url = PDFService.shared.generateInspectionReport(inspection: inspection) {
-                                        selectedPDFURL = url
-                                        selectedReportTitle = inspection.title.isEmpty ? inspection.type.rawValue : inspection.title
-                                        showPDF = true
-                                    }
+                                    let title = inspection.title.isEmpty ? inspection.type.rawValue : inspection.title
+                                    generateAndShowPDF(for: inspection, title: title)
                                 }) {
                                     historyRow(title: inspection.title.isEmpty ? inspection.type.rawValue : inspection.title, date: inspection.timestamp)
                                 }
@@ -131,6 +129,24 @@ struct VehicleInspectionsListView: View {
         .fullScreenCover(isPresented: $showPDF) {
             if let url = selectedPDFURL {
                 PDFPreviewView(url: url, title: selectedReportTitle)
+            }
+        }
+        .overlay {
+            if isGeneratingPDF {
+                ZStack {
+                    Color.black.opacity(0.3).ignoresSafeArea()
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(.white)
+                        Text("Generating Report…")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                    .padding(32)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(16)
+                }
             }
         }
     }
@@ -171,6 +187,21 @@ struct VehicleInspectionsListView: View {
     
     init(unitName: String) {
         self.unitName = unitName
+    }
+
+    private func generateAndShowPDF(for inspection: TripInspection, title: String) {
+        isGeneratingPDF = true
+        selectedReportTitle = title
+        Task {
+            let url = await Task.detached(priority: .userInitiated) {
+                PDFService.shared.generateInspectionReport(inspection: inspection, inventoryParts: store.inventoryParts)
+            }.value
+            isGeneratingPDF = false
+            if let url = url {
+                selectedPDFURL = url
+                showPDF = true
+            }
+        }
     }
     
     private func deleteItems(at offsets: IndexSet) {

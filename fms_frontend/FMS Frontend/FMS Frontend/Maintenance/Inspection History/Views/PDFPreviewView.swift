@@ -11,50 +11,81 @@ struct PDFPreviewView: View {
     let title: String
     @Environment(\.dismiss) var dismiss
     @State private var showShareSheet = false
-    
+    @State private var pdfDocument: PDFDocument?
+    @State private var loadFailed = false
+
     var body: some View {
         NavigationStack {
-            PDFKitRepresentedView(url: url)
-                .ignoresSafeArea(edges: .bottom)
-                .navigationTitle(title)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.primary)
-                        }
+            Group {
+                if let document = pdfDocument {
+                    PDFKitDocumentView(document: document)
+                        .ignoresSafeArea(edges: .bottom)
+                } else if loadFailed {
+                    VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 48))
+                            .foregroundColor(.orange)
+                        Text("Failed to load PDF")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
                     }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: { showShareSheet = true }) {
-                            Image(systemName: "square.and.arrow.up")
-                        }
+                } else {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                        Text("Loading Report…")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                     }
                 }
-                .sheet(isPresented: $showShareSheet) {
-                    ShareSheet(activityItems: [url])
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.primary)
+                    }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showShareSheet = true }) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .disabled(pdfDocument == nil)
+                }
+            }
+            .sheet(isPresented: $showShareSheet) {
+                ShareSheet(activityItems: [url])
+            }
+        }
+        .task {
+            let doc = await Task.detached(priority: .userInitiated) {
+                PDFDocument(url: url)
+            }.value
+            if let doc = doc {
+                pdfDocument = doc
+            } else {
+                loadFailed = true
+            }
         }
     }
 }
 
-struct PDFKitRepresentedView: UIViewRepresentable {
-    let url: URL
-    
+struct PDFKitDocumentView: UIViewRepresentable {
+    let document: PDFDocument
+
     func makeUIView(context: Context) -> PDFView {
         let pdfView = PDFView()
+        pdfView.document = document
         pdfView.autoScales = true
+        pdfView.displayMode = .singlePageContinuous
+        pdfView.displayDirection = .vertical
         return pdfView
     }
-    
+
     func updateUIView(_ uiView: PDFView, context: Context) {
-        if uiView.document == nil {
-            if let data = try? Data(contentsOf: url) {
-                uiView.document = PDFDocument(data: data)
-            } else {
-                uiView.document = PDFDocument(url: url)
-            }
-        }
+        // No-op: document is set once in makeUIView
     }
 }

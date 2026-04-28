@@ -200,6 +200,14 @@ struct DetailedInspectionView: View {
                 }
             }
         }
+        .alert("Complete Audit?", isPresented: $showingDoneAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Complete & Generate Report") {
+                submitAndGeneratePDF()
+            }
+        } message: {
+            Text("This will finalize the inspection and generate a PDF report. You won't be able to edit it afterwards.")
+        }
         .confirmationDialog("Evidence Source", isPresented: $showingProofSource) {
             Button("Camera") { showingCamera = true }
             Button("Photo Library") { showingImagePicker = true }
@@ -444,7 +452,7 @@ struct DetailedInspectionView: View {
         store.updateInspection(inspection)
         isGenerating = true
         DispatchQueue.global(qos: .userInitiated).async {
-            let url = PDFService.shared.generateInspectionReport(inspection: inspection)
+            let url = PDFService.shared.generateInspectionReport(inspection: inspection, inventoryParts: store.inventoryParts)
             DispatchQueue.main.async {
                 isGenerating = false
                 reportURL = url

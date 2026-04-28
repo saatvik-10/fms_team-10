@@ -16,7 +16,7 @@ class PDFService {
     private let secondaryColor = UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1.0)
     private let accentColor = UIColor(red: 242/255, green: 244/255, blue: 247/255, alpha: 1.0)
     
-    func generateInspectionReport(inspection: TripInspection) -> URL? {
+    func generateInspectionReport(inspection: TripInspection, inventoryParts: [InventoryPart] = []) -> URL? {
         let pdfMetaData = [
             kCGPDFContextCreator: "FMS Maintenance App",
             kCGPDFContextAuthor: "Fleet Management System",
@@ -55,7 +55,6 @@ class PDFService {
             
             let vehicleInfo: [(String, String)] = [
                 ("Vehicle", inspection.unitName),
-                ("VIN", inspection.unitVIN),
                 ("Type", inspection.vehicleType == .truck ? "Truck" : "Car"),
                 ("Inspection", inspection.type == .preTrip ? "Pre-Trip" : "Post-Trip"),
                 ("Date", inspection.timestamp.formatted(date: .long, time: .shortened)),
@@ -65,17 +64,6 @@ class PDFService {
             ]
             
             drawKeyValueGrid(info: vehicleInfo, at: &currentY, context: context)
-            
-            currentY += 20
-            
-            // 3. VEHICLE METRICS SECTION
-            drawSectionHeader(title: "VEHICLE METRICS", at: &currentY, in: context)
-            let metrics: [(String, String)] = [
-                ("Fuel Level", "75%"),
-                ("Fuel Effic.", "14.2 mpg"),
-                ("Engine Hours", "4,821 hrs")
-            ]
-            drawKeyValueGrid(info: metrics, at: &currentY, context: context)
             
             currentY += 20
             
@@ -144,15 +132,30 @@ class PDFService {
                 currentY = 60
             }
 
-            // 7. PARTS REPLACED
+            // 7. PARTS REPLACED & COST
             if !inspection.consumedParts.isEmpty {
                 drawSectionHeader(title: "PARTS REPLACED DURING AUDIT", at: &currentY, in: context)
                 var partLines: [(String, String)] = []
+                var totalCost: Double = 0
                 for usage in inspection.consumedParts {
-                    partLines.append((usage.inventoryPartId, "Qty: \(usage.quantity)"))
+                    let part = inventoryParts.first(where: { $0.partId == usage.inventoryPartId })
+                    let name = part?.partName ?? usage.inventoryPartId
+                    let unitPrice = part?.unitPriceInr ?? 0
+                    let lineCost = unitPrice * Double(usage.quantity)
+                    totalCost += lineCost
+                    partLines.append((name, "Qty: \(usage.quantity)  —  ₹\(String(format: "%.2f", lineCost))"))
                 }
                 drawKeyValueGrid(info: partLines, at: &currentY, context: context)
-                currentY += 20
+                currentY += 10
+
+                // Total Cost
+                drawSectionHeader(title: "TOTAL MAINTENANCE COST", at: &currentY, in: context)
+                let costText = "₹\(String(format: "%.2f", totalCost))"
+                costText.draw(at: CGPoint(x: margin + 5, y: currentY), withAttributes: [
+                    .font: UIFont.systemFont(ofSize: 14, weight: .black),
+                    .foregroundColor: UIColor.label
+                ])
+                currentY += 30
             }
 
 
