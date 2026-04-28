@@ -74,7 +74,6 @@ class DashboardViewModel: ObservableObject {
             let lifecycleTrips = response.trips.compactMap(Self.mapTripItemToLifecycleTrip)
 
             if let active = lifecycleTrips.first(where: { $0.status == .scheduled })
-                ?? lifecycleTrips.first(where: { $0.status == .assigned })
                 ?? lifecycleTrips.first {
                 activeLifecycleTrip = active
                 activeTrip = active.toTripModel()
@@ -121,8 +120,6 @@ class DashboardViewModel: ObservableObject {
         switch rawStatus?.uppercased() {
         case "COMPLETED":
             return .completed
-        case "PENDING", "CANCELLED":
-            return .assigned
         default:
             return .scheduled
         }

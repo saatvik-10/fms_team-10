@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 class TripsViewModel: ObservableObject {
-    @Published var selectedSegment: TripSegment = .assigned
+    @Published var selectedSegment: TripSegment = .accepted
     @Published var trips: [LifecycleTrip] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -74,8 +74,8 @@ class TripsViewModel: ObservableObject {
         switch rawStatus?.uppercased() {
         case "COMPLETED":
             return .completed
-        case "PENDING", "CANCELLED":
-            return .assigned
+//        case "PENDING", "CANCELLED":
+////            return .assigned
         default:
             return .scheduled
         }
@@ -135,9 +135,9 @@ class TripsViewModel: ObservableObject {
     
     private func loadMockData() {
         trips = [
-            // Assigned Trips
-            LifecycleTrip(id: "TRP-10492", source: "Mumbai, MH", destination: "Pune, MH", status: .assigned, dateValue: "Oct 18", timeLabel: "Arrival Window", timeValue: "08:00 - 10:00", loadInfo: "24 Pallets", distance: 148.4, vehicleNumber: nil),
-            LifecycleTrip(id: "TRP-10495", source: "Delhi, DL", destination: "Jaipur, RJ", status: .assigned, dateValue: "Oct 19", timeLabel: "Arrival Window", timeValue: "13:30 - 15:00", loadInfo: "18 Pallets", distance: 281.0, vehicleNumber: nil),
+//            // Assigned Trips
+//            LifecycleTrip(id: "TRP-10492", source: "Mumbai, MH", destination: "Pune, MH", status: .assigned, dateValue: "Oct 18", timeLabel: "Arrival Window", timeValue: "08:00 - 10:00", loadInfo: "24 Pallets", distance: 148.4, vehicleNumber: nil),
+//            LifecycleTrip(id: "TRP-10495", source: "Delhi, DL", destination: "Jaipur, RJ", status: .assigned, dateValue: "Oct 19", timeLabel: "Arrival Window", timeValue: "13:30 - 15:00", loadInfo: "18 Pallets", distance: 281.0, vehicleNumber: nil),
             
             // Accepted Trips
             LifecycleTrip(id: "TRP-10488", source: "Mumbai, MH", destination: "Gurgaon, HR", status: .scheduled, dateValue: "Oct 20", timeLabel: "Scheduled Start", timeValue: "14:30", loadInfo: "12 Pallets", distance: 1412.0, vehicleNumber: "MH01BK9392"),
