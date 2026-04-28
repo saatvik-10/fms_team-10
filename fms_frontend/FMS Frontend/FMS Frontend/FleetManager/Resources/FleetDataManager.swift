@@ -401,6 +401,7 @@ class FleetDataManager: ObservableObject {
                 operationalStatus: item.operationalStatus ?? "OPERATIONAL",
                 currentTrip: item.currentTrip.map { trip in
                     VehicleTrip(
+                        backendId: trip.id,
                         vehicleID: trip.vehicleId,
                         origin: trip.origin,
                         destination: trip.destination,
