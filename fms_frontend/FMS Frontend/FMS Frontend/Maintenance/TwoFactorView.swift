@@ -207,20 +207,37 @@ struct TwoFactorView: View {
                     .stroke(borderColor, lineWidth: 2)
             )
             .multilineTextAlignment(.center)
-            .keyboardType(.numberPad)
+            .keyboardType(.asciiCapableNumberPad)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled(true)
             .font(.system(size: 24, weight: .bold))
             .foregroundColor(.white)
             .focused($focusedIndex, equals: index)
             .onChange(of: otpDigits[index]) { oldValue, newValue in
                 // Filter to numbers only
                 let filtered = newValue.filter { $0.isNumber }
-                if filtered != newValue {
-                    otpDigits[index] = filtered
+                
+                // If user pasted a full OTP (e.g., 6 digits)
+                if filtered.count > 1 {
+                    let chars = Array(filtered)
+                    for (i, char) in chars.enumerated() where index + i < 6 {
+                        otpDigits[index + i] = String(char)
+                    }
+                    
+                    // Move focus to the end of the pasted string or the last box
+                    let nextIndex = min(index + chars.count, 5)
+                    focusedIndex = nextIndex
+                    
+                    // If we pasted more than what fits in this box, we don't want to leave the full string here
+                    if index < 6 {
+                        otpDigits[index] = String(chars[0])
+                    }
                     return
                 }
                 
-                if filtered.count > 1 {
-                    otpDigits[index] = String(filtered.last!)
+                if filtered != newValue {
+                    otpDigits[index] = filtered
+                    return
                 }
                 
                 if !filtered.isEmpty {

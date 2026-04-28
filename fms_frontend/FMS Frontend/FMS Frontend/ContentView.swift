@@ -136,12 +136,6 @@ struct ContentView: View {
     
     var body: some View {
         Group {
-            // ── LOGIN BYPASS (comment out to re-enable login) ──────────────
-            FleetManagerMainView()
-                .environmentObject(session)
-            // ── END BYPASS ─────────────────────────────────────────────────
-            
-            /*
             switch session.state {
             case .restoring:
                 ProgressView("Restoring session...")
@@ -164,7 +158,6 @@ struct ContentView: View {
                     LoginView(userRole: userRoleBinding, session: session)
                 }
             }
-            */
         }
         .task {
             await session.restoreSessionIfNeeded()
