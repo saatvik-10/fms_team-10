@@ -47,14 +47,9 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 }
 
 class DashboardViewModel: ObservableObject {
-    @Published var userName: String = UserProfile.mockDriver.name
-    @Published var activeTrip: Trip = Trip.mockTrip
+    @Published var activeTrip: Trip?
     @Published var activeLifecycleTrip: LifecycleTrip?
-    @Published var vehicleName: String = "Tata Prima 4028.S"
-    @Published var vehiclePlate: String = "MH 43 AB 1234"
-    @Published var fuelLevel: String = "78%"
-    @Published var maintenanceHealth: String = "Optimal"
-    @Published var maintenanceProgress: Double = 0.8
+    @Published var vehiclePlate: String = "UNASSIGNED"
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -84,6 +79,10 @@ class DashboardViewModel: ObservableObject {
                 activeLifecycleTrip = active
                 activeTrip = active.toTripModel()
                 vehiclePlate = active.vehicleNumber ?? "UNASSIGNED"
+            } else {
+                activeLifecycleTrip = nil
+                activeTrip = nil
+                vehiclePlate = "UNASSIGNED"
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -219,7 +218,14 @@ struct DashboardHomeView: View {
                 headerView
                 
                 // Active Mission Section
-                MissionCardView(viewModel: viewModel, locationManager: locationManager)
+                if viewModel.isLoading {
+                    ProgressView("Loading trip data...")
+                        .padding(.top, 40)
+                } else if viewModel.activeTrip != nil {
+                    MissionCardView(viewModel: viewModel, locationManager: locationManager)
+                } else {
+                    EmptyTripStateCard()
+                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -324,28 +330,30 @@ struct MissionCardView: View {
                 .clipped()
             
             // Details
-            VStack(alignment: .leading, spacing: 16) {
-                RouteDetailRow(label: "PICKUP", value: viewModel.activeTrip.pickup.name)
-                RouteDetailRow(label: "DESTINATION", value: viewModel.activeTrip.destination.name)
-                
-                NavigationLink(
-                    destination: TripDetailView(
-                        trip: viewModel.activeTrip,
-                        lifecycleTrip: viewModel.activeLifecycleTrip
-                    )
-                ) {
-                    HStack {
-                        Text("View Trip")
+            if let trip = viewModel.activeTrip {
+                VStack(alignment: .leading, spacing: 16) {
+                    RouteDetailRow(label: "PICKUP", value: trip.pickup.name)
+                    RouteDetailRow(label: "DESTINATION", value: trip.destination.name)
+                    
+                    NavigationLink(
+                        destination: TripDetailView(
+                            trip: trip,
+                            lifecycleTrip: viewModel.activeLifecycleTrip
+                        )
+                    ) {
+                        HStack {
+                            Text("View Trip")
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(hex: "0a303a"))
+                        .cornerRadius(12)
                     }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(hex: "0a303a"))
-                    .cornerRadius(12)
                 }
+                .padding(16)
             }
-            .padding(16)
         }
         .background(Color.white)
         .cornerRadius(16)
@@ -353,68 +361,25 @@ struct MissionCardView: View {
     }
 }
 
-struct VehicleCardView: View {
-    @ObservedObject var viewModel: DashboardViewModel
-    
+struct EmptyTripStateCard: View {
     var body: some View {
         VStack(spacing: 16) {
-            HStack(alignment: .top) {
-                HStack(spacing: 12) {
-                    Image(systemName: "box.truck.fill")
-                        .font(.system(size: 28))
-                        .foregroundColor(AppColors.primary)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(viewModel.vehicleName)
-                            .font(.headline)
-                            .foregroundColor(.black)
-                        Text(viewModel.vehiclePlate)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    }
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Fuel")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    Text(viewModel.fuelLevel)
-                        .font(.headline)
-                        .foregroundColor(.black)
-                }
-            }
+            Image(systemName: "car.2.fill")
+                .font(.system(size: 40))
+                .foregroundColor(.gray)
             
-            Divider()
+            Text("No Active Trips")
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundColor(.black)
             
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Maintenance Health")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                    Spacer()
-                    Text(viewModel.maintenanceHealth)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.black)
-                }
-                
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(AppColors.secondaryBackground)
-                            .frame(height: 8)
-                        
-                        Capsule()
-                            .fill(Color(hex: "0a303a"))
-                            .frame(width: geo.size.width * viewModel.maintenanceProgress, height: 8)
-                    }
-                }
-                .frame(height: 8)
-            }
+            Text("You currently have no scheduled or ongoing trips.")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
         }
-        .padding(16)
+        .frame(maxWidth: .infinity)
+        .padding(32)
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
