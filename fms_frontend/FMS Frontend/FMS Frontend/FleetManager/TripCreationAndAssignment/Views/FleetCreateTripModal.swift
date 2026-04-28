@@ -105,9 +105,11 @@ struct FleetCreateTripModal: View {
                         ForEach(dataManager.vehicles.filter { v in
                             let amount = Double(loadAmount) ?? 0
                             let weightInKG = convertToKG(amount: amount, unit: loadUnit)
-                            return v.status == .idle && weightInKG <= v.capacityInKG
+                            // If capacity is 0 (unknown), allow assignment. Otherwise, enforce the limit.
+                            return v.status == .idle && (v.capacityInKG <= 0 || weightInKG <= v.capacityInKG)
                         }) { v in
-                            Text("\(v.model) (Max: \(Int(v.maxLoadCapacity)) \(v.capacityUnit))").tag(v.backendId ?? v.id)
+                            let capacityText = v.maxLoadCapacity > 0 ? " (Max: \(Int(v.maxLoadCapacity)) \(v.capacityUnit))" : ""
+                            Text("\(v.model)\(capacityText)").tag(v.backendId ?? v.id)
                         }
                     }
                     
@@ -256,6 +258,20 @@ struct FleetCreateTripModal: View {
         Task {
             do {
                 _ = try await TripAPI.shared.createTrip(request)
+                
+                await MainActor.run {
+                    if let vIndex = dataManager.vehicles.firstIndex(where: { $0.id == selectedVehicleID || $0.backendId == selectedVehicleID }) {
+                        dataManager.vehicles[vIndex].status = .inTransit
+                    }
+                    
+                    if let dIndex = dataManager.drivers.firstIndex(where: { $0.id == finalDriverID || $0.backendId == finalDriverID }) {
+                        // Create a modified copy of the driver
+                        var updatedDriver = dataManager.drivers[dIndex]
+                        // We can't directly mutate status if it's a let, we should check if it's var.
+                        // For now, let's just refresh from backend to ensure data consistency.
+                    }
+                }
+                
                 try? await dataManager.refreshVehicles()
                 try? await dataManager.refreshDrivers()
                 isPresented = false
