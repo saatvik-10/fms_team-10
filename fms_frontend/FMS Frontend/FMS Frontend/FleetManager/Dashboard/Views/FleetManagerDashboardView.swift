@@ -158,9 +158,9 @@ struct FleetManagerDashboardView: View {
         .sheet(item: $selectedAlert) { alert in
             FleetMaintenanceAlertDetailView(alert: alert)
         }
-        .fullScreenCover(isPresented: $showingAllTrips) {
-            AllTripsView()
-        }
+        // .fullScreenCover(isPresented: $showingAllTrips) {
+        //     AllTripsView()
+        // }
         .task {
             do {
                 try await dataManager.refreshVehicles()
