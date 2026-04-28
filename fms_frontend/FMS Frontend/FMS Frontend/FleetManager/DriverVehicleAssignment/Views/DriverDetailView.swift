@@ -31,7 +31,7 @@ struct DriverDetailView: View {
                         .foregroundColor(AppColors.primary)
                 }
 
-                Text(driver.name)
+                Text("Back")
                     .font(AppFonts.title3)
 
                 Spacer()

@@ -162,6 +162,9 @@ model Vehicle {
   rcImageKey      String?
   vehicleImageKey String?
 
+  maxLoadCapacity  Float @default(0)
+  capacityUnit       String @default("KG")
+
   assignedDriverId String? @unique
 
   createdById String?

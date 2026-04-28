@@ -14,6 +14,8 @@ struct CreateVehicleRequest: Encodable {
     let registrationNumber: String
     let rcDocumentImage: String?
     let vehicleImage: String?
+    let maxLoadCapacity: Double?
+    let capacityUnit: String?
 }
 
 struct VehicleItem: Decodable {
@@ -32,6 +34,8 @@ struct VehicleItem: Decodable {
     let rcImageUrl: String?
     let vehicleImageUrl: String?
     let assignedDriverId: String?
+    let maxLoadCapacity: Double?
+    let capacityUnit: String?
     let createdAt: Date?
     let updatedAt: Date?
 
@@ -133,6 +137,8 @@ struct UpdateVehicleRequest: Encodable {
     let rcDocumentImage: String?
     let vehicleImage: String?
     let assignedDriverId: String?
+    let maxLoadCapacity: Double?
+    let capacityUnit: String?
 }
 
 struct UpdateVehicleResponse: Decodable {

@@ -105,9 +105,9 @@ struct FleetCreateTripModal: View {
                         ForEach(dataManager.vehicles.filter { v in
                             let amount = Double(loadAmount) ?? 0
                             let weightInKG = convertToKG(amount: amount, unit: loadUnit)
-                            return v.status == .idle && weightInKG <= v.maxLoadCapacityKG
+                            return v.status == .idle && weightInKG <= v.capacityInKG
                         }) { v in
-                            Text("\(v.model) (Max: \(Int(v.maxLoadCapacityKG))kg)").tag(v.backendId ?? v.id)
+                            Text("\(v.model) (Max: \(Int(v.maxLoadCapacity)) \(v.capacityUnit))").tag(v.backendId ?? v.id)
                         }
                     }
                     

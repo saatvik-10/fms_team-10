@@ -219,10 +219,21 @@ struct VehicleGridCard: View {
 
             // Vehicle Info
             VStack(alignment: .leading, spacing: 5) {
-                Text(vehicle.registrationNumber)
-                    .font(AppFonts.title2)
-                    .foregroundColor(AppColors.primaryText)
-                    .tracking(0.5)
+                HStack {
+                    Text(vehicle.registrationNumber)
+                        .font(AppFonts.title2)
+                        .foregroundColor(AppColors.primaryText)
+                        .tracking(0.5)
+                    Spacer()
+                    Text("\(Int(vehicle.maxLoadCapacity)) \(vehicle.capacityUnit)")
+                        .font(AppFonts.caption1)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppTheme.primary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(AppTheme.primary.opacity(0.1))
+                        .cornerRadius(6)
+                }
 
                 Text("\(vehicle.make) \(vehicle.model)".uppercased())
                     .font(AppFonts.caption2)

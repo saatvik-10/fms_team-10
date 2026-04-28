@@ -122,6 +122,8 @@ export class Vehicle {
           vehicleImageUrl: vehicleImgUrl,
           rcImageKey: rcKey,
           vehicleImageKey: vehicleKey,
+          maxLoadCapacity: data.maxLoadCapacity,
+          capacityUnit: data.capacityUnit,
           createdById: userId,
         },
       });
@@ -239,6 +241,8 @@ export class Vehicle {
           ...(data.chassisNumber ? { chassisNumber: data.chassisNumber } : {}),
           ...(data.registrationNumber ? { registrationNumber: data.registrationNumber } : {}),
           ...(data.assignedDriverId ? { assignedDriverId: data.assignedDriverId } : {}),
+          ...(data.maxLoadCapacity !== undefined ? { maxLoadCapacity: data.maxLoadCapacity } : {}),
+          ...(data.capacityUnit ? { capacityUnit: data.capacityUnit } : {}),
           rcImageUrl: nextRcImageUrl,
           vehicleImageUrl: nextVehicleImageUrl,
           rcImageKey: newRcKey ?? existingVehicle.rcImageKey,

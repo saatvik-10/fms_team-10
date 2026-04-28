@@ -211,196 +211,126 @@ struct DriverModalView: View {
 
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 30) {
-            // Header
-            HStack {
-                Text(driverToEdit == nil ? "Add Driver" : "Update Driver")
-                    .font(AppFonts.title1)
-                Spacer()
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark")
-                        .foregroundColor(.gray)
-                        .font(AppFonts.title3)
-                }
-            }
-            .padding(.top, 10)
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: 25) {
-                    
-                    if driverToEdit == nil {
-                        // Section 1: License Verification
-                        VStack(alignment: .leading, spacing: 15) {
-                            Text("LICENSE VERIFICATION")
-                                .font(AppFonts.caption2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.gray)
-                            
-                            OCRUploadArea(
-                                title: "Upload Driver License",
-                                subtitle: "Drag and drop or tap to scan document",
-                                buttonTitle: "Upload License",
-                                action: { showingScanner = true }
-                            )
-                            if frontLicenseImageData != nil || backLicenseImageData != nil {
-                                HStack(spacing: 12) {
-                                    Label(frontLicenseImageData != nil ? "Front uploaded" : "Front missing", systemImage: frontLicenseImageData != nil ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                        .foregroundColor(frontLicenseImageData != nil ? .green : .orange)
-                                    Label(backLicenseImageData != nil ? "Back uploaded" : "Back missing", systemImage: backLicenseImageData != nil ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                        .foregroundColor(backLicenseImageData != nil ? .green : .orange)
-                                }
-                                .font(AppFonts.caption2)
+        NavigationView {
+            Form {
+                if driverToEdit == nil {
+                    Section(header: Text("License Verification")) {
+                        OCRUploadArea(
+                            title: "Upload Driver License",
+                            subtitle: "Drag and drop or tap to scan document",
+                            buttonTitle: "Upload License",
+                            action: { showingScanner = true }
+                        )
+                        if frontLicenseImageData != nil || backLicenseImageData != nil {
+                            HStack(spacing: 12) {
+                                Label(frontLicenseImageData != nil ? "Front uploaded" : "Front missing", systemImage: frontLicenseImageData != nil ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                    .foregroundColor(frontLicenseImageData != nil ? .green : .orange)
+                                Label(backLicenseImageData != nil ? "Back uploaded" : "Back missing", systemImage: backLicenseImageData != nil ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                    .foregroundColor(backLicenseImageData != nil ? .green : .orange)
                             }
-                        }
-                    } else {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("LICENSE VERIFICATION")
-                                .font(AppFonts.caption2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.gray)
-                            Text("License images are already stored. Update the text fields below to edit the driver profile.")
-                                .font(AppFonts.caption1)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    
-                    // Section 2: Review Details
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text("REVIEW DRIVER DETAILS")
                             .font(AppFonts.caption2)
-                            .fontWeight(.bold)
+                        }
+                    }
+                } else {
+                    Section(header: Text("License Verification")) {
+                        Text("License images are already stored. Update the text fields below to edit the driver profile.")
+                            .font(AppFonts.caption1)
                             .foregroundColor(.gray)
-                        
-                        HStack(spacing: 20) {
-                            ModalFormField(label: "Full Name", text: $fullName)
-                            ModalFormField(label: "Phone Number", text: $phone)
-                        }
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            ModalFormField(label: "Email", text: $email)
-                                .onChange(of: email) { _, newValue in
-                                    if newValue.isEmpty {
-                                        emailError = nil
-                                    } else if !isValidEmail(newValue) {
-                                        emailError = "Enter a valid email address"
-                                    } else {
-                                        emailError = nil
-                                    }
-                                }
-                            if let error = emailError {
-                                Text(error)
-                                    .font(AppFonts.caption2)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 10) {
-                            ModalFormField(label: "License Number", text: $licenseNumber)
-                                .onChange(of: licenseNumber) { _, newValue in
-                                    if newValue.count != 15 && !newValue.isEmpty {
-                                        licenseError = "License number must be 15 characters"
-                                    } else {
-                                        licenseError = nil
-                                    }
-                                }
-                            if let error = licenseError {
-                                Text(error)
-                                    .font(AppFonts.caption2)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                        
-                        ModalFormField(label: "Expiry Date", text: $expiryDate)
-                        
-                        VStack(alignment: .leading, spacing: 15) {
-                            HStack {
-                                Text("VEHICLE CLASSES")
-                                    .font(AppFonts.caption2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.gray)
-                                Spacer()
-                                Button(action: { vehicleClasses.append(Self.vehicleClassOptions.first ?? "LMV-NT") }) {
-                                    HStack {
-                                        Image(systemName: "plus")
-                                        Text("Add Class")
-                                    }
-                                    .font(AppFonts.caption2)
-                                    .fontWeight(.bold)
+                    }
+                }
+                
+                Section(header: Text("Driver Details")) {
+                    TextField("Full Name", text: $fullName)
+                    TextField("Phone Number", text: $phone)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextField("Email", text: $email)
+                            .autocapitalization(.none)
+                            .keyboardType(.emailAddress)
+                            .onChange(of: email) { _, newValue in
+                                if newValue.isEmpty {
+                                    emailError = nil
+                                } else if !isValidEmail(newValue) {
+                                    emailError = "Enter a valid email address"
+                                } else {
+                                    emailError = nil
                                 }
                             }
-                            
-                            ForEach(0..<vehicleClasses.count, id: \.self) { index in
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        Text("CLASS \(index + 1)")
-                                            .font(AppFonts.caption2)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.gray)
-
-                                        Menu {
-                                            ForEach(Self.vehicleClassOptions, id: \.self) { vehicleClass in
-                                                Button(action: {
-                                                    vehicleClasses[index] = vehicleClass
-                                                }) {
-                                                    Text(vehicleClass)
-                                                }
-                                            }
-                                        } label: {
-                                            HStack {
-                                                Text(vehicleClasses[index])
-                                                    .font(AppFonts.subheadline)
-                                                    .foregroundColor(AppTheme.textPrimary)
-                                                Spacer()
-                                                Image(systemName: "chevron.up.chevron.down")
-                                                    .font(AppFonts.caption2)
-                                                    .fontWeight(.bold)
-                                                    .foregroundColor(.gray)
-                                            }
-                                            .padding()
-                                            .background(Color.gray.opacity(0.1))
-                                            .cornerRadius(10)
-                                        }
-                                    }
-                                    if vehicleClasses.count > 1 {
-                                        Button(action: { vehicleClasses.remove(at: index) }) {
-                                            Image(systemName: "trash")
-                                                .foregroundColor(.red)
-                                        }
-                                    }
+                        if let error = emailError {
+                            Text(error)
+                                .font(AppFonts.caption2)
+                                .foregroundColor(.red)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextField("License Number", text: $licenseNumber)
+                            .onChange(of: licenseNumber) { _, newValue in
+                                if newValue.count != 15 && !newValue.isEmpty {
+                                    licenseError = "License number must be 15 characters"
+                                } else {
+                                    licenseError = nil
+                                }
+                            }
+                        if let error = licenseError {
+                            Text(error)
+                                .font(AppFonts.caption2)
+                                .foregroundColor(.red)
+                        }
+                    }
+                    
+                    TextField("Expiry Date", text: $expiryDate)
+                }
+                
+                Section(header: Text("Vehicle Classes")) {
+                    ForEach(0..<vehicleClasses.count, id: \.self) { index in
+                        HStack {
+                            Picker("Class \(index + 1)", selection: $vehicleClasses[index]) {
+                                ForEach(Self.vehicleClassOptions, id: \.self) { option in
+                                    Text(option).tag(option)
+                                }
+                            }
+                            if vehicleClasses.count > 1 {
+                                Button(role: .destructive, action: { vehicleClasses.remove(at: index) }) {
+                                    Image(systemName: "trash")
                                 }
                             }
                         }
                     }
+                    
+                    Button(action: { vehicleClasses.append(Self.vehicleClassOptions.first ?? "LMV-NT") }) {
+                        Label("Add Class", systemImage: "plus")
+                    }
                 }
-                .padding(.bottom, 30)
-            }
-            
-            // Footer Buttons
-            HStack(spacing: 15) {
-                Button(action: {
-                    Task { await saveDriver() }
-                }) {
-                    HStack {
+                
+                Section {
+                    Button(action: {
+                        Task { await saveDriver() }
+                    }) {
                         Text(isSaving ? "Saving..." : (driverToEdit == nil ? "Save Driver" : "Update Driver"))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .fontWeight(.bold)
+                            .foregroundColor(canSave ? .white : .gray)
                     }
-                    .font(AppFonts.button)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
-                    .background(canSave ? AppTheme.primary : Color.gray)
-                    .cornerRadius(12)
+                    .listRowBackground(canSave ? AppTheme.primary : Color(.systemGroupedBackground))
+                    .disabled(isSaving || !canSave)
                 }
-                .disabled(isSaving || !canSave)
-
+                
+                if let saveError {
+                    Section {
+                        Text(saveError)
+                            .foregroundColor(.red)
+                            .font(AppFonts.caption2)
+                    }
+                }
             }
-            if let saveError {
-                Text(saveError)
-                    .font(AppFonts.caption2)
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            .navigationTitle(driverToEdit == nil ? "Add Driver" : "Update Driver")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
             }
         }
-        .padding(30)
         .background(Color.white)
         .sheet(isPresented: $showingScanner) {
             CameraScannerView(isPresented: $showingScanner) { name, id, date, vehicles, frontImage, backImage in
@@ -617,6 +547,8 @@ struct AddVehicleModalView: View {
     @State private var model: String
     @State private var regNumber: String
     @State private var vin: String
+    @State private var maxLoadCapacity: String = "0"
+    @State private var capacityUnit: String = "KG"
     @State private var showingScanner = false
     @State private var rcDocumentImageData: Data?
     @State private var isSaving = false
@@ -637,6 +569,8 @@ struct AddVehicleModalView: View {
         _model = State(initialValue: vehicleToEdit?.model ?? "")
         _regNumber = State(initialValue: vehicleToEdit?.registrationNumber ?? "")
         _vin = State(initialValue: vehicleToEdit?.chassisNumber ?? "")
+        _maxLoadCapacity = State(initialValue: String(format: "%.0f", vehicleToEdit?.maxLoadCapacity ?? 0))
+        _capacityUnit = State(initialValue: vehicleToEdit?.capacityUnit ?? "KG")
     }
 
     private var canSave: Bool {
@@ -647,133 +581,104 @@ struct AddVehicleModalView: View {
             !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
             !regNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
             !vin.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            !(Double(maxLoadCapacity) ?? 0 <= 0) &&
             hasVehicleImage && hasRcImage
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 30) {
-            // Header
-            HStack {
-                Text(vehicleToEdit == nil ? "Add Vehicle" : "Update Vehicle")
-                    .font(AppFonts.title1)
-                Spacer()
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark")
-                        .foregroundColor(.gray)
-                        .font(AppFonts.title3)
-                }
-            }
-            .padding(.top, 10)
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: 25) {
-                    
-                    // Section 1: RC Verification
-                    VStack(alignment: .leading, spacing: 15) {
-                        Text("VEHICLE REGISTRATION (RC) VERIFICATION")
-                            .font(AppFonts.caption2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.gray)
-                        
-                        OCRUploadArea(
-                            title: "Upload RC Document",
-                            subtitle: "Drag and drop or tap to scan document",
-                            buttonTitle: "Upload Document",
-                            action: { showingScanner = true }
-                        )
+        NavigationView {
+            Form {
+                Section(header: Text("RC Verification")) {
+                    OCRUploadArea(
+                        title: "Upload RC Document",
+                        subtitle: "Drag and drop or tap to scan document",
+                        buttonTitle: "Upload Document",
+                        action: { showingScanner = true }
+                    )
 
-                        if rcDocumentImageData != nil || vehicleToEdit?.rcImageUrl != nil {
-                            Label("RC document ready", systemImage: "checkmark.circle.fill")
-                                .font(AppFonts.caption2)
-                                .foregroundColor(.green)
-                        }
-                    }
-                    
-                    // Section 2: Vehicle Image (NEW)
-                    VStack(alignment: .leading, spacing: 15) {
-                        Text("VEHICLE IMAGE")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.gray)
-                        
-                        VStack(spacing: 15) {
-                            if let image = selectedVehicleImage {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(height: 200)
-                                    .frame(maxWidth: .infinity)
-                                    .cornerRadius(12)
-                                    .clipped()
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                                    )
-                                    .onTapGesture {
-                                        showActionSheet = true
-                                    }
-                            } else if let urlString = vehicleToEdit?.vehicleImageUrl, let url = URL(string: urlString) {
-                                asyncImageView(url: url)
-                            } else {
-                                placeholderUploadArea
-                            }
-                        }
-
-                        if selectedVehicleImage != nil || vehicleToEdit?.vehicleImageUrl != nil {
-                            Label("Vehicle image ready", systemImage: "checkmark.circle.fill")
-                                .font(AppFonts.caption2)
-                                .foregroundColor(.green)
-                        }
-                    }
-                    
-                    // Section 3: Review Details
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text("REVIEW VEHICLE DETAILS")
+                    if rcDocumentImageData != nil || vehicleToEdit?.rcImageUrl != nil {
+                        Label("RC document ready", systemImage: "checkmark.circle.fill")
                             .font(AppFonts.caption2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.gray)
-                        
-                        HStack(spacing: 20) {
-                            ModalFormField(label: "Vehicle Owner", text: $make)
-                            ModalFormField(label: "Vehicle Model", text: $model)
-                        }
-                        
-                        HStack(spacing: 20) {
-                            ModalFormField(label: "Registration Number", text: $regNumber)
-                            ModalFormField(label: "Chassis Number / VIN", text: $vin)
-                        }
+                            .foregroundColor(.green)
                     }
                 }
-                .padding(.bottom, 30)
-            }
-            
-            // Footer Buttons
-            HStack(spacing: 15) {
-                Button(action: {
-                    Task { await saveVehicle() }
-                }) {
+                
+                Section(header: Text("Vehicle Image")) {
+                    VStack(spacing: 15) {
+                        if let image = selectedVehicleImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(height: 200)
+                                .frame(maxWidth: .infinity)
+                                .cornerRadius(12)
+                                .clipped()
+                                .onTapGesture {
+                                    showActionSheet = true
+                                }
+                        } else if let urlString = vehicleToEdit?.vehicleImageUrl, let url = URL(string: urlString) {
+                            asyncImageView(url: url)
+                        } else {
+                            placeholderUploadArea
+                        }
+                    }
+
+                    if selectedVehicleImage != nil || vehicleToEdit?.vehicleImageUrl != nil {
+                        Label("Vehicle image ready", systemImage: "checkmark.circle.fill")
+                            .font(AppFonts.caption2)
+                            .foregroundColor(.green)
+                    }
+                }
+                
+                Section(header: Text("Vehicle Details")) {
+                    TextField("Vehicle Owner", text: $make)
+                    TextField("Vehicle Model", text: $model)
+                    TextField("Registration Number", text: $regNumber)
+                    TextField("Chassis Number / VIN", text: $vin)
+                }
+                
+                Section(header: Text("Capacity Load")) {
                     HStack {
-                        Text(isSaving ? "Saving..." : (vehicleToEdit == nil ? "Save Vehicle" : "Update Vehicle"))
+                        TextField("0.0", text: $maxLoadCapacity)
+                            .keyboardType(.decimalPad)
+                        
+                        Picker("Unit", selection: $capacityUnit) {
+                            Text("KG").tag("KG")
+                            Text("Tons").tag("Tons")
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 120)
                     }
-                    .font(AppFonts.button)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
-                    .background(canSave ? AppTheme.primary : Color.gray)
-                    .cornerRadius(12)
                 }
-                .disabled(isSaving || !canSave)
-
+                
+                Section {
+                    Button(action: {
+                        Task { await saveVehicle() }
+                    }) {
+                        Text(isSaving ? "Saving..." : (vehicleToEdit == nil ? "Save Vehicle" : "Update Vehicle"))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .fontWeight(.bold)
+                            .foregroundColor(canSave ? .white : .gray)
+                    }
+                    .listRowBackground(canSave ? AppTheme.primary : Color(.systemGroupedBackground))
+                    .disabled(isSaving || !canSave)
+                }
+                
+                if let saveError {
+                    Section {
+                        Text(saveError)
+                            .foregroundColor(.red)
+                            .font(AppFonts.caption2)
+                    }
+                }
             }
-
-            if let saveError {
-                Text(saveError)
-                    .font(AppFonts.caption2)
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            .navigationTitle(vehicleToEdit == nil ? "Add Vehicle" : "Update Vehicle")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
             }
         }
-        .padding(30)
-        .background(Color.white)
         .actionSheet(isPresented: $showActionSheet) {
             ActionSheet(
                 title: Text("Select Image Source"),
@@ -802,7 +707,6 @@ struct AddVehicleModalView: View {
                 self.model = model
                 self.vin = chassis
                 self.rcDocumentImageData = imageData
-                // Try to extract make from owner name or leave empty for user to fill
                 if !owner.isEmpty {
                     self.make = owner
                 }
@@ -846,7 +750,9 @@ struct AddVehicleModalView: View {
             chassisNumber: vin,
             registrationNumber: regNumber,
             rcDocumentImage: rcBase64,
-            vehicleImage: vehicleBase64
+            vehicleImage: vehicleBase64,
+            maxLoadCapacity: Double(maxLoadCapacity) ?? 0,
+            capacityUnit: capacityUnit
         )
 
         isSaving = true
@@ -874,7 +780,9 @@ struct AddVehicleModalView: View {
                 chassisNumber: response.vehicle.chassisNumber,
                 registrationNumber: response.vehicle.registrationNumber,
                 rcImageUrl: response.vehicle.rcImageUrl,
-                vehicleImageUrl: response.vehicle.vehicleImageUrl
+                vehicleImageUrl: response.vehicle.vehicleImageUrl,
+                maxLoadCapacity: response.vehicle.maxLoadCapacity ?? (Double(maxLoadCapacity) ?? 0),
+                capacityUnit: response.vehicle.capacityUnit ?? capacityUnit
             )
 
             await MainActor.run {
@@ -917,7 +825,9 @@ struct AddVehicleModalView: View {
             registrationNumber: regNumber,
             rcDocumentImage: rcBase64,
             vehicleImage: vehicleBase64,
-            assignedDriverId: nil
+            assignedDriverId: nil,
+            maxLoadCapacity: Double(maxLoadCapacity) ?? 0,
+            capacityUnit: capacityUnit
         )
 
         isSaving = true
@@ -946,7 +856,9 @@ struct AddVehicleModalView: View {
                 chassisNumber: response.vehicle.chassisNumber,
                 registrationNumber: response.vehicle.registrationNumber,
                 rcImageUrl: response.vehicle.rcImageUrl ?? editingVehicle.rcImageUrl,
-                vehicleImageUrl: response.vehicle.vehicleImageUrl ?? editingVehicle.vehicleImageUrl
+                vehicleImageUrl: response.vehicle.vehicleImageUrl ?? editingVehicle.vehicleImageUrl,
+                maxLoadCapacity: response.vehicle.maxLoadCapacity ?? (Double(maxLoadCapacity) ?? 0),
+                capacityUnit: response.vehicle.capacityUnit ?? capacityUnit
             )
 
             await MainActor.run {

@@ -249,7 +249,15 @@ struct Vehicle: Identifiable {
     let registrationNumber: String // New field
     let rcImageUrl: String?
     let vehicleImageUrl: String?
-    let maxLoadCapacityKG: Double // New field for assignment logic
+    let maxLoadCapacity: Double // New field for assignment logic
+    let capacityUnit: String
+    
+    var capacityInKG: Double {
+        if capacityUnit.lowercased() == "tons" {
+            return maxLoadCapacity * 1000
+        }
+        return maxLoadCapacity
+    }
 
     init(
         id: String,
@@ -272,7 +280,8 @@ struct Vehicle: Identifiable {
         registrationNumber: String,
         rcImageUrl: String? = nil,
         vehicleImageUrl: String? = nil,
-        maxLoadCapacityKG: Double = 5000.0
+        maxLoadCapacity: Double = 0.0,
+        capacityUnit: String = "KG"
     ) {
         self.id = id
         self.backendId = backendId
@@ -294,7 +303,8 @@ struct Vehicle: Identifiable {
         self.registrationNumber = registrationNumber
         self.rcImageUrl = rcImageUrl
         self.vehicleImageUrl = vehicleImageUrl
-        self.maxLoadCapacityKG = maxLoadCapacityKG
+        self.maxLoadCapacity = maxLoadCapacity
+        self.capacityUnit = capacityUnit
     }
 }
 
