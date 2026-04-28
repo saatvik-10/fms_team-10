@@ -136,10 +136,6 @@ struct ContentView: View {
     
     var body: some View {
         Group {
-            //            // ── LOGIN BYPASS (comment out to re-enable login) ──────────────
-            //            FleetManagerMainView()
-            //            // ── END BYPASS ─────────────────────────────────────────────────
-            
             switch session.state {
             case .restoring:
                 ProgressView("Restoring session...")
