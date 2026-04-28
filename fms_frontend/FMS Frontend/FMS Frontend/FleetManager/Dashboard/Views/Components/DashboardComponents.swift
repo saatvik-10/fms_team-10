@@ -939,13 +939,13 @@ struct UnifiedMaintenanceCostCard: View {
                 .frame(height: 150)
             }
             
-            HStack {
-                Label("Monthly aggregated", systemImage: "calendar")
-                Spacer()
-                Text("Values in Indian Rupees (₹)")
-            }
-            .font(.system(size: 10))
-            .foregroundColor(.gray)
+            // HStack {
+            //     Label("Monthly aggregated", systemImage: "calendar")
+            //     Spacer()
+            //     Text("Values in Indian Rupees (₹)")
+            // }
+            // .font(.system(size: 10))
+            // .foregroundColor(.gray)
         }
         .padding(24)
         .background(Color.white)
