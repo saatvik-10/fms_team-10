@@ -1202,10 +1202,10 @@ struct IdleDriversAnalytic: View {
                 Circle()
                     .fill(AppTheme.activeGreen)
                     .frame(width: 7, height: 7)
-                Text("\(drivers.count) ready for dispatch")
-                    .font(AppFonts.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(AppTheme.activeGreen)
+                // Text("\(drivers.count) ready for dispatch")
+                //     .font(AppFonts.caption2)
+                //     .fontWeight(.semibold)
+                //     .foregroundColor(AppTheme.activeGreen)
                 Spacer()
             }
         }
