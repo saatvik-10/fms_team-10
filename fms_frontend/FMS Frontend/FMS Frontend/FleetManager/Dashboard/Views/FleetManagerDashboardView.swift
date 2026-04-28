@@ -127,12 +127,12 @@ struct FleetManagerDashboardView: View {
                             .padding(.vertical, 4)
                         
                         // MARK: - Section 5: Trip History
-                        TripHistoryCard(trips: dataManager.allHistory, onSelect: { trip in
-                            selectedHistoryTrip = trip
-                        }, onViewAll: {
-                            showingAllTrips = true
-                        })
-                        .frame(maxWidth: .infinity)
+                        // TripHistoryCard(trips: dataManager.allHistory, onSelect: { trip in
+                        //     selectedHistoryTrip = trip
+                        // }, onViewAll: {
+                        //     showingAllTrips = true
+                        // })
+                        // .frame(maxWidth: .infinity)
                         
                         // Bottom padding for tab bar
                         Spacer().frame(height: 100)

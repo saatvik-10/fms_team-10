@@ -304,26 +304,26 @@ struct WorkOrderDetailsView: View {
                         }
                         
                         // Action Buttons (Now part of the scroll content)
-                        VStack(spacing: 16) {
-                            if !workOrder.isAccepted {
-                                Button(action: {
-                                    acceptWorkOrder()
-                                }) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "checkmark.shield.fill")
-                                            .font(.system(size: 16, weight: .bold))
-                                        Text("Accept Work Order")
-                                            .font(.system(size: 15, weight: .bold))
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
-                                    .background(AppColors.primary)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(14)
-                                    .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
-                                }
-                            }
-                        }
+                        // VStack(spacing: 16) {
+                        //     if !workOrder.isAccepted {
+                        //         Button(action: {
+                        //             acceptWorkOrder()
+                        //         }) {
+                        //             HStack(spacing: 8) {
+                        //                 Image(systemName: "checkmark.shield.fill")
+                        //                     .font(.system(size: 16, weight: .bold))
+                        //                 Text("Accept Work Order")
+                        //                     .font(.system(size: 15, weight: .bold))
+                        //             }
+                        //             .frame(maxWidth: .infinity)
+                        //             .padding(.vertical, 16)
+                        //             .background(AppColors.primary)
+                        //             .foregroundColor(.white)
+                        //             .cornerRadius(14)
+                        //             .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
+                        //         }
+                        //     }
+                        // }
                         .padding(.top, 32)
                         .padding(.bottom, 40)
                     }
