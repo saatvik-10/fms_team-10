@@ -242,4 +242,47 @@ export class Trip {
 
         return c.json({ trips: enrichedTrips });
     }
+
+    async deleteTrip(c: Context) {
+        const tripId = c.req.param('id');
+        const userId = c.get('userId') as string;
+
+        if (!tripId) {
+            return c.json({ err: 'Trip id is required' }, 400);
+        }
+
+        const trip = await prisma.trips.findFirst({
+            where: {
+                id: tripId,
+                createdById: userId,
+            },
+            select: { id: true, vehicle: true, driver: true },
+        });
+
+        if (!trip) {
+            return c.json({ err: 'Trip not found' }, 404);
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.trips.delete({
+                where: { id: tripId },
+            });
+
+            await tx.vehicle.update({
+                where: { id: trip.vehicle },
+                data: { status: 'AVAILABLE', assignedDriverId: null },
+            });
+
+            await tx.vehicleTrip.deleteMany({
+                where: { vehicleId: trip.vehicle },
+            });
+
+            // await tx.driver.update({
+            //     where: { id: trip.driver },
+            //     data: { status: 'AVAILABLE' },
+            // });
+        });
+
+        return c.json({ message: 'Trip deleted successfully' }, 200);
+    }
 }
