@@ -4,9 +4,7 @@ import Combine
 
 final class ChatService {
     private let client = APIClient.shared
-    // Local Node.js chat server.
-    // 127.0.0.1 only works on Simulator. For a real device use your Mac's LAN IP.
-    // Run `ipconfig getifaddr en0` in Terminal to get the current IP if it changes.
+    // Using production backend
     private let chatBaseURL = "http://10.105.191.51:3000/api"
 
     // MARK: - Fetch Rooms
@@ -19,7 +17,7 @@ final class ChatService {
                     let rooms: [ChatRoom] = try await self?.client.request(
                         path: "/chat/rooms",
                         method: .get,
-                        requiresAuth: false, // 👈 Disabled for local testing
+                        requiresAuth: true,
                         baseURL: self?.chatBaseURL
                     ) ?? []
                     promise(.success(rooms))
@@ -42,7 +40,7 @@ final class ChatService {
                     let messages: [ChatMessage] = try await self?.client.request(
                         path: "/chat/rooms/\(roomId.uuidString)/messages",
                         method: .get,
-                        requiresAuth: false, // 👈 Disabled for local testing
+                        requiresAuth: true,
                         baseURL: self?.chatBaseURL
                     ) ?? []
                     promise(.success(messages))
@@ -66,7 +64,7 @@ final class ChatService {
                         path: "/chat/rooms/\(message.roomId.uuidString)/messages",
                         method: .post,
                         body: message,
-                        requiresAuth: false, // 👈 Disabled for local testing
+                        requiresAuth: true,
                         baseURL: self?.chatBaseURL
                     ) ?? message
                     promise(.success(sentMessage))
@@ -89,7 +87,7 @@ final class ChatService {
                     let _: EmptyResponse = try await self?.client.request(
                         path: "/chat/rooms/\(roomId.uuidString)/read",
                         method: .put,
-                        requiresAuth: false, // 👈 Disabled for local testing
+                        requiresAuth: true,
                         baseURL: self?.chatBaseURL
                     ) ?? EmptyResponse()
                     promise(.success(()))
