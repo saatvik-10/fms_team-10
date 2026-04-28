@@ -106,29 +106,30 @@ struct TripCardView: View {
             
             // Action Buttons (vary by segment)
             HStack(spacing: 12) {
-                if trip.segment == .assigned {
-                    Button(action: { onDecline?() }) {
-                        Text("Decline")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color(UIColor.systemGray6))
-                            .foregroundColor(.primary)
-                            .cornerRadius(10)
-                    }
-                    
-                    Button(action: { onAccept?() }) {
-                        Text("Accept Trip")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color(hex: "0a303a"))
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                } else if trip.segment == .accepted {
+//                if trip.segment == .assigned {
+//                    Button(action: { onDecline?() }) {
+//                        Text("Decline")
+//                            .font(.subheadline)
+//                            .fontWeight(.semibold)
+//                            .frame(maxWidth: .infinity)
+//                            .padding(.vertical, 14)
+//                            .background(Color(UIColor.systemGray6))
+//                            .foregroundColor(.primary)
+//                            .cornerRadius(10)
+//                    }
+//                    
+//                    Button(action: { onAccept?() }) {
+//                        Text("Accept Trip")
+//                            .font(.subheadline)
+//                            .fontWeight(.semibold)
+//                            .frame(maxWidth: .infinity)
+//                            .padding(.vertical, 14)
+//                            .background(Color(hex: "0a303a"))
+//                            .foregroundColor(.white)
+//                            .cornerRadius(10)
+//                    }
+//                }
+                if trip.segment == .accepted {
                     Button(action: { onStart?() }) {
                         Text("View Trip")
                             .font(.subheadline)
