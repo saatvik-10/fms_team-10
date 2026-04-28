@@ -456,9 +456,9 @@ export class Maintenance {
 
       const savedWorkOrder = uploadedKeys.length
         ? await prisma.workOrder.update({
-            where: { id: workOrder.id },
-            data: { workOrderMedia: uploadedKeys },
-          })
+          where: { id: workOrder.id },
+          data: { workOrderMedia: uploadedKeys },
+        })
         : workOrder;
 
       return c.json(
@@ -486,9 +486,12 @@ export class Maintenance {
       return c.json({ err: 'Maintenance profile not found' }, 404);
     }
 
+    const status = c.req.query('status');
+
     const workOrders = await prisma.workOrder.findMany({
       where: {
         maintenanceId: ownership.maintenanceId,
+        ...(status ? { status: status.toUpperCase() } : {}),
       },
       orderBy: {
         createdAt: 'desc',
@@ -503,5 +506,170 @@ export class Maintenance {
     );
 
     return c.json({ workOrders: hydrated });
+  }
+
+  async completeWorkOrder(c: Context) {
+    const userId = c.get('userId') as string;
+    const workOrderId = c.req.param('id');
+    const { totalCost, technicianNotes, checklist, isEmergency, odometer, fuelLevel, consumedParts, workOrderMedia, taskDetails } = await c.req.json();
+
+    const ownership = await getMaintenanceFleetManagerId(userId);
+
+    if (!ownership) {
+      return c.json({ err: 'Maintenance profile not found' }, 404);
+    }
+
+    const workOrder = await prisma.workOrder.findFirst({
+      where: {
+        id: workOrderId,
+        maintenanceId: ownership.maintenanceId,
+      },
+      include: {
+        vehicle: true,
+      }
+    });
+
+    if (!workOrder) {
+      return c.json({ err: 'Work order not found or unauthorized' }, 404);
+    }
+
+    const uploadedMediaKeys: string[] = [];
+    if (workOrderMedia && Array.isArray(workOrderMedia)) {
+      for (const media of workOrderMedia) {
+        if (media.startsWith('data:image') || media.length > 500) {
+          try {
+            const upload = await r2Service.uploadByScope({
+              scope: {
+                role: 'maintenance',
+                userId,
+                vehicleId: '',
+              },
+              fileName: `${workOrderId}_evidence_${nanoid(4)}.jpg`,
+              body: decodeBase64Image(media),
+              contentType: 'image/jpeg',
+            });
+            uploadedMediaKeys.push(upload.key);
+          } catch (e) {
+            console.error('Failed to upload image', e);
+          }
+        } else {
+          uploadedMediaKeys.push(media);
+        }
+      }
+    }
+
+    const updatedMedia = [...(workOrder.workOrderMedia || []), ...uploadedMediaKeys];
+
+    const updatedWorkOrder = await prisma.workOrder.update({
+      where: { id: workOrderId },
+      data: {
+        status: 'COMPLETED',
+        totalCost: Number(totalCost) || 0,
+        workOrderMedia: updatedMedia,
+      },
+    });
+
+    // Automatically create an Inspection record based on the completed Work Order
+    const vehicleName = workOrder.vehicleName || 'Unknown Vehicle';
+    const isBus = vehicleName.toLowerCase().includes('bus');
+
+    await prisma.inspection.create({
+      data: {
+        workOrderId: workOrder.id,
+        title: workOrder.title,
+        vehicleId: workOrder.vehicleId || '-',
+        unitName: vehicleName,
+        unitVIN: workOrder.vehicleId || '-',
+        driverId: 'N/A',
+        timestamp: new Date(),
+        type: 'Post-Trip',
+        vehicleType: isBus ? 'Car' : 'Truck',
+        status: 'Completed',
+        priority: workOrder.priority,
+        items: checklist || [],
+        notes: technicianNotes || '',
+        taskDetails: taskDetails || workOrder.taskDetails || '',
+        maintenanceStaffId: workOrder.maintenanceId,
+        isEmergency: isEmergency || false,
+        odometer: odometer || 'N/A',
+        fuelLevel: fuelLevel || 'N/A',
+        imageUrls: updatedMedia,
+        consumedParts: consumedParts || [],
+        maintenanceId: ownership.maintenanceId,
+      }
+    });
+
+    if (updatedWorkOrder.vehicleId && updatedWorkOrder.totalCost > 0) {
+      await prisma.vehicle.update({
+        where: { id: updatedWorkOrder.vehicleId },
+        data: {
+          totalMaintenanceCost: {
+            increment: updatedWorkOrder.totalCost,
+          },
+        },
+      });
+    }
+
+    return c.json({ message: 'Work order completed successfully', workOrder: updatedWorkOrder });
+  }
+
+  async getInspections(c: Context) {
+    const userId = c.get('userId') as string;
+    const ownership = await getMaintenanceFleetManagerId(userId);
+
+    if (!ownership) {
+      return c.json({ err: 'Maintenance profile not found' }, 404);
+    }
+
+    const inspections = await prisma.inspection.findMany({
+      where: {
+        maintenanceId: ownership.maintenanceId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    const hydrated = await Promise.all(
+      inspections.map(async (insp) => ({
+        ...insp,
+        imageUrls: await getSignedWorkOrderMedia(insp.imageUrls),
+      })),
+    );
+
+    return c.json({ inspections: hydrated });
+  }
+
+  async updateInspection(c: Context) {
+    const userId = c.get('userId') as string;
+    const inspectionId = c.req.param('id');
+    const updates = await c.req.json();
+
+    const ownership = await getMaintenanceFleetManagerId(userId);
+    if (!ownership) {
+      return c.json({ err: 'Maintenance profile not found' }, 404);
+    }
+
+    const existing = await prisma.inspection.findFirst({
+      where: {
+        id: inspectionId,
+        maintenanceId: ownership.maintenanceId,
+      },
+    });
+
+    if (!existing) {
+      return c.json({ err: 'Inspection not found' }, 404);
+    }
+
+    const updated = await prisma.inspection.update({
+      where: { id: inspectionId },
+      data: {
+        notes: updates.notes ?? existing.notes,
+        items: updates.items ?? existing.items,
+        reportUrl: updates.reportUrl ?? existing.reportUrl,
+      },
+    });
+
+    return c.json({ message: 'Inspection updated successfully', inspection: updated });
   }
 }

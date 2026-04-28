@@ -41,6 +41,13 @@ maintenanceRoute.get(
 );
 
 maintenanceRoute.patch(
+  '/work-orders/:id/complete',
+  proxyAuth,
+  requireRole(ROLES.MAINTENANCE),
+  controller.completeWorkOrder,
+);
+
+maintenanceRoute.patch(
   '/update-maintenance/:maintenanceId',
   proxyAuth,
   requireRole(ROLES.MANAGER),
@@ -52,6 +59,20 @@ maintenanceRoute.delete(
   proxyAuth,
   requireRole(ROLES.MANAGER),
   controller.deleteMaintenance,
+);
+
+maintenanceRoute.get(
+  '/inspections',
+  proxyAuth,
+  requireRole(ROLES.MAINTENANCE),
+  controller.getInspections,
+);
+
+maintenanceRoute.patch(
+  '/inspections/:id',
+  proxyAuth,
+  requireRole(ROLES.MAINTENANCE),
+  controller.updateInspection,
 );
 
 export default maintenanceRoute;
