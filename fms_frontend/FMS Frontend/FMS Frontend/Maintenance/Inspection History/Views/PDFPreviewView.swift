@@ -44,12 +44,17 @@ struct PDFKitRepresentedView: UIViewRepresentable {
     
     func makeUIView(context: Context) -> PDFView {
         let pdfView = PDFView()
-        pdfView.document = PDFDocument(url: url)
         pdfView.autoScales = true
         return pdfView
     }
     
     func updateUIView(_ uiView: PDFView, context: Context) {
-        // Update the view if needed
+        if uiView.document == nil {
+            if let data = try? Data(contentsOf: url) {
+                uiView.document = PDFDocument(data: data)
+            } else {
+                uiView.document = PDFDocument(url: url)
+            }
+        }
     }
 }

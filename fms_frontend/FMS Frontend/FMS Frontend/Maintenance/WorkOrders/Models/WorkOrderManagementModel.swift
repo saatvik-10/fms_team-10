@@ -6,8 +6,7 @@
 import Foundation
 
 enum WorkOrderStatus: String, Codable, CaseIterable {
-    case pending = "Pending"
-    case inProgress = "In Progress"
+    case progress = "Progress"
     case completed = "Completed"
 }
 
@@ -58,6 +57,7 @@ struct WorkOrder: Identifiable, Codable {
     var technicianNotes: String = ""
     var partsNeeded: [Part] = []
     var consumedParts: [WorkOrderPartUsage] = []
+    var mediaUrls: [String] = []
     var imageURL: String? = nil
     var imageAsset: String? = nil
     var voiceTranscript: String? = nil
@@ -87,7 +87,7 @@ struct WorkOrder: Identifiable, Codable {
             vehicleVIN: "1HGCM8263JA05",
             serviceType: "Routine PM",
             priority: .high,
-            status: .inProgress,
+            status: .progress,
             taskDetails: "Driver reports: Squealing sounds coming from front passenger side and noticeably decreased braking efficiency under load. Inspection of rotors required for scoring or heat damage.",
             scheduledDate: Date().addingTimeInterval(86400),
             technicianId: "TECH-01",
@@ -133,10 +133,11 @@ extension WorkOrder {
             vehicleVIN: apiItem.vehicleId ?? "-",
             serviceType: apiItem.serviceType ?? "Maintenance",
             priority: WorkOrderPriority(apiValue: apiItem.priority),
-            status: .pending,
+            status: apiItem.status == "COMPLETED" ? .completed : .progress,
             taskDetails: apiItem.taskDetails,
             scheduledDate: apiItem.date,
             technicianId: apiItem.maintenanceId,
+            mediaUrls: apiItem.mediaUrls ?? [],
             driverMediaImages: localMediaImages,
             createdAt: apiItem.createdAt ?? Date(),
             updatedAt: apiItem.updatedAt ?? Date(),

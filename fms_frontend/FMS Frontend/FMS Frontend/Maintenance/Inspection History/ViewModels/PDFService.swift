@@ -120,9 +120,18 @@ class PDFService {
                 currentY += 70
             }
             
-            // 6. AUDIT SCOPE (TASK DETAILS)
+            // 6. AUDIT SCOPE & OBJECTIVES
             drawSectionHeader(title: "AUDIT SCOPE & OBJECTIVES", at: &currentY, in: context)
-            inspection.taskDetails.draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 80), withAttributes: [
+            inspection.title.draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 20), withAttributes: [
+                .font: UIFont.systemFont(ofSize: 10, weight: .bold),
+                .foregroundColor: UIColor.label
+            ])
+            currentY += 30
+
+            // 6.5 AUDITOR NOTES
+            drawSectionHeader(title: "AUDITOR NOTES", at: &currentY, in: context)
+            let notesText = inspection.taskDetails.isEmpty ? "No auditor notes provided." : inspection.taskDetails
+            notesText.draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 80), withAttributes: [
                 .font: UIFont.systemFont(ofSize: 10),
                 .foregroundColor: UIColor.label
             ])
@@ -146,15 +155,7 @@ class PDFService {
                 currentY += 20
             }
 
-            // 8. AUDITOR NOTES
-            drawSectionHeader(title: "AUDITOR TECHNICAL NOTES", at: &currentY, in: context)
-            let notesText = inspection.technicianNotes.isEmpty ? "No auditor notes provided." : inspection.technicianNotes
-            notesText.draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 100), withAttributes: [
-                .font: UIFont.systemFont(ofSize: 10),
-                .foregroundColor: UIColor.label
-            ])
-            currentY += 110
-            
+
             // Footer (Page 1)
             drawFooter(pageNum: 1, context: context)
             

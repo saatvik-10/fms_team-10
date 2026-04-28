@@ -88,6 +88,7 @@ struct WorkOrderAPIItem: Decodable {
   let title: String
   let serviceType: String?
   let priority: String
+  let status: String?
   let date: Date
   let taskDetails: String
   let workOrderMedia: [String]
@@ -140,6 +141,41 @@ struct CreateWorkOrderResponse: Decodable {
 
 struct GetWorkOrdersResponse: Decodable {
   let workOrders: [WorkOrderAPIItem]
+}
+
+struct InspectionAPIItem: Decodable {
+  let id: String
+  let workOrderId: String?
+  let title: String
+  let vehicleId: String
+  let unitName: String
+  let unitVIN: String
+  let driverId: String
+  let timestamp: Date
+  let type: String
+  let vehicleType: String
+  let status: String
+  let priority: String
+  let items: [InspectionItem]
+  let notes: String?
+  let maintenanceStaffId: String
+  let isEmergency: Bool
+  let odometer: String
+  let fuelLevel: String
+  let imageUrls: [String]?
+  let reportUrl: String?
+  let consumedParts: [WorkOrderPartUsage]?
+  let taskDetails: String?
+}
+
+struct GetInspectionsResponse: Decodable {
+  let inspections: [InspectionAPIItem]
+}
+
+struct UpdateInspectionRequest: Encodable {
+  let notes: String?
+  let items: [InspectionItem]?
+  let reportUrl: String?
 }
 
 final class MaintenanceAPI {
@@ -202,11 +238,54 @@ final class MaintenanceAPI {
     )
   }
 
-  func getWorkOrders() async throws -> GetWorkOrdersResponse {
-    try await client.request(
-      path: "/maintenance/work-orders",
+  func getWorkOrders(status: String? = nil) async throws -> GetWorkOrdersResponse {
+    var path = "/maintenance/work-orders"
+    if let status = status {
+        path += "?status=\(status)"
+    }
+    
+    return try await client.request(
+      path: path,
       method: .get,
       requiresAuth: true
     )
   }
+
+  func completeWorkOrder(id: String, request: CompleteWorkOrderRequest) async throws -> BasicMessageResponse {
+    try await client.request(
+      path: "/maintenance/work-orders/\(id)/complete",
+      method: .patch,
+      body: request,
+      requiresAuth: true
+    )
+  }
+
+  func getInspections() async throws -> GetInspectionsResponse {
+    try await client.request(
+      path: "/maintenance/inspections",
+      method: .get,
+      requiresAuth: true
+    )
+  }
+
+  func updateInspection(id: String, request: UpdateInspectionRequest) async throws -> BasicMessageResponse {
+    try await client.request(
+      path: "/maintenance/inspections/\(id)",
+      method: .patch,
+      body: request,
+      requiresAuth: true
+    )
+  }
+}
+
+struct CompleteWorkOrderRequest: Encodable {
+  let totalCost: Double
+  let technicianNotes: String?
+  let checklist: [InspectionItem]?
+  let consumedParts: [WorkOrderPartUsage]?
+  let workOrderMedia: [String]?
+  let isEmergency: Bool?
+  let odometer: String?
+  let fuelLevel: String?
+  let taskDetails: String?
 }

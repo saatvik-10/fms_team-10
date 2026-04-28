@@ -64,9 +64,9 @@ struct DetailedInspectionView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(inspection.unitName)
                                 .font(.title3.bold())
-                            Text("VIN: \(inspection.unitVIN)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            // Text("VIN: \(inspection.unitVIN)")
+                            //     .font(.caption)
+                            //     .foregroundColor(.secondary)
                             
                             HStack {
                                 Text(inspection.type.rawValue)
@@ -92,16 +92,14 @@ struct DetailedInspectionView: View {
 
                 // ── Parity with WorkOrder Details ──────────────────────────
                 
-                // 1. Task Details Card
+                // 1. Audit Scope Card
                 VStack(alignment: .leading, spacing: 12) {
                     SectionHeader(title: "AUDIT SCOPE", icon: "doc.text.fill")
                     
                     VStack(alignment: .leading, spacing: 12) {
-                        ForEach(taskPoints, id: \.self) { point in
-                            Text(point)
-                                .font(.body)
-                                .foregroundColor(.primary)
-                        }
+                        Text(inspection.title)
+                            .font(.body)
+                            .foregroundColor(.primary)
                     }
                     .padding(20)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -118,7 +116,7 @@ struct DetailedInspectionView: View {
                 
                 // 3. Driver Media Card
                 VStack(alignment: .leading, spacing: 12) {
-                    SectionHeader(title: "DRIVER MEDIA", icon: "photo.on.rectangle.angled")
+                    SectionHeader(title: "MEDIA", icon: "photo.on.rectangle.angled")
                     driverMediaContent
                 }
 
@@ -167,10 +165,10 @@ struct DetailedInspectionView: View {
                 }
 
                 // 4. Technician Notes
-                VStack(alignment: .leading, spacing: 12) {
-                    SectionHeader(title: "AUDITOR NOTES", icon: "wrench.and.screwdriver.fill")
-                    technicianNotesContent
-                }
+                // VStack(alignment: .leading, spacing: 12) {
+                //     SectionHeader(title: "AUDITOR NOTES", icon: "wrench.and.screwdriver.fill")
+                //     technicianNotesContent
+                // }
                 
                 // 5. Parts Consumed (Optional for Inspection but added for parity)
                 VStack(alignment: .leading, spacing: 12) {
@@ -178,11 +176,11 @@ struct DetailedInspectionView: View {
                     partsConsumedContent
                 }
                 
-                // 6. Media Gallery
-                VStack(alignment: .leading, spacing: 12) {
-                    SectionHeader(title: "EVIDENCE MEDIA", icon: "camera.fill")
-                    mediaGalleryContent
-                }
+                // // 6. Media Gallery
+                // VStack(alignment: .leading, spacing: 12) {
+                //     SectionHeader(title: "EVIDENCE MEDIA", icon: "camera.fill")
+                //     mediaGalleryContent
+                // }
 
                 Spacer(minLength: 120)
             }
@@ -313,14 +311,28 @@ struct DetailedInspectionView: View {
     @ViewBuilder
     private var driverMediaContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if inspection.driverMediaImages.isEmpty {
-                Text("No driver media uploaded.").font(.subheadline).foregroundColor(.secondary).padding(.vertical, 4)
+            if inspection.imageUrls.isEmpty && inspection.driverMediaImages.isEmpty {
+                Text("No media uploaded.").font(.subheadline).foregroundColor(.secondary).padding(.vertical, 4)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(0..<inspection.driverMediaImages.count, id: \.self) { index in
                             if let uiImage = UIImage(data: inspection.driverMediaImages[index]) {
                                 Image(uiImage: uiImage).resizable().aspectRatio(contentMode: .fill).frame(width: 100, height: 100).cornerRadius(12).clipped()
+                            }
+                        }
+                        ForEach(inspection.imageUrls, id: \.self) { urlString in
+                            if let url = URL(string: urlString) {
+                                AsyncImage(url: url) { phase in
+                                    if let image = phase.image {
+                                        image.resizable().aspectRatio(contentMode: .fill)
+                                    } else if phase.error != nil {
+                                        Color.red.overlay(Image(systemName: "photo").foregroundColor(.white))
+                                    } else {
+                                        ProgressView()
+                                    }
+                                }
+                                .frame(width: 100, height: 100).cornerRadius(12).clipped()
                             }
                         }
                     }
@@ -334,10 +346,10 @@ struct DetailedInspectionView: View {
     @ViewBuilder
     private var technicianNotesContent: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if inspection.technicianNotes.isEmpty {
+            if inspection.taskDetails.isEmpty {
                 Text("No auditor notes yet.").font(.body).foregroundColor(.secondary)
             } else {
-                Text(inspection.technicianNotes).font(.body).foregroundColor(.primary)
+                Text(inspection.taskDetails).font(.body).foregroundColor(.primary)
             }
             Divider().padding(.vertical, 4)
             HStack(alignment: .top, spacing: 10) {
@@ -345,7 +357,7 @@ struct DetailedInspectionView: View {
                 Button(action: {
                     let trimmed = newNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !trimmed.isEmpty {
-                        inspection.technicianNotes = inspection.technicianNotes.isEmpty ? trimmed : inspection.technicianNotes + "\n" + trimmed
+                        inspection.taskDetails = inspection.taskDetails.isEmpty ? trimmed : inspection.taskDetails + "\n" + trimmed
                         store.updateInspection(inspection)
                         newNoteText = ""
                     }
@@ -396,6 +408,20 @@ struct DetailedInspectionView: View {
             HStack(spacing: 12) {
                 ForEach(0..<inspection.imagesData.count, id: \.self) { index in
                     Image(uiImage: UIImage(data: inspection.imagesData[index]) ?? UIImage()).resizable().aspectRatio(contentMode: .fill).frame(width: 90, height: 90).cornerRadius(12).clipped()
+                }
+                ForEach(inspection.imageUrls, id: \.self) { urlString in
+                    if let url = URL(string: urlString) {
+                        AsyncImage(url: url) { phase in
+                            if let image = phase.image {
+                                image.resizable().aspectRatio(contentMode: .fill)
+                            } else if phase.error != nil {
+                                Color.red.overlay(Image(systemName: "photo").foregroundColor(.white))
+                            } else {
+                                ProgressView()
+                            }
+                        }
+                        .frame(width: 90, height: 90).cornerRadius(12).clipped()
+                    }
                 }
                 Button(action: { showingProofSource = true }) {
                     VStack(spacing: 4) { Image(systemName: "plus.circle.fill").font(.title3); Text("Capture").font(.caption2.weight(.bold)) }

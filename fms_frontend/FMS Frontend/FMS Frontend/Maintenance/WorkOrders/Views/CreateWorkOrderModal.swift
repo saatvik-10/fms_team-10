@@ -37,7 +37,7 @@ struct CreateWorkOrderModal: View {
                     classificationSection
                     timingSection
                     taskDetailsSection
-                    driverMediaSection
+                    // driverMediaSection
                     Spacer(minLength: 40)
                 }
                 .padding()
@@ -96,14 +96,14 @@ struct CreateWorkOrderModal: View {
                     loadVehicles: loadVehicles
                 )
             }
-            .sheet(isPresented: $showingDriverMediaPicker) {
-                PhotoPicker(images: Binding(
-                    get: { [] },
-                    set: { images in
-                        driverMediaImages.append(contentsOf: images.compactMap { $0.jpegData(compressionQuality: 0.7) })
-                    }
-                ))
-            }
+            // .sheet(isPresented: $showingDriverMediaPicker) {
+            //     PhotoPicker(images: Binding(
+            //         get: { [] },
+            //         set: { images in
+            //             driverMediaImages.append(contentsOf: images.compactMap { $0.jpegData(compressionQuality: 0.7) })
+            //         }
+            //     ))
+            // }
             .task {
                 await loadVehicles()
             }
@@ -190,82 +190,82 @@ struct CreateWorkOrderModal: View {
         }
     }
 
-    private var driverMediaSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            FormGroup(title: "MEDIA") {
-                VStack(alignment: .leading, spacing: 12) {
-                    if driverMediaImages.isEmpty {
-                        HStack(spacing: 10) {
-                            Text("No media attached.")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 8)
-                    } else {
-                        driverMediaPreviewStrip
-                    }
+    // private var driverMediaSection: some View {
+    //     VStack(alignment: .leading, spacing: 12) {
+    //         FormGroup(title: "MEDIA") {
+    //             VStack(alignment: .leading, spacing: 12) {
+    //                 if driverMediaImages.isEmpty {
+    //                     HStack(spacing: 10) {
+    //                         Text("No media attached.")
+    //                             .font(.subheadline)
+    //                             .foregroundColor(.secondary)
+    //                     }
+    //                     .padding(.vertical, 8)
+    //                 } else {
+    //                     // driverMediaPreviewStrip
+    //                 }
 
-                    Button(action: { showingDriverMediaPicker = true }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "camera.fill")
-                                .font(.subheadline)
-                            Text("Add Media")
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        .foregroundColor(AppColors.primary)
-                    }
-                }
-            }
-        }
-    }
+    //                 Button(action: { showingDriverMediaPicker = true }) {
+    //                     HStack(spacing: 8) {
+    //                         Image(systemName: "camera.fill")
+    //                             .font(.subheadline)
+    //                         Text("Add Media")
+    //                             .font(.subheadline.weight(.semibold))
+    //                     }
+    //                     .foregroundColor(AppColors.primary)
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
-    private var driverMediaPreviewStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(Array(driverMediaImages.enumerated()), id: \.offset) { item in
-                    driverMediaThumbnail(data: item.element, index: item.offset)
-                }
-            }
-        }
-    }
+    // private var driverMediaPreviewStrip: some View {
+    //     ScrollView(.horizontal, showsIndicators: false) {
+    //         HStack(spacing: 10) {
+    //             ForEach(Array(driverMediaImages.enumerated()), id: \.offset) { item in
+    //                 driverMediaThumbnail(data: item.element, index: item.offset)
+    //             }
+    //         }
+    //     }
+    // }
 
-    private func driverMediaThumbnail(data: Data, index: Int) -> some View {
-        ZStack(alignment: .topTrailing) {
-            driverMediaImageView(data: data)
+    // private func driverMediaThumbnail(data: Data, index: Int) -> some View {
+    //     ZStack(alignment: .topTrailing) {
+    //        driverMediaImageView(data: data)
 
-            Button(action: {
-                withAnimation {
-                    removeDriverMedia(at: index)
-                }
-            }) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.5), radius: 2)
-            }
-            .offset(x: 4, y: -4)
-        }
-    }
+    //         Button(action: {
+    //             withAnimation {
+    //                 removeDriverMedia(at: index)
+    //             }
+    //         }) {
+    //             Image(systemName: "xmark.circle.fill")
+    //                 .font(.system(size: 18))
+    //                 .foregroundColor(.white)
+    //                 .shadow(color: .black.opacity(0.5), radius: 2)
+    //         }
+    //         .offset(x: 4, y: -4)
+    //     }
+    // }
 
     @ViewBuilder
-    private func driverMediaImageView(data: Data) -> some View {
-        if let uiImage = UIImage(data: data) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 80, height: 80)
-                .cornerRadius(10)
-                .clipped()
-        } else {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(.systemGray5))
-                .frame(width: 80, height: 80)
-                .overlay {
-                    Image(systemName: "exclamationmark.triangle")
-                        .foregroundColor(.secondary)
-                }
-        }
-    }
+    // private func driverMediaImageView(data: Data) -> some View {
+    //     if let uiImage = UIImage(data: data) {
+    //         Image(uiImage: uiImage)
+    //             .resizable()
+    //             .aspectRatio(contentMode: .fill)
+    //             .frame(width: 80, height: 80)
+    //             .cornerRadius(10)
+    //             .clipped()
+    //     } else {
+    //         RoundedRectangle(cornerRadius: 10)
+    //             .fill(Color(.systemGray5))
+    //             .frame(width: 80, height: 80)
+    //             .overlay {
+    //                 Image(systemName: "exclamationmark.triangle")
+    //                     .foregroundColor(.secondary)
+    //             }
+    //     }
+    // }
 
     private func removeDriverMedia(at index: Int) {
         guard driverMediaImages.indices.contains(index) else { return }

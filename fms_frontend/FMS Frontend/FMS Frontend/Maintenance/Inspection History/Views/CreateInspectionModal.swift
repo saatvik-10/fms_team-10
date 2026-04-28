@@ -196,7 +196,7 @@ struct CreateInspectionModal: View {
                             timestamp: Date(),
                             type: inspectionType,
                             vehicleType: vehicleType,
-                            status: .pending,
+                            status: .progress,
                             items: TripInspection.mockItems(for: vehicleType),
                             notes: notes,
                             maintenanceStaffId: "STAFF-01",

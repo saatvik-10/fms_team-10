@@ -135,5 +135,8 @@ struct InspectionHistoryView: View {
                 }
             }
         }
+        .task {
+            try? await store.refreshInspections()
+        }
     }
 }
