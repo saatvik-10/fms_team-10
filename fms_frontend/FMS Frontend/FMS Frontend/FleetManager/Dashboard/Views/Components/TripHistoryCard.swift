@@ -6,50 +6,50 @@ struct TripHistoryCard: View {
     var onViewAll: (() -> Void)? = nil
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            HStack {
-                Text("Trip History")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(AppColors.primary)
+        // VStack(alignment: .leading, spacing: 15) {
+        //     HStack {
+        //         Text("Trip History")
+        //             .font(.system(size: 16, weight: .semibold))
+        //             .foregroundColor(AppColors.primary)
                 
-                Spacer()
+        //         Spacer()
                 
-                Button(action: { onViewAll?() }) {
-                    HStack(spacing: 4) {
-                        Text("View All")
-                            .font(AppFonts.caption2)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .bold))
-                    }
-                    .foregroundColor(AppColors.primary.opacity(0.6))
-                }
-            }
+        //         Button(action: { onViewAll?() }) {
+        //             HStack(spacing: 4) {
+        //                 Text("View All")
+        //                     .font(AppFonts.caption2)
+        //                 Image(systemName: "chevron.right")
+        //                     .font(.system(size: 10, weight: .bold))
+        //             }
+        //             .foregroundColor(AppColors.primary.opacity(0.6))
+        //         }
+        //     }
             
-            if trips.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 30))
-                        .foregroundColor(.gray.opacity(0.3))
-                    Text("No recent activity")
-                        .font(AppFonts.body)
-                        .foregroundColor(.gray)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(trips.prefix(4)) { trip in
-                        Button(action: { onSelect?(trip) }) {
-                            TripHistoryRow(trip: trip)
-                        }
-                        .buttonStyle(PlainButtonStyle())
+        //     if trips.isEmpty {
+        //         VStack(spacing: 12) {
+        //             Image(systemName: "clock.arrow.circlepath")
+        //                 .font(.system(size: 30))
+        //                 .foregroundColor(.gray.opacity(0.3))
+        //             Text("No recent activity")
+        //                 .font(AppFonts.body)
+        //                 .foregroundColor(.gray)
+        //         }
+        //         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        //     } else {
+        //         VStack(spacing: 0) {
+        //             ForEach(trips.prefix(4)) { trip in
+        //                 Button(action: { onSelect?(trip) }) {
+        //                     TripHistoryRow(trip: trip)
+        //                 }
+        //                 .buttonStyle(PlainButtonStyle())
                         
-                        if trip.id != trips.prefix(4).last?.id {
-                            Divider().padding(.vertical, 8)
-                        }
-                    }
-                }
-            }
-        }
+        //                 if trip.id != trips.prefix(4).last?.id {
+        //                     Divider().padding(.vertical, 8)
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.cardBackground)

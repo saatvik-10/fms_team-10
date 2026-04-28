@@ -138,7 +138,7 @@ struct TripDetailView: View {
         .navigationTitle("Trip Details")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showNavigationMap) {
-            CustomNavigationView(trip: trip)
+            CustomNavigationView(trip: trip, resolvedDestinationCoordinate: resolvedDestinationCoordinate)
         }
         .navigationDestination(isPresented: $showReportIssue) {
             if let lt = lifecycleTrip {

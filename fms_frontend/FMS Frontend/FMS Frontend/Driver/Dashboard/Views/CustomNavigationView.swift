@@ -128,8 +128,8 @@ struct CustomNavigationView: View {
     @State private var showCameraNotice = false
     @Environment(\.dismiss) private var dismiss
 
-    init(trip: Trip) {
-        _viewModel = StateObject(wrappedValue: NavigationViewModel(trip: trip))
+    init(trip: Trip, resolvedDestinationCoordinate: CLLocationCoordinate2D? = nil) {
+        _viewModel = StateObject(wrappedValue: NavigationViewModel(trip: trip, resolvedDestinationCoordinate: resolvedDestinationCoordinate))
     }
 
     var body: some View {

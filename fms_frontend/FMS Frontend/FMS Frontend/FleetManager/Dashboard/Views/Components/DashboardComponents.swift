@@ -939,13 +939,13 @@ struct UnifiedMaintenanceCostCard: View {
                 .frame(height: 150)
             }
             
-            HStack {
-                Label("Monthly aggregated", systemImage: "calendar")
-                Spacer()
-                Text("Values in Indian Rupees (₹)")
-            }
-            .font(.system(size: 10))
-            .foregroundColor(.gray)
+            // HStack {
+            //     Label("Monthly aggregated", systemImage: "calendar")
+            //     Spacer()
+            //     Text("Values in Indian Rupees (₹)")
+            // }
+            // .font(.system(size: 10))
+            // .foregroundColor(.gray)
         }
         .padding(24)
         .background(Color.white)
@@ -1202,10 +1202,10 @@ struct IdleDriversAnalytic: View {
                 Circle()
                     .fill(AppTheme.activeGreen)
                     .frame(width: 7, height: 7)
-                Text("\(drivers.count) ready for dispatch")
-                    .font(AppFonts.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(AppTheme.activeGreen)
+                // Text("\(drivers.count) ready for dispatch")
+                //     .font(AppFonts.caption2)
+                //     .fontWeight(.semibold)
+                //     .foregroundColor(AppTheme.activeGreen)
                 Spacer()
             }
         }

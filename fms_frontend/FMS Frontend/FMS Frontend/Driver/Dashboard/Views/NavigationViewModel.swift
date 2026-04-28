@@ -18,6 +18,9 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
     private let locationManager = CLLocationManager()
     let trip: Trip
 
+    // Resolved destination coordinate (from Directions API or passed in)
+    private var resolvedDestination: CLLocationCoordinate2D?
+
     // Uses clean NavigationInstruction — no HTML, no formatting in ViewModel
     var rawSteps: [NavigationInstruction] = []
     var currentStepIndex = 0
@@ -25,10 +28,12 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
     private var lastLocation: CLLocation?
     private var isFetching = false
     private var hasStartedInitialFetch = false
+    private var isResolvingDestination = false
     // MARK: - Init
 
-    init(trip: Trip) {
+    init(trip: Trip, resolvedDestinationCoordinate: CLLocationCoordinate2D? = nil) {
         self.trip = trip
+        self.resolvedDestination = resolvedDestinationCoordinate
         super.init()
         setupLocationManager()
     }
@@ -53,6 +58,47 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
         // Otherwise first didUpdateLocations triggers fetch
     }
 
+    // MARK: - Coordinate Validation
+
+    private func isValidCoordinate(_ coord: CLLocationCoordinate2D) -> Bool {
+        return coord.latitude != 0.0 && coord.longitude != 0.0 &&
+               coord.latitude >= -90 && coord.latitude <= 90 &&
+               coord.longitude >= -180 && coord.longitude <= 180
+    }
+
+    // MARK: - Resolve Destination (place name → coordinate via Directions API)
+
+    private func resolveDestinationIfNeeded(from origin: CLLocationCoordinate2D) {
+        guard !isResolvingDestination else { return }
+        isResolvingDestination = true
+
+        print("[Nav] Resolving destination from place name: \(trip.destination.name)")
+        Task {
+            do {
+                let result = try await GoogleDirectionsService.shared.fetchDirections(
+                    origin: trip.pickup.name,
+                    destination: trip.destination.name
+                )
+                await MainActor.run {
+                    self.resolvedDestination = result.destinationCoordinate
+                    self.isResolvingDestination = false
+                    print("[Nav] Resolved destination: \(result.destinationCoordinate)")
+                    // Now fetch segment route with the resolved coordinate
+                    self.fetchSegmentRoute(from: origin)
+                }
+            } catch {
+                await MainActor.run {
+                    self.isResolvingDestination = false
+                    self.currentInstruction = "Could not resolve destination. Retrying..."
+                    print("[Nav] Resolve error: \(error.localizedDescription)")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        self.resolveDestinationIfNeeded(from: origin)
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Route Fetch (user location → next stop only)
 
     private func fetchSegmentRoute(from origin: CLLocationCoordinate2D? = nil) {
@@ -70,8 +116,16 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
             return
         }
 
-        guard let destination = CLLocationCoordinate2D?(trip.destination.coordinate) else {
-            print("[Nav] No destination available")
+        // Use resolved destination, fall back to trip coordinate
+        let destination: CLLocationCoordinate2D
+        if let resolved = resolvedDestination, isValidCoordinate(resolved) {
+            destination = resolved
+        } else if isValidCoordinate(trip.destination.coordinate) {
+            destination = trip.destination.coordinate
+        } else {
+            // Destination coordinate is (0,0) — resolve it via place name first
+            print("[Nav] Destination coordinate is invalid (0,0), resolving from place name...")
+            resolveDestinationIfNeeded(from: resolvedOrigin)
             return
         }
 
