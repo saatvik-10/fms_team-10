@@ -91,8 +91,12 @@ struct WorkOrderDetailsView: View {
                                 .font(.largeTitle.weight(.heavy))
                                 .foregroundColor(.primary)
                             
+                            Text(workOrder.vehicleNum)
+                                .font(.title3.weight(.bold))
+                                .foregroundColor(.secondary)
+                            
                             // Scheduled Date Subtitle
-                            Text("Scheduled for: \(workOrder.scheduledDate.formatted(date: .long, time: .shortened))")
+                            Text("Scheduled for: \(workOrder.scheduledDate.formatted(date: .long, time: .omitted))")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                              
@@ -355,7 +359,7 @@ struct WorkOrderDetailsView: View {
         .sheet(isPresented: $showingDatePicker) {
             NavigationStack {
                 VStack {
-                    DatePicker("Select New Date", selection: $selectedDate, in: Date()..., displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("Select New Date", selection: $selectedDate, in: Date()..., displayedComponents: [.date])
                         .datePickerStyle(.graphical)
                         .padding()
                     Spacer()
@@ -372,15 +376,16 @@ struct WorkOrderDetailsView: View {
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button(action: {
-                            let now = Date()
-                            guard selectedDate >= now else {
-                                selectedDate = now
+                            let selectedDay = Calendar.current.startOfDay(for: selectedDate)
+                            let today = Calendar.current.startOfDay(for: Date())
+                            guard selectedDay >= today else {
+                                selectedDate = Date()
                                 showingScheduleValidationAlert = true
                                 return
                             }
 
                             var updated = workOrder
-                            updated.scheduledDate = selectedDate
+                            updated.scheduledDate = selectedDay
                             updated.hasBeenRescheduled = true
                             store.updateWorkOrder(updated)
                             workOrder = updated
@@ -459,12 +464,12 @@ struct WorkOrderDetailsView: View {
         .alert("Success", isPresented: $showingScheduleSuccess) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Work order for \(workOrder.vehicleName) has been rescheduled to \(selectedDate.formatted(date: .abbreviated, time: .shortened)).")
+            Text("Work order for \(workOrder.vehicleName) has been rescheduled to \(selectedDate.formatted(date: .abbreviated, time: .omitted)).")
         }
         .alert("Invalid Schedule", isPresented: $showingScheduleValidationAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Scheduled date and time cannot be before the current time.")
+            Text("Scheduled date cannot be before today.")
         }
         .alert("Checklist Incomplete", isPresented: $showingChecklistIncompleteAlert) {
             Button("OK", role: .cancel) { }

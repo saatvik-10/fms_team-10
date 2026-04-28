@@ -6,7 +6,7 @@ const vehicleRoute = new Hono();
 const controller = new Vehicle();
 
 const authRole = requireRole(ROLES.MANAGER);
-const maintenanceRole = requireRole(ROLES.MAINTENANCE);
+const managerOrMaintenanceRole = requireRole(ROLES.MANAGER, ROLES.MAINTENANCE);
 
 vehicleRoute.post(
   '/create-vehicle-profile',
@@ -17,8 +17,7 @@ vehicleRoute.post(
 vehicleRoute.get(
   '/get-vehicles',
   proxyAuth,
-  authRole,
-  maintenanceRole,
+  managerOrMaintenanceRole,
   controller.getVehicles,
 );
 vehicleRoute.get('/:vehicleId', proxyAuth, authRole, controller.getVehicleById);

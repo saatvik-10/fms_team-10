@@ -152,9 +152,9 @@ struct WorkOrderTaskCard: View {
                             .foregroundColor(.primary)
                             .fixedSize(horizontal: false, vertical: true)
 
-                    Text(order.vehicleName)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.secondary)
+                        Text("\(order.vehicleName) • \(order.vehicleNum)")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary)
                 }
                 
                 Spacer()
@@ -169,15 +169,10 @@ struct WorkOrderTaskCard: View {
 
             Divider()
 
-            // Bottom 3-Part Metadata Row
+            // Bottom metadata row
             HStack(spacing: 0) {
                 // Date Section
                 MetadataCell(icon: "calendar", text: order.scheduledDate.formatted(.dateTime.day().month(.abbreviated)))
-                
-                Divider().frame(height: 16)
-                
-                // Time Section
-                MetadataCell(icon: "clock", text: order.scheduledDate.formatted(.dateTime.hour().minute()))
                 
                 Divider().frame(height: 16)
                 

@@ -19,6 +19,27 @@ maintenanceRoute.get(
   controller.getMaintenances,
 );
 
+maintenanceRoute.get(
+  '/work-orders/vehicles',
+  proxyAuth,
+  requireRole(ROLES.MAINTENANCE),
+  controller.getWorkOrderVehicles,
+);
+
+maintenanceRoute.post(
+  '/work-orders',
+  proxyAuth,
+  requireRole(ROLES.MAINTENANCE),
+  controller.createWorkOrder,
+);
+
+maintenanceRoute.get(
+  '/work-orders',
+  proxyAuth,
+  requireRole(ROLES.MAINTENANCE),
+  controller.getWorkOrders,
+);
+
 maintenanceRoute.patch(
   '/update-maintenance/:maintenanceId',
   proxyAuth,

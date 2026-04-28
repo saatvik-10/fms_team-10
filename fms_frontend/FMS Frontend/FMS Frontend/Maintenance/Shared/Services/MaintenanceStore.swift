@@ -97,6 +97,7 @@ class MaintenanceStore: ObservableObject {
             WorkOrder(
                 title: "Hydraulic Leak Repair",
                 vehicleName: "JCB 3DX",
+                vehicleNum: "KA-01-XX-9999",
                 vehicleVIN: "JCB123456789",
                 serviceType: "Emergency",
                 priority: .high,
@@ -115,6 +116,7 @@ class MaintenanceStore: ObservableObject {
             WorkOrder(
                 title: "Tire Calibration",
                 vehicleName: "Tata Prima",
+                vehicleNum: "KA-02-YY-8888",
                 vehicleVIN: "3VWCP1192BM00",
                 serviceType: "Routine",
                 priority: .medium,
@@ -221,8 +223,22 @@ class MaintenanceStore: ObservableObject {
     func addWorkOrder(_ order: WorkOrder) {
         var normalizedOrder = order
         normalizedOrder.status = autoStatus(for: normalizedOrder)
-        workOrders.insert(normalizedOrder, at: 0)
+        if let backendId = normalizedOrder.backendId,
+           let index = workOrders.firstIndex(where: { $0.backendId == backendId }) {
+            workOrders[index] = normalizedOrder
+        } else {
+            workOrders.insert(normalizedOrder, at: 0)
+        }
         reconcileInventoryForWorkOrderChange(oldParts: [], newParts: order.consumedParts)
+    }
+
+    @MainActor
+    func refreshWorkOrders() async throws {
+        let response = try await MaintenanceAPI.shared.getWorkOrders()
+        let apiOrders = response.workOrders.map { WorkOrder(apiItem: $0) }
+        let localOnlyOrders = workOrders.filter { $0.backendId == nil }
+        workOrders = apiOrders + localOnlyOrders
+        refreshWorkOrderStatuses()
     }
     
     func updateWorkOrder(_ order: WorkOrder) {
