@@ -4,8 +4,11 @@ import Combine
 
 final class ChatService {
     private let client = APIClient.shared
-    // Using production backend
-    private let chatBaseURL = "http://10.105.191.51:3000/api"
+    
+    /// The base URL for chat services. 
+    /// 💡 Local: "http://localhost:3000/api" or your machine's IP
+    /// 💡 Production: Use the global APIConfig.baseURL
+    private let chatBaseURL = "http://localhost:3000/api" // Update this IP if your backend moved
 
     // MARK: - Fetch Rooms
 

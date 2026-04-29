@@ -19,7 +19,7 @@ final class AppSessionStore: ObservableObject {
     @Published var currentRoleValue: AppUserRole = .none
     @Published private(set) var state: State = .restoring
     private(set) var managerProfile: ManagerProfileData?
-    private(set) var driverProfile: UserProfile?
+    private(set) var userProfile: UserProfile?
     
     private let authAPI: AuthAPI
     private var didRestoreSession = false
@@ -80,9 +80,10 @@ final class AppSessionStore: ObservableObject {
                     username: profile.username ?? "",
                     role: profile.role.rawValue
                 )
-            } else if profile.role == .driver {
-                driverProfile = profile
             }
+            
+            // Store the full profile for any authenticated user
+            userProfile = profile
             
             state = .authenticated(AppUserRole(profile.role))
         } catch {
@@ -103,6 +104,7 @@ final class AppSessionStore: ObservableObject {
     func logout() {
         authAPI.logout()
         managerProfile = nil
+        userProfile = nil
         state = .unauthenticated
     }
 }
@@ -174,12 +176,12 @@ struct ContentView: View {
                     let userId: String
                     let name: String
                     
-                    if let manager = session.managerProfile {
+                    if let profile = session.userProfile {
+                        userId = profile.id
+                        name = profile.name
+                    } else if let manager = session.managerProfile {
                         userId = manager.id
                         name = manager.name
-                    } else if let driver = session.driverProfile {
-                        userId = driver.id
-                        name = driver.name
                     } else {
                         userId = "unknown"
                         name = "User"
@@ -204,7 +206,7 @@ struct ContentView: View {
                    let senderId = userInfo["senderId"] as? String {
                     
                     // Optional: Try to avoid self-notifying by checking senderId against current session ID.
-                    let currentIdStr = session.managerProfile?.id ?? session.driverProfile?.id ?? ""
+                    let currentIdStr = session.userProfile?.id ?? session.managerProfile?.id ?? ""
                     if senderId != currentIdStr {
                         self.latestNotificationData = (title, body)
                         withAnimation { self.showNotification = true }
