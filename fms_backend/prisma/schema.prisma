@@ -66,7 +66,7 @@ model Driver {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  trips     Trips[]
+  trips Trips[]
 }
 
 model Maintenance {
@@ -86,9 +86,9 @@ model Maintenance {
 }
 
 model WorkOrder {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   vehicleName String
-  vehicleNum  String @default("UNKNOWN")
+  vehicleNum  String   @default("UNKNOWN")
   vehicleId   String?
   vehicle     Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
   title       String
@@ -103,20 +103,20 @@ model WorkOrder {
   maintenanceId String
   maintenance   Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
 
-  tripId        String?
+  tripId String?
 
-  status        String @default("PROGRESS")
-  totalCost     Float  @default(0)
+  status    String @default("PROGRESS")
+  totalCost Float  @default(0)
 
-  inspection    Inspection?
+  inspection Inspection?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Inspection {
-  id                 String   @id @default(cuid())
-  workOrderId        String?  @unique
+  id                 String     @id @default(cuid())
+  workOrderId        String?    @unique
   workOrder          WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
   title              String
   vehicleId          String
@@ -126,59 +126,60 @@ model Inspection {
   timestamp          DateTime
   type               String
   vehicleType        String
-  status             String   @default("Pending")
-  priority           String   @default("Medium")
+  status             String     @default("Pending")
+  priority           String     @default("Medium")
   items              Json
   consumedParts      Json?
   notes              String?
   taskDetails        String?
   maintenanceStaffId String
-  isEmergency        Boolean  @default(false)
+  isEmergency        Boolean    @default(false)
   odometer           String
   fuelLevel          String
   imageUrls          String[]
   reportUrl          String?
   maintenanceId      String
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("inspections")
 }
 
 model Vehicle {
-  id                 String        @id @default(cuid())
-  make               String
-  model              String
-  type               String
-  status             VehicleStatus @default(AVAILABLE)
-  totalMaintenanceCost Float @default(0)
-  imageName          String?
-  year               String?
-  color              String?
-  operationalStatus  String?       @default("OPERATIONAL")
-  assessmentReason   String?
-  chassisNumber      String        @unique @map("chassis_num")
-  registrationNumber String        @unique @map("registration_num")
+  id                   String        @id @default(cuid())
+  make                 String
+  model                String
+  type                 String
+  status               VehicleStatus @default(AVAILABLE)
+  totalMaintenanceCost Float         @default(0)
+  imageName            String?
+  year                 String?
+  color                String?
+  operationalStatus    String?       @default("OPERATIONAL")
+  assessmentReason     String?
+  chassisNumber        String        @unique @map("chassis_num")
+  registrationNumber   String        @unique @map("registration_num")
 
   rcImageUrl      String?
   vehicleImageUrl String?
   rcImageKey      String?
   vehicleImageKey String?
 
-  maxLoadCapacity  Float @default(0)
-  capacityUnit       String @default("KG")
+  maxLoadCapacity Float  @default(0)
+  capacityUnit    String @default("KG")
 
   assignedDriverId String? @unique
 
   createdById String?
-  createdBy   User?   @relation("UserCreatedVehicles", fields: [createdById], references: [id])
+  createdBy   User?       @relation("UserCreatedVehicles", fields: [createdById], references: [id])
   workOrders  WorkOrder[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  trips      Trips[]
+  trips                         Trips[]
+  vehiclePredictiveMaintenances VehiclePredictiveMaintenance[]
 
   @@map("vehicles")
 }
@@ -244,7 +245,7 @@ model TripHistory {
 }
 
 model Trips {
-  id                  String @id @default(cuid())
+  id                  String   @id @default(cuid())
   sourceLocation      String
   destinationLocation String
   productType         String
@@ -256,7 +257,7 @@ model Trips {
   driver              Driver?  @relation(fields: [driverId], references: [id])
   departureTime       String
   createdById         String
-  status              String  @default("PENDING")
+  status              String   @default("PENDING")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -279,6 +280,79 @@ model IssueReport {
 
   @@index([driverUserId])
   @@map("issue_reports")
+}
+
+model VehiclePredictiveMaintenance {
+  id          String   @id @default(cuid())
+  engineTemp  Int      @map("engine_temp")
+  distance    Int
+  brakeEvents Int      @map("brake_events")
+  sharpTurns  Int      @map("sharp_turns")
+  cargoWeight Float    @map("cargo_weight")
+  weatherTemp Int      @map("weather_temp")
+  humidity    Int
+  vehicleId   String?
+  vehicle     Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("vehicle_predictive_maintenance")
+}
+
+model ChatRoom {
+  id               String       @id @default(uuid())
+  name             String
+  avatarInitials   String?      @map("avatar_initials")
+  roomType         ChatRoomType @default(GROUP) @map("room_type")
+  participants     String[]
+  participantNames Json?        @map("participant_names")
+  lastActivity     DateTime     @default(now()) @map("last_activity")
+
+  messages ChatMessage[]
+  reads    ChatRoomRead[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id             String  @id @default(uuid())
+  roomId         String  @map("room_id")
+  senderId       String  @map("sender_id")
+  senderName     String  @map("sender_name")
+  senderRole     String  @map("sender_role")
+  content        String
+  status         String  @default("sent")
+  isStarred      Boolean @default(false) @map("is_starred")
+  attachmentType String? @map("attachment_type")
+  attachmentUrl  String? @map("attachment_url")
+
+  room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  timestamp DateTime @default(now())
+
+  @@index([roomId])
+  @@map("chat_messages")
+}
+
+model ChatRoomRead {
+  id         String   @id @default(cuid())
+  roomId     String   @map("room_id")
+  userId     String   @map("user_id")
+  lastReadAt DateTime @default(now()) @map("last_read_at")
+
+  room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("chat_room_reads")
+}
+
+enum ChatRoomType {
+  DIRECT
+  GROUP
+  BROADCAST
 }
 
 enum Role {
