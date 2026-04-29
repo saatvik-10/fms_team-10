@@ -53,15 +53,8 @@ struct TripStatusHelper {
         case "IN_TRANSIT":
             return .ongoing
         default:
-            break
+            return .scheduled
         }
-
-        // Time-based fallback: if departure has passed, treat as ongoing
-        if let raw = departureRaw, let departureDate = parseDate(raw) {
-            return departureDate > Date() ? .scheduled : .ongoing
-        }
-
-        return .scheduled
     }
 
     /// Returns true if the departure time has passed (i.e. trip can be started).
