@@ -21,11 +21,13 @@ struct MaintenanceUserAuthenticationView: View {
                     Image(systemName: "wrench.and.screwdriver.fill")
                         .font(.system(size: 80))
                         .foregroundColor(AppColors.primary)
+                        .accessibilityHidden(true)
                     
                     Text("FMS Maintenance")
                         .font(.largeTitle)
                         .fontWeight(.black)
                         .foregroundColor(AppColors.primary)
+                        .accessibilityAddTraits(.isHeader)
                 }
                 
                 // Login Card
@@ -55,6 +57,8 @@ struct MaintenanceUserAuthenticationView: View {
                                 .font(.footnote)
                                 .foregroundColor(AppColors.primary)
                         }
+                        .accessibilityLabel("Forgot Password")
+                        .accessibilityHint("Double tap to reset your staff account password")
                     }
                 }
                 .padding(.horizontal)
@@ -80,8 +84,11 @@ struct MaintenanceUserAuthenticationView: View {
             Image(systemName: icon)
                 .foregroundColor(AppColors.primary.opacity(0.6))
                 .frame(width: 30)
+                .accessibilityHidden(true)
             TextField(placeholder, text: text)
                 .autocapitalization(.none)
+                .accessibilityLabel(placeholder)
+                .accessibilityHint("Enter your \(placeholder.lowercased())")
         }
         .padding()
         .background(AppColors.secondaryBackground.opacity(0.1))
@@ -94,7 +101,10 @@ struct MaintenanceUserAuthenticationView: View {
             Image(systemName: icon)
                 .foregroundColor(AppColors.primary.opacity(0.6))
                 .frame(width: 30)
+                .accessibilityHidden(true)
             SecureField(placeholder, text: text)
+                .accessibilityLabel(placeholder)
+                .accessibilityHint("Enter your \(placeholder.lowercased())")
         }
         .padding()
         .background(AppColors.secondaryBackground.opacity(0.1))

@@ -185,6 +185,7 @@ struct DashboardSectionHeader: View {
         Text(title)
             .font(AppFonts.title2)
             .foregroundColor(AppTheme.primary)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 
