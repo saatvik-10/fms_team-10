@@ -165,6 +165,22 @@ export class Auth {
       return c.json({ err: 'Invalid credentials' }, 401);
     }
 
+    const token = await jwtAuth({
+      userId: user.id,
+      role: user.role,
+    });
+
+    return c.json({
+      message: 'Logged in successfully',
+      token,
+      user: {
+        ...profileData,
+        role: user.role,
+        username: user.username,
+      },
+    });
+
+    /*
     const userEmail = user.email?.trim();
     if (!userEmail) {
       return c.json({ err: 'No email found for this account' }, 400);
@@ -193,8 +209,10 @@ export class Auth {
         username: user.username,
       },
     });
+    */
   }
 
+  /*
   async sendOtpMail(c: Context) {
     const body = await c.req.json();
     const result = otpMailSchema.safeParse(body);
@@ -277,6 +295,7 @@ export class Auth {
 
     return c.json('Failure');
   }
+  */
 
   async getProfile(c: Context) {
     const userId = c.get('userId') as string;
