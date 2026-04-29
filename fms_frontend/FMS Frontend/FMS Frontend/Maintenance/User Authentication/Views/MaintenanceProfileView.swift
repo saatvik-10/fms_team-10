@@ -46,7 +46,7 @@ struct MaintenanceProfileView: View {
                     VStack(spacing: 4) {
                         Text(profile?.name ?? "Maintenance")
                             .font(.title2.bold())
-                            .accessibilityAddTraits(.header)
+                            .accessibilityAddTraits(.isHeader)
                         Text("Senior Maintenance Technician")
                             .font(.subheadline)
                             .foregroundColor(.secondary)

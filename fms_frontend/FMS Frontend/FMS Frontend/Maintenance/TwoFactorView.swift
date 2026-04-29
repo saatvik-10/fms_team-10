@@ -175,7 +175,7 @@ struct TwoFactorView: View {
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
-                        .accessibilityAddTraits(.header)
+                        .accessibilityAddTraits(.isHeader)
                     
                     Text("Welcome back to Fleetro")
                         .font(.system(size: 15, weight: .medium))
