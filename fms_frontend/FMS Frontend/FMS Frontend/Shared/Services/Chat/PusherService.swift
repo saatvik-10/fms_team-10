@@ -64,14 +64,23 @@ final class PusherService: ObservableObject, PusherDelegate {
     // MARK: - Decoding Logic
     
     private func decodeMessage(from data: [String: Any]) -> ChatMessage? {
-        // This helper maps the JSON from Pusher to your ChatMessage model
+        // Map backend's snake_case keys to ChatMessage properties
         guard let idString = data["id"] as? String, let id = UUID(uuidString: idString),
-              let roomIdString = data["roomId"] as? String, let roomId = UUID(uuidString: roomIdString),
-              let senderId = data["senderId"] as? String,
-              let senderName = data["senderName"] as? String,
-              let senderRole = data["senderRole"] as? String,
+              let roomIdString = (data["room_id"] as? String) ?? (data["roomId"] as? String), 
+              let roomId = UUID(uuidString: roomIdString),
+              let senderId = (data["sender_id"] as? String) ?? (data["senderId"] as? String),
+              let senderName = (data["sender_name"] as? String) ?? (data["senderName"] as? String),
+              let senderRole = (data["sender_role"] as? String) ?? (data["senderRole"] as? String),
               let content = data["content"] as? String else {
+            print("⚠️ Pusher: Failed to decode message data: \(data)")
             return nil
+        }
+        
+        let timestamp: Date
+        if let tsString = data["timestamp"] as? String {
+            timestamp = ISO8601DateFormatter().date(from: tsString) ?? Date()
+        } else {
+            timestamp = Date()
         }
         
         return ChatMessage(
@@ -81,7 +90,7 @@ final class PusherService: ObservableObject, PusherDelegate {
             senderName: senderName,
             senderRole: senderRole,
             content: content,
-            timestamp: Date() // Or decode from data["timestamp"] if provided
+            timestamp: timestamp
         )
     }
     
