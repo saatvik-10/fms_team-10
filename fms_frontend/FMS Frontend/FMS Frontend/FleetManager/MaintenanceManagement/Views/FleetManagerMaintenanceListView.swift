@@ -179,23 +179,6 @@ struct MaintenancePersonnelCard: View {
                         .foregroundColor(AppTheme.textPrimary)
                 }
                 Spacer()
-                
-                Menu {
-                    Button(action: { onEdit() }) {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    Button(role: .destructive, action: { showingDeleteAlert = true }) {
-                        Label("Delete", systemImage: "trash")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.gray)
-                        .padding(10)
-                        .background(Color.gray.opacity(0.1))
-                        .clipShape(Circle())
-                }
-                .disabled(isDeleting)
             }
             .alert("Delete Personnel?", isPresented: $showingDeleteAlert) {
                 Button("Cancel", role: .cancel) { }
@@ -222,6 +205,14 @@ struct MaintenancePersonnelCard: View {
         .background(Color.white)
         .cornerRadius(12)
         .modifier(AppTheme.cardShadow())
+        .contextMenu {
+            Button(action: { onEdit() }) {
+                Label("Edit", systemImage: "pencil")
+            }
+            Button(role: .destructive, action: { showingDeleteAlert = true }) {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
     
     private func deletePerson() async {

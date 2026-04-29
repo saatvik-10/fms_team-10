@@ -4,6 +4,9 @@ struct FleetManagerDriversListView: View {
     @EnvironmentObject var dataManager: FleetDataManager
     @State private var searchText = ""
     @State private var showingAddDriver = false
+    @State private var driverToEdit: Driver? = nil
+    @State private var driverToDelete: Driver? = nil
+    @State private var showingDeleteAlert = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -96,6 +99,17 @@ struct FleetManagerDriversListView: View {
                                     DriverRowView(driver: driver)
                                 }
                                 .buttonStyle(PlainButtonStyle())
+                                .contextMenu {
+                                    Button(action: { driverToEdit = driver }) {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                    Button(role: .destructive, action: {
+                                        driverToDelete = driver
+                                        showingDeleteAlert = true
+                                    }) {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
                             }
                         }
                     }
@@ -106,6 +120,19 @@ struct FleetManagerDriversListView: View {
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingAddDriver) { DriverModalView().environmentObject(dataManager) }
+        .sheet(item: $driverToEdit) { driver in
+            DriverModalView(driverToEdit: driver).environmentObject(dataManager)
+        }
+        .alert("Confirm Delete", isPresented: $showingDeleteAlert, presenting: driverToDelete) { driver in
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                Task {
+                    await dataManager.deleteDriver(driver)
+                }
+            }
+        } message: { driver in
+            Text("Are you sure you want to delete \(driver.name)?")
+        }
         .task {
             do {
                 try await dataManager.refreshDrivers()
