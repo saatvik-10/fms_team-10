@@ -450,11 +450,8 @@ struct FleetDashboardHeaderView: View {
                 session.logout()
                 dismiss()
             }) {
-                HStack {
-                    Image(systemName: "arrow.right.square.fill")
-                    Text("Sign Out of Session")
+                    Text("Logout")
                         .fontWeight(.bold)
-                }
                 .font(AppFonts.body)
                 .foregroundColor(.red)
                 .frame(maxWidth: .infinity)
