@@ -2,11 +2,19 @@ import SwiftUI
 
 // MARK: - Vehicle Status Filter (no "All")
 private enum VehicleFilter: String, CaseIterable {
-    case inTransit   = "IN TRANSIT"
+    case inTransit   = "IN_TRANSIT"
+    case scheduled   = "SCHEDULED"
+    case idle        = "AVAILABLE"
     case maintenance = "MAINTENANCE"
-    case idle        = "IDLE"
 
-    var displayName: String { rawValue }
+    var displayName: String {
+        switch self {
+        case .inTransit: return "IN TRANSIT"
+        case .maintenance: return "MAINTENANCE"
+        case .scheduled: return "SCHEDULED"
+        case .idle: return "IDLE"
+        }
+    }
 }
 
 struct FleetManagerVehiclesListView: View {

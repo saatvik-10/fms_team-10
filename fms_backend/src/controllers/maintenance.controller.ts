@@ -6,6 +6,7 @@ import {
 } from '../validators/maintenance.validator';
 import { nanoid } from 'nanoid';
 import { prisma } from '../../prisma';
+import { WorkOrderStatus, VehicleStatus } from '../../generated/prisma';
 import { hashPassword } from '../lib/hashPassword';
 import { sendCredentialsMail } from '../services/resend.service';
 import { calculateAge, decodeBase64Image, deleteUploadedKeys, getImageMeta } from '../lib/utils';
@@ -563,11 +564,19 @@ export class Maintenance {
     const updatedWorkOrder = await prisma.workOrder.update({
       where: { id: workOrderId },
       data: {
-        status: 'COMPLETED',
+        status: WorkOrderStatus.COMPLETED,
         totalCost: Number(totalCost) || 0,
         workOrderMedia: updatedMedia,
       },
     });
+
+    if (updatedWorkOrder.vehicleId) {
+      const nextStatus = updatedWorkOrder.tripId ? VehicleStatus.SCHEDULED : VehicleStatus.AVAILABLE;
+      await prisma.vehicle.update({
+        where: { id: updatedWorkOrder.vehicleId },
+        data: { status: nextStatus },
+      });
+    }
 
     // Automatically create an Inspection record based on the completed Work Order
     const vehicleName = workOrder.vehicleName || 'Unknown Vehicle';

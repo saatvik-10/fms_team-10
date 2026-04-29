@@ -5,7 +5,11 @@ import CoreLocation
 
 enum TripStatus: String, CaseIterable {
     case scheduled = "SCHEDULED"
+<<<<<<< HEAD
     case ongoing   = "IN TRANSIT"
+=======
+    case inTransit = "IN TRANSIT"
+>>>>>>> 2ef748cbb5af745efc1818e835726b23f6d63e50
     case completed = "COMPLETED"
 }
 
@@ -134,8 +138,14 @@ struct LifecycleTrip: Identifiable {
     
     var segment: TripSegment {
         switch status {
+<<<<<<< HEAD
         case .scheduled, .ongoing: return .accepted
         case .completed:           return .past
+=======
+        case .scheduled: return .accepted
+        case .inTransit: return .accepted
+        case .completed: return .past
+>>>>>>> 2ef748cbb5af745efc1818e835726b23f6d63e50
         }
     }
 
