@@ -139,4 +139,12 @@ final class TripAPI {
       requiresAuth: true
     )
   }
+
+  func deleteTrip(id: String) async throws {
+    let _: EmptyResponse = try await client.request(
+      path: "/trip/delete-trip?id=\(id)",
+      method: .delete,
+      requiresAuth: true
+    )
+  }
 }
