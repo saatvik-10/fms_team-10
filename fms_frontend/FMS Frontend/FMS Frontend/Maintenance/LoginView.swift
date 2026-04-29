@@ -50,22 +50,6 @@ struct LoginView: View {
                         Color.clear.frame(height: 32)
                         
                         actionButtonSection
-                        
-                        // --- DEVELOPER BYPASS ---
-                        VStack(spacing: 12) {
-                            HStack {
-                                Rectangle().frame(height: 0.5).foregroundColor(.white.opacity(0.3))
-                                Text("DEV BYPASS").font(.system(size: 10, weight: .bold)).foregroundColor(.white.opacity(0.5))
-                                Rectangle().frame(height: 0.5).foregroundColor(.white.opacity(0.3))
-                            }
-                            .padding(.top, 24)
-                            
-                            HStack(spacing: 12) {
-                                bypassButton(title: "Driver", role: .driver, icon: "steeringwheel")
-                                bypassButton(title: "Manager", role: .manager, icon: "briefcase.fill")
-                                bypassButton(title: "Maint.", role: .maintenance, icon: "wrench.and.screwdriver.fill")
-                            }
-                        }
                     }
                     .padding(32)
                     .frame(maxWidth: 400) // Fixed max width for consistent card look
@@ -330,29 +314,7 @@ struct LoginView: View {
         }
     }
 
-    @ViewBuilder
-    private func bypassButton(title: String, role: AppUserRole, icon: String) -> some View {
-        Button(action: {
-            session.debugLogin(as: role)
-            userRole = role
-        }) {
-            VStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                Text(title)
-                    .font(.system(size: 10, weight: .bold))
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 54)
-            .background(Color.white.opacity(0.1))
-            .foregroundColor(.white)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-            )
-        }
-    }
+
 }
 
 #Preview {
