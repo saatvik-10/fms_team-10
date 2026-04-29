@@ -109,15 +109,23 @@ final class ChatService {
     // MARK: - Create Room
 
     /// POST /chat/rooms
-    func createRoom(with targetId: String, initialMessage: String) -> AnyPublisher<ChatRoom, Error> {
+    func createRoom(targetId: String, senderId: String, senderName: String, senderRole: String, initialMessage: String) -> AnyPublisher<ChatRoom, Error> {
         return Future { [weak self] promise in
             Task {
                 guard let self = self else { return }
                 do {
+                    let body: [String: String] = [
+                        "targetId": targetId,
+                        "senderId": senderId,
+                        "senderName": senderName,
+                        "senderRole": senderRole,
+                        "message": initialMessage
+                    ]
+                    
                     let room: ChatRoom = try await self.client.request(
                         path: "/chat/rooms",
                         method: .post,
-                        body: ["targetId": targetId, "message": initialMessage],
+                        body: body,
                         requiresAuth: true,
                         baseURL: self.chatBaseURL
                     )

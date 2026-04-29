@@ -56,6 +56,25 @@ final class PusherService: ObservableObject, PusherDelegate {
         })
     }
     
+    func subscribeToUser(userId: String) {
+        let cleanId = userId.replacingOccurrences(of: "-", with: "").lowercased()
+        let channelName = "user_\(cleanId)"
+        print("📡 Pusher: Subscribing to user channel \(channelName)")
+        
+        let userChannel = pusher?.subscribe(channelName)
+        
+        // Bind to "new-message" on the user channel as well
+        userChannel?.bind(eventName: "new-message", eventCallback: { [weak self] event in
+            guard let self = self,
+                  let dataString = event.data,
+                  let data = try? JSONSerialization.jsonObject(with: Data(dataString.utf8)) as? [String: Any] else { return }
+            
+            if let message = self.decodeMessage(from: data) {
+                self.messageSubject.send(message)
+            }
+        })
+    }
+    
     func disconnect() {
         print("📡 Pusher: Disconnecting")
         pusher?.disconnect()

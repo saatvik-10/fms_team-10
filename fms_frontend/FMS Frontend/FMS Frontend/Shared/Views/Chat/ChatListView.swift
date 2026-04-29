@@ -154,7 +154,7 @@ struct ChatRoomRow: View {
                 }
                 
                 HStack {
-                    Text(room.lastMessagePreview)
+                    Text(room.lastMessagePreview(for: viewModel.currentUserId))
                         .font(.system(size: 14))
                         .foregroundColor(room.unreadCount > 0 ? .primary : .gray)
                         .lineLimit(1)

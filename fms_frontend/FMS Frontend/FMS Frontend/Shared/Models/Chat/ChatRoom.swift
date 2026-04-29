@@ -98,9 +98,21 @@ extension ChatRoom {
         return avatarInitials ?? String(name.prefix(1)).uppercased()
     }
 
-    var lastMessagePreview: String {
+    func lastMessagePreview(for currentUserId: String?) -> String {
         guard let msg = lastMessage else { return "No messages yet" }
-        return "\(msg.senderName.components(separatedBy: " ").first ?? "User"): \(msg.content)"
+        
+        if msg.senderId == currentUserId {
+            return "You: \(msg.content)"
+        }
+        
+        if roomType == .direct {
+            // No need to prefix with name in a 1-on-1 chat
+            return msg.content
+        }
+        
+        // In group chats, prefix with the sender's first name
+        let firstName = msg.senderName.components(separatedBy: " ").first ?? "User"
+        return "\(firstName): \(msg.content)"
     }
 
     var lastActivityFormatted: String {

@@ -35,6 +35,7 @@ class ChatViewModel: ObservableObject {
         self.currentUserRole = role
         
         pusher.connect(userId: userId)
+        pusher.subscribeToUser(userId: userId)
         loadRooms()
     }
     
@@ -110,6 +111,12 @@ class ChatViewModel: ObservableObject {
                 }
             } receiveValue: { [weak self] rooms in
                 self?.rooms = rooms.sorted(by: { $0.lastActivity > $1.lastActivity })
+                
+                // 📡 NEW: Subscribe to ALL rooms for real-time updates (unread counts, previews)
+                // even when we are just looking at the room list.
+                rooms.forEach { room in
+                    self?.pusher.subscribeToRoom(roomId: room.id)
+                }
             }
             .store(in: &cancellables)
     }
@@ -177,8 +184,18 @@ class ChatViewModel: ObservableObject {
     }
     
     func startNewConversation(with name: String, initials: String, role: String, targetId: String, initialMessage: String) {
+        guard let userId = currentUserId,
+              let userName = currentUserName,
+              let userRole = currentUserRole else { return }
+              
         isLoading = true
-        chatService.createRoom(with: targetId, initialMessage: initialMessage)
+        chatService.createRoom(
+            targetId: targetId,
+            senderId: userId,
+            senderName: userName,
+            senderRole: userRole,
+            initialMessage: initialMessage
+        )
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
                 self?.isLoading = false
@@ -186,10 +203,24 @@ class ChatViewModel: ObservableObject {
                     self?.errorMessage = "Failed to start chat: \(error.localizedDescription)"
                 }
             } receiveValue: { [weak self] newRoom in
-                // Add the new room and navigate to it
-                self?.rooms.insert(newRoom, at: 0)
-                // Optionally: fetch messages for this new room if the initial message is already in DB
-                self?.loadMessages(for: newRoom.id)
+                var room = newRoom
+                if room.lastMessage == nil {
+                    let injectedMessage = ChatMessage(
+                        roomId: room.id,
+                        senderId: userId,
+                        senderName: userName,
+                        senderRole: userRole,
+                        content: initialMessage
+                    )
+                    room.lastMessage = injectedMessage
+                }
+                
+                // Add the new room to the top of the list
+                self?.rooms.insert(room, at: 0)
+                
+                // Subscribe and fetch history
+                self?.pusher.subscribeToRoom(roomId: room.id)
+                self?.loadMessages(for: room.id)
             }
             .store(in: &cancellables)
     }
