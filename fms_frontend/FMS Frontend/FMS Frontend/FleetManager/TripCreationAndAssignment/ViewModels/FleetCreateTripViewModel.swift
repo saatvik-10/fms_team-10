@@ -13,7 +13,7 @@ class FleetCreateTripViewModel: ObservableObject {
     
     @Published var selectedVehicleID: String = ""
     @Published var selectedDriverID: String = ""
-    @Published var scheduledDate: Date = Date()
+    @Published var scheduledDate: Date = Date().addingTimeInterval(2 * 3600)
     @Published var productName: String = ""
     @Published var loadAmount: String = ""
     @Published var loadUnit: String = "Tons"
@@ -70,11 +70,13 @@ class FleetCreateTripViewModel: ObservableObject {
                 } else if let minIndex = durationParts.firstIndex(where: { $0.contains("min") }), minIndex > 0 {
                     hours += (Double(durationParts[minIndex - 1]) ?? 0.0) / 60.0
                 }
-                if hours == 0 { hours = dist / 60.0 } // fallback
+                let drivingHours = hours
+                let breaks = max(0, floor((drivingHours - 0.001) / 4))
+                let totalHours = drivingHours + (breaks * 1.5)
                 
                 self.encodedPolyline = result.polyline
                 self.estimatedDistance = dist
-                self.estimatedDuration = hours
+                self.estimatedDuration = totalHours
                 self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
                 self.isCalculatingRoute = false
             } catch {

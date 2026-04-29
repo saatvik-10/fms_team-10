@@ -1140,81 +1140,114 @@ struct DriverDistanceChart: View {
 }
 
 // MARK: - Available Drivers Card
-struct IdleDriversAnalytic: View {
-    let drivers: [Driver]
+// MARK: - Driver Statistics Card
+struct DriverStatsCard: View {
+    let total: Int
+    let inTransit: Int
+    let idle: Int
+    let offDuty: Int
+    
+    private var chartData: [(status: String, count: Int, color: Color)] {
+        [
+            ("In Transit", inTransit, AppTheme.statusInTransit),
+            ("Idle / Available", idle, AppTheme.activeGreen),
+            ("Off Duty", offDuty, Color.gray.opacity(0.4))
+        ].filter { $0.count >= 0 } // Keep all for legend consistency even if 0
+    }
+    
+    private var utilizationPercentage: Double {
+        guard total > 0 else { return 0 }
+        return Double(inTransit + idle) / Double(total) * 100
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("Available Drivers")
+                Text("Driver Availability")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppTheme.primary)
-                Text("Ready for dispatch")
+                Text("Real-time workforce distribution")
                     .font(AppFonts.caption1)
                     .foregroundColor(.gray)
             }
             
-            if drivers.isEmpty {
-                VStack(spacing: 8) {
+            Spacer(minLength: 0)
+            
+            if total == 0 {
+                VStack(spacing: 12) {
                     Image(systemName: "person.slash.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.gray.opacity(0.3))
-                    Text("All drivers on duty")
-                        .font(AppFonts.caption1)
+                        .font(.system(size: 32))
+                        .foregroundColor(AppTheme.primary.opacity(0.1))
+                    Text("No driver data available")
+                        .font(AppFonts.subheadline)
                         .foregroundColor(.gray)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .frame(maxWidth: .infinity)
+                .frame(height: 120)
+                .background(AppTheme.primary.opacity(0.02))
+                .cornerRadius(16)
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(drivers) { driver in
-                            VStack(spacing: 6) {
-                                ZStack {
-                                    Circle()
-                                        .fill(AppTheme.primary.opacity(0.1))
-                                        .frame(width: 44, height: 44)
-                                    Text(String(driver.name.prefix(2)).uppercased())
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundColor(AppTheme.primary)
-                                }
-                                .overlay(
-                                    Circle()
-                                        .fill(AppTheme.activeGreen)
-                                        .frame(width: 10, height: 10)
-                                        .offset(x: 15, y: -15)
-                                )
-                                
-                                Text(driver.name.components(separatedBy: " ").first ?? "")
-                                    .font(AppFonts.caption2)
-                                    .foregroundColor(.primary)
-                                    .lineLimit(1)
-                            }
-                            .frame(width: 56)
+                // Activity Ring and Legend
+                HStack(spacing: 20) {
+                    // Ring
+                    ZStack {
+                        Chart(chartData, id: \.status) { data in
+                            SectorMark(
+                                angle: .value("Count", data.count),
+                                innerRadius: .ratio(0.7),
+                                angularInset: 1.5
+                            )
+                            .foregroundStyle(data.color)
+                            .cornerRadius(5)
+                        }
+                        .frame(width: 100, height: 100)
+                        
+                        VStack(spacing: 0) {
+                            Text("\(total)")
+                                .font(.system(size: 24, weight: .black))
+                                .foregroundColor(AppTheme.primary)
+                            Text("DRIVERS")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(.gray)
+                                .tracking(1)
                         }
                     }
-                    .padding(.vertical, 4)
+                    
+                    // Legend
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(chartData, id: \.status) { data in
+                            HStack(spacing: 10) {
+                                Circle()
+                                    .fill(data.color)
+                                    .frame(width: 8, height: 8)
+                                
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(data.status)
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(AppTheme.primary.opacity(0.8))
+                                    Text("\(data.count) Drivers")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                Spacer()
+                            }
+                        }
+                    }
                 }
+                .padding(.vertical, 10)
             }
             
             Spacer(minLength: 0)
-            
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(AppTheme.activeGreen)
-                    .frame(width: 7, height: 7)
-                // Text("\(drivers.count) ready for dispatch")
-                //     .font(AppFonts.caption2)
-                //     .fontWeight(.semibold)
-                //     .foregroundColor(AppTheme.activeGreen)
-                Spacer()
-            }
         }
-        .padding(20)
+        .padding(24)
+        .frame(height: 260)
         .background(Color.white)
         .cornerRadius(16)
         .modifier(AppTheme.cardShadow())
     }
 }
+
 
 // MARK: - Least Travelled Vehicles Chart
 struct LeastTravelledVehiclesChart: View {
@@ -1252,6 +1285,8 @@ struct LeastTravelledVehiclesChart: View {
                     .font(AppFonts.caption1)
                     .foregroundColor(.gray)
             }
+            
+            Spacer(minLength: 0)
 
             if entries.isEmpty {
                 Text("No vehicle history available.")
@@ -1290,8 +1325,10 @@ struct LeastTravelledVehiclesChart: View {
                         }
                     }
                 }
-                .frame(height: CGFloat(entries.count) * 38)
+                .frame(height: CGFloat(entries.count) * 30)
             }
+            
+            Spacer(minLength: 0)
 
             HStack(spacing: 5) {
                 Image(systemName: "exclamationmark.triangle.fill")
@@ -1303,7 +1340,8 @@ struct LeastTravelledVehiclesChart: View {
             }
             .padding(.top, 4)
         }
-        .padding(20)
+        .padding(24)
+        .frame(height: 260)
         .background(Color.white)
         .cornerRadius(16)
         .modifier(AppTheme.cardShadow())

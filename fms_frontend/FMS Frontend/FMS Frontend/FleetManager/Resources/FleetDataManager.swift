@@ -173,8 +173,12 @@ class FleetDataManager: ObservableObject {
         }
     }
     
-    var idleDriversCount: Int { idleDrivers.count }
-    var idleDrivers: [Driver] { drivers.filter { $0.status == .active || $0.status == .offDuty } }
+    var totalDriversCount: Int { drivers.count }
+    var inTransitDriversCount: Int { drivers.filter { $0.status == .onTrip }.count }
+    var offDutyDriversCount: Int { drivers.filter { $0.status == .offDuty }.count }
+    var idleDriversCount: Int { drivers.filter { $0.status == .active || $0.status == .onDuty }.count }
+    
+    var idleDrivers: [Driver] { drivers.filter { $0.status == .active || $0.status == .onDuty } }
     
     // Computed Metrics
     var activeCount: Int {

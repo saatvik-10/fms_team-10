@@ -109,7 +109,12 @@ struct FleetManagerDashboardView: View {
                                     LeastTravelledVehiclesChart(vehicles: dataManager.vehicles)
                                         .frame(maxWidth: .infinity)
                                     
-                                    IdleDriversAnalytic(drivers: dataManager.idleDrivers)
+                                    DriverStatsCard(
+                                        total: dataManager.totalDriversCount,
+                                        inTransit: dataManager.inTransitDriversCount,
+                                        idle: dataManager.idleDriversCount,
+                                        offDuty: dataManager.offDutyDriversCount
+                                    )
                                         .frame(maxWidth: .infinity)
                                 }
                             }

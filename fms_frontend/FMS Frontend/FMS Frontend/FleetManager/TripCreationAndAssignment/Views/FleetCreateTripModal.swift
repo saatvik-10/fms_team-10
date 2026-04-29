@@ -13,7 +13,7 @@ struct FleetCreateTripModal: View {
     
     @State private var selectedVehicleID: String = ""
     @State private var selectedDriverID: String = ""
-    @State private var scheduledDate: Date = Date()
+    @State private var scheduledDate: Date = Date().addingTimeInterval(2 * 3600)
     @State private var productName: String = ""
     @State private var loadAmount: String = ""
     @State private var loadUnit: String = "KG"
@@ -123,7 +123,7 @@ struct FleetCreateTripModal: View {
                 }
                 
                 Section(header: Text("Schedule")) {
-                    DatePicker("Departure Time", selection: $scheduledDate, displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("Departure Time", selection: $scheduledDate, in: Date().addingTimeInterval(2 * 3600)..., displayedComponents: [.date, .hourAndMinute])
                 }
                 
                 if estimatedCost > 0 || isCalculatingRoute {
@@ -220,7 +220,9 @@ struct FleetCreateTripModal: View {
                 )
                 
                 let dist = Double(result.distance.replacingOccurrences(of: " km", with: "")) ?? 50
-                let hours = dist / 60
+                let drivingHours = dist / 60
+                let breaks = max(0, floor((drivingHours - 0.001) / 4))
+                let hours = drivingHours + (breaks * 1.5)
                 
                 await MainActor.run {
                     estimatedDistance = dist
