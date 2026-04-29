@@ -496,7 +496,7 @@ struct DriverProfileView: View {
                 .padding(.vertical, 16)
                 // Group avatar + name + role as one VoiceOver element
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(session.driverProfile?.name ?? "Driver"), Certified Commercial Driver")
+                .accessibilityLabel("\(session.userProfile?.name ?? "Driver"), Certified Commercial Driver")
             }
             .listRowBackground(Color.clear)
             

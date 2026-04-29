@@ -281,6 +281,62 @@ model IssueReport {
   @@map("issue_reports")
 }
 
+model ChatRoom {
+  id               String       @id @default(uuid())
+  name             String
+  avatarInitials   String?      @map("avatar_initials")
+  roomType         ChatRoomType @default(GROUP) @map("room_type")
+  participants     String[]
+  participantNames Json?        @map("participant_names")
+  lastActivity     DateTime     @default(now()) @map("last_activity")
+
+  messages ChatMessage[]
+  reads    ChatRoomRead[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id             String  @id @default(uuid())
+  roomId         String  @map("room_id")
+  senderId       String  @map("sender_id")
+  senderName     String  @map("sender_name")
+  senderRole     String  @map("sender_role")
+  content        String
+  status         String  @default("sent")
+  isStarred      Boolean @default(false) @map("is_starred")
+  attachmentType String? @map("attachment_type")
+  attachmentUrl  String? @map("attachment_url")
+
+  room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  timestamp DateTime @default(now())
+
+  @@index([roomId])
+  @@map("chat_messages")
+}
+
+model ChatRoomRead {
+  id         String   @id @default(cuid())
+  roomId     String   @map("room_id")
+  userId     String   @map("user_id")
+  lastReadAt DateTime @default(now()) @map("last_read_at")
+
+  room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("chat_room_reads")
+}
+
+enum ChatRoomType {
+  DIRECT
+  GROUP
+  BROADCAST
+}
+
 enum Role {
   SUPER_ADMIN
   MANAGER
