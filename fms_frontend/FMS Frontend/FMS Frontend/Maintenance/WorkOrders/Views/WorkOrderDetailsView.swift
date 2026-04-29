@@ -42,6 +42,17 @@ struct WorkOrderDetailsView: View {
         workOrder.checklist.allSatisfy { $0.result != .pending }
     }
     
+    /// Returns true only when the work order originated from a driver-reported
+    /// issue during a trip (i.e. has a tripId, voice transcript, or driver media).
+    /// Work orders created manually by maintenance personnel for pre-inspection
+    /// will not have any of these, so the driver sections stay hidden.
+    private var hasDriverReportedContent: Bool {
+        let hasTripId = workOrder.tripId != nil && !(workOrder.tripId?.isEmpty ?? true)
+        let hasVoiceNotes = workOrder.voiceTranscript != nil && !(workOrder.voiceTranscript?.isEmpty ?? true)
+        let hasDriverMedia = !workOrder.driverMediaImages.isEmpty
+        return hasTripId || hasVoiceNotes || hasDriverMedia
+    }
+    
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
@@ -145,16 +156,19 @@ struct WorkOrderDetailsView: View {
                         //     .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
                         // }
                         
-                        // Driver Notes Card
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "DRIVER NOTES", icon: "person.wave.2.fill")
-                            driverNotesContent
-                        }
-                        
-                        // Driver Media Card
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "MEDIA", icon: "camera.fill")
-                            driverMediaContent
+                        // Driver Notes & Media — only shown for driver-reported issues
+                        if hasDriverReportedContent {
+                            // Driver Notes Card
+                            VStack(alignment: .leading, spacing: 12) {
+                                SectionHeader(title: "DRIVER NOTES", icon: "person.wave.2.fill")
+                                driverNotesContent
+                            }
+                            
+                            // Driver Media Card
+                            VStack(alignment: .leading, spacing: 12) {
+                                SectionHeader(title: "MEDIA", icon: "camera.fill")
+                                driverMediaContent
+                            }
                         }
                         
                         // System Checklist

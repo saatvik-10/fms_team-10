@@ -55,8 +55,10 @@ class MaintenanceDashboardViewModel: ObservableObject {
     }
 
     private func computeAlertItems(workOrders: [WorkOrder], inventoryParts: [InventoryPart]) {
+        // Only show alerts for driver-reported issues (work orders with a tripId).
+        // Maintenance-created work orders are already in the Pending Work Orders card.
         let workOrderAlerts = workOrders
-            .filter { $0.status != .completed }
+            .filter { $0.status != .completed && $0.tripId != nil && !($0.tripId?.isEmpty ?? true) }
             .map { order in
                 DashboardAlertItem(
                     id: "wo-\(order.id.uuidString)",

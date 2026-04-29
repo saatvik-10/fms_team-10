@@ -39,14 +39,58 @@ struct InventoryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 
-                // Dashboard Header Style
-                HStack {
-                    Text("Inventory")
-                        .font(.system(size: 34, weight: .bold))
-                    Spacer()
+                // ── Inline Search Bar + Filter ────────────────────────────────
+                HStack(spacing: 12) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundColor(.secondary)
+                        
+                        TextField("Search SKUs or category", text: $searchText)
+                            .font(.system(size: 17))
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                        
+                        if !searchText.isEmpty {
+                            Button {
+                                searchText = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(Color(.systemGray5))
+                    .cornerRadius(14)
+                    
+                    // Filter button – right of search bar
+                    Menu {
+                        Button("All Categories") { selectedCategory = nil }
+                        if !categories.isEmpty {
+                            Divider()
+                            ForEach(categories, id: \.self) { category in
+                                Button {
+                                    selectedCategory = category
+                                } label: {
+                                    HStack {
+                                        Text(category)
+                                        if selectedCategory == category {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: selectedCategory == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundColor(selectedCategory == nil ? .secondary : AppColors.primary)
+                    }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 4)
                 
                 // ── Section 1: Parts Catalog ──────────────────────────────────
                 VStack(alignment: .leading, spacing: 12) {
@@ -85,45 +129,37 @@ struct InventoryView: View {
                 
                 Spacer(minLength: 48)
             }
+            .padding(.top, 8)
         }
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
-        .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "Search SKUs or category")
+        .navigationTitle("Inventory")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                Menu {
-                    Button("All Categories") { selectedCategory = nil }
-                    if !categories.isEmpty {
-                        Divider()
-                        ForEach(categories, id: \.self) { category in
-                            Button(category) { selectedCategory = category }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                HStack(spacing: 16) {
+                    Menu {
+                        Button(role: .destructive) {
+                            showingResetConfirmation = true
+                        } label: {
+                            Label("Reset Inventory", systemImage: "trash")
                         }
-                    }
-                } label: {
-                    Image(systemName: selectedCategory == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(selectedCategory == nil ? .secondary : AppColors.primary)
-                }
-
-                Button(action: { showingFileImporter = true }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
-                }
-
-                Menu {
-                    Button(role: .destructive) {
-                        showingResetConfirmation = true
                     } label: {
-                        Label("Reset Inventory", systemImage: "trash")
+                        Image(systemName: "ellipsis.circle")
+                            .font(.system(size: 18))
+                            .foregroundColor(AppColors.primary)
                     }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 18))
-                }
-                
-                NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
-                    Image(systemName: "person.circle")
-                        .font(.system(size: 22))
+
+                    Button(action: { showingFileImporter = true }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(AppColors.primary)
+                    }
+
+                    NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
+                        Image(systemName: "person.circle")
+                            .font(.system(size: 22))
+                            .foregroundColor(AppColors.primary)
+                    }
                 }
             }
         }

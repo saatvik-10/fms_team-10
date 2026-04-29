@@ -48,21 +48,7 @@ struct InventoryDetailView: View {
                         if isEditing {
                             editableRow(title: "Reorder Threshold", text: $editPartMinStock, keyboard: .numberPad)
                         } else {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text("Reorder Threshold")
-                                        .font(.subheadline)
-                                    Spacer()
-                                    Text("\(part.minStock)")
-                                        .fontWeight(.bold)
-                                }
-                                
-                                Stepper("Adjust Threshold", value: Binding(
-                                    get: { part.minStock },
-                                    set: { store.updateInventoryThreshold(for: part.partId, newThreshold: $0) }
-                                ), in: 0...1000)
-                                .labelsHidden()
-                            }
+                            detailRow(title: "Reorder Threshold", value: "\(part.minStock)")
                         }
                         
                         detailRow(title: "Stock Status", value: part.isLowStock ? "LOW STOCK" : "OPTIMAL", color: part.isLowStock ? .orange : .green)
@@ -74,7 +60,7 @@ struct InventoryDetailView: View {
                         } else {
                             detailRow(title: "Unit Price", value: "₹\(part.unitPriceInr, default: "%.2f")")
                         }
-                        detailRow(title: "Total Inventory Cost", value: "₹\(part.totalValue, default: "%.2f")", color: AppColors.primary)
+                        detailRow(title: "Total Cost", value: "₹\(part.totalValue, default: "%.2f")", color: AppColors.primary)
                     }
                     
                     Section("Supply & Logistics") {
@@ -105,30 +91,16 @@ struct InventoryDetailView: View {
                 .listStyle(.insetGrouped)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        HStack(spacing: 16) {
-                            Button(action: {
-                                guard !isEditing else { return }
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    showingAddStock.toggle()
-                                }
-                            }) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(isEditing ? .secondary : AppColors.primary)
+                        Button(action: {
+                            if isEditing {
+                                saveEdits(part: part)
+                            } else {
+                                startEditing(part: part)
                             }
-                            .disabled(isEditing)
-
-                            Button(action: {
-                                if isEditing {
-                                    saveEdits(part: part)
-                                } else {
-                                    startEditing(part: part)
-                                }
-                            }) {
-                                Text(isEditing ? "Save" : "Edit")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(AppColors.primary)
-                            }
+                        }) {
+                            Text(isEditing ? "Save" : "Edit")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(AppColors.primary)
                         }
                     }
                     if isEditing {
