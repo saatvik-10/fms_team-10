@@ -70,9 +70,9 @@ struct NewChatView: View {
     @State private var message: String = ""
     
     let allContacts = [
-        ("Chad (Driver)", "CD", "driver", "chad_user"),
-        ("John (Maintenance)", "JM", "maintenance", "john_user"),
-        ("Fleet Manager", "FM", "manager", "manager_user")
+        ("Rahul Sharma (Driver)", "RS", "driver", "KM-1029"),
+        ("Suresh Kumar (Maint.)", "SK", "maintenance", "clx9876543210"),
+        ("Vikram Singh (Manager)", "VS", "manager", "clx1234567890")
     ]
     
     private var availableContacts: [(String, String, String, String)] {

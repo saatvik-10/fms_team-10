@@ -101,6 +101,32 @@ final class AppSessionStore: ObservableObject {
         state = .authenticated(role)
     }
     
+    func debugLogin(as role: AppUserRole) {
+        switch role {
+        case .manager:
+            userProfile = UserProfile.mockManager
+            managerProfile = ManagerProfileData(
+                id: UserProfile.mockManager.id,
+                name: UserProfile.mockManager.name,
+                email: UserProfile.mockManager.email,
+                phone: UserProfile.mockManager.phone,
+                address: UserProfile.mockManager.address,
+                username: UserProfile.mockManager.username,
+                role: "MANAGER"
+            )
+        case .driver:
+            userProfile = UserProfile.mockDriver
+        case .maintenance:
+            userProfile = UserProfile.mockMaintenance
+        case .none:
+            logout()
+            return
+        }
+        // Set a dummy token to satisfy any token checks
+        TokenStore.shared.save(token: "mock_token_\(role)")
+        state = .authenticated(role)
+    }
+    
     func logout() {
         authAPI.logout()
         managerProfile = nil

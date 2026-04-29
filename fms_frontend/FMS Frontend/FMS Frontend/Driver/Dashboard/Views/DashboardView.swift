@@ -463,14 +463,14 @@ struct DriverProfileView: View {
     @State private var isOffDuty: Bool = false
     
     var formattedExpiryDate: String {
-        guard let date = session.driverProfile?.expiryDate else { return "-" }
+        guard let date = session.userProfile?.expiryDate else { return "-" }
         let formatter = DateFormatter()
         formatter.dateFormat = "dd MMM yyyy"
         return formatter.string(from: date)
     }
     
     var formattedClasses: String {
-        guard let classes = session.driverProfile?.classes, !classes.isEmpty else { return "-" }
+        guard let classes = session.userProfile?.classes, !classes.isEmpty else { return "-" }
         return classes.joined(separator: ", ")
     }
     
@@ -484,7 +484,7 @@ struct DriverProfileView: View {
                         .foregroundColor(AppColors.primary)
                     
                     VStack(spacing: 4) {
-                        Text(session.driverProfile?.name ?? "Driver")
+                        Text(session.userProfile?.name ?? "Driver")
                             .font(.title2.bold())
                         Text("Certified Commercial Driver")
                             .font(.subheadline)
@@ -497,13 +497,13 @@ struct DriverProfileView: View {
             .listRowBackground(Color.clear)
             
             Section("Account Details") {
-                AppProfileInfoRow(label: "USERNAME", value: session.driverProfile?.username ?? "-")
-                AppProfileInfoRow(label: "PHONE", value: session.driverProfile?.phone ?? "-")
-                AppProfileInfoRow(label: "EMAIL", value: session.driverProfile?.email ?? "-")
-                AppProfileInfoRow(label: "DL NUMBER", value: session.driverProfile?.licenceNumber ?? "-")
+                AppProfileInfoRow(label: "USERNAME", value: session.userProfile?.username ?? "-")
+                AppProfileInfoRow(label: "PHONE", value: session.userProfile?.phone ?? "-")
+                AppProfileInfoRow(label: "EMAIL", value: session.userProfile?.email ?? "-")
+                AppProfileInfoRow(label: "DL NUMBER", value: session.userProfile?.licenceNumber ?? "-")
                 AppProfileInfoRow(label: "EXPIRY DATE", value: formattedExpiryDate)
                 AppProfileInfoRow(label: "DL CLASSES", value: formattedClasses)
-                AppProfileInfoRow(label: "JOINED", value: session.driverProfile?.createdAt.formatted(date: .abbreviated, time: .omitted) ?? "-")
+                AppProfileInfoRow(label: "JOINED", value: session.userProfile?.createdAt.formatted(date: .abbreviated, time: .omitted) ?? "-")
 
                 HStack {
                     Text("TURN ON OFFDUTY")

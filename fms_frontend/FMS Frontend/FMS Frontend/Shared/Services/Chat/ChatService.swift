@@ -16,12 +16,13 @@ final class ChatService {
     func fetchRooms() -> AnyPublisher<[ChatRoom], Error> {
         return Future { [weak self] promise in
             Task {
+                guard let self = self else { return }
                 do {
-                    let rooms: [ChatRoom] = try await self?.client.request(
+                    let rooms: [ChatRoom] = try await self.client.request(
                         path: "/chat/rooms",
                         method: .get,
                         requiresAuth: true,
-                        baseURL: self?.chatBaseURL
+                        baseURL: self.chatBaseURL
                     ) ?? []
                     promise(.success(rooms))
                 } catch {
@@ -39,12 +40,13 @@ final class ChatService {
     func fetchMessages(for roomId: UUID) -> AnyPublisher<[ChatMessage], Error> {
         return Future { [weak self] promise in
             Task {
+                guard let self = self else { return }
                 do {
-                    let messages: [ChatMessage] = try await self?.client.request(
+                    let messages: [ChatMessage] = try await self.client.request(
                         path: "/chat/rooms/\(roomId.uuidString)/messages",
                         method: .get,
                         requiresAuth: true,
-                        baseURL: self?.chatBaseURL
+                        baseURL: self.chatBaseURL
                     ) ?? []
                     promise(.success(messages))
                 } catch {
@@ -62,13 +64,14 @@ final class ChatService {
     func sendMessage(_ message: ChatMessage) -> AnyPublisher<ChatMessage, Error> {
         return Future { [weak self] promise in
             Task {
+                guard let self = self else { return }
                 do {
-                    let sentMessage: ChatMessage = try await self?.client.request(
+                    let sentMessage: ChatMessage = try await self.client.request(
                         path: "/chat/rooms/\(message.roomId.uuidString)/messages",
                         method: .post,
                         body: message,
                         requiresAuth: true,
-                        baseURL: self?.chatBaseURL
+                        baseURL: self.chatBaseURL
                     ) ?? message
                     promise(.success(sentMessage))
                 } catch {
@@ -86,15 +89,41 @@ final class ChatService {
     func markRead(roomId: UUID) -> AnyPublisher<Void, Error> {
         return Future { [weak self] promise in
             Task {
+                guard let self = self else { return }
                 do {
-                    let _: EmptyResponse = try await self?.client.request(
+                    let _: EmptyResponse = try await self.client.request(
                         path: "/chat/rooms/\(roomId.uuidString)/read",
                         method: .put,
                         requiresAuth: true,
-                        baseURL: self?.chatBaseURL
+                        baseURL: self.chatBaseURL
                     ) ?? EmptyResponse()
                     promise(.success(()))
                 } catch {
+                    promise(.failure(error))
+                }
+            }
+        }
+        .eraseToAnyPublisher()
+    }
+
+    // MARK: - Create Room
+
+    /// POST /chat/rooms
+    func createRoom(with targetId: String, initialMessage: String) -> AnyPublisher<ChatRoom, Error> {
+        return Future { [weak self] promise in
+            Task {
+                guard let self = self else { return }
+                do {
+                    let room: ChatRoom = try await self.client.request(
+                        path: "/chat/rooms",
+                        method: .post,
+                        body: ["targetId": targetId, "message": initialMessage],
+                        requiresAuth: true,
+                        baseURL: self.chatBaseURL
+                    )
+                    promise(.success(room))
+                } catch {
+                    print("❌ ChatService Error (CreateRoom): \(error)")
                     promise(.failure(error))
                 }
             }

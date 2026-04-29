@@ -77,6 +77,11 @@ class ChatViewModel: ObservableObject {
             }
             
             rooms = updatedRooms.sorted(by: { $0.lastActivity > $1.lastActivity })
+        } else {
+            // 💡 NEW: If the room doesn't exist yet (e.g., someone just started a chat with us),
+            // reload the entire room list so it appears in the UI.
+            print("🆕 ChatViewModel: Received message for unknown room \(message.roomId) — reloading rooms...")
+            loadRooms()
         }
         
         // Post notification only if not currently in the room
@@ -172,9 +177,21 @@ class ChatViewModel: ObservableObject {
     }
     
     func startNewConversation(with name: String, initials: String, role: String, targetId: String, initialMessage: String) {
-        // In a "proper" setup, this would be a POST to /chat/rooms/create
-        // For now, we'll stick to the existing rooms or handle creation if the API supports it.
-        print("Creating new conversation with \(name)...")
+        isLoading = true
+        chatService.createRoom(with: targetId, initialMessage: initialMessage)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] completion in
+                self?.isLoading = false
+                if case .failure(let error) = completion {
+                    self?.errorMessage = "Failed to start chat: \(error.localizedDescription)"
+                }
+            } receiveValue: { [weak self] newRoom in
+                // Add the new room and navigate to it
+                self?.rooms.insert(newRoom, at: 0)
+                // Optionally: fetch messages for this new room if the initial message is already in DB
+                self?.loadMessages(for: newRoom.id)
+            }
+            .store(in: &cancellables)
     }
     
     func deleteRoom(at offsets: IndexSet) {
