@@ -83,15 +83,18 @@ struct MaintenanceAlertsListView: View {
                         let matchingInventoryPart = alert.inventoryPartId.flatMap { partId in
                             store.inventoryParts.first { $0.partId == partId }
                         }
-                        NavigationLink(destination: Group {
+
+                        let destination: AnyView = {
                             if let order = matchingWorkOrder {
-                                WorkOrderDetailsView(workOrder: order)
-                            } else if let part = matchingInventoryPart {
-                                InventoryDetailView(part: part)
-                            } else {
-                                EmptyView()
+                                return AnyView(WorkOrderDetailsView(workOrder: order))
                             }
-                        }) {
+                            if let part = matchingInventoryPart {
+                                return AnyView(InventoryDetailView(partId: part.partId))
+                            }
+                            return AnyView(EmptyView())
+                        }()
+
+                        NavigationLink(destination: destination) {
                             HStack(spacing: 14) {
                                 ZStack {
                                     Circle()
@@ -101,7 +104,7 @@ struct MaintenanceAlertsListView: View {
                                         .font(.system(size: 16))
                                         .foregroundColor(alertIconColor)
                                 }
-                                
+
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(alert.title)
                                         .font(.system(size: 16, weight: .semibold))

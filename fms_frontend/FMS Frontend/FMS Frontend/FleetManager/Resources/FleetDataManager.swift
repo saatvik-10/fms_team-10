@@ -194,7 +194,7 @@ class FleetDataManager: ObservableObject {
     }
     
     var scheduledCount: Int {
-        vehicles.filter { $0.currentTrip?.status == .scheduled }.count
+        vehicles.filter { $0.status != .maintenance && $0.currentTrip?.status == .scheduled }.count
     }
     
     var allHistory: [VehicleTrip] {
@@ -423,6 +423,8 @@ class FleetDataManager: ObservableObject {
                     switch item.status {
                     case "IN_TRANSIT": return .inTransit
                     case "MAINTENANCE": return .maintenance
+                    case "AVAILABLE": return .idle
+                    case "SCHEDULED": return .scheduled
                     default: return .idle
                     }
                 }(),
@@ -443,7 +445,15 @@ class FleetDataManager: ObservableObject {
                         duration: trip.duration ?? "",
                         costEstimate: trip.costEstimate ?? "",
                         startTime: trip.startTime,
-                        status: trip.status == "IN_TRANSIT" ? .inTransit : (trip.status == "COMPLETED" ? .completed : .scheduled),
+                        status: {
+                            switch trip.status {
+                            case "IN_TRANSIT": return .inTransit
+                            case "COMPLETED": return .completed
+                            case "SCHEDULED": return .scheduled
+                            case "PENDING": return .pending
+                            default: return .scheduled
+                            }
+                        }(),
                         productType: trip.productType ?? "",
                         loadAmount: trip.loadAmount ?? ""
                     )

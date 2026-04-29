@@ -374,11 +374,16 @@ export class Driver {
         userId: true,
         dlFrontImageUrl: true,
         dlBackImageUrl: true,
+        status: true,
       },
     });
 
     if (!driver) {
       return c.json({ err: 'Driver not found' }, 404);
+    }
+
+    if (driver.status !== 'OFF_DUTY') {
+      return c.json({ err: 'Driver can only be deleted when their status is OFF_DUTY' }, 400);
     }
 
     await prisma.$transaction([

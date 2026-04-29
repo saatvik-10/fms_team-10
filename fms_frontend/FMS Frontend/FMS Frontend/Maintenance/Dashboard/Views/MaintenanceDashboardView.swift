@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
 
 struct MaintenanceDashboardView: View {
     @Binding var isLoggedIn: Bool
+    @Binding var selectedTab: Int
     @EnvironmentObject var store: MaintenanceStore
     @StateObject private var viewModel = MaintenanceDashboardViewModel()
 
@@ -29,11 +30,7 @@ struct MaintenanceDashboardView: View {
                 systemStatusSection
                     .padding(.top, 8)
 
-                // ── Section 2: Quick Actions ────────────────────────────────
-                quickActionsSection
-                    .padding(.top, 28)
-
-                // ── Section 3: Maintenance Alerts ─────────────────────────────
+                // ── Section 2: Maintenance Alerts ─────────────────────────────
                 maintenanceAlertsSection
                     .padding(.top, 28)
 
@@ -128,31 +125,13 @@ struct MaintenanceDashboardView: View {
                 .buttonStyle(PlainButtonStyle())
             }
             .padding(.horizontal, 20)
-        }
-    }
 
-    // MARK: - Section 2: Quick Actions
-
-    private var quickActionsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Quick Actions")
-                .font(.title2.bold())
-                .padding(.horizontal, 20)
-            
             HStack(spacing: 12) {
-                QuickActionButton(
-                    title: "Create Work Order",
-                    icon: "plus",
+                FleetAnalysisCard(
+                    title: "Inventory Valuation",
+                    count: formatCurrency(store.totalInventoryValue),
                     color: AppColors.primary,
-                    action: { showingCreateWorkOrder = true }
-                )
-                
-                QuickActionButton(
-                    title: "Update Inventory",
-                    icon: "shippingbox.fill",
-                    color: AppColors.primary,
-                    action: { showingFileImporter = true },
-                    emphasize: false
+                    showsChevron: false
                 )
             }
             .padding(.horizontal, 20)
@@ -179,17 +158,17 @@ struct MaintenanceDashboardView: View {
                         let matchingInventoryPart = item.inventoryPartId.flatMap { partId in
                             store.inventoryParts.first { $0.partId == partId }
                         }
-                        NavigationLink(
-                            destination: Group {
-                                if let order = matchingWorkOrder {
-                                    WorkOrderDetailsView(workOrder: order)
-                                } else if let part = matchingInventoryPart {
-                                    InventoryDetailView(part: part)
-                                } else {
-                                    MaintenanceAlertsListView()
-                                }
+                        let destination: AnyView = {
+                            if let order = matchingWorkOrder {
+                                return AnyView(WorkOrderDetailsView(workOrder: order))
                             }
-                        ) {
+                            if let part = matchingInventoryPart {
+                                return AnyView(InventoryDetailView(partId: part.partId))
+                            }
+                            return AnyView(MaintenanceAlertsListView())
+                        }()
+
+                        NavigationLink(destination: destination) {
                             MaintenanceDashboardAlertCard(item: item)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -207,6 +186,16 @@ struct MaintenanceDashboardView: View {
             }
         }
     }
+
+    private func formatCurrency(_ value: Double) -> String {
+        if value >= 10_000_000 { // 1 Crore = 100 Lakhs
+            return String(format: "₹%.2f C", value / 10_000_000)
+        } else if value >= 100_000 { // 1 Lakh
+            return String(format: "₹%.2f L", value / 100_000)
+        } else {
+            return String(format: "₹%.2f", value)
+        }
+    }
 }
 
 // MARK: - Preview
@@ -214,7 +203,7 @@ struct MaintenanceDashboardView: View {
 struct MaintenanceDashboardView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
-            MaintenanceDashboardView(isLoggedIn: .constant(true))
+            MaintenanceDashboardView(isLoggedIn: .constant(true), selectedTab: .constant(0))
                 .environmentObject(MaintenanceStore())
         }
     }

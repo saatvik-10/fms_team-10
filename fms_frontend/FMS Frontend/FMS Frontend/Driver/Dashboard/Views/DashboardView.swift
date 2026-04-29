@@ -59,9 +59,20 @@ class DashboardViewModel: ObservableObject {
         self.tripAPI = tripAPI
     }
 
+    /// Dashboard status label: "SCHEDULED" or "IN TRANSIT"
     var missionStatusText: String {
-        guard let status = activeLifecycleTrip?.status else { return "IN TRANSIT" }
+        guard let status = activeLifecycleTrip?.status else { return "SCHEDULED" }
         return status.rawValue
+    }
+
+    /// Color for the status badge
+    var missionStatusColor: Color {
+        guard let status = activeLifecycleTrip?.status else { return .blue }
+        switch status {
+        case .ongoing:   return .green
+        case .scheduled: return .blue
+        case .completed: return .gray
+        }
     }
 
     @MainActor
@@ -73,8 +84,16 @@ class DashboardViewModel: ObservableObject {
             let response = try await tripAPI.getDriverTrips()
             let lifecycleTrips = response.trips.compactMap(Self.mapTripItemToLifecycleTrip)
 
-            if let active = lifecycleTrips.first(where: { $0.status == .scheduled })
-                ?? lifecycleTrips.first {
+            // Deduplicate by trip ID
+            var seen = Set<String>()
+            let uniqueTrips = lifecycleTrips.filter { seen.insert($0.id).inserted }
+
+            // Filter out completed trips — dashboard only shows scheduled/ongoing
+            let activeTrips = uniqueTrips.filter { $0.status != .completed }
+
+            if let active = activeTrips.first(where: { $0.status == .ongoing })
+                ?? activeTrips.first(where: { $0.status == .scheduled })
+                ?? activeTrips.first {
                 activeLifecycleTrip = active
                 activeTrip = active.toTripModel()
                 vehiclePlate = active.vehicleNumber ?? "UNASSIGNED"
@@ -90,6 +109,20 @@ class DashboardViewModel: ObservableObject {
         isLoading = false
     }
 
+    /// Call backend to mark trip completed, then refresh the dashboard
+    @MainActor
+    func completeTripAndReload(tripId: String) {
+        Task {
+            do {
+                let response = try await tripAPI.completeTripForDriver(tripId: tripId)
+                print("✅ Trip completed from dashboard: \(response.message)")
+            } catch {
+                print("❌ Failed to complete trip: \(error.localizedDescription)")
+            }
+            await loadActiveTrip()
+        }
+    }
+
     private static func mapTripItemToLifecycleTrip(_ trip: TripItem) -> LifecycleTrip? {
         guard let id = trip.id,
               let source = trip.sourceLocation,
@@ -97,32 +130,24 @@ class DashboardViewModel: ObservableObject {
             return nil
         }
 
-        let status = mapTripStatus(trip.status)
-        let loadInfo = trip.loadAmount ?? buildLoadInfo(amount: trip.amount, unit: trip.unit)
         let departure = trip.tripDate ?? trip.departureTime
+        let status = TripStatusHelper.resolve(backendStatus: trip.status, departureRaw: departure)
+        let loadInfo = trip.loadAmount ?? buildLoadInfo(amount: trip.amount, unit: trip.unit)
 
         return LifecycleTrip(
             id: id,
             source: source,
             destination: destination,
             status: status,
-            dateValue: formatDateValue(from: departure),
+            dateValue: TripStatusHelper.formatDateValue(from: departure),
             timeLabel: status == .completed ? "Completion Time" : "Scheduled Start",
-            timeValue: formatTimeValue(from: departure),
+            timeValue: TripStatusHelper.formatTimeValue(from: departure),
             loadInfo: loadInfo,
             distance: parseDistanceKm(trip.distanceKm ?? trip.tripDistance),
             vehicleNumber: trip.vehicleRegistrationNumber,
-            cargoWeight: formatCargoWeight(amount: trip.amount, unit: trip.unit)
+            cargoWeight: formatCargoWeight(amount: trip.amount, unit: trip.unit),
+            rawDeparture: departure
         )
-    }
-
-    private static func mapTripStatus(_ rawStatus: String?) -> TripStatus {
-        switch rawStatus?.uppercased() {
-        case "COMPLETED":
-            return .completed
-        default:
-            return .scheduled
-        }
     }
 
     private static func buildLoadInfo(amount: Int?, unit: String?) -> String {
@@ -141,39 +166,6 @@ class DashboardViewModel: ObservableObject {
         guard let value, !value.isEmpty else { return 0.0 }
         let filtered = value.filter { "0123456789.".contains($0) }
         return Double(filtered) ?? 0.0
-    }
-
-    private static func formatDateValue(from raw: String?) -> String {
-        guard let raw, let date = parseDate(raw) else { return "" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-        return formatter.string(from: date)
-    }
-
-    private static func formatTimeValue(from raw: String?) -> String {
-        guard let raw, let date = parseDate(raw) else { return "TBD" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
-    }
-
-    private static func parseDate(_ raw: String) -> Date? {
-        let isoWithFractional = ISO8601DateFormatter()
-        isoWithFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = isoWithFractional.date(from: raw) {
-            return date
-        }
-
-        let isoBasic = ISO8601DateFormatter()
-        isoBasic.formatOptions = [.withInternetDateTime]
-        if let date = isoBasic.date(from: raw) {
-            return date
-        }
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        return formatter.date(from: raw)
     }
 }
 
@@ -309,8 +301,8 @@ struct MissionCardView: View {
                         .fontWeight(.bold)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.1))
-                        .foregroundColor(.blue)
+                        .background(viewModel.missionStatusColor.opacity(0.1))
+                        .foregroundColor(viewModel.missionStatusColor)
                         .cornerRadius(6)
                 }
                 
@@ -335,7 +327,12 @@ struct MissionCardView: View {
                     NavigationLink(
                         destination: TripDetailView(
                             trip: trip,
-                            lifecycleTrip: viewModel.activeLifecycleTrip
+                            lifecycleTrip: viewModel.activeLifecycleTrip,
+                            onTripEnded: {
+                                if let tripId = viewModel.activeLifecycleTrip?.id {
+                                    viewModel.completeTripAndReload(tripId: tripId)
+                                }
+                            }
                         )
                     ) {
                         HStack {
@@ -520,4 +517,3 @@ struct DriverProfileView: View {
         .navigationTitle("Profile")
     }
 }
-

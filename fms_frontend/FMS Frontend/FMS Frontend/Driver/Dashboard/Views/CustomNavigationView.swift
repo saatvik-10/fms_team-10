@@ -86,35 +86,68 @@ private struct NavigationBannerView: View {
 private struct BottomTrackingCard: View {
     let etaText: String
     let distanceRemaining: String
+    let onEndTrip: (() -> Void)?
+    @State private var showEndTripConfirmation = false
 
     var body: some View {
-        HStack(spacing: 0) {
-            VStack(spacing: 4) {
-                Text(etaText)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(.white)
-                Text("ETA")
-                    .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.5))
-            }
-            .frame(maxWidth: .infinity)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                VStack(spacing: 4) {
+                    Text(etaText)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("ETA")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .frame(maxWidth: .infinity)
 
-            Rectangle()
-                .fill(Color.white.opacity(0.2))
-                .frame(width: 1, height: 30)
+                Rectangle()
+                    .fill(Color.white.opacity(0.2))
+                    .frame(width: 1, height: 30)
 
-            VStack(spacing: 4) {
-                Text(distanceRemaining)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(.white)
-                Text("DISTANCE")
-                    .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.5))
+                VStack(spacing: 4) {
+                    Text(distanceRemaining)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("DISTANCE")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 16)
+
+            // ── End Trip Button ──
+            if let onEndTrip {
+                Button {
+                    showEndTripConfirmation = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "flag.checkered")
+                            .font(.system(size: 14, weight: .bold))
+                        Text("End Trip")
+                            .font(.system(size: 16, weight: .bold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.red)
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .alert("End Trip?", isPresented: $showEndTripConfirmation) {
+                    Button("End Trip", role: .destructive) {
+                        onEndTrip()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("This will mark the trip as completed and stop navigation.")
+                }
+            }
         }
-        .padding(.vertical, 20)
-        .padding(.horizontal, 16)
         .background(Color(red: 0.08, green: 0.08, blue: 0.08))
         .clipShape(RoundedCorner(radius: 24, corners: [.topLeft, .topRight]))
     }
@@ -128,8 +161,12 @@ struct CustomNavigationView: View {
     @State private var showCameraNotice = false
     @Environment(\.dismiss) private var dismiss
 
-    init(trip: Trip, resolvedDestinationCoordinate: CLLocationCoordinate2D? = nil) {
+    /// Callback to mark the trip completed and dismiss navigation.
+    var onEndTrip: (() -> Void)?
+
+    init(trip: Trip, resolvedDestinationCoordinate: CLLocationCoordinate2D? = nil, onEndTrip: (() -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: NavigationViewModel(trip: trip, resolvedDestinationCoordinate: resolvedDestinationCoordinate))
+        self.onEndTrip = onEndTrip
     }
 
     var body: some View {
@@ -197,7 +234,8 @@ struct CustomNavigationView: View {
             if !drowsinessDetector.isDrowsy {
                 BottomTrackingCard(
                     etaText: viewModel.etaText,
-                    distanceRemaining: viewModel.distanceRemaining
+                    distanceRemaining: viewModel.distanceRemaining,
+                    onEndTrip: onEndTrip
                 )
                 .background(Color.black)
             }

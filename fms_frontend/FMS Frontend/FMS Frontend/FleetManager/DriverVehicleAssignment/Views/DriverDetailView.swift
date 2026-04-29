@@ -156,7 +156,7 @@ struct DriverDetailView: View {
     
     var statusColor: Color {
         switch driver.status {
-        case .active, .onDuty: return AppColors.activeGreen
+        case .active: return AppColors.activeGreen
         case .onTrip: return AppColors.maintenanceOrange
         case .offDuty: return AppColors.criticalRed
         }

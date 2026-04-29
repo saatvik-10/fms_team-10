@@ -200,9 +200,8 @@ struct Driver: Identifiable {
 
 enum DriverStatus: String {
     case active = "ACTIVE"
-    case onTrip = "ON TRIP"
-    case offDuty = "OFF DUTY"
-    case onDuty = "ON DUTY"
+    case onTrip = "ON_TRIP"
+    case offDuty = "OFF_DUTY"
 }
 
 struct MaintenancePersonnel: Identifiable {
@@ -309,9 +308,10 @@ struct Vehicle: Identifiable {
 }
 
 enum FleetTripStatus: String, Codable {
-    case scheduled = "Scheduled"
-    case inTransit = "In Transit"
-    case completed = "Completed"
+    case pending = "PENDING"
+    case scheduled = "SCHEDULED"
+    case inTransit = "IN_TRANSIT"
+    case completed = "COMPLETED"
 }
 
 struct VehicleTrip: Identifiable {
@@ -366,9 +366,19 @@ struct ReportTask: Identifiable {
 }
 
 enum VehicleStatus: String {
-    case inTransit = "IN TRANSIT"
-    case idle = "IDLE"
-    case maintenance = "UNDER MAINTENANCE"
+    case inTransit = "IN_TRANSIT"
+    case idle = "AVAILABLE"
+    case maintenance = "MAINTENANCE"
+    case scheduled = "SCHEDULED"
+    
+    var displayName: String {
+        switch self {
+        case .inTransit: return "IN TRANSIT"
+        case .idle: return "IDLE"
+        case .maintenance: return "MAINTENANCE"
+        case .scheduled: return "SCHEDULED"
+        }
+    }
 }
 
 struct ManagerProfileData: Identifiable {

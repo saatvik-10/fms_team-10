@@ -259,18 +259,15 @@ struct FleetTripDetailView: View {
         if let trip = tripOverride {
             return "Trip Completed on \(trip.date ?? "Past")"
         }
-        // if let trip = vehicle.currentTrip {
-        //     switch trip.status {
-        //     case .scheduled: return "Scheduled: \(trip.origin) to \(trip.destination)"
-        //     case .inTransit: return "\(vehicle.id) is currently In Transit"
-        //     case .completed: return "Trip Completed"
-        //     }
-        // }
-        return "Vehicle is currently Idle"
-        guard let trip = displayTrip else {
-            return vehicle.id
+        if let trip = vehicle.currentTrip {
+            switch trip.status {
+            case .pending: return "Trip is Pending"
+            case .scheduled: return "Scheduled: \(trip.origin) to \(trip.destination)"
+            case .inTransit: return "\(vehicle.id) is currently In Transit"
+            case .completed: return "Trip Completed"
+            }
         }
-        return "\(vehicle.id): \(trip.origin) to \(trip.destination)"
+        return "Vehicle is currently Idle"
     }
     
     private func loadRouteData() async {
