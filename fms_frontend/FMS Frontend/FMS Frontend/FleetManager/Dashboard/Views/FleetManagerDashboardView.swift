@@ -107,7 +107,7 @@ struct FleetManagerDashboardView: View {
                                 // Row B: Least Travelled Vehicles + Available Drivers (side by side)
                                 HStack(alignment: .top, spacing: 15) {
                                     LeastTravelledVehiclesChart(vehicles: dataManager.vehicles)
-                                        .frame(maxWidth: .infinity)
+                                        .frame(minWidth: 0, maxWidth: .infinity)
                                     
                                     DriverStatsCard(
                                         total: dataManager.totalDriversCount,
@@ -115,7 +115,7 @@ struct FleetManagerDashboardView: View {
                                         idle: dataManager.idleDriversCount,
                                         offDuty: dataManager.offDutyDriversCount
                                     )
-                                        .frame(maxWidth: .infinity)
+                                        .frame(minWidth: 0, maxWidth: .infinity)
                                 }
                             }
                             .padding(20)
