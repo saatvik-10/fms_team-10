@@ -7,8 +7,8 @@ struct FleetTripDetailView: View {
     var tripOverride: VehicleTrip? = nil // New: Allow showing a specific past trip
     
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var dataManager: FleetDataManager
     @State private var showingDeleteAlert = false
-    @State private var isEditing = false
     
     @StateObject private var locationManager = FleetLocationManager()
     
@@ -50,27 +50,19 @@ struct FleetTripDetailView: View {
                     Spacer()
                     
                     if tripOverride == nil {
-                        Menu {
-                            Button(action: { 
-                                isEditing = true
-                            }) {
-                                Label("Edit Trip", systemImage: "pencil")
-                            }
-                            Button(role: .destructive, action: {
-                                showingDeleteAlert = true
-                            }) {
-                                Label("Delete Trip", systemImage: "trash")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(AppColors.primary)
-                                .padding(8)
+                        Button(action: {
+                            showingDeleteAlert = true
+                        }) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.red)
+                                .padding(10)
                                 .background(Color.white)
                                 .clipShape(Circle())
+                                .modifier(AppColors.cardShadow())
                         }
                     } else {
-                        Spacer().frame(width: 40) // Balance the chevron to center title
+                        Spacer().frame(width: 40)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -237,16 +229,27 @@ struct FleetTripDetailView: View {
             }
         }
         .navigationBarHidden(true)
-        .alert("End Trip", isPresented: $showingDeleteAlert) {
+        .alert("Delete Trip", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }
-            Button("End Trip", role: .destructive) {
-                vehicle.currentTrip = nil
-                vehicle.status = .idle
-                dismiss()
+            Button("Delete Trip", role: .destructive) {
+                Task {
+                    if let tripID = vehicle.currentTrip?.backendId {
+                        do {
+                            _ = try await TripAPI.shared.deleteTrip(id: tripID)
+                            try? await dataManager.refreshVehicles()
+                        } catch {
+                            print("Error deleting trip: \(error)")
+                        }
+                    }
+                    vehicle.currentTrip = nil
+                    vehicle.status = .idle
+                    dismiss()
+                }
             }
         } message: {
-            Text("Are you sure you want to end this trip? The vehicle will be marked as idle.")
+            Text("Are you sure you want to delete this trip? This action cannot be undone.")
         }
+
         .task {
             await loadRouteData()
         }

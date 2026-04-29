@@ -50,6 +50,7 @@ struct TwoFactorView: View {
                             .font(.system(size: 50))
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.4), radius: 4, x: 0, y: 2)
+                            .accessibilityHidden(true)
                         
                         Text("Verification")
                             .font(.system(size: 32, weight: .black))
@@ -74,6 +75,8 @@ struct TwoFactorView: View {
                             otpBox(index: index)
                         }
                     }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("One-time password entry. Enter 6 digits.")
 
                     if let otpError {
                         Text(otpError)
@@ -91,6 +94,7 @@ struct TwoFactorView: View {
                         ZStack {
                             if isVerifying {
                                 ProgressView().tint(AppColors.primary)
+                                    .accessibilityLabel("Verifying code, please wait")
                             } else {
                                 Text("Verify Account")
                                     .font(.system(size: 18, weight: .bold))
@@ -104,6 +108,8 @@ struct TwoFactorView: View {
                         .shadow(color: isVerifyEnabled ? Color.white.opacity(0.2) : .clear, radius: 10, y: 5)
                     }
                     .disabled(!isVerifyEnabled || isVerifying || isResending)
+                    .accessibilityLabel("Verify Account")
+                    .accessibilityHint(isVerifyEnabled ? "Double tap to verify your OTP" : "Enter all 6 digits first")
                     
                     VStack(spacing: 12) {
                         if !canResend {
@@ -123,6 +129,8 @@ struct TwoFactorView: View {
                                 .underline(canResend)
                         }
                         .disabled(!canResend || isVerifying || isResending)
+                        .accessibilityLabel(isResending ? "Sending new code" : "Resend OTP")
+                        .accessibilityHint(canResend ? "Double tap to send a new verification code" : "Available after the timer expires")
                     }
                     .onReceive(timer) { _ in
                         if timeRemaining > 0 {
@@ -167,6 +175,7 @@ struct TwoFactorView: View {
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                        .accessibilityAddTraits(.isHeader)
                     
                     Text("Welcome back to Fleetro")
                         .font(.system(size: 15, weight: .medium))

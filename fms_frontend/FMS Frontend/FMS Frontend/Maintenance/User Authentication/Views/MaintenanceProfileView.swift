@@ -22,6 +22,7 @@ struct MaintenanceProfileView: View {
             if store.isLoadingProfile {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityLabel("Loading profile")
             } else {
                 mainContent
             }
@@ -39,20 +40,23 @@ struct MaintenanceProfileView: View {
                         .resizable()
                         .frame(width: 80, height: 80)
                         .foregroundColor(AppColors.primary)
+                        .accessibilityLabel("\(profile?.name ?? "Maintenance") profile photo")
+                        .accessibilityHidden(false)
                     
                     VStack(spacing: 4) {
                         Text(profile?.name ?? "Maintenance")
                             .font(.title2.bold())
+                            .accessibilityAddTraits(.isHeader)
                         Text("Senior Maintenance Technician")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                        
                     }
-                    
-
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
+                // Group avatar + name + role as one VoiceOver element
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(profile?.name ?? "Maintenance"), Senior Maintenance Technician")
             }
             .listRowBackground(Color.clear)
             
@@ -74,7 +78,10 @@ struct MaintenanceProfileView: View {
                     Text("Logout")
                         .foregroundColor(.red)
                         .frame(maxWidth: .infinity)
+                        .frame(minHeight: 44)
                 }
+                .accessibilityLabel("Logout")
+                .accessibilityHint("Double tap to log out of your maintenance account")
             }
         }
         .navigationTitle("Profile")

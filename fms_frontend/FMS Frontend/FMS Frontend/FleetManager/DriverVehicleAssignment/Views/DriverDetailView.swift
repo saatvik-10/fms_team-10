@@ -36,23 +36,7 @@ struct DriverDetailView: View {
 
                 Spacer()
 
-                Menu {
-                    Button(action: { showingEditModal = true }) {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    Button(role: .destructive, action: {
-                        showingDeleteAlert = true
-                    }) {
-                        Label("Delete", systemImage: "trash")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.gray)
-                        .padding(10)
-                        .background(Color.gray.opacity(0.1))
-                        .clipShape(Circle())
-                }
+
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
