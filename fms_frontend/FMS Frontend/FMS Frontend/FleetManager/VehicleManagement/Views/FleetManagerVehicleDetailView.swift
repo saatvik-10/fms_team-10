@@ -91,6 +91,7 @@ private func vmStatusColor(_ s: VehicleStatus) -> Color {
     case .inTransit:   return AppTheme.activeGreen
     case .idle:        return .gray
     case .maintenance: return .orange
+    case .scheduled:   return .blue
     }
 }
 
@@ -222,7 +223,7 @@ struct FleetManagerVehicleDetailView: View {
                 .foregroundColor(AppTheme.primary)
             }
             Spacer()
-            Text(vehicle.status.rawValue)
+            Text(vehicle.status.displayName)
                 .font(.system(size: 12, weight: .bold))
                 .foregroundColor(vmStatusColor(vehicle.status))
                 .padding(.horizontal, 14).padding(.vertical, 7)

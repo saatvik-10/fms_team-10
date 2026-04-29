@@ -1,5 +1,5 @@
 -- DropIndex
-DROP INDEX "WorkOrder_vehicleId_idx";
+DROP INDEX IF EXISTS "WorkOrder_vehicleId_idx";
 
 -- AlterTable
 ALTER TABLE "WorkOrder" ADD COLUMN     "status" TEXT NOT NULL DEFAULT 'PROGRESS',

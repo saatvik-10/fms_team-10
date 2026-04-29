@@ -12,6 +12,14 @@ struct TripCardView: View {
     var onDecline: (() -> Void)? = nil
     var onStart: (() -> Void)? = nil
     var onViewSummary: (() -> Void)? = nil
+
+    private var statusBadgeColor: Color {
+        switch trip.status {
+        case .ongoing:   return .green
+        case .scheduled: return .blue
+        case .completed: return .gray
+        }
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -43,8 +51,8 @@ struct TripCardView: View {
                     .fontWeight(.bold)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Color(UIColor.systemGray6))
-                    .foregroundColor(.primary)
+                    .background(statusBadgeColor.opacity(0.12))
+                    .foregroundColor(statusBadgeColor)
                     .clipShape(Capsule())
             }
             

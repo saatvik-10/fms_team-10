@@ -14,11 +14,18 @@ import {
 } from '../validators/vehicle.validator';
 import { R2Service } from '../services/r2.service';
 import { nanoid } from 'nanoid';
-import { decodeBase64Image, extractKeyFromUrl, deleteUploadedKeys } from '../lib/utils';
+import {
+  decodeBase64Image,
+  extractKeyFromUrl,
+  deleteUploadedKeys,
+} from '../lib/utils';
 
 const r2Service = new R2Service();
 
-async function getFreshSignedUrl(key: string | null | undefined, fallbackUrl: string | null | undefined) {
+async function getFreshSignedUrl(
+  key: string | null | undefined,
+  fallbackUrl: string | null | undefined,
+) {
   const objectKey = key ?? extractKeyFromUrl(fallbackUrl);
   return objectKey ? r2Service.getSignedDownloadUrl(objectKey) : null;
 }
@@ -184,7 +191,10 @@ export class Vehicle {
       }
     }
 
-    if (data.chassisNumber && data.chassisNumber !== existingVehicle.chassisNumber) {
+    if (
+      data.chassisNumber &&
+      data.chassisNumber !== existingVehicle.chassisNumber
+    ) {
       const existingByChassis = await prisma.vehicle.findUnique({
         where: { chassisNumber: data.chassisNumber },
         select: { id: true },
@@ -236,12 +246,22 @@ export class Vehicle {
           ...(data.imageName ? { imageName: data.imageName } : {}),
           ...(data.year ? { year: data.year } : {}),
           ...(data.color ? { color: data.color } : {}),
-          ...(data.operationalStatus ? { operationalStatus: data.operationalStatus } : {}),
-          ...(data.assessmentReason ? { assessmentReason: data.assessmentReason } : {}),
+          ...(data.operationalStatus
+            ? { operationalStatus: data.operationalStatus }
+            : {}),
+          ...(data.assessmentReason
+            ? { assessmentReason: data.assessmentReason }
+            : {}),
           ...(data.chassisNumber ? { chassisNumber: data.chassisNumber } : {}),
-          ...(data.registrationNumber ? { registrationNumber: data.registrationNumber } : {}),
-          ...(data.assignedDriverId ? { assignedDriverId: data.assignedDriverId } : {}),
-          ...(data.maxLoadCapacity !== undefined ? { maxLoadCapacity: data.maxLoadCapacity } : {}),
+          ...(data.registrationNumber
+            ? { registrationNumber: data.registrationNumber }
+            : {}),
+          ...(data.assignedDriverId
+            ? { assignedDriverId: data.assignedDriverId }
+            : {}),
+          ...(data.maxLoadCapacity !== undefined
+            ? { maxLoadCapacity: data.maxLoadCapacity }
+            : {}),
           ...(data.capacityUnit ? { capacityUnit: data.capacityUnit } : {}),
           rcImageUrl: nextRcImageUrl,
           vehicleImageUrl: nextVehicleImageUrl,
@@ -252,7 +272,9 @@ export class Vehicle {
 
       await deleteUploadedKeys([
         newRcKey ? extractKeyFromUrl(existingVehicle.rcImageUrl) : null,
-        newVehicleKey ? extractKeyFromUrl(existingVehicle.vehicleImageUrl) : null,
+        newVehicleKey
+          ? extractKeyFromUrl(existingVehicle.vehicleImageUrl)
+          : null,
       ]);
 
       return c.json({ message: 'Vehicle updated successfully', vehicle });
@@ -275,6 +297,7 @@ export class Vehicle {
         id: true,
         rcImageUrl: true,
         vehicleImageUrl: true,
+        status: true,
       },
     });
 
@@ -282,9 +305,20 @@ export class Vehicle {
       return c.json({ err: 'Vehicle not found' }, 404);
     }
 
+    if (vehicle.status !== 'AVAILABLE') {
+      return c.json(
+        {
+          err: 'Vehicle can only be deleted when its status is AVAILABLE (IDLE)',
+        },
+        400,
+      );
+    }
+
     await prisma.$transaction([
       prisma.vehicleTrip.deleteMany({ where: { vehicleId: vehicle.id } }),
-      prisma.vehicleMaintenance.deleteMany({ where: { vehicleId: vehicle.id } }),
+      prisma.vehicleMaintenance.deleteMany({
+        where: { vehicleId: vehicle.id },
+      }),
       prisma.tripHistory.deleteMany({ where: { vehicleId: vehicle.id } }),
       prisma.vehicle.delete({ where: { id: vehicle.id } }),
     ]);
@@ -334,29 +368,45 @@ export class Vehicle {
           prisma.vehicleMaintenance.findUnique({ where: { vehicleId: v.id } }),
           v.assignedDriverId
             ? prisma.driver.findUnique({
-                where: { id: v.assignedDriverId },
-                select: { id: true, name: true, phone: true, status: true, licenceNumber: true, classes: true },
-              })
+              where: { id: v.assignedDriverId },
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                status: true,
+                licenceNumber: true,
+                classes: true,
+              },
+            })
             : Promise.resolve(null),
         ]);
 
         const latestStoredTrip = await prisma.trips.findFirst({
           where: {
             createdById: ownerId,
-            OR: [{ vehicle: v.id }, { vehicle: v.registrationNumber }],
+            vehicleId: v.id,
           },
           orderBy: { createdAt: 'desc' },
+          include: {
+            driver: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                status: true,
+                licenceNumber: true,
+                classes: true,
+              },
+            },
+          },
         });
 
-        const assignedDriver = driver ?? (latestStoredTrip?.driver
-          ? await prisma.driver.findUnique({
-              where: { id: latestStoredTrip.driver },
-              select: { id: true, name: true, phone: true, status: true, licenceNumber: true, classes: true },
-            })
-          : null);
+        const assignedDriver = driver ?? latestStoredTrip?.driver ?? null;
 
-        const hydratedCurrentTrip = currentTrip ?? (latestStoredTrip
-          ? {
+        const hydratedCurrentTrip =
+          currentTrip ??
+          (latestStoredTrip
+            ? {
               id: latestStoredTrip.id,
               vehicleId: v.id,
               origin: latestStoredTrip.sourceLocation,
@@ -374,21 +424,27 @@ export class Vehicle {
               createdAt: latestStoredTrip.createdAt,
               updatedAt: latestStoredTrip.updatedAt,
             }
-          : null);
+            : null);
 
-        const vehicleImageUrl = await getFreshSignedUrl(v.vehicleImageKey, v.vehicleImageUrl);
+        const vehicleImageUrl = await getFreshSignedUrl(
+          v.vehicleImageKey,
+          v.vehicleImageUrl,
+        );
         const rcImageUrl = await getFreshSignedUrl(v.rcImageKey, v.rcImageUrl);
 
         return {
           ...v,
-          status: hydratedCurrentTrip?.status === 'IN_TRANSIT' ? 'IN_TRANSIT' : v.status,
-          vehicleImageUrl: vehicleImageUrl,
-          rcImageUrl: rcImageUrl,
+          status:
+            hydratedCurrentTrip?.status === 'IN_TRANSIT'
+              ? 'IN_TRANSIT'
+              : v.status,
+          vehicleImageUrl,
+          rcImageUrl,
           currentTrip: hydratedCurrentTrip,
           maintenance,
           assignedDriver,
         };
-      })
+      }),
     );
 
     return c.json({
@@ -396,7 +452,7 @@ export class Vehicle {
     });
   }
 
-async getVehicleById(c: Context) {
+  async getVehicleById(c: Context) {
     const vehicleId = c.req.param('vehicleId');
     const userId = c.get('userId') as string;
 
@@ -411,17 +467,32 @@ async getVehicleById(c: Context) {
       return c.json({ err: 'Vehicle not found' }, 404);
     }
 
-    vehicle.rcImageUrl = await getFreshSignedUrl(vehicle.rcImageKey, vehicle.rcImageUrl);
-    vehicle.vehicleImageUrl = await getFreshSignedUrl(vehicle.vehicleImageKey, vehicle.vehicleImageUrl);
+    vehicle.rcImageUrl = await getFreshSignedUrl(
+      vehicle.rcImageKey,
+      vehicle.rcImageUrl,
+    );
+    vehicle.vehicleImageUrl = await getFreshSignedUrl(
+      vehicle.vehicleImageKey,
+      vehicle.vehicleImageUrl,
+    );
 
     const [currentTrip, maintenance, driver, history] = await Promise.all([
       prisma.vehicleTrip.findUnique({ where: { vehicleId: vehicle.id } }),
-      prisma.vehicleMaintenance.findUnique({ where: { vehicleId: vehicle.id } }),
+      prisma.vehicleMaintenance.findUnique({
+        where: { vehicleId: vehicle.id },
+      }),
       vehicle.assignedDriverId
         ? prisma.driver.findUnique({
-            where: { id: vehicle.assignedDriverId },
-            select: { id: true, name: true, phone: true, status: true, licenceNumber: true, classes: true },
-          })
+          where: { id: vehicle.assignedDriverId },
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            status: true,
+            licenceNumber: true,
+            classes: true,
+          },
+        })
         : Promise.resolve(null),
       prisma.tripHistory.findMany({
         where: { vehicleId: vehicle.id },

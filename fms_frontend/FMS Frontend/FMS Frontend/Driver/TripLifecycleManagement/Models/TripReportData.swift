@@ -37,47 +37,69 @@ struct TripReportData {
     var driverCostINR: Double
     var totalCostINR: Double           // highlighted in PDF
 
-    // MARK: - Factory from LifecycleTrip
-    static func mock(from trip: LifecycleTrip) -> TripReportData {
-        // Deterministic pseudo-values derived from trip distance so each trip
-        // gets its own consistent numbers without a real backend.
-        let dist       = trip.distance            // miles → treat as km for demo
-        let fuel       = dist / 12.4              // ~12.4 km/l efficiency
-        let efficiency = dist / max(fuel, 0.001)
-        let fuelCost   = fuel * 91.0              // ₹91/l
-        let drivingHrs = dist / 65.0              // avg 65 km/h
-        let idleHrs    = drivingHrs * 0.12
+    // MARK: - Factory from LifecycleTrip (uses real trip data)
+    static func mock(from trip: LifecycleTrip, driverName: String? = nil) -> TripReportData {
+        // Use actual trip distance from the backend
+        let dist = trip.distance
+
+        // Derive metrics from actual distance
+        let avgSpeed     = dist > 0 ? 55.0 : 0.0                // conservative avg for trucks
+        let drivingHrs   = dist > 0 ? dist / avgSpeed : 0.0
+        let idleHrs      = drivingHrs * 0.10                     // ~10% idle
+        let totalDuration = drivingHrs + idleHrs
+
+        // Fuel estimates based on distance
+        let fuelEfficiency = 12.4                                 // km/l typical for fleet
+        let fuel           = dist / max(fuelEfficiency, 0.001)
+        let fuelCost       = fuel * 91.0                          // ₹91/l
+
+        // Cost estimates
         let toll       = dist * 2.3
-        let driverCost = drivingHrs * 350.0       // ₹350/hr
+        let driverCost = drivingHrs * 350.0                       // ₹350/hr
         let total      = fuelCost + toll + driverCost
 
-        // Build a Google Maps URL for the route
+        // Build a Google Maps URL for the route (using real source/destination)
         let srcEncoded = trip.source.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let dstEncoded = trip.destination.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let mapURL = "https://www.google.com/maps/dir/\(srcEncoded)/\(dstEncoded)"
 
+        // Use actual vehicle number from trip
+        let vehicleNum = trip.vehicleNumber ?? "N/A"
+
+        // Use actual trip date/time values
+        let startDT = "\(trip.dateValue)  \(trip.timeValue)"
+        
+        // For end time: if completed, show completion time; otherwise estimate
+        let endDT: String
+        if trip.status == .completed {
+            endDT = "\(trip.dateValue)  \(trip.timeValue)"
+        } else {
+            let durationFormatted = String(format: "%.1f hrs", totalDuration)
+            endDT = "Est. \(durationFormatted) after start"
+        }
+
         return TripReportData(
             tripID:               trip.id,
             vehicleID:            "VH-\(trip.id.suffix(4))",
-            vehicleNumber:        "MH-12-AB-\(trip.id.suffix(4))",
-            driverName:           "Aarav Sharma",
-            driverID:             "DRV-4821",
-            startDateTime:        "\(trip.dateValue)  \(trip.timeValue.components(separatedBy: " - ").first ?? "08:00")",
-            endDateTime:          "\(trip.dateValue)  \(trip.timeValue.components(separatedBy: " - ").last ?? "18:00")",
-            tripDuration:         String(format: "%.1f hrs", drivingHrs + idleHrs),
+            vehicleNumber:        vehicleNum,
+            driverName:           driverName ?? "Driver",
+            driverID:             trip.id,
+            startDateTime:        startDT,
+            endDateTime:          endDT,
+            tripDuration:         String(format: "%.1f hrs", totalDuration),
             startLocation:        trip.source,
             endLocation:          trip.destination,
             routeMapURL:          mapURL,
             totalDistanceKm:      dist,
             fuelConsumedLiters:   fuel,
-            fuelEfficiencyKmL:    efficiency,
+            fuelEfficiencyKmL:    fuelEfficiency,
             fuelCostINR:          fuelCost,
-            averageSpeedKmH:      65.0,
-            maxSpeedKmH:          88.0,
+            averageSpeedKmH:      avgSpeed,
+            maxSpeedKmH:          avgSpeed * 1.4,   // estimated peak
             drivingTimeHours:     drivingHrs,
             idleTimeHours:        idleHrs,
-            restingHours:         1.5,
-            stopsCount:           Int(dist / 80) + 2,
+            restingHours:         nil,              // no mock resting hours
+            stopsCount:           max(1, Int(dist / 120)),  // ~1 stop per 120 km
             tollCostINR:          toll,
             driverCostINR:        driverCost,
             totalCostINR:         total

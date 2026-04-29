@@ -13,6 +13,8 @@ tripRoute.post('/create-trip', proxyAuth, authRole, controller.createTrip)
 tripRoute.get('/get-trip', proxyAuth, managerOrDriverRole, controller.getTrip)
 tripRoute.get('/get-trips', proxyAuth, authRole, controller.getTrips)
 tripRoute.get('/get-driver-trips', proxyAuth, driverRole, controller.getDriverTrips)
+tripRoute.patch('/start-trip', proxyAuth, driverRole, controller.startTrip)
+tripRoute.patch('/complete-trip', proxyAuth, driverRole, controller.completeTrip)
 tripRoute.delete('/delete-trip/:id', proxyAuth, authRole, controller.deleteTrip)
 
 export default tripRoute;

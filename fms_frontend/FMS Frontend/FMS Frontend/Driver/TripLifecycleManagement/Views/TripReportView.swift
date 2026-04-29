@@ -10,6 +10,7 @@ struct TripReportView: View {
     let trip: LifecycleTrip
 
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var session: AppSessionStore
     @State private var pdfDocument: PDFDocument? = nil
     @State private var isLoading: Bool = true
     @State private var showShareSheet: Bool = false
@@ -98,10 +99,11 @@ struct TripReportView: View {
     private func generatePDF() async {
         // Build data off the main actor, then publish results on it.
         let trip = self.trip   // capture value type — safe to cross actor boundary
+        let driverName = session.driverProfile?.name
 
         let (pdfData, url): (Data, URL) = await Task.detached(priority: .userInitiated) {
             // nonisolated context: call through nonisolated static helpers
-            let reportData = await MainActor.run { TripReportData.mock(from: trip) }
+            let reportData = await MainActor.run { TripReportData.mock(from: trip, driverName: driverName) }
             let pdfData    = await MainActor.run { TripReportGenerator().generate(from: reportData) }
 
             let fileName = "TripReport_\(trip.id).pdf"
