@@ -8,62 +8,167 @@
 import SwiftUI
 
 struct InventoryDetailView: View {
-    let part: InventoryPart
+    let partId: String
     @EnvironmentObject var store: MaintenanceStore
     @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        List {
-            Section {
-                headerView
-            }
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
-            
-            Section("Stock Status") {
-                detailRow(title: "Current Stock", value: "\(part.stockQty) units", color: part.isLowStock ? .orange : .primary)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Reorder Threshold")
-                            .font(.subheadline)
-                        Spacer()
-                        Text("\(part.minStock)")
-                            .fontWeight(.bold)
-                    }
-                    
-                    Stepper("Adjust Threshold", value: Binding(
-                        get: { part.minStock },
-                        set: { store.updateInventoryThreshold(for: part.partId, newThreshold: $0) }
-                    ), in: 0...1000)
-                    .labelsHidden()
-                }
-                
-                detailRow(title: "Stock Status", value: part.isLowStock ? "LOW STOCK" : "OPTIMAL", color: part.isLowStock ? .orange : .green)
-            }
-            
-            Section("Financials") {
-                detailRow(title: "Unit Price", value: "₹\(part.unitPriceInr, default: "%.2f")")
-                detailRow(title: "Total Inventory Cost", value: "₹\(part.totalValue, default: "%.2f")", color: AppColors.primary)
-            }
-            
-            Section("Supply & Logistics") {
-                detailRow(title: "Supplier", value: part.supplier)
-                detailRow(title: "Location", value: part.location)
-                detailRow(title: "Vehicle Compatibility", value: part.vehicleType)
-            }
-            
-            Section("Identification") {
-                detailRow(title: "SKU / Part ID", value: part.partId)
-                detailRow(title: "Category", value: part.category)
-            }
-        }
-        .navigationTitle(part.partName)
-        .navigationBarTitleDisplayMode(.inline)
-        .listStyle(.insetGrouped)
+    @State private var showingAddStock = false
+    @State private var isEditing = false
+    @State private var stockAppendValue = ""
+    @State private var editPartName = ""
+    @State private var editPartPrice = ""
+    @State private var editPartCategory = ""
+    @State private var editPartMinStock = ""
+    @State private var editPartStockQty = ""
+    @State private var showingEditValidation = false
+    @State private var showingAddStockValidation = false
+    @State private var showingStockSuccess = false
+    @State private var lastStockUpdateMessage = ""
+
+    private var part: InventoryPart? {
+        store.inventoryParts.first { $0.partId == partId }
     }
     
-    private var headerView: some View {
+    var body: some View {
+        Group {
+            if let part = part {
+                List {
+                    Section {
+                        headerView(part: part)
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                    
+                    Section("Stock Status") {
+                        if isEditing {
+                            editableRow(title: "Current Stock", text: $editPartStockQty, keyboard: .numberPad)
+                        } else {
+                            detailRow(title: "Current Stock", value: "\(part.stockQty) units", color: part.isLowStock ? .orange : .primary)
+                        }
+                        
+                        if isEditing {
+                            editableRow(title: "Reorder Threshold", text: $editPartMinStock, keyboard: .numberPad)
+                        } else {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("Reorder Threshold")
+                                        .font(.subheadline)
+                                    Spacer()
+                                    Text("\(part.minStock)")
+                                        .fontWeight(.bold)
+                                }
+                                
+                                Stepper("Adjust Threshold", value: Binding(
+                                    get: { part.minStock },
+                                    set: { store.updateInventoryThreshold(for: part.partId, newThreshold: $0) }
+                                ), in: 0...1000)
+                                .labelsHidden()
+                            }
+                        }
+                        
+                        detailRow(title: "Stock Status", value: part.isLowStock ? "LOW STOCK" : "OPTIMAL", color: part.isLowStock ? .orange : .green)
+                    }
+                    
+                    Section("Financials") {
+                        if isEditing {
+                            editableRow(title: "Unit Price", text: $editPartPrice, keyboard: .decimalPad)
+                        } else {
+                            detailRow(title: "Unit Price", value: "₹\(part.unitPriceInr, default: "%.2f")")
+                        }
+                        detailRow(title: "Total Inventory Cost", value: "₹\(part.totalValue, default: "%.2f")", color: AppColors.primary)
+                    }
+                    
+                    Section("Supply & Logistics") {
+                        detailRow(title: "Supplier", value: part.supplier)
+                        detailRow(title: "Location", value: part.location)
+                        detailRow(title: "Vehicle Compatibility", value: part.vehicleType)
+                    }
+                    
+                    Section("Identification") {
+                        detailRow(title: "SKU / Part ID", value: part.partId)
+                        if isEditing {
+                            editableRow(title: "Category", text: $editPartCategory, keyboard: .default)
+                        } else {
+                            detailRow(title: "Category", value: part.category)
+                        }
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    if showingAddStock {
+                        addStockCard(part: part)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 16)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .navigationTitle(part.partName)
+                .navigationBarTitleDisplayMode(.inline)
+                .listStyle(.insetGrouped)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        HStack(spacing: 16) {
+                            Button(action: {
+                                guard !isEditing else { return }
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    showingAddStock.toggle()
+                                }
+                            }) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(isEditing ? .secondary : AppColors.primary)
+                            }
+                            .disabled(isEditing)
+
+                            Button(action: {
+                                if isEditing {
+                                    saveEdits(part: part)
+                                } else {
+                                    startEditing(part: part)
+                                }
+                            }) {
+                                Text(isEditing ? "Save" : "Edit")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(AppColors.primary)
+                            }
+                        }
+                    }
+                    if isEditing {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Cancel") {
+                                cancelEditing()
+                            }
+                        }
+                    }
+                }
+                .alert("Invalid Details", isPresented: $showingEditValidation) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text("Enter a valid name, category, price, min stock, and current stock.")
+                }
+                .alert("Stock Updated", isPresented: $showingStockSuccess) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text(lastStockUpdateMessage)
+                }
+                .alert("Invalid Quantity", isPresented: $showingAddStockValidation) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text("Enter a quantity greater than 0.")
+                }
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "shippingbox.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary.opacity(0.4))
+                    Text("Part not found")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
+    
+    private func headerView(part: InventoryPart) -> some View {
         VStack(spacing: 16) {
             ZStack {
                 Circle()
@@ -109,5 +214,95 @@ struct InventoryDetailView: View {
         if cat.contains("fluid") || cat.contains("oil") { return "drop.fill" }
         if cat.contains("elect") || cat.contains("battery") { return "bolt.fill" }
         return "gearshape.fill"
+    }
+
+    private func editableRow(title: String, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
+        HStack {
+            Text(title)
+                .foregroundColor(.secondary)
+            Spacer()
+            TextField(title, text: text)
+                .keyboardType(keyboard)
+                .multilineTextAlignment(.trailing)
+                .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: 140)
+        }
+    }
+
+    private func addStockCard(part: InventoryPart) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Add Stock")
+                .font(.headline)
+
+            TextField("Quantity", text: $stockAppendValue)
+                .keyboardType(.numberPad)
+                .textFieldStyle(.roundedBorder)
+
+            HStack(spacing: 12) {
+                Button("Cancel") {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showingAddStock = false
+                    }
+                }
+                .buttonStyle(.bordered)
+
+                Button("Add") {
+                    guard let quantity = Int(stockAppendValue), quantity > 0 else {
+                        showingAddStockValidation = true
+                        return
+                    }
+                    store.appendInventoryStock(partId: part.partId, quantity: quantity)
+                    lastStockUpdateMessage = "Added \(quantity) units to \(part.partName)."
+                    stockAppendValue = ""
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showingAddStock = false
+                    }
+                    showingStockSuccess = true
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
+    }
+
+    private func startEditing(part: InventoryPart) {
+        editPartName = part.partName
+        editPartPrice = String(format: "%.2f", part.unitPriceInr)
+        editPartCategory = part.category
+        editPartMinStock = "\(part.minStock)"
+        editPartStockQty = "\(part.stockQty)"
+        showingAddStock = false
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isEditing = true
+        }
+    }
+
+    private func cancelEditing() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isEditing = false
+        }
+    }
+
+    private func saveEdits(part: InventoryPart) {
+        guard !editPartName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !editPartCategory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let price = Double(editPartPrice),
+              price >= 0,
+              let minStock = Int(editPartMinStock),
+              minStock >= 0,
+              let stockQty = Int(editPartStockQty),
+              stockQty >= 0 else {
+            showingEditValidation = true
+            return
+        }
+        let roundedPrice = (price * 100).rounded() / 100
+        editPartPrice = String(format: "%.2f", roundedPrice)
+        store.updateInventoryPart(partId: part.partId, name: editPartName, category: editPartCategory, minStock: minStock, stockQty: stockQty, unitPriceInr: roundedPrice)
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isEditing = false
+        }
     }
 }
