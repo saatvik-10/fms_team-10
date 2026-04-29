@@ -48,6 +48,11 @@ class MaintenanceStore: ObservableObject {
             UserDefaults.standard.set(encoded, forKey: inventoryKey)
         }
     }
+
+    func resetInventory() {
+        inventoryParts = []
+        saveInventory()
+    }
     
     func loadInventory() {
         if let data = UserDefaults.standard.data(forKey: inventoryKey),
@@ -83,13 +88,38 @@ class MaintenanceStore: ObservableObject {
     }
     
     func importInventory(_ newParts: [InventoryPart]) {
-        var mergedParts = newParts
-        for i in 0..<mergedParts.count {
-            if let existing = inventoryParts.firstIndex(where: { $0.partId == mergedParts[i].partId }) {
-                mergedParts[i].minStock = inventoryParts[existing].minStock
+        var updatedParts = inventoryParts
+        for newPart in newParts {
+            if let existingIndex = updatedParts.firstIndex(where: { $0.partId == newPart.partId }) {
+                updatedParts[existingIndex].stockQty += newPart.stockQty
+            } else {
+                updatedParts.append(newPart)
             }
         }
-        self.inventoryParts = mergedParts
+        self.inventoryParts = updatedParts
+        saveInventory()
+    }
+
+    func appendInventoryStock(partId: String, quantity: Int) {
+        guard quantity > 0, let index = inventoryParts.firstIndex(where: { $0.partId == partId }) else { return }
+        inventoryParts[index].stockQty += quantity
+        saveInventory()
+    }
+
+    func updateInventoryPart(partId: String, name: String, category: String, minStock: Int, stockQty: Int, unitPriceInr: Double) {
+        guard let index = inventoryParts.firstIndex(where: { $0.partId == partId }) else { return }
+        inventoryParts[index] = InventoryPart(
+            id: inventoryParts[index].id,
+            partName: name,
+            partId: inventoryParts[index].partId,
+            category: category,
+            stockQty: stockQty,
+            minStock: minStock,
+            unitPriceInr: unitPriceInr,
+            supplier: inventoryParts[index].supplier,
+            vehicleType: inventoryParts[index].vehicleType,
+            location: inventoryParts[index].location
+        )
         saveInventory()
     }
     

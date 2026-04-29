@@ -14,6 +14,26 @@ struct InventoryView: View {
     @State private var showingFileImporter = false
     @State private var importErrors: [InventoryCSVImportService.ImportError] = []
     @State private var showingErrorAlert = false
+    @State private var searchText = ""
+    @State private var selectedCategory: String? = nil
+    @State private var showingResetConfirmation = false
+
+    private var categories: [String] {
+        Array(Set(store.inventoryParts.map { $0.category })).sorted()
+    }
+
+    private var filteredParts: [InventoryPart] {
+        store.inventoryParts.filter { part in
+            let matchesSearch = searchText.isEmpty ||
+                part.partName.localizedCaseInsensitiveContains(searchText) ||
+                part.partId.localizedCaseInsensitiveContains(searchText) ||
+                part.category.localizedCaseInsensitiveContains(searchText)
+
+            let matchesCategory = selectedCategory == nil || part.category == selectedCategory
+            return matchesSearch && matchesCategory
+        }
+        .sorted { $0.partName.localizedCaseInsensitiveCompare($1.partName) == .orderedAscending }
+    }
     
     var body: some View {
         ScrollView {
@@ -28,44 +48,15 @@ struct InventoryView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
                 
-                // ── Section 1: Inventory Analysis ─────────────────────────────
+                // ── Section 1: Parts Catalog ──────────────────────────────────
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Inventory Analysis")
-                        .font(.title2.bold())
-                        .foregroundColor(AppColors.primaryText)
-                        .padding(.horizontal, 20)
-                    
-                    prominentValuationCard
-                        .padding(.horizontal, 20)
-                }
-                
-                // ── Section 2: Parts Catalog ──────────────────────────────────
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Global Inventory")
-                            .font(.title2.bold())
-                            .foregroundColor(AppColors.primaryText)
-                        Spacer()
-                        NavigationLink(destination: FullInventoryListView()) {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(Color(.systemGray3))
-                        }
-                    }
-                    .padding(.horizontal, 20)
-
                     VStack(spacing: 0) {
-                        let sortedInventoryItems = store.inventoryParts.sorted {
-                            $0.partName.localizedCaseInsensitiveCompare($1.partName) == .orderedAscending
-                        }
-                        let itemsToDisplay = Array(sortedInventoryItems.prefix(3))
-
-                        if itemsToDisplay.isEmpty {
+                        if filteredParts.isEmpty {
                             HStack(spacing: 10) {
                                 Image(systemName: "shippingbox.fill")
                                     .font(.title3)
                                     .foregroundColor(.secondary)
-                                Text("No inventory parts available yet.")
+                                Text(searchText.isEmpty && selectedCategory == nil ? "No inventory parts available yet." : "No items match your search")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 Spacer()
@@ -73,13 +64,13 @@ struct InventoryView: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, 18)
                         } else {
-                            ForEach(Array(itemsToDisplay.enumerated()), id: \.element.id) { index, part in
-                                NavigationLink(destination: InventoryDetailView(part: part)) {
+                            ForEach(Array(filteredParts.enumerated()), id: \.element.id) { index, part in
+                                NavigationLink(destination: InventoryDetailView(partId: part.partId)) {
                                     InventoryAlertRow(part: part)
                                 }
                                 .buttonStyle(PlainButtonStyle())
 
-                                if index < itemsToDisplay.count - 1 {
+                                if index < filteredParts.count - 1 {
                                     Divider()
                                         .padding(.leading, 70)
                                 }
@@ -97,11 +88,37 @@ struct InventoryView: View {
         }
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, prompt: "Search SKUs or category")
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Menu {
+                    Button("All Categories") { selectedCategory = nil }
+                    if !categories.isEmpty {
+                        Divider()
+                        ForEach(categories, id: \.self) { category in
+                            Button(category) { selectedCategory = category }
+                        }
+                    }
+                } label: {
+                    Image(systemName: selectedCategory == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(selectedCategory == nil ? .secondary : AppColors.primary)
+                }
+
                 Button(action: { showingFileImporter = true }) {
                     Image(systemName: "plus")
                         .font(.system(size: 18, weight: .semibold))
+                }
+
+                Menu {
+                    Button(role: .destructive) {
+                        showingResetConfirmation = true
+                    } label: {
+                        Label("Reset Inventory", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 18))
                 }
                 
                 NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
@@ -138,6 +155,14 @@ struct InventoryView: View {
             } else {
                 Text("Inventory imported successfully.")
             }
+        }
+        .confirmationDialog("Reset Inventory?", isPresented: $showingResetConfirmation, titleVisibility: .visible) {
+            Button("Reset", role: .destructive) {
+                store.resetInventory()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This will clear all inventory data. This action cannot be undone.")
         }
     }
     
@@ -222,6 +247,7 @@ struct InventoryView: View {
             return String(format: "₹%.2f", value)
         }
     }
+
 }
 
 struct InventoryAlertRow: View {

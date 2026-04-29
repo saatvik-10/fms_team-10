@@ -24,6 +24,8 @@ struct WorkOrderDetailsView: View {
     @State private var recentlyUpdatedPartId: String?
     @State private var pendingSelectedPartIds: Set<String> = []
     @State private var showingCompleteAlert = false
+    @State private var showingStockLimitAlert = false
+    @State private var stockLimitMessage = ""
     
     private var taskPoints: [String] {
         workOrder.taskDetails.components(separatedBy: ".")
@@ -221,11 +223,16 @@ struct WorkOrderDetailsView: View {
                                                      }
 
                                                     Button {
+                                                        if usage.quantity >= inventoryPart.stockQty {
+                                                            stockLimitMessage = "Only \(inventoryPart.stockQty) unit(s) available in stock."
+                                                            showingStockLimitAlert = true
+                                                            return
+                                                        }
                                                         updateConsumedQuantity(partId: usage.inventoryPartId, quantity: usage.quantity + 1)
                                                     } label: {
                                                         Image(systemName: "plus.circle.fill")
                                                             .font(.title3)
-                                                            .foregroundColor(AppColors.primary)
+                                                            .foregroundColor(usage.quantity >= inventoryPart.stockQty ? .secondary : AppColors.primary)
                                                     }
 
                                                     Button {
@@ -476,6 +483,11 @@ struct WorkOrderDetailsView: View {
         } message: {
             Text("Complete all checklist items before completing this work order.")
         }
+        .alert("Stock Limit Reached", isPresented: $showingStockLimitAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(stockLimitMessage)
+        }
         .navigationTitle(workOrder.title)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
@@ -686,7 +698,11 @@ struct WorkOrderDetailsView: View {
             workOrder.consumedParts.remove(at: idx)
             recentlyUpdatedPartId = nil
         } else {
-            workOrder.consumedParts[idx].quantity = quantity
+            if let inventoryPart = store.inventoryParts.first(where: { $0.partId == partId }) {
+                workOrder.consumedParts[idx].quantity = min(quantity, inventoryPart.stockQty)
+            } else {
+                workOrder.consumedParts[idx].quantity = quantity
+            }
             markPartUpdated(partId)
         }
         store.updateWorkOrder(workOrder)
