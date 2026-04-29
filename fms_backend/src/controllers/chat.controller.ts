@@ -159,7 +159,8 @@ export class ChatController {
       );
     }
 
-    const { targetId, senderId, senderName, senderRole, message } = parsed.data;
+    const { targetId, senderName, senderRole, message } = parsed.data;
+    const senderId = userId; // Always use authenticated ID
 
     // Resolve target user's name and role
     const targetName = await resolveUserName(targetId);
@@ -259,8 +260,8 @@ export class ChatController {
       );
     }
 
-    // Resolve sender info: prefer body values, fall back to auth-derived values
-    const senderId = parsed.data.sender_id ?? parsed.data.senderId ?? userId;
+    // Resolve sender info: use auth-derived userId, prefer body values for name/role
+    const senderId = userId;
     const senderName =
       parsed.data.sender_name ?? parsed.data.senderName ?? (await resolveUserName(userId));
     const senderRole =
@@ -335,5 +336,38 @@ export class ChatController {
     });
 
     return c.json({ success: true });
+  }
+
+  /**
+   * GET /chat/users
+   * Returns all users in the system (Managers, Drivers, Maintenance) for starting new chats.
+   */
+  async getUsers(c: Context) {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        role: true,
+        manager: { select: { name: true } },
+        driver: { select: { name: true } },
+        maintenance: { select: { name: true } },
+      },
+    });
+
+    const result = users.map((u) => {
+      let name = 'Unknown';
+      if (u.role === 'MANAGER' && u.manager) name = u.manager.name;
+      if (u.role === 'DRIVER' && u.driver) name = u.driver.name;
+      if (u.role === 'MAINTENANCE' && u.maintenance) name = u.maintenance.name;
+      if (u.role === 'SUPER_ADMIN') name = 'Admin';
+
+      return {
+        id: u.id,
+        name,
+        role: u.role.toLowerCase(),
+        initials: name.charAt(0).toUpperCase(),
+      };
+    });
+
+    return c.json(result);
   }
 }

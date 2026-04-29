@@ -8,6 +8,7 @@ class ChatViewModel: ObservableObject {
     @Published var messages: [UUID: [ChatMessage]] = [:] // RoomID -> Messages
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var availableUsers: [ChatService.UserContact] = []
     
     // Notification state
     @Published var latestNotification: ChatMessage?
@@ -30,13 +31,23 @@ class ChatViewModel: ObservableObject {
     }
     
     func configure(userId: String, name: String, role: String) {
+        guard userId != "unknown" else {
+            print("⚠️ ChatViewModel: Skipping configuration for 'unknown' user")
+            return
+        }
+        
         self.currentUserId = userId
         self.currentUserName = name
         self.currentUserRole = role
         
+        // Clear previous state
+        self.rooms = []
+        self.messages = [:]
+        
         pusher.connect(userId: userId)
         pusher.subscribeToUser(userId: userId)
         loadRooms()
+        loadAvailableUsers()
     }
     
     private func setupPusherSubscription() {
@@ -99,7 +110,7 @@ class ChatViewModel: ObservableObject {
     // MARK: - API Actions
     
     func loadRooms() {
-        guard currentUserId != nil else { return }
+        guard let userId = currentUserId, userId != "unknown" else { return }
         
         isLoading = true
         chatService.fetchRooms()
@@ -139,7 +150,7 @@ class ChatViewModel: ObservableObject {
     }
     
     func sendMessage(content: String, in roomId: UUID) {
-        guard let userId = currentUserId,
+        guard let userId = currentUserId, userId != "unknown",
               let userName = currentUserName,
               let userRole = currentUserRole else { return }
         
@@ -184,7 +195,7 @@ class ChatViewModel: ObservableObject {
     }
     
     func startNewConversation(with name: String, initials: String, role: String, targetId: String, initialMessage: String) {
-        guard let userId = currentUserId,
+        guard let userId = currentUserId, userId != "unknown",
               let userName = currentUserName,
               let userRole = currentUserRole else { return }
               
@@ -239,5 +250,14 @@ class ChatViewModel: ObservableObject {
             messages[roomId]?[index].isStarred.toggle()
             // TODO: API call to sync starred status
         }
+    }
+
+    func loadAvailableUsers() {
+        chatService.fetchUsers()
+            .receive(on: DispatchQueue.main)
+            .sink { _ in } receiveValue: { [weak self] users in
+                self?.availableUsers = users
+            }
+            .store(in: &cancellables)
     }
 }

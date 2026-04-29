@@ -65,33 +65,34 @@ struct ChatListView: View {
 struct NewChatView: View {
     @ObservedObject var viewModel: ChatViewModel
     @Environment(\.dismiss) var dismiss
-    // Removed session manager
-    @State private var selectedContact: String = ""
+    @State private var selectedContactId: String = ""
     @State private var message: String = ""
     
-    let allContacts = [
-        ("Rahul Sharma (Driver)", "RS", "driver", "KM-1029"),
-        ("Suresh Kumar (Maint.)", "SK", "maintenance", "clx9876543210"),
-        ("Vikram Singh (Manager)", "VS", "manager", "clx1234567890")
-    ]
-    
-    private var availableContacts: [(String, String, String, String)] {
-        allContacts.filter { $0.3 != (viewModel.currentUserId ?? "") }
+    private var availableContacts: [ChatService.UserContact] {
+        viewModel.availableUsers.filter { $0.id != (viewModel.currentUserId ?? "") }
     }
     
     var body: some View {
         NavigationStack {
             Form {
                 Section("To:") {
-                    Picker("Contact", selection: $selectedContact) {
-                        ForEach(availableContacts, id: \.0) { contact in
-                            Text(contact.0).tag(contact.0)
+                    Picker("Contact", selection: $selectedContactId) {
+                        if availableContacts.isEmpty {
+                            Text("Loading users...").tag("")
+                        }
+                        ForEach(availableContacts, id: \.id) { contact in
+                            Text("\(contact.name) (\(contact.role.capitalized))").tag(contact.id)
                         }
                     }
                 }
                 .onAppear {
-                    if selectedContact.isEmpty, let first = availableContacts.first {
-                        selectedContact = first.0
+                    if selectedContactId.isEmpty, let first = availableContacts.first {
+                        selectedContactId = first.id
+                    }
+                }
+                .onChange(of: availableContacts.count) { _ in
+                    if selectedContactId.isEmpty, let first = availableContacts.first {
+                        selectedContactId = first.id
                     }
                 }
                 
@@ -108,18 +109,18 @@ struct NewChatView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Send") {
-                        if let contact = availableContacts.first(where: { $0.0 == selectedContact }) {
+                        if let contact = availableContacts.first(where: { $0.id == selectedContactId }) {
                             viewModel.startNewConversation(
-                                with: contact.0,
-                                initials: contact.1,
-                                role: contact.2,
-                                targetId: contact.3,
+                                with: contact.name,
+                                initials: contact.initials,
+                                role: contact.role,
+                                targetId: contact.id,
                                 initialMessage: message
                             )
                         }
                         dismiss()
                     }
-                    .disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || selectedContactId.isEmpty)
                 }
             }
         }

@@ -104,8 +104,6 @@ final class ChatService {
         .eraseToAnyPublisher()
     }
 
-    // MARK: - Create Room
-
     /// POST /chat/rooms
     func createRoom(targetId: String, senderId: String, senderName: String, senderRole: String, initialMessage: String) -> AnyPublisher<ChatRoom, Error> {
         return Future { [weak self] promise in
@@ -130,6 +128,36 @@ final class ChatService {
                     promise(.success(room))
                 } catch {
                     print("❌ ChatService Error (CreateRoom): \(error)")
+                    promise(.failure(error))
+                }
+            }
+        }
+        .eraseToAnyPublisher()
+    }
+
+    // MARK: - Fetch Users
+
+    struct UserContact: Codable {
+        let id: String
+        let name: String
+        let role: String
+        let initials: String
+    }
+
+    func fetchUsers() -> AnyPublisher<[UserContact], Error> {
+        return Future { [weak self] promise in
+            Task {
+                guard let self = self else { return }
+                do {
+                    let users: [UserContact] = try await self.client.request(
+                        path: "/chat/users",
+                        method: .get,
+                        requiresAuth: true,
+                        baseURL: self.chatBaseURL
+                    ) ?? []
+                    promise(.success(users))
+                } catch {
+                    print("❌ ChatService Error (Users): \(error)")
                     promise(.failure(error))
                 }
             }
