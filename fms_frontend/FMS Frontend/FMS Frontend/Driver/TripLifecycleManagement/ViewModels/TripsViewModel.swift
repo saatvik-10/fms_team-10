@@ -11,9 +11,6 @@ class TripsViewModel: ObservableObject {
     
     init(tripAPI: TripAPI = .shared) {
         self.tripAPI = tripAPI
-        Task {
-            await loadDriverTrips()
-        }
     }
     
     var filteredTrips: [LifecycleTrip] {
@@ -29,10 +26,15 @@ class TripsViewModel: ObservableObject {
             let response = try await tripAPI.getDriverTrips()
             let mappedTrips = response.trips.compactMap(Self.mapTripItemToLifecycleTrip)
 
-            if mappedTrips.isEmpty {
+            // Deduplicate by trip ID — backend may return duplicates
+            // when multiple trip records share the same vehicle
+            var seen = Set<String>()
+            let uniqueTrips = mappedTrips.filter { seen.insert($0.id).inserted }
+
+            if uniqueTrips.isEmpty {
                 trips = []
             } else {
-                trips = mappedTrips
+                trips = uniqueTrips
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -49,36 +51,26 @@ class TripsViewModel: ObservableObject {
             return nil
         }
 
-        let status = mapTripStatus(trip.status)
-        let loadInfo = trip.loadAmount ?? buildLoadInfo(amount: trip.amount, unit: trip.unit)
         let departure = trip.tripDate ?? trip.departureTime
+        let status = TripStatusHelper.resolve(backendStatus: trip.status, departureRaw: departure)
+        let loadInfo = trip.loadAmount ?? buildLoadInfo(amount: trip.amount, unit: trip.unit)
 
         return LifecycleTrip(
             id: id,
             source: source,
             destination: destination,
             status: status,
-            dateValue: formatDateValue(from: departure),
+            dateValue: TripStatusHelper.formatDateValue(from: departure),
             timeLabel: status == .completed ? "Completion Time" : "Scheduled Start",
-            timeValue: formatTimeValue(from: departure),
+            timeValue: TripStatusHelper.formatTimeValue(from: departure),
             loadInfo: loadInfo,
             distance: parseDistanceKm(trip.distanceKm ?? trip.tripDistance),
             vehicleNumber: trip.vehicleRegistrationNumber,
             cargoWeight: formatCargoWeight(amount: trip.amount, unit: trip.unit),
             sourceCoordinate: nil,
-            destinationCoordinate: nil
+            destinationCoordinate: nil,
+            rawDeparture: departure
         )
-    }
-
-    private static func mapTripStatus(_ rawStatus: String?) -> TripStatus {
-        switch rawStatus?.uppercased() {
-        case "COMPLETED":
-            return .completed
-//        case "PENDING", "CANCELLED":
-////            return .assigned
-        default:
-            return .scheduled
-        }
     }
 
     private static func buildLoadInfo(amount: Int?, unit: String?) -> String {
@@ -99,46 +91,9 @@ class TripsViewModel: ObservableObject {
         let filtered = value.filter { "0123456789.".contains($0) }
         return Double(filtered) ?? 0.0
     }
-
-    private static func formatDateValue(from raw: String?) -> String {
-        guard let raw, let date = parseDate(raw) else { return "Today" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-        return formatter.string(from: date)
-    }
-
-    private static func formatTimeValue(from raw: String?) -> String {
-        guard let raw, let date = parseDate(raw) else { return "TBD" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
-    }
-
-    private static func parseDate(_ raw: String) -> Date? {
-        let isoWithFractional = ISO8601DateFormatter()
-        isoWithFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = isoWithFractional.date(from: raw) {
-            return date
-        }
-
-        let isoBasic = ISO8601DateFormatter()
-        isoBasic.formatOptions = [.withInternetDateTime]
-        if let date = isoBasic.date(from: raw) {
-            return date
-        }
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        return formatter.date(from: raw)
-    }
     
     private func loadMockData() {
         trips = [
-//            // Assigned Trips
-//            LifecycleTrip(id: "TRP-10492", source: "Mumbai, MH", destination: "Pune, MH", status: .assigned, dateValue: "Oct 18", timeLabel: "Arrival Window", timeValue: "08:00 - 10:00", loadInfo: "24 Pallets", distance: 148.4, vehicleNumber: nil),
-//            LifecycleTrip(id: "TRP-10495", source: "Delhi, DL", destination: "Jaipur, RJ", status: .assigned, dateValue: "Oct 19", timeLabel: "Arrival Window", timeValue: "13:30 - 15:00", loadInfo: "18 Pallets", distance: 281.0, vehicleNumber: nil),
-            
             // Accepted Trips
             LifecycleTrip(id: "TRP-10488", source: "Mumbai, MH", destination: "Gurgaon, HR", status: .scheduled, dateValue: "Oct 20", timeLabel: "Scheduled Start", timeValue: "14:30", loadInfo: "12 Pallets", distance: 1412.0, vehicleNumber: "MH01BK9392"),
             
@@ -187,17 +142,16 @@ class TripsViewModel: ObservableObject {
     
     func endTrip(_ tripId: String) {
         print("End Trip called for \(tripId)")
+
+        // Immediately update UI
         if let index = trips.firstIndex(where: { $0.id == tripId }) {
             let existing = trips[index]
-            
-            // Format current time for completion time
             let formatter = DateFormatter()
             formatter.dateFormat = "MMM d"
             let dateString = formatter.string(from: Date())
-            
             formatter.dateFormat = "'Today', HH:mm"
             let timeString = formatter.string(from: Date())
-            
+
             trips[index] = LifecycleTrip(
                 id: existing.id,
                 source: existing.source,
@@ -210,6 +164,16 @@ class TripsViewModel: ObservableObject {
                 distance: existing.distance,
                 vehicleNumber: existing.vehicleNumber
             )
+        }
+
+        // Call backend to persist the completion
+        Task {
+            do {
+                let response = try await tripAPI.completeTripForDriver(tripId: tripId)
+                print("✅ Trip completed on backend: \(response.message)")
+            } catch {
+                print("❌ Failed to complete trip on backend: \(error.localizedDescription)")
+            }
         }
     }
     

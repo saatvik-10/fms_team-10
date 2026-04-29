@@ -35,12 +35,22 @@ struct TripDetailView: View {
         distanceToDestinationMeters <= 0
     }
 
-    private var isNavigationEnabled: Bool {
-        guard !trip.tripDate.isEmpty else { return true }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-        let todayString = formatter.string(from: Date())
-        return todayString == trip.tripDate
+    /// Determines if the trip is currently ongoing (start time has passed).
+    private var isTripOngoing: Bool {
+        guard let lt = lifecycleTrip else {
+            // Fallback: if no lifecycle trip, check date string
+            guard !trip.tripDate.isEmpty else { return true }
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d"
+            let todayString = formatter.string(from: Date())
+            return todayString == trip.tripDate
+        }
+        return lt.status == .ongoing
+    }
+
+    /// True if the trip is completed
+    private var isTripCompleted: Bool {
+        lifecycleTrip?.status == .completed
     }
 
     @State private var showMap = false
@@ -103,33 +113,13 @@ struct TripDetailView: View {
                 .padding(.horizontal, horizontalPadding)
                 .shadow(color: AppColors.shadow, radius: 10, x: 0, y: 4)
                 
+                // ACTION BUTTONS — conditional on trip status
                 if showTripControls {
+                    // ── TRIPS TAB: State-driven buttons ──
                     tripActionButtons
                 } else {
-                    VStack(spacing: 16) {
-                        ZStack {
-                            PrimaryButton(
-                                title: "Continue Navigation",
-                                icon: "location.fill",
-                                backgroundColor: Color(hex: "0a303a"),
-                                textColor: .white
-                            ) {
-                                showNavigationMap = true
-                            }
-                            .allowsHitTesting(isNavigationEnabled)
-
-                            if !isNavigationEnabled {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(UIColor.systemBackground).opacity(0.45))
-                                    .allowsHitTesting(false)
-                            }
-                        }
-                        .opacity(isNavigationEnabled ? 1.0 : 0.5)
-
-                        reportIssueButton
-                    }
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.bottom, 32)
+                    // ── HOME TAB: Status-aware buttons ──
+                    homeTabActionButtons
                 }
             }
             .padding(.top, 16)
@@ -138,7 +128,15 @@ struct TripDetailView: View {
         .navigationTitle("Trip Details")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showNavigationMap) {
-            CustomNavigationView(trip: trip, resolvedDestinationCoordinate: resolvedDestinationCoordinate)
+            CustomNavigationView(
+                trip: trip,
+                resolvedDestinationCoordinate: resolvedDestinationCoordinate,
+                onEndTrip: {
+                    showNavigationMap = false
+                    tripProgressState = .ended
+                    onTripEnded?()
+                }
+            )
         }
         .navigationDestination(isPresented: $showReportIssue) {
             if let lt = lifecycleTrip {
@@ -215,55 +213,13 @@ struct TripDetailView: View {
         }
     }
 
-    // MARK: - Trips Tab Action Buttons
+    // MARK: - Home Tab Action Buttons
 
     @ViewBuilder
-    private var tripActionButtons: some View {
-        VStack(spacing: 12) {
-            switch tripProgressState {
-
-            case .notStarted:
-                if !isNavigationEnabled && !trip.tripDate.isEmpty {
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar.badge.clock")
-                            .font(.caption)
-                            .foregroundColor(AppColors.secondaryText)
-                        Text("Available on \(trip.tripDate)")
-                            .font(.caption)
-                            .foregroundColor(AppColors.secondaryText)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
-                }
-
-                ZStack {
-                    PrimaryButton(
-                        title: "Start Trip",
-                        icon: "arrow.right.circle.fill",
-                        backgroundColor: Color(hex: "0a303a"),
-                        textColor: .white
-                    ) {
-                        guard isNavigationEnabled else { return }
-                        tripProgressState = .inProgress
-                    }
-                    .allowsHitTesting(isNavigationEnabled)
-
-                    if !isNavigationEnabled {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(UIColor.systemBackground).opacity(0.45))
-                            .allowsHitTesting(false)
-                    }
-                }
-                .opacity(isNavigationEnabled ? 1.0 : 0.45)
-
-            case .inProgress:
-                distanceHintLabel
-                endTripButton(enabled: false)
-
-            case .nearDestination:
-                distanceHintLabel
-                endTripButton(enabled: true)
-
-            case .ended:
+    private var homeTabActionButtons: some View {
+        VStack(spacing: 16) {
+            if isTripCompleted {
+                // ── COMPLETED: Show status banner, no navigation button ──
                 HStack(spacing: 10) {
                     Image(systemName: "checkmark.seal.fill")
                         .foregroundColor(AppColors.success)
@@ -277,9 +233,142 @@ struct TripDetailView: View {
                 .padding()
                 .background(AppColors.success.opacity(0.12))
                 .cornerRadius(12)
+            } else if isTripOngoing {
+                // ── ONGOING: "Continue Navigation" — ENABLED ──
+                PrimaryButton(
+                    title: "Continue Navigation",
+                    icon: "location.fill",
+                    backgroundColor: Color(hex: "0a303a"),
+                    textColor: .white
+                ) {
+                    showNavigationMap = true
+                }
+            } else {
+                // ── SCHEDULED: "Start Trip" — DISABLED ──
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.caption)
+                        .foregroundColor(AppColors.secondaryText)
+                    Text("Trip available on \(lifecycleTrip?.scheduledDateTimeText ?? trip.tripDate)")
+                        .font(.caption)
+                        .foregroundColor(AppColors.secondaryText)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+
+                ZStack {
+                    PrimaryButton(
+                        title: "Start Trip",
+                        icon: "arrow.right.circle.fill",
+                        backgroundColor: Color(hex: "0a303a"),
+                        textColor: .white
+                    ) { /* disabled — no action */ }
+                    .allowsHitTesting(false)
+
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(UIColor.systemBackground).opacity(0.45))
+                        .allowsHitTesting(false)
+                }
+                .opacity(0.5)
+            }
+
+            if !isTripCompleted {
+                reportIssueButton
+            }
+        }
+        .padding(.horizontal, horizontalPadding)
+        .padding(.bottom, 32)
+    }
+
+    // MARK: - Trips Tab Action Buttons
+
+    @ViewBuilder
+    private var tripActionButtons: some View {
+        VStack(spacing: 12) {
+            if isTripCompleted {
+                // ── COMPLETED: Just show completed banner ──
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundColor(AppColors.success)
+                        .font(.title3)
+                    Text("Trip Completed")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(AppColors.primaryText)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(AppColors.success.opacity(0.12))
+                .cornerRadius(12)
+            } else {
+                switch tripProgressState {
+
+                case .notStarted:
+                    if isTripOngoing {
+                        // ── ONGOING: "Continue Navigation" — ENABLED ──
+                        PrimaryButton(
+                            title: "Continue Navigation",
+                            icon: "location.fill",
+                            backgroundColor: Color(hex: "0a303a"),
+                            textColor: .white
+                        ) {
+                            showNavigationMap = true
+                        }
+                    } else {
+                        // ── SCHEDULED: "Start Navigation" — DISABLED ──
+                        HStack(spacing: 6) {
+                            Image(systemName: "calendar.badge.clock")
+                                .font(.caption)
+                                .foregroundColor(AppColors.secondaryText)
+                            Text("Trip available on \(lifecycleTrip?.scheduledDateTimeText ?? trip.tripDate)")
+                                .font(.caption)
+                                .foregroundColor(AppColors.secondaryText)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+
+                        ZStack {
+                            PrimaryButton(
+                                title: "Start Navigation",
+                                icon: "arrow.right.circle.fill",
+                                backgroundColor: Color(hex: "0a303a"),
+                                textColor: .white
+                            ) { /* disabled */ }
+                            .allowsHitTesting(false)
+
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(UIColor.systemBackground).opacity(0.45))
+                                .allowsHitTesting(false)
+                        }
+                        .opacity(0.45)
+                    }
+
+                case .inProgress:
+                    distanceHintLabel
+                    endTripButton(enabled: false)
+
+                case .nearDestination:
+                    distanceHintLabel
+                    endTripButton(enabled: true)
+
+                case .ended:
+                    HStack(spacing: 10) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundColor(AppColors.success)
+                            .font(.title3)
+                        Text("Trip Completed")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.primaryText)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(AppColors.success.opacity(0.12))
+                    .cornerRadius(12)
+                }
             }
             
-            reportIssueButton
+            if !isTripCompleted {
+                reportIssueButton
+            }
         }
         .padding(.horizontal, horizontalPadding)
         .padding(.bottom, 32)

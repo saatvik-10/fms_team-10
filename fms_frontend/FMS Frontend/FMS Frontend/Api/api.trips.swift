@@ -46,6 +46,14 @@ struct GetTripsResponse: Decodable {
   let trips: [TripItem]
 }
 
+struct CompleteTripRequest: Encodable {
+  let tripId: String
+}
+
+struct CompleteTripResponse: Decodable {
+  let message: String
+}
+
 final class TripAPI {
   static let shared = TripAPI()
 
@@ -84,6 +92,15 @@ final class TripAPI {
     try await client.request(
       path: "/trip/get-driver-trips",
       method: .get,
+      requiresAuth: true
+    )
+  }
+
+  func completeTripForDriver(tripId: String) async throws -> CompleteTripResponse {
+    try await client.request(
+      path: "/trip/complete-trip",
+      method: .patch,
+      body: CompleteTripRequest(tripId: tripId),
       requiresAuth: true
     )
   }
