@@ -107,10 +107,15 @@ struct FleetManagerDashboardView: View {
                                 // Row B: Least Travelled Vehicles + Available Drivers (side by side)
                                 HStack(alignment: .top, spacing: 15) {
                                     LeastTravelledVehiclesChart(vehicles: dataManager.vehicles)
-                                        .frame(maxWidth: .infinity)
+                                        .frame(minWidth: 0, maxWidth: .infinity)
                                     
-                                    IdleDriversAnalytic(drivers: dataManager.idleDrivers)
-                                        .frame(maxWidth: .infinity)
+                                    DriverStatsCard(
+                                        total: dataManager.totalDriversCount,
+                                        inTransit: dataManager.inTransitDriversCount,
+                                        idle: dataManager.idleDriversCount,
+                                        offDuty: dataManager.offDutyDriversCount
+                                    )
+                                        .frame(minWidth: 0, maxWidth: .infinity)
                                 }
                             }
                             .padding(20)
@@ -337,9 +342,11 @@ struct FleetDashboardHeaderView: View {
         @Environment(\.dismiss) var dismiss
         @EnvironmentObject var session: AppSessionStore
         let profile: ManagerProfileData?
+        @State private var phoneNumber: String
         
         init(profile: ManagerProfileData? = nil) {
             self.profile = profile
+            _phoneNumber = State(initialValue: profile?.phone ?? "To be integrated")
         }
         
         var body: some View {
@@ -394,7 +401,32 @@ struct FleetDashboardHeaderView: View {
                                 
                                 VStack(spacing: 15) {
                                     ProfileInfoRow(icon: "envelope.fill", label: "Email", value: profile?.email ?? "To be integrated")
-                                    ProfileInfoRow(icon: "phone.fill", label: "Work Phone", value: profile?.phone ?? "To be integrated")
+                                    
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "phone.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(AppTheme.primary.opacity(0.4))
+                                            .frame(width: 24)
+                                        Text("Work Phone")
+                                            .font(AppFonts.caption1)
+                                            .foregroundColor(.gray)
+                                        Spacer()
+                                        HStack(spacing: 8) {
+                                            TextField("Phone Number", text: $phoneNumber)
+                                                .font(AppFonts.body)
+                                                .foregroundColor(AppTheme.primary)
+                                                .multilineTextAlignment(.trailing)
+                                                .keyboardType(.phonePad)
+                                            
+                                            Image(systemName: "pencil")
+                                                .font(.system(size: 10))
+                                                .foregroundColor(.gray)
+                                        }
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(Color.gray.opacity(0.05))
+                                        .cornerRadius(8)
+                                    }
                                 }
                             }
                             .padding(24)
@@ -420,11 +452,8 @@ struct FleetDashboardHeaderView: View {
                 session.logout()
                 dismiss()
             }) {
-                HStack {
-                    Image(systemName: "arrow.right.square.fill")
-                    Text("Sign Out of Session")
+                    Text("Logout")
                         .fontWeight(.bold)
-                }
                 .font(AppFonts.body)
                 .foregroundColor(.red)
                 .frame(maxWidth: .infinity)

@@ -13,7 +13,7 @@ class FleetCreateTripViewModel: ObservableObject {
     
     @Published var selectedVehicleID: String = ""
     @Published var selectedDriverID: String = ""
-    @Published var scheduledDate: Date = Date()
+    @Published var scheduledDate: Date = Date().addingTimeInterval(2 * 3600)
     @Published var productName: String = ""
     @Published var loadAmount: String = ""
     @Published var loadUnit: String = "Tons"
@@ -55,7 +55,9 @@ class FleetCreateTripViewModel: ObservableObject {
                 )
                 
                 // Parse distance and duration to numbers for cost calculation
-                let distStr = result.distance.replacingOccurrences(of: " km", with: "").replacingOccurrences(of: ",", with: "")
+                let distStr = result.distance
+                    .replacingOccurrences(of: " km", with: "")
+                    .replacingOccurrences(of: ",", with: "")
                 let dist = Double(distStr) ?? 50.0
                 
                 var hours = 0.0
@@ -72,9 +74,13 @@ class FleetCreateTripViewModel: ObservableObject {
                 }
                 if hours == 0 { hours = dist / 60.0 } // fallback
                 
+                let drivingHours = hours
+                let breaks = floor(drivingHours / 4.0)
+                let totalHours = drivingHours + (breaks * 0.75)
+                
                 self.encodedPolyline = result.polyline
                 self.estimatedDistance = dist
-                self.estimatedDuration = hours
+                self.estimatedDuration = totalHours
                 self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
                 self.isCalculatingRoute = false
             } catch {

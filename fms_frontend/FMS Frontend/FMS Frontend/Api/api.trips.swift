@@ -122,6 +122,7 @@ final class TripAPI {
     )
   }
 
+<<<<<<< HEAD
   func completeTripForDriver(tripId: String) async throws -> CompleteTripResponse {
     try await client.request(
       path: "/trip/complete-trip",
@@ -136,6 +137,12 @@ final class TripAPI {
       path: "/trip/start-trip",
       method: .patch,
       body: StartTripRequest(tripId: tripId),
+=======
+  func deleteTrip(id: String) async throws -> BasicMessageResponse {
+    try await client.request(
+      path: "/trip/delete-trip?id=\(id)",
+      method: .delete,
+>>>>>>> 607bb91cffde46b58b17aad48e2863d192149315
       requiresAuth: true
     )
   }
