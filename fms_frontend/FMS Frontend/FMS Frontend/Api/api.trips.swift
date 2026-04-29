@@ -12,6 +12,20 @@ struct CreateTripRequest: Encodable {
   let distance: String?
 }
 
+struct TripVehicleInfo: Decodable {
+  let id: String
+  let registrationNumber: String
+  let model: String?
+  let status: String?
+}
+
+struct TripDriverInfo: Decodable {
+  let id: String
+  let name: String
+  let phone: String?
+  let status: String?
+}
+
 struct TripItem: Decodable {
   let id: String?
   let sourceLocation: String?
@@ -19,8 +33,12 @@ struct TripItem: Decodable {
   let productType: String?
   let unit: String?
   let amount: Int?
-  let vehicle: String?
-  let driver: String?
+  let vehicleId: String?
+  let driverId: String?
+  
+  let vehicle: TripVehicleInfo?
+  let driver: TripDriverInfo?
+  
   let departureTime: String?
   let status: String?
   let loadAmount: String?
@@ -44,6 +62,22 @@ struct GetTripResponse: Decodable {
 
 struct GetTripsResponse: Decodable {
   let trips: [TripItem]
+}
+
+struct CompleteTripRequest: Encodable {
+  let tripId: String
+}
+
+struct CompleteTripResponse: Decodable {
+  let message: String
+}
+
+struct StartTripRequest: Encodable {
+  let tripId: String
+}
+
+struct StartTripResponse: Decodable {
+  let message: String
 }
 
 final class TripAPI {
@@ -84,6 +118,24 @@ final class TripAPI {
     try await client.request(
       path: "/trip/get-driver-trips",
       method: .get,
+      requiresAuth: true
+    )
+  }
+
+  func completeTripForDriver(tripId: String) async throws -> CompleteTripResponse {
+    try await client.request(
+      path: "/trip/complete-trip",
+      method: .patch,
+      body: CompleteTripRequest(tripId: tripId),
+      requiresAuth: true
+    )
+  }
+
+  func startTripForDriver(tripId: String) async throws -> StartTripResponse {
+    try await client.request(
+      path: "/trip/start-trip",
+      method: .patch,
+      body: StartTripRequest(tripId: tripId),
       requiresAuth: true
     )
   }

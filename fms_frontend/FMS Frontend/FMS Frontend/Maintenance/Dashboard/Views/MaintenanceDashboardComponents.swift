@@ -14,6 +14,7 @@ struct FleetAnalysisCard: View {
     let title: String
     let count: String
     let color: Color
+    var showsChevron: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -36,10 +37,14 @@ struct FleetAnalysisCard: View {
                 .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
         )
         .overlay(
-            Image(systemName: "chevron.right")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(Color(.systemGray4))
-                .padding(16),
+            Group {
+                if showsChevron {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Color(.systemGray4))
+                        .padding(16)
+                }
+            },
             alignment: .topTrailing
         )
     }

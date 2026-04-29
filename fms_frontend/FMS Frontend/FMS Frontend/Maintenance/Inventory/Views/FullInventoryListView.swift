@@ -47,7 +47,7 @@ struct FullInventoryListView: View {
             } else {
                 Section {
                     ForEach(filteredParts) { part in
-                        NavigationLink(destination: InventoryDetailView(part: part)) {
+                        NavigationLink(destination: InventoryDetailView(partId: part.partId)) {
                             InventoryRow(part: part)
                         }
                     }

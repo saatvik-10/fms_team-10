@@ -94,6 +94,7 @@ struct WorkOrderAPIItem: Decodable {
   let workOrderMedia: [String]
   let maintenanceId: String
   let mediaUrls: [String]?
+  let tripId: String?
   let createdAt: Date?
   let updatedAt: Date?
 }

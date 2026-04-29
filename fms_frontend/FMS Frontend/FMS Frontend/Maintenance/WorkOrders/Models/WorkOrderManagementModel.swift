@@ -6,8 +6,8 @@
 import Foundation
 
 enum WorkOrderStatus: String, Codable, CaseIterable {
-    case progress = "Progress"
-    case completed = "Completed"
+    case progress = "PROGRESS"
+    case completed = "COMPLETED"
 }
 
 enum WorkOrderPriority: String, Codable, CaseIterable {
@@ -64,6 +64,7 @@ struct WorkOrder: Identifiable, Codable {
     var driverMediaImages: [Data] = []
     var isAccepted: Bool = false
     var acceptedByTechnicianId: String? = nil
+    var tripId: String? = nil
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
     var proofOfWorkImages: [Data] = []
@@ -139,6 +140,7 @@ extension WorkOrder {
             technicianId: apiItem.maintenanceId,
             mediaUrls: apiItem.mediaUrls ?? [],
             driverMediaImages: localMediaImages,
+            tripId: apiItem.tripId,
             createdAt: apiItem.createdAt ?? Date(),
             updatedAt: apiItem.updatedAt ?? Date(),
             checklist: WorkOrder.standardChecklist

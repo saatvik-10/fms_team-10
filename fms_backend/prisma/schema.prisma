@@ -65,6 +65,8 @@ model Driver {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  trips     Trips[]
 }
 
 model Maintenance {
@@ -100,6 +102,8 @@ model WorkOrder {
 
   maintenanceId String
   maintenance   Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
+
+  tripId        String?
 
   status        String @default("PROGRESS")
   totalCost     Float  @default(0)
@@ -174,6 +178,8 @@ model Vehicle {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  trips      Trips[]
+
   @@map("vehicles")
 }
 
@@ -190,7 +196,7 @@ model VehicleTrip {
   duration     String?
   costEstimate String?
   startTime    DateTime?
-  status       TripStatus @default(PENDING)
+  status       TripStatus @default(SCHEDULED)
   productType  String?
   loadAmount   String?
 
@@ -228,7 +234,7 @@ model TripHistory {
   duration     String?
   costEstimate String?
   startTime    DateTime?
-  status       TripStatus @default(PENDING)
+  status       TripStatus @default(SCHEDULED)
   productType  String?
   loadAmount   String?
 
@@ -244,10 +250,13 @@ model Trips {
   productType         String
   unit                String
   amount              Int
-  vehicle             String
-  driver              String
+  vehicleId           String?
+  vehicle             Vehicle? @relation(fields: [vehicleId], references: [id])
+  driverId            String?
+  driver              Driver?  @relation(fields: [driverId], references: [id])
   departureTime       String
   createdById         String
+  status              String  @default("PENDING")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -289,13 +298,20 @@ enum VehicleStatus {
   AVAILABLE
   IN_TRANSIT
   MAINTENANCE
+  SCHEDULED
 }
 
 enum TripStatus {
+  CANCELLED
   PENDING
+  SCHEDULED
   IN_TRANSIT
   COMPLETED
-  CANCELLED
+}
+
+enum WorkOrderStatus {
+  PROGRESS
+  COMPLETED
 }
 
 enum IssueReportStatus {

@@ -9,16 +9,18 @@ import Combine
 struct MaintenanceTabView: View {
     @Binding var isLoggedIn: Bool
     @StateObject var store = MaintenanceStore()
+    @State private var selectedTab = 0
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             // Tab 1: Dashboard
             NavigationStack {
-                MaintenanceDashboardView(isLoggedIn: $isLoggedIn)
+                MaintenanceDashboardView(isLoggedIn: $isLoggedIn, selectedTab: $selectedTab)
             }
             .tabItem {
                 Label("Dashboard", systemImage: "square.grid.2x2.fill")
             }
+            .tag(0)
 
             // Tab 2: Work Orders
             NavigationStack {
@@ -27,6 +29,7 @@ struct MaintenanceTabView: View {
             .tabItem {
                 Label("Work Orders", systemImage: "wrench.and.screwdriver.fill")
             }
+            .tag(1)
 
             // Tab 3: Inventory
             NavigationStack {
@@ -35,6 +38,7 @@ struct MaintenanceTabView: View {
             .tabItem {
                 Label("Inventory", systemImage: "box.truck.fill")
             }
+            .tag(2)
 
             // Tab 4: Inspections
             NavigationStack {
@@ -43,6 +47,7 @@ struct MaintenanceTabView: View {
             .tabItem {
                 Label("Inspections", systemImage: "clipboard.fill")
             }
+            .tag(3)
             
             // --- CHAT INTEGRATION ---
             NavigationStack {
@@ -51,6 +56,7 @@ struct MaintenanceTabView: View {
             .tabItem {
                 Label("Messages", systemImage: "message.fill")
             }
+            .tag(4)
             // ------------------------
         }
         .environmentObject(store)
