@@ -475,7 +475,7 @@ struct DriverProfileView: View {
                     VStack(spacing: 4) {
                         Text(session.driverProfile?.name ?? "Driver")
                             .font(.title2.bold())
-                            .accessibilityAddTraits(.isHeader)
+                            .accessibilityAddTraits(.header)
                         Text("Certified Commercial Driver")
                             .font(.subheadline)
                             .foregroundColor(.secondary)

@@ -27,7 +27,7 @@ struct MaintenanceUserAuthenticationView: View {
                         .font(.largeTitle)
                         .fontWeight(.black)
                         .foregroundColor(AppColors.primary)
-                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityAddTraits(.header)
                 }
                 
                 // Login Card

@@ -185,7 +185,7 @@ struct DashboardSectionHeader: View {
         Text(title)
             .font(AppFonts.title2)
             .foregroundColor(AppTheme.primary)
-            .accessibilityAddTraits(.isHeader)
+            .accessibilityAddTraits(.header)
     }
 }
 
@@ -396,7 +396,7 @@ struct FleetDashboardHeaderView: View {
                                         Text(profile?.name ?? "Manager")
                                             .font(AppFonts.title3)
                                             .foregroundColor(AppTheme.primary)
-                                            .accessibilityAddTraits(.isHeader)
+                                            .accessibilityAddTraits(.header)
                                         Text("Fleet Operations Manager")
                                             .font(AppFonts.subheadline)
                                             .foregroundColor(.gray)
