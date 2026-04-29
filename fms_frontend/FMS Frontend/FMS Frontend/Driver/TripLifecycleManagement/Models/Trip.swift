@@ -4,8 +4,8 @@ import CoreLocation
 // MARK: - Enums
 
 enum TripStatus: String, CaseIterable {
-//    case assigned = "NEW TASK"
     case scheduled = "SCHEDULED"
+    case inTransit = "IN TRANSIT"
     case completed = "COMPLETED"
 }
 
@@ -64,8 +64,8 @@ struct LifecycleTrip: Identifiable {
     
     var segment: TripSegment {
         switch status {
-//        case .assigned: return .
         case .scheduled: return .accepted
+        case .inTransit: return .accepted
         case .completed: return .past
         }
     }

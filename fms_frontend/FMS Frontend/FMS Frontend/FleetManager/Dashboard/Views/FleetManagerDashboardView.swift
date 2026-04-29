@@ -326,6 +326,8 @@ struct FleetDashboardHeaderView: View {
             case .scheduled: return Color.gray
             case .inTransit: return AppTheme.statusInTransit
             case .completed: return AppTheme.activeGreen
+            case .pending:
+                return AppTheme.secondary
             }
         }
     }
