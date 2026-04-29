@@ -42,6 +42,9 @@ struct FleetOpsMetricItem: View {
                 .foregroundColor(AppTheme.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // VoiceOver: read as combined unit e.g. "In Transit: 05"
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title): \(value)")
     }
 }
 
@@ -161,9 +164,11 @@ struct MaintenancePriorityDarkCard: View {
                             Rectangle()
                                 .fill(alert.status == "Urgent" ? AppTheme.criticalRed : Color.white.opacity(0.2))
                                 .frame(width: 3, height: 40)
+                                .accessibilityHidden(true)
                             
                             Image(systemName: alert.iconName)
                                 .foregroundColor(.white)
+                                .accessibilityHidden(true)
                             
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(alert.title)
@@ -179,6 +184,9 @@ struct MaintenancePriorityDarkCard: View {
                         .padding(.horizontal, 15)
                         .background(Color.white.opacity(0.05))
                         .cornerRadius(10)
+                        // VoiceOver: combine alert row as one element
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(alert.status == "Urgent" ? "Urgent alert" : "Scheduled alert"): \(alert.title). \(alert.detail)")
                     }
                 }
                 .padding(.top, 10)
@@ -206,18 +214,26 @@ struct MaintenancePriorityDarkCard: View {
                     }
                 }
                 .frame(width: 140, height: 140)
+                // VoiceOver: describe gauge as a value
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Maintenance critical mass gauge")
+                .accessibilityValue("\(Int(criticalMass * 100)) percent")
                 
                 HStack(spacing: 30) {
                     Label {
                         Text("04 URGENT").font(AppFonts.caption2)
                     } icon: {
                         Circle().fill(AppTheme.criticalRed).frame(width: 6, height: 6)
+                            .accessibilityHidden(true)
                     }
+                    .accessibilityLabel("4 urgent maintenance items")
                     Label {
                         Text("14 SCHEDULED").font(AppFonts.caption2)
                     } icon: {
                         Circle().fill(Color.white.opacity(0.4)).frame(width: 6, height: 6)
+                            .accessibilityHidden(true)
                     }
+                    .accessibilityLabel("14 scheduled maintenance items")
                 }
                 .foregroundColor(.white)
             }

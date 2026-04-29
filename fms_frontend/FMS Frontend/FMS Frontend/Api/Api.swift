@@ -70,7 +70,7 @@ private struct APIErrorResponse: Decodable {
 	let message: String?
 }
 
-struct EmptyResponse: Encodable {}
+struct EmptyResponse: Codable {}
 
 struct MailStatus: Decodable {
 	let sent: Bool

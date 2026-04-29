@@ -58,12 +58,15 @@ struct FleetCreateTripModal: View {
                                     Image(systemName: "mappin.and.ellipse")
                                         .font(.system(size: 14))
                                         .foregroundColor(AppTheme.primary)
+                                        .accessibilityHidden(true)
                                 }
                                 .padding()
                                 .background(Color.gray.opacity(0.1))
                                 .cornerRadius(10)
                             }
                         }
+                        .accessibilityLabel("Source Location: \(sourceLocation?.name ?? "Not selected")")
+                        .accessibilityHint("Double tap to open the map and pick a source location")
                         
                         Button(action: { showingDestinationPicker = true }) {
                             VStack(alignment: .leading, spacing: 10) {
@@ -81,12 +84,15 @@ struct FleetCreateTripModal: View {
                                     Image(systemName: "flag.fill")
                                         .font(.system(size: 14))
                                         .foregroundColor(AppTheme.primary)
+                                        .accessibilityHidden(true)
                                 }
                                 .padding()
                                 .background(Color.gray.opacity(0.1))
                                 .cornerRadius(10)
                             }
                         }
+                        .accessibilityLabel("Destination Location: \(destinationLocation?.name ?? "Not selected")")
+                        .accessibilityHint("Double tap to open the map and pick a destination location")
                         
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
@@ -103,10 +109,14 @@ struct FleetCreateTripModal: View {
                             
                             Slider(value: $geofenceRadius, in: 100...5000, step: 100)
                                 .accentColor(AppTheme.primary)
+                                .accessibilityLabel("Geofence Radius")
+                                .accessibilityValue("\(Int(geofenceRadius)) meters")
+                                .accessibilityHint("Swipe up or down to adjust the geofence alert boundary")
                             
                             Text("Triggers alerts when entering/exiting this zone.")
                                 .font(AppFonts.caption2)
                                 .foregroundColor(.gray)
+                                .accessibilityHidden(true)
                         }
                     }
                     
@@ -168,6 +178,8 @@ struct FleetCreateTripModal: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(10)
+                            .accessibilityLabel("Select Vehicle")
+                            .accessibilityHint("Choose an idle vehicle that can carry your cargo weight")
                         }
                         
                         VStack(alignment: .leading, spacing: 10) {
@@ -188,6 +200,8 @@ struct FleetCreateTripModal: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(10)
+                            .accessibilityLabel("Select Driver")
+                            .accessibilityHint("Choose an available driver or select auto assign")
                         }
                     }
                     
@@ -202,6 +216,8 @@ struct FleetCreateTripModal: View {
                             .padding()
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(10)
+                            .accessibilityLabel("Departure Date and Time")
+                            .accessibilityHint("Select the scheduled trip departure date and time")
                     }
                     
                     if estimatedCost > 0 || isCalculatingRoute {
@@ -215,6 +231,7 @@ struct FleetCreateTripModal: View {
                                 ProgressView("Calculating...")
                                     .padding()
                                     .frame(maxWidth: .infinity)
+                                    .accessibilityLabel("Calculating route and cost estimate, please wait")
                             } else {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 4) {
@@ -241,6 +258,8 @@ struct FleetCreateTripModal: View {
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(AppTheme.primary.opacity(0.1), lineWidth: 1)
                                 )
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("Estimated cost: ₹\(String(format: "%.2f", estimatedCost)). Distance: \(Int(estimatedDistance)) km. Duration: \(formatDuration(estimatedDuration))")
                             }
                         }
                     }
@@ -261,6 +280,8 @@ struct FleetCreateTripModal: View {
                 .disabled(!canCreate)
                 .padding()
                 .background(Color.white.shadow(color: Color.black.opacity(0.05), radius: 5, y: -5))
+                .accessibilityLabel("Create Trip")
+                .accessibilityHint(canCreate ? "Double tap to create and schedule this trip" : "Fill in all required fields to enable trip creation")
             }
             .navigationTitle("New Trip")
             .toolbar {

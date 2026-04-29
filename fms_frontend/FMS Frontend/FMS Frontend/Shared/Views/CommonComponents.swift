@@ -16,18 +16,22 @@ struct PrimaryButton: View {
                 if isLoading {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: textColor))
+                        .accessibilityLabel("Loading")
                 } else if let icon = icon {
                     Image(systemName: icon)
+                        .accessibilityHidden(true) // decorative; label covers it
                 }
                 Text(title)
                     .font(.headline)
             }
             .frame(maxWidth: .infinity)
+            .frame(minHeight: 44) // Minimum touch target
             .padding(.vertical, 16)
             .background(backgroundColor)
             .foregroundColor(textColor)
             .cornerRadius(12)
         }
+        .accessibilityLabel(title)
     }
 }
 
@@ -48,5 +52,9 @@ struct AppProfileInfoRow: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 4)
+        .frame(minHeight: 44) // Minimum touch target height
+        // VoiceOver: combine label + value into one readable element
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(value)")
     }
 }

@@ -393,7 +393,7 @@ class FleetDataManager: ObservableObject {
         vehicles = response.vehicles.map { item in
             // Filter and map trips for this vehicle
             let vehicleHistory = allTrips
-                .filter { $0.vehicle?.id == item.id || $0.vehicle?.registrationNumber == item.registrationNumber }
+                .filter { $0.vehicleId == item.id || $0.vehicleRegistrationNumber == item.registrationNumber }
                 .map { trip in
                     VehicleTrip(
                         backendId: trip.id ?? UUID().uuidString,

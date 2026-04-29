@@ -21,6 +21,7 @@ struct LoginView: View {
     @State private var logoWidth: CGFloat = 0
     
     @FocusState private var focusedField: Field?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     enum Field {
         case username, password
     }
@@ -144,10 +145,12 @@ struct LoginView: View {
             }
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 2.0).delay(0.3)) {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 2.0).delay(0.3)) {
                 animateLogo = true
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Fleetro Fleet Management System")
     }
 
     @ViewBuilder
@@ -174,6 +177,8 @@ struct LoginView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled(true)
                     .keyboardType(.asciiCapable)
+                    .accessibilityLabel("Username")
+                    .accessibilityHint("Enter your Fleetro account username")
             }
             
             // Password Field
@@ -186,14 +191,20 @@ struct LoginView: View {
                 HStack {
                     if showPassword {
                         TextField("", text: $password, prompt: Text("Enter your password").foregroundColor(.white.opacity(0.35)))
+                            .accessibilityLabel("Password")
+                            .accessibilityHint("Your password is currently visible")
                     } else {
                         SecureField("", text: $password, prompt: Text("Enter your password").foregroundColor(.white.opacity(0.35)))
+                            .accessibilityLabel("Password")
+                            .accessibilityHint("Your password is hidden")
                     }
                     
                     Button(action: { showPassword.toggle() }) {
                         Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
                             .foregroundColor(.white.opacity(0.6))
                     }
+                    .accessibilityLabel(showPassword ? "Hide password" : "Show password")
+                    .accessibilityHint("Double tap to \(showPassword ? "hide" : "show") your password")
                 }
                 .focused($focusedField, equals: .password)
                 .font(.system(size: 16, weight: .medium))
@@ -219,6 +230,7 @@ struct LoginView: View {
             .foregroundColor(.red.opacity(0.8))
             .multilineTextAlignment(.center)
             .padding(.top, 12)
+            .accessibilityLabel("Error: \(error)")
     }
 
     @ViewBuilder
@@ -231,6 +243,7 @@ struct LoginView: View {
             ZStack {
                 if isLoggingIn {
                     ProgressView().tint(AppColors.primary)
+                        .accessibilityLabel("Signing in, please wait")
                 } else {
                     Text("Sign In")
                         .font(.system(size: 17, weight: .bold))
@@ -245,6 +258,8 @@ struct LoginView: View {
         }
         .disabled(isLoggingIn || username.isEmpty || password.isEmpty)
         .opacity(isLoggingIn || username.isEmpty || password.isEmpty ? 0.7 : 1.0)
+        .accessibilityLabel("Sign In")
+        .accessibilityHint(username.isEmpty || password.isEmpty ? "Enter your username and password first" : "Double tap to sign in to your account")
     }
 
     @MainActor
