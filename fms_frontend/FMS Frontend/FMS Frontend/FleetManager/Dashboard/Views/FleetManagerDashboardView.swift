@@ -218,6 +218,8 @@ struct FleetDashboardHeaderView: View {
                 }
                 .modifier(AppTheme.cardShadow())
             }
+            .accessibilityLabel("Open Manager Profile")
+            .accessibilityHint("Double tap to view and manage your profile")
         }
         .padding(.horizontal, 25)
         .padding(.top, 20)
@@ -368,6 +370,8 @@ struct FleetDashboardHeaderView: View {
                                 .background(AppTheme.primary.opacity(0.1))
                                 .cornerRadius(12)
                         }
+                        .accessibilityLabel("Done")
+                        .accessibilityHint("Double tap to close the profile sheet")
                     }
                     .padding(25)
                     .background(Color.white)
@@ -384,11 +388,14 @@ struct FleetDashboardHeaderView: View {
                                             .font(.system(size: 32, weight: .black))
                                             .foregroundColor(.white)
                                     }
+                                    .accessibilityLabel("\(profile?.name ?? "Manager")'s profile picture, initials \(initials)")
+                                    .accessibilityHidden(false)
                                     
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(profile?.name ?? "Manager")
                                             .font(AppFonts.title3)
                                             .foregroundColor(AppTheme.primary)
+                                            .accessibilityAddTraits(.isHeader)
                                         Text("Fleet Operations Manager")
                                             .font(AppFonts.subheadline)
                                             .foregroundColor(.gray)
@@ -407,6 +414,7 @@ struct FleetDashboardHeaderView: View {
                                             .font(.system(size: 14))
                                             .foregroundColor(AppTheme.primary.opacity(0.4))
                                             .frame(width: 24)
+                                            .accessibilityHidden(true)
                                         Text("Work Phone")
                                             .font(AppFonts.caption1)
                                             .foregroundColor(.gray)
@@ -417,10 +425,13 @@ struct FleetDashboardHeaderView: View {
                                                 .foregroundColor(AppTheme.primary)
                                                 .multilineTextAlignment(.trailing)
                                                 .keyboardType(.phonePad)
+                                                .accessibilityLabel("Work Phone Number")
+                                                .accessibilityHint("Editable. Enter your work phone number")
                                             
                                             Image(systemName: "pencil")
                                                 .font(.system(size: 10))
                                                 .foregroundColor(.gray)
+                                                .accessibilityHidden(true)
                                         }
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 6)
@@ -457,11 +468,14 @@ struct FleetDashboardHeaderView: View {
                 .font(AppFonts.body)
                 .foregroundColor(.red)
                 .frame(maxWidth: .infinity)
+                .frame(minHeight: 44)
                 .padding(.vertical, 18)
                 .background(Color.red.opacity(0.05))
                 .cornerRadius(16)
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.red.opacity(0.1), lineWidth: 1))
             }
+            .accessibilityLabel("Logout")
+            .accessibilityHint("Double tap to log out of your fleet manager account")
         }
     }
     
@@ -478,6 +492,7 @@ struct FleetDashboardHeaderView: View {
                     .font(.system(size: 14))
                     .foregroundColor(AppTheme.primary.opacity(0.4))
                     .frame(width: 24)
+                    .accessibilityHidden(true) // decorative; label text covers intent
                 Text(label)
                     .font(AppFonts.caption1)
                     .foregroundColor(.gray)
@@ -486,6 +501,10 @@ struct FleetDashboardHeaderView: View {
                     .font(AppFonts.body)
                     .foregroundColor(AppTheme.primary)
             }
+            // VoiceOver: read as a single combined element
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(label): \(value)")
+            .frame(minHeight: 44)
         }
     }
     

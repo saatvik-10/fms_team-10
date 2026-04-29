@@ -274,6 +274,8 @@ struct DashboardHomeView: View {
                     .clipShape(Circle())
                     .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
             }
+            .accessibilityLabel("Open Profile")
+            .accessibilityHint("Double tap to view and manage your driver profile")
         }
     }
 }
@@ -468,10 +470,12 @@ struct DriverProfileView: View {
                         .resizable()
                         .frame(width: 80, height: 80)
                         .foregroundColor(AppColors.primary)
+                        .accessibilityHidden(true) // decorative; name below covers identity
                     
                     VStack(spacing: 4) {
                         Text(session.driverProfile?.name ?? "Driver")
                             .font(.title2.bold())
+                            .accessibilityAddTraits(.isHeader)
                         Text("Certified Commercial Driver")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
@@ -479,6 +483,9 @@ struct DriverProfileView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
+                // Group avatar + name + role as one VoiceOver element
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(session.driverProfile?.name ?? "Driver"), Certified Commercial Driver")
             }
             .listRowBackground(Color.clear)
             
@@ -498,9 +505,12 @@ struct DriverProfileView: View {
                     Spacer()
                     Toggle("", isOn: $isOffDuty)
                         .labelsHidden()
+                        .accessibilityLabel("Off Duty Status")
+                        .accessibilityHint(isOffDuty ? "Currently off duty. Double tap to go on duty" : "Currently on duty. Double tap to go off duty")
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 4)
+                .frame(minHeight: 44)
             }
             
             Section {
@@ -511,7 +521,10 @@ struct DriverProfileView: View {
                     Text("Logout")
                         .foregroundColor(.red)
                         .frame(maxWidth: .infinity)
+                        .frame(minHeight: 44)
                 }
+                .accessibilityLabel("Logout")
+                .accessibilityHint("Double tap to log out of your driver account")
             }
         }
         .navigationTitle("Profile")
