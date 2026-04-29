@@ -385,8 +385,35 @@ class FleetDataManager: ObservableObject {
     @MainActor
     func refreshVehicles() async throws {
         let response = try await VehicleAPI.shared.getVehicles()
+        
+        // Fetch all trips to populate vehicle history
+        let allTripsResponse = try? await TripAPI.shared.getTrips()
+        let allTrips = allTripsResponse?.trips ?? []
+        
         vehicles = response.vehicles.map { item in
-            Vehicle(
+            // Filter and map trips for this vehicle
+            let vehicleHistory = allTrips
+                .filter { $0.vehicle == item.id || $0.vehicleRegistrationNumber == item.registrationNumber }
+                .map { trip in
+                    VehicleTrip(
+                        backendId: trip.id ?? UUID().uuidString,
+                        vehicleID: item.registrationNumber,
+                        origin: trip.sourceLocation ?? "Unknown",
+                        destination: trip.destinationLocation ?? "Unknown",
+                        progress: trip.status == "COMPLETED" ? 1.0 : 0.0,
+                        eta: "",
+                        date: trip.tripDate ?? "Unknown",
+                        distance: trip.distanceKm ?? trip.tripDistance ?? "0 km",
+                        duration: "",
+                        costEstimate: "",
+                        startTime: trip.createdAt,
+                        status: trip.status == "COMPLETED" ? .completed : (trip.status == "IN_TRANSIT" ? .inTransit : .scheduled),
+                        productType: trip.productType ?? "General",
+                        loadAmount: trip.loadAmount ?? "0"
+                    )
+                }
+            
+            return Vehicle(
                 id: item.registrationNumber,
                 backendId: item.id,
                 make: item.make,
@@ -454,7 +481,7 @@ class FleetDataManager: ObservableObject {
                         alerts: []
                     )
                 } ?? VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
-                history: [],
+                history: vehicleHistory.filter { $0.status == .completed },
                 reports: [],
                 assessmentReason: item.assessmentReason,
                 chassisNumber: item.chassisNumber,

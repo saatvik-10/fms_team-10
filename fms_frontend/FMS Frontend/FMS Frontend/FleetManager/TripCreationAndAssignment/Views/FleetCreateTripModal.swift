@@ -140,7 +140,7 @@ struct FleetCreateTripModal: View {
                                 Spacer()
                                 VStack(alignment: .trailing) {
                                     Text("\(Int(estimatedDistance)) km")
-                                    Text("\(Int(estimatedDuration)) hrs")
+                                    Text(formatDuration(estimatedDuration))
                                         .font(.caption)
                                 }
                             }
@@ -148,21 +148,18 @@ struct FleetCreateTripModal: View {
                     }
                 }
                 
-                Section {
-                    Button(action: { createTrip() }) {
-                        Text("Create Trip")
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .fontWeight(.bold)
-                            .foregroundColor(canCreate ? .white : .gray)
-                    }
-                    .listRowBackground(canCreate ? AppTheme.primary : Color(.systemGroupedBackground))
-                    .disabled(!canCreate)
-                }
             }
             .navigationTitle("New Trip")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { isPresented = false }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Create Trip") {
+                        createTrip()
+                    }
+                    .disabled(!canCreate)
+                    .fontWeight(.bold)
                 }
             }
         }
@@ -202,6 +199,17 @@ struct FleetCreateTripModal: View {
         }
     }
     
+    private func formatDuration(_ hours: Double) -> String {
+        let totalMinutes = Int(hours * 60)
+        let h = totalMinutes / 60
+        let m = totalMinutes % 60
+        if h > 0 {
+            return "\(h) hrs \(m) mins"
+        } else {
+            return "\(m) mins"
+        }
+    }
+    
     private func fetchRealRoute() {
         guard let src = sourceLocation, let dst = destinationLocation else {
             estimatedCost = 0
@@ -219,10 +227,15 @@ struct FleetCreateTripModal: View {
                     destName: dst.name
                 )
                 
-                let dist = Double(result.distance.replacingOccurrences(of: " km", with: "")) ?? 50
-                let drivingHours = dist / 60
-                let breaks = max(0, floor((drivingHours - 0.001) / 4))
-                let hours = drivingHours + (breaks * 1.5)
+                let distStr = result.distance
+                    .replacingOccurrences(of: " km", with: "")
+                    .replacingOccurrences(of: ",", with: "")
+                let dist = Double(distStr) ?? 50.0
+                
+                let drivingHours = dist / 60.0 // Assume 60km/h avg
+                // Logic: 45 min break for every 4 hours. 8 hours driving = 2 breaks = 90 mins = 9.5h total.
+                let breaks = floor(drivingHours / 4.0)
+                let hours = drivingHours + (breaks * 0.75)
                 
                 await MainActor.run {
                     estimatedDistance = dist

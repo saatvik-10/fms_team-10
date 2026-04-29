@@ -55,7 +55,9 @@ class FleetCreateTripViewModel: ObservableObject {
                 )
                 
                 // Parse distance and duration to numbers for cost calculation
-                let distStr = result.distance.replacingOccurrences(of: " km", with: "").replacingOccurrences(of: ",", with: "")
+                let distStr = result.distance
+                    .replacingOccurrences(of: " km", with: "")
+                    .replacingOccurrences(of: ",", with: "")
                 let dist = Double(distStr) ?? 50.0
                 
                 var hours = 0.0
@@ -70,9 +72,11 @@ class FleetCreateTripViewModel: ObservableObject {
                 } else if let minIndex = durationParts.firstIndex(where: { $0.contains("min") }), minIndex > 0 {
                     hours += (Double(durationParts[minIndex - 1]) ?? 0.0) / 60.0
                 }
+                if hours == 0 { hours = dist / 60.0 } // fallback
+                
                 let drivingHours = hours
-                let breaks = max(0, floor((drivingHours - 0.001) / 4))
-                let totalHours = drivingHours + (breaks * 1.5)
+                let breaks = floor(drivingHours / 4.0)
+                let totalHours = drivingHours + (breaks * 0.75)
                 
                 self.encodedPolyline = result.polyline
                 self.estimatedDistance = dist
