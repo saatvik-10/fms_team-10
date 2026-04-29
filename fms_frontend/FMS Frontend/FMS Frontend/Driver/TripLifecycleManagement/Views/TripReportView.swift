@@ -99,7 +99,7 @@ struct TripReportView: View {
     private func generatePDF() async {
         // Build data off the main actor, then publish results on it.
         let trip = self.trip   // capture value type — safe to cross actor boundary
-        let driverName = session.driverProfile?.name
+        let driverName = session.userProfile?.name ?? "Unknown Driver"
 
         let (pdfData, url): (Data, URL) = await Task.detached(priority: .userInitiated) {
             // nonisolated context: call through nonisolated static helpers
