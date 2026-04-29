@@ -4,6 +4,9 @@ struct FleetManagerMaintenanceListView: View {
     @EnvironmentObject var dataManager: FleetDataManager
     @State private var searchText = ""
     @State private var showingAddPersonnel = false
+    @State private var isLoadingPersonnel = false
+    @State private var loadError: String?
+    @State private var selectedPerson: MaintenancePersonnel? = nil
     
     // Grid layout for 2 cards per row
     private let columns = [
@@ -13,57 +16,105 @@ struct FleetManagerMaintenanceListView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // MARK: - Header (Matching Drivers Style)
-            HStack(spacing: 20) {
-                Text("Maintenance Team")
-                    .font(.system(size: 20, weight: .black))
-                
-                // Search Bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                    TextField("Search by name or email...", text: $searchText)
-                        .font(.system(size: 14))
-                }
-                .padding(.horizontal, 15)
-                .padding(.vertical, 10)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
-                .frame(maxWidth: .infinity)
+            // MARK: - Header
+            HStack(alignment: .center, spacing: 16) {
+                Text("Maintenance")
+                    .font(AppFonts.title1)
+                    .foregroundColor(AppColors.primaryText)
                 
                 Spacer()
                 
                 Button(action: { showingAddPersonnel = true }) {
-                    HStack {
+                    HStack(spacing: 6) {
                         Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .bold))
                         Text("Add Personnel")
+                            .font(.system(size: 15, weight: .bold))
                     }
-                    .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 11)
                     .background(AppTheme.primary)
-                    .cornerRadius(8)
+                    .cornerRadius(10)
                 }
             }
-            .padding(25)
+            .padding(.horizontal, 30)
+            .padding(.top, 28)
+            .padding(.bottom, 16)
+            .background(Color.white)
+            
+            // MARK: - Search Bar
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.gray)
+                TextField("Search by name or email...", text: $searchText)
+                    .font(.system(size: 16))
+                    .autocorrectionDisabled()
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 16))
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+            .padding(.horizontal, 30)
+            .padding(.bottom, 18)
             .background(Color.white)
             
             // MARK: - Grid Content
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 20) {
-                    ForEach(filteredPersonnel) { person in
-                        MaintenancePersonnelCard(person: person)
+                if isLoadingPersonnel && filteredPersonnel.isEmpty {
+                    VStack(spacing: 10) {
+                        ProgressView()
+                        Text("Loading maintenance team...")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 60)
+                } else if filteredPersonnel.isEmpty {
+                    VStack(spacing: 10) {
+                        Text(emptyStateTitle)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(AppTheme.primary)
+                        Text(emptyStateSubtitle)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 25)
+                    .padding(.top, 60)
+                } else {
+                    LazyVGrid(columns: columns, spacing: 20) {
+                        ForEach(filteredPersonnel) { person in
+                            MaintenancePersonnelCard(
+                                person: person,
+                                onEdit: { selectedPerson = person }
+                            )
+                        }
+                    }
+                    .padding(25)
+                    .padding(.bottom, 100)
                 }
-                .padding(25)
-                .padding(.bottom, 100)
             }
             .background(AppTheme.background)
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingAddPersonnel) {
-            AddMaintenancePersonnelModal()
+            AddMaintenancePersonnelModal().environmentObject(dataManager)
+        }
+        .sheet(item: $selectedPerson) { person in
+            EditMaintenancePersonnelModal(person: person).environmentObject(dataManager)
+        }
+        .task {
+            await loadPersonnel()
         }
     }
     
@@ -77,12 +128,46 @@ struct FleetManagerMaintenanceListView: View {
             }
         }
     }
+
+    private var emptyStateTitle: String {
+        searchText.isEmpty ? "No maintenance personnel yet" : "No matching personnel found"
+    }
+
+    private var emptyStateSubtitle: String {
+        if let loadError {
+            return loadError
+        }
+        return searchText.isEmpty
+            ? "No profiles available right now. Add personnel to get started."
+            : "Try a different name or email to find personnel."
+    }
+
+    private func loadPersonnel() async {
+        isLoadingPersonnel = true
+        loadError = nil
+
+        defer {
+            isLoadingPersonnel = false
+        }
+
+        do {
+            try await dataManager.refreshMaintenancePersonnel()
+        } catch {
+            loadError = "Maintenance profiles could not be loaded right now."
+        }
+    }
+    
+    func deletePerson(_ person: MaintenancePersonnel) async {
+        await dataManager.deleteMaintenancePersonnel(person)
+    }
 }
 
 struct MaintenancePersonnelCard: View {
     let person: MaintenancePersonnel
+    let onEdit: () -> Void
     @EnvironmentObject var dataManager: FleetDataManager
     @State private var showingDeleteAlert = false
+    @State private var isDeleting = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
@@ -90,65 +175,47 @@ struct MaintenancePersonnelCard: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(person.name)
-                        .font(.system(size: 18, weight: .bold))
+                        .font(AppFonts.headline)
                         .foregroundColor(AppTheme.textPrimary)
                 }
                 Spacer()
                 
-                Button(action: { showingDeleteAlert = true }) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
-                        .font(.system(size: 16))
+                Menu {
+                    Button(action: { onEdit() }) {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    Button(role: .destructive, action: { showingDeleteAlert = true }) {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.gray)
                         .padding(10)
-                        .background(Color.red.opacity(0.1))
+                        .background(Color.gray.opacity(0.1))
                         .clipShape(Circle())
                 }
+                .disabled(isDeleting)
             }
             .alert("Delete Personnel?", isPresented: $showingDeleteAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Delete", role: .destructive) {
-                    dataManager.deleteMaintenancePersonnel(person)
+                    isDeleting = true
+                    Task {
+                        await deletePerson()
+                    }
                 }
             } message: {
                 Text("Are you sure you want to remove \(person.name) from the maintenance team?")
             }
-            
+
             Divider()
-            
+
             // Contact Info
             VStack(alignment: .leading, spacing: 10) {
                 InfoRow(icon: "phone.fill", label: "PHONE", value: person.phone)
                 InfoRow(icon: "envelope.fill", label: "EMAIL", value: person.email)
-                InfoRow(icon: "calendar", label: "DATE OF BIRTH", value: formatDate(person.dob))
-            }
-            
-            Divider()
-            
-            // Current Assignment
-            VStack(alignment: .leading, spacing: 8) {
-                Text("CURRENT ASSIGNMENT")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(.gray)
-                
-                HStack {
-                    if let vehicleID = person.currentAssignment {
-                        Image(systemName: "truck.box.fill")
-                            .foregroundColor(AppTheme.primary)
-                        Text("Vehicle: \(vehicleID)")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(AppTheme.textPrimary)
-                    } else {
-                        Image(systemName: "pause.circle.fill")
-                            .foregroundColor(.gray)
-                        Text("No Active Assignment")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.gray)
-                    }
-                }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(person.currentAssignment != nil ? AppTheme.primary.opacity(0.05) : Color.gray.opacity(0.05))
-                .cornerRadius(8)
+                InfoRow(icon: "calendar", label: "AGE", value: displayAge)
             }
         }
         .padding(20)
@@ -157,10 +224,17 @@ struct MaintenancePersonnelCard: View {
         .modifier(AppTheme.cardShadow())
     }
     
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd-MM-yyyy"
-        return formatter.string(from: date)
+    private func deletePerson() async {
+        await dataManager.deleteMaintenancePersonnel(person)
+        isDeleting = false
+    }
+
+    private var displayAge: String {
+        if let age = person.age {
+            return "\(age)"
+        }
+        let years = Calendar.current.dateComponents([.year], from: person.dob, to: Date()).year
+        return years.map(String.init) ?? "To be integrated"
     }
 }
 
@@ -196,7 +270,7 @@ struct AddMaintenancePersonnelModal: View {
     @State private var phone = ""
     @State private var email = ""
     @State private var dob = Date()
-    @State private var vehicleID = ""
+    @State private var isLoading = false
     
     private var isFormValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -238,22 +312,12 @@ struct AddMaintenancePersonnelModal: View {
                             .cornerRadius(10)
                     }
                     
-                    ModalFormField(label: "Assign Vehicle (ID)", text: $vehicleID)
-                    
                     Spacer(minLength: 40)
                     
                     Button(action: {
-                        let newPerson = MaintenancePersonnel(
-                            name: name,
-                            phone: phone,
-                            email: email,
-                            dob: dob,
-                            currentAssignment: vehicleID.isEmpty ? nil : vehicleID
-                        )
-                        dataManager.addMaintenancePersonnel(newPerson)
-                        dismiss()
+                        savePersonnel()
                     }) {
-                        Text("Save Personnel")
+                        Text(isLoading ? "Saving..." : "Save Personnel")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -261,13 +325,176 @@ struct AddMaintenancePersonnelModal: View {
                             .background(isFormValid ? AppTheme.primary : Color.gray)
                             .cornerRadius(10)
                     }
-                    .disabled(!isFormValid)
+                    .disabled(!isFormValid || isLoading)
                 }
                 .padding(25)
             }
         }
-        .frame(width: 500, height: 600)
-        .background(Color.white)
+    }
+    
+    private func savePersonnel() {
+        guard isFormValid else { return }
+        isLoading = true
+        
+        let formatter = ISO8601DateFormatter()
+        let dobString = formatter.string(from: dob)
+        
+        Task {
+            do {
+                let request = CreateMaintenanceRequest(
+                    name: name,
+                    dob: dobString,
+                    email: email,
+                    phone: phone
+                )
+                let response = try await MaintenanceAPI.shared.createMaintenanceProfile(request)
+
+                let createdPerson = MaintenancePersonnel(
+                    backendId: response.maintenance.id,
+                    name: response.maintenance.name ?? name,
+                    phone: response.maintenance.phone ?? phone,
+                    email: response.maintenance.email ?? email,
+                    dob: response.maintenance.dob ?? dob,
+                    age: response.maintenance.age,
+                    currentAssignment: nil
+                )
+
+                await MainActor.run {
+                    dataManager.addMaintenancePersonnel(createdPerson)
+                }
+
+                // Try to sync with backend list if endpoint is available.
+                try? await dataManager.refreshMaintenancePersonnel()
+                dismiss()
+            } catch {
+                isLoading = false
+            }
+        }
+    }
+}
+
+struct EditMaintenancePersonnelModal: View {
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var dataManager: FleetDataManager
+    
+    let person: MaintenancePersonnel
+    
+    @State private var name: String
+    @State private var phone: String
+    @State private var email: String
+    @State private var dob: Date
+    @State private var isLoading = false
+    
+    init(person: MaintenancePersonnel) {
+        self.person = person
+        _name = State(initialValue: person.name)
+        _phone = State(initialValue: person.phone)
+        _email = State(initialValue: person.email)
+        _dob = State(initialValue: person.dob)
+    }
+    
+    private var isFormValid: Bool {
+        (name != person.name ||
+         phone != person.phone ||
+         email != person.email ||
+         !Calendar.current.isDate(dob, inSameDayAs: person.dob)) &&
+        !name.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !phone.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !email.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Edit Maintenance Personnel")
+                    .font(.system(size: 24, weight: .bold))
+                Spacer()
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark")
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(25)
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    ModalFormField(label: "Full Name", text: $name)
+                    ModalFormField(label: "Phone Number", text: $phone)
+                    ModalFormField(label: "Email Address", text: $email)
+                    
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("DATE OF BIRTH")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.gray)
+                        
+                        DatePicker("", selection: $dob, in: ...Date(), displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(10)
+                    }
+                    
+                    Spacer(minLength: 40)
+                    
+                    Button(action: updatePersonnel) {
+                        Text(isLoading ? "Updating..." : "Update Personnel")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 15)
+                            .background(isFormValid ? AppTheme.primary : Color.gray)
+                            .cornerRadius(10)
+                    }
+                    .disabled(!isFormValid || isLoading)
+                }
+                .padding(25)
+            }
+        }
+    }
+    
+    private func updatePersonnel() {
+        guard let id = person.backendId else { return }
+        isLoading = true
+        
+        let formatter = ISO8601DateFormatter()
+        let dobString = formatter.string(from: dob)
+        
+        Task {
+            do {
+                let request = UpdateMaintenancePersonnelRequest(
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    dob: dobString
+                )
+                
+                let response = try await MaintenanceAPI.shared.updateMaintenance(
+                    id: id,
+                    request: request
+                )
+                
+                let updated = MaintenancePersonnel(
+                    backendId: response.maintenance.id,
+                    name: response.maintenance.name ?? name,
+                    phone: response.maintenance.phone ?? phone,
+                    email: response.maintenance.email ?? email,
+                    dob: response.maintenance.dob ?? dob,
+                    age: response.maintenance.age,
+                    currentAssignment: nil
+                )
+                
+                await MainActor.run {
+                    dataManager.updateMaintenancePersonnel(updated)
+                }
+                
+                dismiss()
+            } catch {
+                isLoading = false
+            }
+        }
     }
 }
 

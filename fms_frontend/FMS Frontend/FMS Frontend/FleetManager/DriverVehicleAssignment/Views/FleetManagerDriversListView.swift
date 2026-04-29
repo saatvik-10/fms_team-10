@@ -8,75 +8,111 @@ struct FleetManagerDriversListView: View {
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - Header
-            HStack(spacing: 20) {
-                Text("Drivers Management")
-                    .font(.system(size: 20, weight: .black))
-                
-                // Search Bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                    TextField("Search by name, license or status...", text: $searchText)
-                        .font(.system(size: 14))
-                }
-                .padding(.horizontal, 15)
-                .padding(.vertical, 10)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
-                .frame(maxWidth: .infinity)
+            HStack(alignment: .center, spacing: 16) {
+                Text("Drivers")
+                    .font(AppFonts.title1)
+                    .foregroundColor(AppColors.primaryText)
                 
                 Spacer()
                 
-                HStack(spacing: 20) {
-                    Button(action: { showingAddDriver = true }) {
-                        HStack {
-                            Image(systemName: "plus")
-                            Text("Add Driver")
-                        }
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(AppTheme.primary)
-                        .cornerRadius(8)
+                Button(action: { showingAddDriver = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .bold))
+                        Text("Add Driver")
+                            .font(.system(size: 15, weight: .bold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 11)
+                    .background(AppColors.primary)
+                    .cornerRadius(10)
+                }
+            }
+            .padding(.horizontal, 30)
+            .padding(.top, 28)
+            .padding(.bottom, 16)
+            .background(Color.white)
+            
+            // MARK: - Search Bar
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.gray)
+                TextField("Search by name, license or status...", text: $searchText)
+                    .font(.system(size: 16))
+                    .autocorrectionDisabled()
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 16))
                     }
                 }
             }
-            .padding(25)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+            .padding(.horizontal, 30)
+            .padding(.bottom, 18)
             .background(Color.white)
             
             // MARK: - Table
             ScrollView {
-                VStack(spacing: 0) {
-                    // Column Headers
-                    HStack {
-                        Text("DRIVER IDENTITY")
-                            .padding(.leading, 55)
-                            .frame(width: 250, alignment: .leading)
-                        Text("LICENSE DETAILS").frame(width: 200, alignment: .leading)
-                        Spacer()
-                        Text("STATUS")
+                if filteredDrivers.isEmpty {
+                    VStack(spacing: 10) {
+                        Text(emptyStateTitle)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(AppColors.primary)
+                        Text(emptyStateSubtitle)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
                     }
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.gray)
-                    .padding(.horizontal, 70)
-                    .padding(.vertical, 20)
-                    
-                    VStack(spacing: 12) {
-                        ForEach(filteredDrivers) { driver in
-                            NavigationLink(destination: DriverDetailView(driver: driver)) {
-                                DriverRowView(driver: driver)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 25)
+                    .padding(.top, 80)
+                } else {
+                    VStack(spacing: 0) {
+                        // Column Headers
+                        HStack {
+                            Text("DRIVER IDENTITY")
+                                .padding(.leading, 55)
+                                .frame(width: 250, alignment: .leading)
+                            Text("LICENSE DETAILS").frame(width: 200, alignment: .leading)
+                            Spacer()
+                            Text("STATUS")
+                        }
+                        .font(AppFonts.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 70)
+                        .padding(.vertical, 20)
+                        
+                        VStack(spacing: 12) {
+                            ForEach(filteredDrivers) { driver in
+                                NavigationLink(destination: DriverDetailView(driver: driver)) {
+                                    DriverRowView(driver: driver)
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
                     }
+                    .padding(.bottom, 100)
                 }
-                .padding(.bottom, 100)
             }
-            .background(AppTheme.background)
+            .background(AppColors.background)
         }
         .navigationBarHidden(true)
-        .sheet(isPresented: $showingAddDriver) { DriverModalView() }
+        .sheet(isPresented: $showingAddDriver) { DriverModalView().environmentObject(dataManager) }
+        .task {
+            do {
+                try await dataManager.refreshDrivers()
+            } catch {
+                print("Failed to refresh drivers: \(error)")
+            }
+        }
     }
     
     private var filteredDrivers: [Driver] {
@@ -88,6 +124,16 @@ struct FleetManagerDriversListView: View {
                 $0.id.localizedCaseInsensitiveContains(searchText)
             }
         }
+    }
+
+    private var emptyStateTitle: String {
+        searchText.isEmpty ? "No drivers yet" : "No matching drivers found"
+    }
+
+    private var emptyStateSubtitle: String {
+        searchText.isEmpty
+            ? "No driver profiles are available right now. Add a driver to get started."
+            : "Try a different name, license, or status to find drivers."
     }
 }
 
@@ -105,7 +151,7 @@ struct DriverRowView: View {
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(driver.name)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(AppFonts.headline)
                 }
             }
             .frame(width: 250, alignment: .leading)
@@ -113,9 +159,9 @@ struct DriverRowView: View {
             // License
             VStack(alignment: .leading, spacing: 2) {
                 Text(driver.licenseNum)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFonts.subheadline)
                 Text("Exp: \(driver.licenseExp)")
-                    .font(.system(size: 11))
+                    .font(AppFonts.caption2)
                     .foregroundColor(.gray)
             }
             .frame(width: 200, alignment: .leading)
@@ -127,7 +173,8 @@ struct DriverRowView: View {
                     .fill(statusColor)
                     .frame(width: 6, height: 6)
                 Text(driver.status.rawValue.uppercased())
-                    .font(.system(size: 10, weight: .bold))
+                    .font(AppFonts.caption2)
+                    .fontWeight(.bold)
                     .foregroundColor(statusColor)
             }
             .padding(.horizontal, 12)
@@ -139,15 +186,17 @@ struct DriverRowView: View {
         .padding(.horizontal, 40)
         .padding(.vertical, 20)
         .background(Color.white)
-        .cornerRadius(8)
+        .cornerRadius(14) // Matching vehicle card radius
+        .modifier(AppColors.cardShadow())
         .padding(.horizontal, 30)
+        .padding(.vertical, 6) // Spacing between rows
     }
     
     var statusColor: Color {
         switch driver.status {
-        case .active, .onDuty: return AppTheme.activeGreen
-        case .onTrip: return AppTheme.maintenanceOrange
-        case .offDuty: return AppTheme.criticalRed
+        case .active, .onDuty: return AppColors.activeGreen
+        case .onTrip: return AppColors.maintenanceOrange
+        case .offDuty: return AppColors.criticalRed
         }
     }
 }
@@ -160,10 +209,11 @@ struct FooterStat: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.system(size: 10, weight: .bold))
+                .font(AppFonts.caption2)
+                .fontWeight(.bold)
                 .foregroundColor(.gray)
             Text(value)
-                .font(.system(size: 16, weight: .black))
+                .font(AppFonts.headline)
                 .foregroundColor(valueColor)
         }
     }

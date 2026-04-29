@@ -18,6 +18,7 @@ struct Leg: Codable {
     let duration: DurationItem
     let distance: DurationItem
     let steps: [DirectionStep]
+    let end_location: LocationCoordinate?
 }
 
 struct DirectionStep: Codable {
@@ -101,19 +102,52 @@ class GoogleDirectionsService {
 
     // MARK: - Full Trip Directions (used by TripDetailView preview)
 
-    func fetchDirections(trip: Trip) async throws -> (eta: String, polyline: String, steps: [NavigationInstruction]) {
+    func fetchDirections(origin: String, destination: String) async throws -> (eta: String, polyline: String, steps: [NavigationInstruction], distance: String, destinationCoordinate: CLLocationCoordinate2D) {
+        let originParams = origin.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? origin
+        let destParams = destination.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? destination
+        
+        let urlString = "https://maps.googleapis.com/maps/api/directions/json"
+            + "?origin=\(originParams)&destination=\(destParams)&key=\(apiKey)"
+        
+        guard let url = URL(string: urlString) else {
+            throw URLError(.badURL)
+        }
+        
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let directionsResponse = try JSONDecoder().decode(DirectionsResponse.self, from: data)
+        
+guard let route = directionsResponse.routes.first,
+              let leg = route.legs.first,
+              let endLocation = leg.end_location else {
+            throw URLError(.badServerResponse)
+        }
+
+        let distanceText = leg.distance.text
+        let steps = leg.steps.map { makeInstruction(from: $0) }
+
+        let destinationCoord = CLLocationCoordinate2D(
+            latitude: endLocation.lat,
+            longitude: endLocation.lng
+        )
+        
+        return (eta: leg.duration.text, polyline: route.overview_polyline.points, steps: steps, distance: distanceText, destinationCoordinate: destinationCoord)
+    }
+
+    func fetchDirections(trip: Trip) async throws -> (eta: String, polyline: String, steps: [NavigationInstruction], distance: String, destinationCoordinate: CLLocationCoordinate2D) {
         print("--- DEBUG Directions API ---")
 
-        guard isValidCoordinate(trip.pickup.coordinate) else {
-            throw NSError(domain: "GoogleDirectionsAPI", code: -1,
-                          userInfo: [NSLocalizedDescriptionKey: "Invalid pickup coordinate"])
+        let hasValidCoordinates = isValidCoordinate(trip.pickup.coordinate)
+            && isValidCoordinate(trip.destination.coordinate)
+        let originParams: String
+        let destParams: String
+
+        if hasValidCoordinates {
+            originParams = "\(trip.pickup.coordinate.latitude),\(trip.pickup.coordinate.longitude)"
+            destParams = "\(trip.destination.coordinate.latitude),\(trip.destination.coordinate.longitude)"
+        } else {
+            originParams = trip.pickup.name
+            destParams = trip.destination.name
         }
-        guard isValidCoordinate(trip.destination.coordinate) else {
-            throw NSError(domain: "GoogleDirectionsAPI", code: -1,
-                          userInfo: [NSLocalizedDescriptionKey: "Invalid destination coordinate"])
-        }
-        let originParams  = "\(trip.pickup.coordinate.latitude),\(trip.pickup.coordinate.longitude)"
-        let destParams    = "\(trip.destination.coordinate.latitude),\(trip.destination.coordinate.longitude)"
 
         let urlString = "https://maps.googleapis.com/maps/api/directions/json"
             + "?origin=\(originParams)&destination=\(destParams)&key=\(apiKey)"
@@ -143,18 +177,35 @@ class GoogleDirectionsService {
         }
 
         var totalSeconds = 0
+        var totalDistanceMeters = 0
         var allInstructions: [NavigationInstruction] = []
         for leg in route.legs {
             totalSeconds += leg.duration.value
+            totalDistanceMeters += leg.distance.value
             allInstructions.append(contentsOf: leg.steps.map { makeInstruction(from: $0) })
         }
 
         let hours   = totalSeconds / 3600
         let minutes = (totalSeconds % 3600) / 60
         let etaText = hours > 0 ? "\(hours) hrs \(minutes) min" : "\(minutes) min"
+        
+        let distanceKm = Double(totalDistanceMeters) / 1000.0
+        let distanceText = String(format: "%.1f km", distanceKm)
 
-        print("[Directions] ETA: \(etaText), steps: \(allInstructions.count)")
-        return (eta: etaText, polyline: route.overview_polyline.points, steps: allInstructions)
+        let endLocation = route.legs.last?.end_location
+        let destinationCoordinate = CLLocationCoordinate2D(
+            latitude: endLocation?.lat ?? trip.destination.coordinate.latitude,
+            longitude: endLocation?.lng ?? trip.destination.coordinate.longitude
+        )
+
+        print("[Directions] ETA: \(etaText), distance: \(distanceText), steps: \(allInstructions.count)")
+        return (
+            eta: etaText,
+            polyline: route.overview_polyline.points,
+            steps: allInstructions,
+            distance: distanceText,
+            destinationCoordinate: destinationCoordinate
+        )
     }
 
     // MARK: - Segment Directions (used by NavigationViewModel — origin = user location)
@@ -200,5 +251,31 @@ class GoogleDirectionsService {
             polyline: route.overview_polyline.points,
             steps:    instructions
         )
+    }
+
+    // MARK: - Reverse Geocoding
+
+    func reverseGeocode(coordinate: CLLocationCoordinate2D) async throws -> String {
+        let geocoder = CLGeocoder()
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        
+        let placemarks = try await geocoder.reverseGeocodeLocation(location)
+        guard let placemark = placemarks.first else {
+            throw NSError(domain: "GoogleDirectionsService", code: 3,
+                          userInfo: [NSLocalizedDescriptionKey: "No address found for coordinate"])
+        }
+        
+        let name = placemark.name ?? ""
+        let locality = placemark.locality ?? ""
+        let adminArea = placemark.administrativeArea ?? ""
+        let country = placemark.country ?? ""
+        
+        var components = [String]()
+        if !name.isEmpty { components.append(name) }
+        if !locality.isEmpty && locality != name { components.append(locality) }
+        if !adminArea.isEmpty && adminArea != locality && adminArea != name { components.append(adminArea) }
+        if !country.isEmpty { components.append(country) }
+        
+        return components.joined(separator: ", ")
     }
 }

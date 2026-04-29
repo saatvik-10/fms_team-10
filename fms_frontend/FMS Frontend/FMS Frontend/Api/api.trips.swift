@@ -9,6 +9,7 @@ struct CreateTripRequest: Encodable {
   let vehicle: String
   let driver: String
   let departureTime: String
+  let distance: String?
 }
 
 struct TripItem: Decodable {
@@ -21,6 +22,12 @@ struct TripItem: Decodable {
   let vehicle: String?
   let driver: String?
   let departureTime: String?
+  let status: String?
+  let loadAmount: String?
+  let tripDate: String?
+  let tripDistance: String?
+  let distanceKm: String?
+  let vehicleRegistrationNumber: String?
   let createdById: String?
   let createdAt: Date?
   let updatedAt: Date?
@@ -68,6 +75,14 @@ final class TripAPI {
   func getTrips() async throws -> GetTripsResponse {
     try await client.request(
       path: "/trip/get-trips",
+      method: .get,
+      requiresAuth: true
+    )
+  }
+
+  func getDriverTrips() async throws -> GetTripsResponse {
+    try await client.request(
+      path: "/trip/get-driver-trips",
       method: .get,
       requiresAuth: true
     )

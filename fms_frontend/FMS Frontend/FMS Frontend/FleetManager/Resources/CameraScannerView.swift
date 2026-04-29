@@ -5,13 +5,16 @@ import CoreImage
 
 struct CameraScannerView: View {
     @Binding var isPresented: Bool
-    var didFinishScanning: (String, String, String, String) -> Void
+    var didFinishScanning: (String, String, String, String, Data?, Data?) -> Void
     
     @State private var frontItem: PhotosPickerItem?
     @State private var backItem: PhotosPickerItem?
     @State private var frontImage: UIImage?
     @State private var backImage: UIImage?
     @State private var isProcessing = false
+    
+
+    
     
     var body: some View {
         NavigationView {
@@ -130,26 +133,15 @@ struct CameraScannerView: View {
                     result.name ?? "",
                     result.dlNumber ?? "",
                     result.expiryDate ?? "",
-                    result.vehicleClasses ?? ""
+                    result.vehicleClasses ?? "",
+                    frontImage?.jpegData(compressionQuality: 0.7),
+                    backImage?.jpegData(compressionQuality: 0.7)
                 )
             }
         }
     }
     
-    func preprocessImage(_ image: UIImage) -> UIImage? {
-        guard let ci = CIImage(image: image) else { return nil }
-        let f = CIFilter.colorControls()
-        f.inputImage = ci
-        f.saturation = 0.0
-        f.contrast = 1.5
-        f.brightness = 0.05
-        
-        let ctx = CIContext()
-        guard let out = f.outputImage,
-              let cg = ctx.createCGImage(out, from: out.extent) else { return nil }
-        
-        return UIImage(cgImage: cg)
-    }
+  
     
     func parseDL(lines: [String]) -> DLData {
         var d = DLData()
@@ -258,6 +250,24 @@ struct CameraScannerView: View {
     }
 }
 
+
+func preprocessImage(_ image: UIImage) -> UIImage? {
+    guard let ci = CIImage(image: image) else { return nil }
+    let f = CIFilter.colorControls()
+    f.inputImage = ci
+    f.saturation = 0.0
+    f.contrast = 1.5
+    f.brightness = 0.05
+    
+    let ctx = CIContext()
+    guard let out = f.outputImage,
+          let cg = ctx.createCGImage(out, from: out.extent) else { return nil }
+    
+    return UIImage(cgImage: cg)
+}
+
+
+
 struct DLData {
     var dlNumber: String?
     var name: String?
@@ -269,7 +279,7 @@ struct DLData {
 
 struct RCScannerView: View {
     @Binding var isPresented: Bool
-    var didFinishScanning: (String, String, String, String) -> Void
+    var didFinishScanning: (String, String, String, String, Data?) -> Void
     
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
@@ -346,6 +356,12 @@ struct RCScannerView: View {
         }
     }
     
+    
+    
+    
+  
+    
+    
     func runOCR() {
         guard let image = selectedImage else { return }
         isProcessing = true
@@ -378,112 +394,102 @@ struct RCScannerView: View {
                 return abs(dy) > 0.015 ? dy > 0 : $0.boundingBox.minX < $1.boundingBox.minX
             }
             
-            let lines = sorted.compactMap { $0.topCandidates(1).first?.string }
-            let result = parseRC(lines: lines)
+let lines = sorted.compactMap { $0.topCandidates(1).first?.string }
+            
+            // Use fixed AddRC parsing logic inline
+            let norm: [String] = lines.map {
+                $0.uppercased()
+                    .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespaces)
+            }.filter { !$0.isEmpty }
+            
+            let fullSpace = norm.joined(separator: " ")
+            
+            // Parse owner
+            var owner: String?
+            owner = extractField(from: norm, keys: [
+                "OWNER'S NAME", "OWNER S NAME", "OWNERS NAME",
+                "NAME OF OWNER", "OWNER NAME", "RC OWNER", "REGISTERED OWNER"
+            ]) { val in
+                let junk = ["GOVERNMENT", "TRANSPORT", "DEPARTMENT", "INDIA",
+                            "MINISTRY", "CERTIFICATE", "REGISTRATION"]
+                return val.count >= 3
+                    && !junk.contains(where: { val.contains($0) })
+                    && val.range(of: #"^\d"#, options: .regularExpression) == nil
+            }
+            
+            // Parse reg number
+            var regNumber: String?
+            let regPattern = #"[A-Z]{2}\s?\d{2}\s?[A-Z]{1,3}\s?\d{1,4}"#
+            if let raw = firstMatch(regPattern, in: fullSpace) {
+                let stripped = raw.replacingOccurrences(of: " ", with: "")
+                if stripped.count >= 10 {
+                    let p1 = String(stripped.prefix(2))
+                    let p2 = String(stripped.dropFirst(2).prefix(2))
+                    let p3 = String(stripped.dropFirst(4).prefix(3))
+                    let p4 = String(stripped.dropFirst(7))
+                    regNumber = "\(p1) \(p2) \(p3) \(p4)"
+                } else {
+                    regNumber = stripped
+                }
+            }
+            
+            // Parse model - robust for truck RCs
+            var model: String?
+            if let modelLabelIdx = norm.indices.first(where: { norm[$0].contains("MODEL") }) {
+                let modelLine = norm[modelLabelIdx]
+                
+                // Try inline first
+                if let inlineModel = inlineValue(from: modelLine, key: "MODEL") {
+                    model = inlineModel
+                }
+                
+                // Next-line fallback - look for model in subsequent lines
+                if model == nil {
+                    for j in (modelLabelIdx + 1)..<min(modelLabelIdx + 4, norm.count) {
+                        let candidate = norm[j].trimmingCharacters(in: .whitespaces)
+                        guard !candidate.isEmpty && !isLabelLine(candidate) else { continue }
+                        
+                        // Model should be alphanumeric, 2-30 chars, not a date/number
+                        if candidate.range(of: #"^[A-Z0-9\s\-/]{2,30}$"#, options: .regularExpression) != nil &&
+                           candidate.range(of: #"^\d"#, options: .regularExpression) == nil {
+                            model = candidate
+                            break
+                        }
+                    }
+                }
+                
+                // Also try splitting the label line and checking words
+                if model == nil {
+                    let words = modelLine.components(separatedBy: CharacterSet.alphanumerics.inverted)
+                        .filter { $0.count >= 2 }
+                        .filter { !$0.contains("MODEL") && !$0.contains("MFG") && !$0.contains("SEAT") }
+                    if let firstWord = words.first {
+                        model = firstWord
+                    }
+                }
+            }
+            
+            // Parse chassis
+            var chassis: String?
+            chassis = extractField(from: norm, keys: [
+                "CHASSIS NO", "CHASSIS NUMBER", "CHASIS NO", "VIN NO"
+            ]) { val in
+                val.replacingOccurrences(of: " ", with: "")
+                    .range(of: #"^[A-Z0-9]{8,20}$"#, options: .regularExpression) != nil
+            }
             
             await MainActor.run {
                 isPresented = false
                 self.didFinishScanning(
-                    result.owner ?? "",
-                    result.regNumber ?? "",
-                    result.model ?? "",
-                    result.chassis ?? result.engineNumber ?? ""
+                    owner ?? "",
+                    regNumber ?? "",
+                    model ?? "",
+                    chassis ?? "",
+                    image.jpegData(compressionQuality: 0.7)
                 )
             }
         }
-    }
-    
-    func preprocessImage(_ image: UIImage) -> UIImage? {
-        guard let ci = CIImage(image: image) else { return nil }
-        let f = CIFilter.colorControls()
-        f.inputImage = ci
-        f.saturation = 0.0
-        f.contrast = 1.5
-        f.brightness = 0.05
-        let ctx = CIContext()
-        guard let out = f.outputImage,
-              let cg = ctx.createCGImage(out, from: out.extent) else { return nil }
-        return UIImage(cgImage: cg)
-    }
-    
-    func parseRC(lines: [String]) -> RCDataParsed {
-        var d = RCDataParsed()
-        
-        let norm: [String] = lines.map {
-            $0.uppercased()
-                .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-                .trimmingCharacters(in: .whitespaces)
-        }.filter { !$0.isEmpty }
-        
-        let full = norm.joined(separator: "\n")
-        
-        if let raw = firstMatch(#"[A-Z]{2}[\s\-]?\d{2}[\s\-]?[A-Z]{1,3}[\s\-]?\d{1,4}"#, in: full) {
-            d.regNumber = raw.replacingOccurrences(of: #"[\s\-]"#, with: "", options: .regularExpression)
-        }
-        
-        d.chassis = extractField(from: norm, keys: [
-            "CHASSIS NO", "CHASSIS NUMBER", "CHASIS NO", "VIN NO"
-        ]) { val in
-            val.replacingOccurrences(of: " ", with: "")
-                .range(of: #"^[A-Z0-9]{8,20}$"#, options: .regularExpression) != nil
-        }
-        
-        d.engineNumber = extractField(from: norm, keys: [
-            "ENGINE NO", "ENGINE NUMBER", "ENG NO"
-        ]) { val in
-            val.replacingOccurrences(of: " ", with: "")
-                .range(of: #"^[A-Z0-9]{6,20}$"#, options: .regularExpression) != nil
-        }
-        
-        d.owner = extractField(from: norm, keys: [
-            "OWNER'S NAME", "OWNER S NAME", "NAME OF OWNER",
-            "OWNER NAME", "RC OWNER", "REGISTERED OWNER"
-        ]) { val in
-            let junk = ["GOVERNMENT", "TRANSPORT", "DEPARTMENT", "INDIA", "MINISTRY", "CERTIFICATE"]
-            return val.count >= 3 && !junk.contains(where: { val.contains($0) })
-        }
-        
-        d.vehicleClass = extractField(from: norm, keys: [
-            "VEHICLE CLASS", "CLASS OF VEHICLE", "VEH CLASS"
-        ])
-        
-        d.fuel = extractField(from: norm, keys: [
-            "FUEL TYPE", "TYPE OF FUEL", "FUEL USED", "FUEL"
-        ]) ?? firstInText(full, candidates: ["PETROL", "DIESEL", "CNG", "LPG", "ELECTRIC", "EV", "HYBRID"])
-        
-        if let modelLine = norm.first(where: { $0.contains("MODEL") }) {
-            d.model = inlineValue(from: modelLine, key: "MODEL")
-            d.mfgYear = inlineValue(from: modelLine, key: "MFG. YEAR")
-                ?? inlineValue(from: modelLine, key: "MFG YEAR")
-                ?? inlineValue(from: modelLine, key: "MFG")
-            d.seatingCapacity = inlineValue(from: modelLine, key: "SEATING CAPACITY")
-                ?? inlineValue(from: modelLine, key: "SEATING")
-        }
-        
-        if d.mfgYear == nil {
-            d.mfgYear = extractField(from: norm, keys: [
-                "MONTH & YEAR OF MFG", "MFG. YEAR", "MFG YEAR",
-                "YEAR OF MFG", "MFG DATE", "MANUFACTURING YEAR"
-            ]) ?? allMatches(#"\b(19|20)\d{2}\b"#, in: full).last
-        }
-        
-        if d.seatingCapacity == nil {
-            d.seatingCapacity = extractField(from: norm, keys: [
-                "SEATING CAPACITY", "NO. OF SEATS", "SEATING"
-            ])
-        }
-        
-        let allDates = allMatches(#"\d{2}[/\-\.]\d{2}[/\-\.]\d{4}"#, in: full)
-        
-        d.regDate = extractField(from: norm, keys: [
-            "REGISTRATION DATE", "REG DATE", "DATE OF REGISTRATION", "REG. DATE"
-        ]) ?? (allDates.count >= 1 ? allDates[0] : nil)
-        
-        d.validity = extractField(from: norm, keys: [
-            "VALID UP TO", "VALID UPTO", "REGISTRATION VALID", "VALIDITY", "VALID TILL"
-        ]) ?? (allDates.count >= 2 ? allDates[1] : nil)
-        
-        return d
     }
     
     func extractField(

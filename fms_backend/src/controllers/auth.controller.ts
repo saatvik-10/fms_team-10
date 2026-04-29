@@ -8,6 +8,7 @@ import {
 import { jwtAuth } from '../lib/jwt';
 import { prisma } from '../../prisma';
 import { comparePassword, hashPassword } from '../lib/hashPassword';
+import { normalizeDriverExpiryDate } from '../lib/utils';
 import { verificationOTP } from '../services/resend.service';
 import {
   otpStore,
@@ -103,7 +104,6 @@ export class Auth {
           select: {
             name: true,
             phone: true,
-            address: true,
             licenceNumber: true,
             expiryDate: true,
             classes: true,
@@ -134,11 +134,6 @@ export class Auth {
       return c.json({ err: 'Invalid credentials' }, 401);
     }
 
-    const token = await jwtAuth({
-      userId: user.id,
-      role: user.role,
-    });
-
     // Return role-specific profile based on role
     let profileData: Record<string, any> = { id: user.id, email: user.email };
 
@@ -154,7 +149,6 @@ export class Auth {
         ...profileData,
         name: user.driver.name,
         phone: user.driver.phone,
-        address: user.driver.address,
         licenceNumber: user.driver.licenceNumber,
         expiryDate: user.driver.expiryDate,
         classes: user.driver.classes,
@@ -171,7 +165,13 @@ export class Auth {
       return c.json({ err: 'Invalid credentials' }, 401);
     }
 
+    const token = await jwtAuth({
+      userId: user.id,
+      role: user.role,
+    });
+
     return c.json({
+      message: 'Logged in successfully',
       token,
       user: {
         ...profileData,
@@ -179,8 +179,40 @@ export class Auth {
         username: user.username,
       },
     });
+
+    /*
+    const userEmail = user.email?.trim();
+    if (!userEmail) {
+      return c.json({ err: 'No email found for this account' }, 400);
+    }
+
+    const existingOtp = otpStore.get(userEmail);
+    const now = Date.now();
+
+    if (existingOtp && isCooldownActive(existingOtp, now)) {
+      return c.json({ err: 'Please wait before requesting another OTP' }, 429);
+    }
+
+    const otp = createOtpCode();
+    saveOtpForEmail(userEmail, otp, now);
+
+    await verificationOTP({
+      userEmail,
+      otp,
+    });
+
+    return c.json({
+      message: 'Credentials verified. OTP sent successfully.',
+      user: {
+        ...profileData,
+        role: user.role,
+        username: user.username,
+      },
+    });
+    */
   }
 
+  /*
   async sendOtpMail(c: Context) {
     const body = await c.req.json();
     const result = otpMailSchema.safeParse(body);
@@ -237,11 +269,33 @@ export class Auth {
 
     if (storedOtp.otp === otp) {
       clearOtpState(email);
-      return c.json('Success');
+
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          role: true,
+        },
+      });
+
+      if (!user || user.role === 'SUPER_ADMIN') {
+        return c.json({ err: 'Invalid user' }, 401);
+      }
+
+      const token = await jwtAuth({
+        userId: user.id,
+        role: user.role,
+      });
+
+      return c.json({
+        message: 'Success',
+        token,
+      });
     }
 
     return c.json('Failure');
   }
+  */
 
   async getProfile(c: Context) {
     const userId = c.get('userId') as string;
@@ -255,6 +309,7 @@ export class Auth {
         username: true,
         role: true,
         createdAt: true,
+        updatedAt: true,
         manager: {
           select: {
             name: true,
@@ -266,7 +321,6 @@ export class Auth {
           select: {
             name: true,
             phone: true,
-            address: true,
             licenceNumber: true,
             expiryDate: true,
             classes: true,
@@ -297,13 +351,14 @@ export class Auth {
         address: user.manager.address,
       };
     } else if (role === 'DRIVER' && user.driver) {
+      const driverExpiryDate = normalizeDriverExpiryDate(user.driver.expiryDate);
+
       profileData = {
         ...profileData,
         name: user.driver.name,
         phone: user.driver.phone,
-        address: user.driver.address,
         licenceNumber: user.driver.licenceNumber,
-        expiryDate: user.driver.expiryDate,
+        expiryDate: driverExpiryDate,
         classes: user.driver.classes,
       };
     } else if (role === 'MAINTENANCE' && user.maintenance) {
@@ -324,6 +379,7 @@ export class Auth {
         role: user.role,
         username: user.username,
         createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
     });
   }

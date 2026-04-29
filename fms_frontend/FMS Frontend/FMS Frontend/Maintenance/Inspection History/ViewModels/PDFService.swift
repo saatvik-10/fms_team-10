@@ -16,7 +16,7 @@ class PDFService {
     private let secondaryColor = UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1.0)
     private let accentColor = UIColor(red: 242/255, green: 244/255, blue: 247/255, alpha: 1.0)
     
-    func generateInspectionReport(inspection: TripInspection) -> URL? {
+    func generateInspectionReport(inspection: TripInspection, inventoryParts: [InventoryPart] = []) -> URL? {
         let pdfMetaData = [
             kCGPDFContextCreator: "FMS Maintenance App",
             kCGPDFContextAuthor: "Fleet Management System",
@@ -55,7 +55,6 @@ class PDFService {
             
             let vehicleInfo: [(String, String)] = [
                 ("Vehicle", inspection.unitName),
-                ("VIN", inspection.unitVIN),
                 ("Type", inspection.vehicleType == .truck ? "Truck" : "Car"),
                 ("Inspection", inspection.type == .preTrip ? "Pre-Trip" : "Post-Trip"),
                 ("Date", inspection.timestamp.formatted(date: .long, time: .shortened)),
@@ -65,17 +64,6 @@ class PDFService {
             ]
             
             drawKeyValueGrid(info: vehicleInfo, at: &currentY, context: context)
-            
-            currentY += 20
-            
-            // 3. VEHICLE METRICS SECTION
-            drawSectionHeader(title: "VEHICLE METRICS", at: &currentY, in: context)
-            let metrics: [(String, String)] = [
-                ("Fuel Level", "75%"),
-                ("Fuel Effic.", "14.2 mpg"),
-                ("Engine Hours", "4,821 hrs")
-            ]
-            drawKeyValueGrid(info: metrics, at: &currentY, context: context)
             
             currentY += 20
             
@@ -108,16 +96,69 @@ class PDFService {
             
             currentY += 50
             
-            // 5. ADDITIONAL NOTES
-            drawSectionHeader(title: "ADDITIONAL NOTES", at: &currentY, in: context)
-            let notesText = inspection.notes ?? "No additional notes provided."
-            notesText.draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 60), withAttributes: [
+            currentY += 40
+            
+            // 5. DRIVER NOTES & VOICE TRANSCRIPT
+            if let transcript = inspection.voiceTranscript, !transcript.isEmpty {
+                drawSectionHeader(title: "DRIVER VOICE TRANSCRIPT", at: &currentY, in: context)
+                "\"\(transcript)\"".draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 60), withAttributes: [
+                    .font: UIFont.systemFont(ofSize: 10, weight: .medium).italic,
+                    .foregroundColor: UIColor.secondaryLabel
+                ])
+                currentY += 70
+            }
+            
+            // 6. AUDIT SCOPE & OBJECTIVES
+            drawSectionHeader(title: "AUDIT SCOPE & OBJECTIVES", at: &currentY, in: context)
+            inspection.title.draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 20), withAttributes: [
+                .font: UIFont.systemFont(ofSize: 10, weight: .bold),
+                .foregroundColor: UIColor.label
+            ])
+            currentY += 30
+
+            // 6.5 AUDITOR NOTES
+            drawSectionHeader(title: "AUDITOR NOTES", at: &currentY, in: context)
+            let notesText = inspection.taskDetails.isEmpty ? "No auditor notes provided." : inspection.taskDetails
+            notesText.draw(in: CGRect(x: margin, y: currentY, width: pageWidth - (margin * 2), height: 80), withAttributes: [
                 .font: UIFont.systemFont(ofSize: 10),
                 .foregroundColor: UIColor.label
             ])
+            currentY += 90
             
-            currentY += 40
-            
+            // START PAGE 2 (Early if needed)
+            if currentY > pageHeight - 150 {
+                drawFooter(pageNum: 1, context: context)
+                context.beginPage()
+                currentY = 60
+            }
+
+            // 7. PARTS REPLACED & COST
+            if !inspection.consumedParts.isEmpty {
+                drawSectionHeader(title: "PARTS REPLACED DURING AUDIT", at: &currentY, in: context)
+                var partLines: [(String, String)] = []
+                var totalCost: Double = 0
+                for usage in inspection.consumedParts {
+                    let part = inventoryParts.first(where: { $0.partId == usage.inventoryPartId })
+                    let name = part?.partName ?? usage.inventoryPartId
+                    let unitPrice = part?.unitPriceInr ?? 0
+                    let lineCost = unitPrice * Double(usage.quantity)
+                    totalCost += lineCost
+                    partLines.append((name, "Qty: \(usage.quantity)  —  ₹\(String(format: "%.2f", lineCost))"))
+                }
+                drawKeyValueGrid(info: partLines, at: &currentY, context: context)
+                currentY += 10
+
+                // Total Cost
+                drawSectionHeader(title: "TOTAL MAINTENANCE COST", at: &currentY, in: context)
+                let costText = "₹\(String(format: "%.2f", totalCost))"
+                costText.draw(at: CGPoint(x: margin + 5, y: currentY), withAttributes: [
+                    .font: UIFont.systemFont(ofSize: 14, weight: .black),
+                    .foregroundColor: UIColor.label
+                ])
+                currentY += 30
+            }
+
+
             // Footer (Page 1)
             drawFooter(pageNum: 1, context: context)
             
@@ -263,6 +304,13 @@ class PDFService {
         case .pending: return .systemGray
         }
     }
+}
+
+extension UIFont {
+    var italic: UIFont {
+        return UIFont(descriptor: self.fontDescriptor.withSymbolicTraits(.traitItalic) ?? self.fontDescriptor, size: self.pointSize)
+    }
+}
     
     private func getResultCounts(items: [InspectionItem]) -> (good: Int, repair: Int, alert: Int, pending: Int) {
         var g = 0, r = 0, a = 0, p = 0
@@ -276,4 +324,4 @@ class PDFService {
         }
         return (g, r, a, p)
     }
-}
+

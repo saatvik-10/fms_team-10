@@ -29,19 +29,19 @@ struct InspectionHistoryView: View {
                         NavigationLink(destination: VehicleInspectionsListView(unitName: unitName)) {
                             VStack(alignment: .leading, spacing: 16) {
                                 Image(systemName: "folder.fill")
-                                    .font(.system(size: 32))
+                                    .font(.system(size: 24))
                                     .foregroundColor(AppColors.primary)
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(unitName)
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(.system(size: 17, weight: .bold))
                                         .foregroundColor(.primary)
                                         .lineLimit(2)
                                         .multilineTextAlignment(.leading)
                             
                                     let count = viewModel.groupedInspections[unitName]?.count ?? 0
                                     Text("\(count) inspection\(count == 1 ? "" : "s")")
-                                        .font(.system(size: 11))
+                                        .font(.system(size: 13))
                                         .foregroundColor(.secondary)
                                 }
                                 
@@ -134,6 +134,9 @@ struct InspectionHistoryView: View {
                     }
                 }
             }
+        }
+        .task {
+            try? await store.refreshInspections()
         }
     }
 }

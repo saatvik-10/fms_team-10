@@ -6,6 +6,7 @@ const driverRoute = new Hono();
 const controller = new Driver();
 
 const authRole = requireRole(ROLES.MANAGER);
+const driverRole = requireRole(ROLES.DRIVER);
 
 driverRoute.post(
   '/create-driver-profile',
@@ -14,5 +15,7 @@ driverRoute.post(
   controller.createDriver,
 );
 driverRoute.get('/get-drivers', proxyAuth, authRole, controller.getDrivers);
+driverRoute.patch('/:driverId', proxyAuth, authRole, controller.editDriver);
+driverRoute.delete('/:driverId', proxyAuth, authRole, controller.deleteDriver);
 
 export default driverRoute;

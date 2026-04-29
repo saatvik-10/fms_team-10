@@ -51,12 +51,43 @@ struct TripsView: View {
                                     onViewSummary: { tripForReport  = trip }
                                 )
                             }
+
+                            if !viewModel.isLoading && viewModel.filteredTrips.isEmpty {
+                                Text("No \(viewModel.selectedSegment.rawValue.lowercased()) trips right now")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .padding(.top, 24)
+                            }
                         }
                         .padding(16)
                     }
                 }
+
+                if viewModel.isLoading {
+                    ProgressView("Loading trips...")
+                        .padding(12)
+                        .background(Color(UIColor.systemBackground))
+                        .cornerRadius(10)
+                }
             }
             .navigationBarHidden(true)
+            .task {
+                await viewModel.loadDriverTrips()
+            }
+            .alert(
+                "Could not load trips",
+                isPresented: Binding(
+                    get: { viewModel.errorMessage != nil },
+                    set: { if !$0 { viewModel.errorMessage = nil } }
+                )
+            ) {
+                Button("Retry") {
+                    Task { await viewModel.loadDriverTrips() }
+                }
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "Please try again.")
+            }
 
             // ── "View Trip" → TripDetailView (Trips tab controls enabled) ──
             .navigationDestination(isPresented: Binding(
@@ -67,7 +98,10 @@ struct TripsView: View {
                     TripDetailView(
                         trip: selected.toTripModel(),
                         showTripControls: true,
-                        lifecycleTrip: selected          // forwarded to ReportIssueView
+                        lifecycleTrip: selected,         // forwarded to ReportIssueView
+                        onTripEnded: {
+                            viewModel.endTrip(selected.id)
+                        }
                     )
                 }
             }

@@ -9,7 +9,8 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 type UploadScope =
   | { role: 'driver'; userId: string }
   | { role: 'maintenance'; userId: string; vehicleId: string }
-  | { role: 'manager'; userId: string; documentType: 'dl' | 'rc' };
+  | { role: 'maintenanceWorkOrder'; userId: string; workOrderId: string }
+  | { role: 'manager'; userId: string; documentType: 'dl' | 'rc' | 'vehicle' };
 
 export class R2Service {
   private client: S3Client;
@@ -108,6 +109,10 @@ export class R2Service {
 
     if (scope.role === 'maintenance') {
       return `maintenance/${scope.userId}/vehicle/${scope.vehicleId}`;
+    }
+
+    if (scope.role === 'maintenanceWorkOrder') {
+      return `maintenance/${scope.userId}/work-orders/${scope.workOrderId}/media`;
     }
 
     return `manager/${scope.userId}/${scope.documentType}`;

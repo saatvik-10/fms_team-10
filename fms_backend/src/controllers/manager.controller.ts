@@ -3,12 +3,8 @@ import { createManagerSchema } from '../validators/manager.validator';
 import { sendCredentialsMail } from '../services/resend.service';
 import { prisma } from '../../prisma';
 import { hashPassword } from '../lib/hashPassword';
-import { customAlphabet } from 'nanoid';
-
-const nanoid = customAlphabet(
-  'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*',
-  10,
-);
+import { nanoid } from 'nanoid';
+import { genPswd } from '../lib/genPswd';
 
 export class Manager {
   async createManager(c: Context) {
@@ -46,7 +42,7 @@ export class Manager {
 
     const firstName = name.split(' ')[0]!;
     const username = firstName.toLowerCase() + '_' + nanoid(3);
-    const password = nanoid();
+    const password = genPswd();
     const passwordHash = await hashPassword(password);
 
     // Create User and Manager in transaction

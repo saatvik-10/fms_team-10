@@ -258,10 +258,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8T6H99BDWA;
+				DEVELOPMENT_TEAM = HKZ6DWLB2X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs your camera to capture images\n";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location for navigation\n";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app needs your microphone\n";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app needs your  speech Recognition permission\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -273,7 +276,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.gargee.fmsfrontend;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mrunal;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -293,10 +296,13 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8T6H99BDWA;
+				DEVELOPMENT_TEAM = HKZ6DWLB2X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs your camera to capture images\n";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location for navigation\n";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app needs your microphone\n";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app needs your  speech Recognition permission\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -308,7 +314,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.gargee.fmsfrontend;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mrunal;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

@@ -15,6 +15,7 @@ class MaintenanceDashboardViewModel: ObservableObject {
 
     // MARK: - Priority Feed (top 3 non-completed work orders by priority)
     @Published var topCriticalWorkOrders: [PriorityFeedItem] = []
+    @Published var alertItems: [DashboardAlertItem] = []
 
     // MARK: - Compliance Score
     @Published var complianceScore: Int         = 0
@@ -26,9 +27,10 @@ class MaintenanceDashboardViewModel: ObservableObject {
 
     // MARK: - Public Refresh Entry Point
     /// Called by the View via `onReceive` whenever `MaintenanceStore` publishes changes.
-    func refresh(workOrders: [WorkOrder], inspections: [TripInspection], lowStock: Int = 0) {
+    func refresh(workOrders: [WorkOrder], inspections: [TripInspection], inventoryParts: [InventoryPart], lowStock: Int = 0) {
         computeSystemStatus(workOrders: workOrders, inspections: inspections)
         computePriorityFeed(workOrders: workOrders)
+        computeAlertItems(workOrders: workOrders, inventoryParts: inventoryParts)
         computeComplianceScore(inspections: inspections)
         computeActiveStaff(workOrders: workOrders)
         lowStockPartsCount = lowStock
@@ -37,10 +39,10 @@ class MaintenanceDashboardViewModel: ObservableObject {
     // MARK: - Private Computations
 
     private func computeSystemStatus(workOrders: [WorkOrder], inspections: [TripInspection]) {
-        let criticalWOs         = workOrders.filter   { $0.priority == .critical && $0.status != .completed }.count
-        let emergencyPending    = inspections.filter  { $0.isEmergency && $0.status == .pending }.count
-        criticalAlertsCount     = criticalWOs + emergencyPending
-        pendingOrdersCount      = workOrders.filter { $0.status == .pending }.count
+        let highPriorityWOs     = workOrders.filter   { $0.priority == .high && $0.status != .completed }.count
+        let emergencyPending    = inspections.filter  { $0.isEmergency && $0.status == .progress }.count
+        criticalAlertsCount     = highPriorityWOs + emergencyPending
+        pendingOrdersCount      = workOrders.filter { $0.status == .progress }.count
     }
 
     private func computePriorityFeed(workOrders: [WorkOrder]) {
@@ -50,6 +52,28 @@ class MaintenanceDashboardViewModel: ObservableObject {
         topCriticalWorkOrders = sorted.prefix(3).map {
             PriorityFeedItem(id: $0.id, title: $0.title, vehicleName: $0.vehicleName, priority: $0.priority)
         }
+    }
+
+    private func computeAlertItems(workOrders: [WorkOrder], inventoryParts: [InventoryPart]) {
+        let workOrderAlerts = workOrders
+            .filter { $0.status != .completed }
+            .map { order in
+                DashboardAlertItem(
+                    id: "wo-\(order.id.uuidString)",
+                    source: .workOrder,
+                    title: order.title,
+                    subtitle: "\(order.vehicleName) • Priority: \(order.priority.rawValue.capitalized)",
+                    sortOrder: order.priority.sortingOrder,
+                    workOrderId: order.id,
+                    inventoryPartId: nil
+                )
+            }
+
+        alertItems = workOrderAlerts
+            .sorted { lhs, rhs in
+                if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
+                return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+            }
     }
 
     private func computeComplianceScore(inspections: [TripInspection]) {
@@ -67,7 +91,7 @@ class MaintenanceDashboardViewModel: ObservableObject {
 
     private func computeActiveStaff(workOrders: [WorkOrder]) {
         activeStaff = workOrders
-            .filter { $0.status == .inProgress }
+            .filter { $0.status == .progress }
             .map { ActiveStaffItem(technicianId: $0.technicianId, taskTitle: $0.title, vehicleName: $0.vehicleName) }
     }
 }

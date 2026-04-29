@@ -1,10 +1,15 @@
 import SwiftUI
 
 struct FleetManagerMainView: View {
+    @EnvironmentObject var session: AppSessionStore
     @StateObject private var dataManager = FleetDataManager()
     @State private var selectedTab: Int = 0
+    let profile: ManagerProfileData?
     
-    init() {
+    init(profile: ManagerProfileData? = nil) {
+        _dataManager = StateObject(wrappedValue: FleetDataManager())
+        self.profile = profile
+        
         // Custom styling for the TabBar to match premium look
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
@@ -20,7 +25,7 @@ struct FleetManagerMainView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationView {
-                FleetManagerDashboardView()
+                FleetManagerDashboardView(profile: profile)
             }
             .navigationViewStyle(.stack)
             .tabItem {
@@ -56,7 +61,7 @@ struct FleetManagerMainView: View {
             .tag(3)
             
         }
-        .accentColor(AppTheme.primary)
+        .accentColor(AppColors.primary)
         .environmentObject(dataManager)
     }
 }

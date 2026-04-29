@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct MaintenanceTabView: View {
     @Binding var isLoggedIn: Bool
@@ -21,7 +22,7 @@ struct MaintenanceTabView: View {
 
             // Tab 2: Work Orders
             NavigationStack {
-                WorkOrderManagementView(maintenanceStore: store)
+                WorkOrderManagementView(maintenanceStore: store, isLoggedIn: $isLoggedIn)
             }
             .tabItem {
                 Label("Work Orders", systemImage: "wrench.and.screwdriver.fill")
@@ -44,6 +45,10 @@ struct MaintenanceTabView: View {
             }
         }
         .environmentObject(store)
+        .tint(AppColors.primary)
         .accentColor(AppColors.primary)
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
+            store.refreshWorkOrderStatuses()
+        }
     }
 }

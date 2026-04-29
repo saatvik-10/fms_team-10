@@ -1,4 +1,0 @@
-//
-//  TripCreationAndAssignmentView.swift
-//  FMS Frontend
-//

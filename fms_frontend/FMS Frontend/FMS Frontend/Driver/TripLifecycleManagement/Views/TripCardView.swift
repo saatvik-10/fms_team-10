@@ -3,6 +3,10 @@ import SwiftUI
 struct TripCardView: View {
     let trip: LifecycleTrip
     
+    @State private var routeDistance: String = ""
+    @State private var isFetchingDistance = false
+    
+    
     // Callbacks for button actions
     var onAccept: (() -> Void)? = nil
     var onDecline: (() -> Void)? = nil
@@ -13,24 +17,24 @@ struct TripCardView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Top Row: ID and Status badge
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(trip.id)
-                        .font(.caption2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.secondary)
-                    
-                    if let vehicleNo = trip.vehicleNumber {
-                        HStack(spacing: 4) {
-                            Image(systemName: "box.truck.fill")
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
-                            Text(vehicleNo)
-                                .font(.subheadline)
-                                .foregroundColor(.primary)
-                                .fontWeight(.medium)
-                        }
-                    }
-                }
+//                VStack(alignment: .leading, spacing: 4) {
+////                    Text(trip.id)
+////                        .font(.caption2)
+////                        .fontWeight(.bold)
+////                        .foregroundColor(.secondary)
+//                    
+//                    if let vehicleNo = trip.vehicleNumber {
+//                        HStack(spacing: 4) {
+//                            Image(systemName: "box.truck.fill")
+//                                .font(.system(size: 10))
+//                                .foregroundColor(.secondary)
+//                            Text(vehicleNo)
+//                                .font(.subheadline)
+//                                .foregroundColor(.primary)
+//                                .fontWeight(.medium)
+//                        }
+//                    }
+//                }
                 
                 Spacer()
                 
@@ -93,7 +97,7 @@ struct TripCardView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fontWeight(.medium)
-                    Text(String(format: "%.1f km", trip.distance * 1.60934))
+                    Text(!routeDistance.isEmpty ? routeDistance : (trip.distance > 0 ? String(format: "%.1f km", trip.distance) : "Calculating"))
                         .font(.headline)
                         .foregroundColor(.primary)
                         .fontWeight(.bold)
@@ -102,29 +106,30 @@ struct TripCardView: View {
             
             // Action Buttons (vary by segment)
             HStack(spacing: 12) {
-                if trip.segment == .assigned {
-                    Button(action: { onDecline?() }) {
-                        Text("Decline")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color(UIColor.systemGray6))
-                            .foregroundColor(.primary)
-                            .cornerRadius(10)
-                    }
-                    
-                    Button(action: { onAccept?() }) {
-                        Text("Accept Trip")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color(hex: "0a303a"))
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                } else if trip.segment == .accepted {
+//                if trip.segment == .assigned {
+//                    Button(action: { onDecline?() }) {
+//                        Text("Decline")
+//                            .font(.subheadline)
+//                            .fontWeight(.semibold)
+//                            .frame(maxWidth: .infinity)
+//                            .padding(.vertical, 14)
+//                            .background(Color(UIColor.systemGray6))
+//                            .foregroundColor(.primary)
+//                            .cornerRadius(10)
+//                    }
+//                    
+//                    Button(action: { onAccept?() }) {
+//                        Text("Accept Trip")
+//                            .font(.subheadline)
+//                            .fontWeight(.semibold)
+//                            .frame(maxWidth: .infinity)
+//                            .padding(.vertical, 14)
+//                            .background(Color(hex: "0a303a"))
+//                            .foregroundColor(.white)
+//                            .cornerRadius(10)
+//                    }
+//                }
+                if trip.segment == .accepted {
                     Button(action: { onStart?() }) {
                         Text("View Trip")
                             .font(.subheadline)
@@ -154,5 +159,19 @@ struct TripCardView: View {
         .background(Color(UIColor.systemBackground))
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 5)
+        .task {
+            guard trip.distance <= 0 else { return }
+            isFetchingDistance = true
+            do {
+                let result = try await GoogleDirectionsService.shared.fetchDirections(
+                    origin: trip.source,
+                    destination: trip.destination
+                )
+                routeDistance = result.distance
+            } catch {
+                print("Trip card distance fetch error: \(error)")
+            }
+            isFetchingDistance = false
+        }
     }
 }

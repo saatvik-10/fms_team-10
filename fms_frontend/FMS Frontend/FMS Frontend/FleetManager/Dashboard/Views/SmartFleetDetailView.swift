@@ -9,7 +9,7 @@ struct SmartFleetDetailView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(height: 200)
-                .foregroundColor(AppTheme.primary)
+                .foregroundColor(AppColors.primary)
             
             Text(assessment.truckName)
                 .font(.largeTitle)
@@ -17,7 +17,7 @@ struct SmartFleetDetailView: View {
             
             Text(assessment.truckID)
                 .font(.headline)
-                .foregroundColor(AppTheme.textSecondary)
+                .foregroundColor(AppColors.textSecondary)
             
             Divider()
             
@@ -50,7 +50,7 @@ struct DetailRow: View {
             Text(title.uppercased())
                 .font(.caption)
                 .fontWeight(.bold)
-                .foregroundColor(AppTheme.textSecondary)
+                .foregroundColor(AppColors.textSecondary)
             Text(value)
                 .font(.body)
         }

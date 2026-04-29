@@ -10,7 +10,7 @@ class WorkOrdersViewModel: ObservableObject {
     private var store: MaintenanceStore
     @Published var filteredWorkOrders: [WorkOrder] = []
     @Published var searchText: String = ""
-    @Published var selectedStatus: WorkOrderStatus? = .pending
+    @Published var selectedStatus: WorkOrderStatus? = nil
     @Published var selectedPriority: WorkOrderPriority? = nil
     @Published var selectedServiceType: String? = nil
     
@@ -35,7 +35,7 @@ class WorkOrdersViewModel: ObservableObject {
     }
     
     func filterOrders() {
-        var orders = store.workOrders
+        var orders = store.workOrders.filter { $0.status != .completed }
         
         if !searchText.isEmpty {
             orders = orders.filter { 
@@ -57,10 +57,11 @@ class WorkOrdersViewModel: ObservableObject {
             orders = orders.filter { $0.serviceType == type }
         }
         
-        // Sorting: Critical first, then by date
+        // Sorting: priority order first, then by date
         self.filteredWorkOrders = orders.sorted {
-            if $0.priority == .critical && $1.priority != .critical { return true }
-            if $0.priority != .critical && $1.priority == .critical { return false }
+            if $0.priority.sortingOrder != $1.priority.sortingOrder {
+                return $0.priority.sortingOrder < $1.priority.sortingOrder
+            }
             return $0.scheduledDate > $1.scheduledDate
         }
     }

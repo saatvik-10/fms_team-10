@@ -56,16 +56,16 @@ struct MaintenanceDashboardView: View {
         }
         // ── Reactive updates from MaintenanceStore ──────────────────────────
         .onAppear {
-            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, lowStock: store.lowStockCount)
+            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
         }
         .onReceive(store.$workOrders) { orders in
-            viewModel.refresh(workOrders: orders, inspections: store.inspections, lowStock: store.lowStockCount)
+            viewModel.refresh(workOrders: orders, inspections: store.inspections, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
         }
         .onReceive(store.$inspections) { inspections in
-            viewModel.refresh(workOrders: store.workOrders, inspections: inspections, lowStock: store.lowStockCount)
+            viewModel.refresh(workOrders: store.workOrders, inspections: inspections, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
         }
         .onReceive(store.$inventoryParts) { _ in
-            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, lowStock: store.lowStockCount)
+            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
         }
         // ── Modals ──────────────────────────────────────────────────────────
         .sheet(isPresented: $showingCreateInspection)    { CreateInspectionModal(isEmergency: false) }
@@ -111,7 +111,7 @@ struct MaintenanceDashboardView: View {
             HStack(spacing: 12) {
                 NavigationLink(destination: PendingWorkOrdersListView()) {
                     FleetAnalysisCard(
-                        title: "Pending Orders",
+                        title: "Pending Work Orders",
                         count: "\(viewModel.pendingOrdersCount)",
                         color: AppColors.primary
                     )
@@ -150,8 +150,9 @@ struct MaintenanceDashboardView: View {
                 QuickActionButton(
                     title: "Update Inventory",
                     icon: "shippingbox.fill",
-                    color: .orange,
-                    action: { showingFileImporter = true }
+                    color: AppColors.primary,
+                    action: { showingFileImporter = true },
+                    emphasize: false
                 )
             }
             .padding(.horizontal, 20)
@@ -166,27 +167,34 @@ struct MaintenanceDashboardView: View {
             MaintenanceSectionHeader(title: "Maintenance Alerts", destination: MaintenanceAlertsListView())
                 .padding(.horizontal, 20)
 
-            if viewModel.topCriticalWorkOrders.isEmpty {
-                MaintenanceEmptyCard(message: "No active work orders", icon: "checkmark.circle.fill")
+            if viewModel.alertItems.isEmpty {
+                MaintenanceEmptyCard(message: "No alerts", icon: "checkmark.circle.fill")
                     .padding(.horizontal, 20)
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(viewModel.topCriticalWorkOrders.prefix(3).enumerated()), id: \.element.id) { index, item in
-                        let match = store.workOrders.first { $0.id == item.id }
+                    ForEach(Array(viewModel.alertItems.prefix(3).enumerated()), id: \.element.id) { index, item in
+                        let matchingWorkOrder = item.workOrderId.flatMap { workOrderId in
+                            store.workOrders.first { $0.id == workOrderId }
+                        }
+                        let matchingInventoryPart = item.inventoryPartId.flatMap { partId in
+                            store.inventoryParts.first { $0.partId == partId }
+                        }
                         NavigationLink(
                             destination: Group {
-                                if let order = match {
+                                if let order = matchingWorkOrder {
                                     WorkOrderDetailsView(workOrder: order)
+                                } else if let part = matchingInventoryPart {
+                                    InventoryDetailView(part: part)
                                 } else {
                                     MaintenanceAlertsListView()
                                 }
                             }
                         ) {
-                            MaintenanceAlertCard(item: item)
+                            MaintenanceDashboardAlertCard(item: item)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
-                        if index < min(viewModel.topCriticalWorkOrders.count, 3) - 1 {
+                        if index < min(viewModel.alertItems.count, 3) - 1 {
                             Divider()
                                 .padding(.leading, 70)
                         }

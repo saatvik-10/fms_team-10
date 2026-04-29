@@ -6,7 +6,21 @@ struct DriverDetailView: View {
     @EnvironmentObject var dataManager: FleetDataManager
     @State private var showingEditModal = false
     @State private var showingDeleteAlert = false
+    @State private var routeEta: String = "--"
     private let infoCardHeight: CGFloat = 180
+    
+    private var assignedVehicle: Vehicle? {
+        dataManager.vehicles.first(where: {
+            ($0.assignedDriver?.backendId != nil && $0.assignedDriver?.backendId == driver.backendId) ||
+            ($0.assignedDriver?.id != nil && $0.assignedDriver?.id == driver.id) ||
+            $0.id == driver.currentVehicleID ||
+            $0.registrationNumber == driver.currentVehicleID
+        })
+    }
+    
+    private var assignedTrip: VehicleTrip? {
+        assignedVehicle?.currentTrip
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -14,11 +28,11 @@ struct DriverDetailView: View {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(AppTheme.primary)
+                        .foregroundColor(AppColors.primary)
                 }
 
-                Text(driver.name)
-                    .font(.system(size: 20, weight: .semibold))
+                Text("Back")
+                    .font(AppFonts.title3)
 
                 Spacer()
 
@@ -65,13 +79,14 @@ struct DriverDetailView: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text(driver.name)
-                                .font(.system(size: 26, weight: .bold))
+                                .font(AppFonts.title1)
                             HStack(spacing: 6) {
                                 Circle()
                                     .fill(statusColor)
                                     .frame(width: 6, height: 6)
                                 Text(driver.status.rawValue)
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFonts.caption2)
+                                    .fontWeight(.bold)
                                     .foregroundColor(statusColor)
                             }
                             .padding(.horizontal, 12)
@@ -96,51 +111,39 @@ struct DriverDetailView: View {
 
                     VStack(alignment: .leading, spacing: 14) {
                         Text("CURRENT ASSIGNMENT")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFonts.caption2)
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
+
+                        let trip = assignedTrip
+                        let routeStr = trip != nil ? "\(trip!.origin) → \(trip!.destination)" : "Idle"
+                        let vehicleStr = assignedVehicle?.registrationNumber ?? "N/A"
 
                         HStack {
-                            DetailHeaderStat(label: "VEHICLE", value: driver.currentVehicleID ?? "N/A")
+                            DetailHeaderStat(label: "VEHICLE", value: vehicleStr)
                             Spacer()
-                            DetailHeaderStat(label: "ETA", value: driver.eta ?? "--")
+                            DetailHeaderStat(label: "ETA", value: routeEta)
                         }
 
-                        DetailHeaderStat(label: "ACTIVE ROUTE", value: driver.activeRoute ?? "Idle")
-                    }
-                    .padding(20)
-                    .frame(maxWidth: .infinity, minHeight: infoCardHeight, maxHeight: infoCardHeight, alignment: .topLeading)
-                    .background(Color.white)
-                    .cornerRadius(14)
+                        DetailHeaderStat(label: "ACTIVE ROUTE", value: routeStr)
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("RECENT ACTIVITY")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.gray)
-
-                        if driver.activityLog.isEmpty {
-                            Text("No recent activity")
-                                .font(.system(size: 13))
-                                .foregroundColor(.gray)
-                                .padding(.vertical, 8)
-                        } else {
-                            ScrollView {
-                                VStack(spacing: 14) {
-                                    ForEach(driver.activityLog) { event in
-                                        ActivityRow(event: event)
-                                    }
-                                }
-                            }
+                        if let vehicle = assignedVehicle, trip != nil {
+                            AsyncFleetVehicleMap(vehicle: vehicle)
+                                .frame(height: 180)
+                                .cornerRadius(12)
+                                .padding(.top, 8)
                         }
                     }
                     .padding(20)
-                    .frame(maxWidth: .infinity, minHeight: infoCardHeight, maxHeight: infoCardHeight, alignment: .topLeading)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
                     .background(Color.white)
                     .cornerRadius(14)
+
                 }
                 .padding(16)
                 .padding(.bottom, 24)
             }
-            .background(AppTheme.background)
+            .background(AppColors.background)
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showingEditModal) {
@@ -149,21 +152,60 @@ struct DriverDetailView: View {
         .alert("Confirm Delete", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
-                if let index = dataManager.drivers.firstIndex(where: { $0.id == driver.id }) {
-                    dataManager.drivers.remove(at: index)
+                Task {
+                    await dataManager.deleteDriver(driver)
+                    await MainActor.run {
+                        dismiss()
+                    }
                 }
-                dismiss()
             }
         } message: {
             Text("Are you sure you want to delete this driver?")
+        }
+        .task {
+            await loadAssignment()
+        }
+        .onChange(of: assignedTrip?.origin) { _, _ in
+            Task { await loadRouteEta() }
         }
     }
     
     var statusColor: Color {
         switch driver.status {
-        case .active, .onDuty: return AppTheme.activeGreen
-        case .onTrip: return AppTheme.maintenanceOrange
-        case .offDuty: return AppTheme.criticalRed
+        case .active, .onDuty: return AppColors.activeGreen
+        case .onTrip: return AppColors.maintenanceOrange
+        case .offDuty: return AppColors.criticalRed
+        }
+    }
+    
+    private func loadAssignment() async {
+        do {
+            try await dataManager.refreshVehicles()
+        } catch {
+            print("Failed to refresh vehicle assignment: \(error)")
+        }
+        await loadRouteEta()
+    }
+    
+    private func loadRouteEta() async {
+        guard let trip = assignedTrip else {
+            await MainActor.run { routeEta = "--" }
+            return
+        }
+        
+        if !trip.eta.isEmpty {
+            await MainActor.run { routeEta = trip.eta }
+        }
+        
+        do {
+            let route = try await FleetDirectionsService.shared.fetchDirections(
+                origin: trip.origin,
+                destination: trip.destination
+            )
+            await MainActor.run { routeEta = route.eta }
+        } catch {
+            await MainActor.run { routeEta = trip.eta.isEmpty ? "--" : trip.eta }
+            print("Failed to load assignment ETA: \(error)")
         }
     }
 }
@@ -181,7 +223,7 @@ struct DetailHeaderStat: View {
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.gray)
             Text(value)
-                .font(.system(size: 18, weight: .black))
+                .font(AppFonts.title3)
                 .foregroundColor(color)
         }
     }
@@ -201,13 +243,14 @@ struct MiniStatCard: View {
             
             HStack(alignment: .bottom) {
                 Text(value)
-                    .font(.system(size: 24, weight: .black))
+                    .font(AppFonts.title2)
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                 
                 if let trend = trend {
                     Text(trend)
-                        .font(.system(size: 10, weight: .bold))
+                        .font(AppFonts.caption2)
+                        .fontWeight(.bold)
                         .foregroundColor(trendColor)
                         .padding(.bottom, 4)
                 }
@@ -234,9 +277,9 @@ struct ActivityRow: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(event.title)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFonts.headline)
                 Text(event.detail + " • " + event.time)
-                    .font(.system(size: 11))
+                    .font(AppFonts.caption2)
                     .foregroundColor(.gray)
             }
             
@@ -244,8 +287,9 @@ struct ActivityRow: View {
             
             if let val = event.value {
                 Text(val)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(event.type == "incident" ? AppTheme.criticalRed : .gray)
+                    .font(AppFonts.caption1)
+                    .fontWeight(.bold)
+                    .foregroundColor(event.type == "incident" ? AppColors.criticalRed : .gray)
             }
         }
     }

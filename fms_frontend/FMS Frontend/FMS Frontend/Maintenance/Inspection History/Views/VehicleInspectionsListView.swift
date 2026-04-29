@@ -29,6 +29,7 @@ struct VehicleInspectionsListView: View {
     @State private var showPDF = false
     @State private var selectedPDFURL: URL?
     @State private var selectedReportTitle: String = ""
+    @State private var isGeneratingPDF = false
 
     private var filteredInspections: [TripInspection] {
         inspections.filter { inspection in
@@ -46,23 +47,14 @@ struct VehicleInspectionsListView: View {
         }
     }
     
-    private var filteredHistory: [HistoryEntry] {
-        viewModel.mockHistoryEntries.filter { entry in
-            switch filter {
-            case .all: return true
-            case .preTrip: return entry.inspection.type == .preTrip
-            case .postTrip: return entry.inspection.type == .postTrip
-            case .maintenance: return entry.inspection.type == .maintenance
-            }
-        }
-    }
+
 
     var body: some View {
         VStack(spacing: 0) {
             // Segmented Control
             Picker("Selection", selection: $selectedSegment) {
-                Text("Inspection").tag(0)
-                Text("History").tag(1)
+                Text("History").tag(0)
+                Text("Reports").tag(1)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
@@ -95,7 +87,7 @@ struct VehicleInspectionsListView: View {
                     LazyVStack(spacing: 12) {
                         let completedFromStore = store.inspections.filter { $0.unitName == unitName && $0.status == .completed }
                         
-                        if filteredHistory.isEmpty && completedFromStore.isEmpty {
+                        if completedFromStore.isEmpty {
                             EmptyStateView(
                                 icon: "archivebox",
                                 title: "No History Records",
@@ -106,27 +98,10 @@ struct VehicleInspectionsListView: View {
                             // Show Completed Store Inspections First
                             ForEach(completedFromStore.sorted(by: { $0.timestamp > $1.timestamp })) { inspection in
                                 Button(action: {
-                                    if let url = PDFService.shared.generateInspectionReport(inspection: inspection) {
-                                        selectedPDFURL = url
-                                        selectedReportTitle = inspection.title.isEmpty ? inspection.type.rawValue : inspection.title
-                                        showPDF = true
-                                    }
+                                    let title = inspection.title.isEmpty ? inspection.type.rawValue : inspection.title
+                                    generateAndShowPDF(for: inspection, title: title)
                                 }) {
                                     historyRow(title: inspection.title.isEmpty ? inspection.type.rawValue : inspection.title, date: inspection.timestamp)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                            
-                            // Then Show Mock History Entries
-                            ForEach(filteredHistory) { entry in
-                                Button(action: {
-                                    if let url = PDFService.shared.generateInspectionReport(inspection: entry.inspection) {
-                                        selectedPDFURL = url
-                                        selectedReportTitle = entry.title
-                                        showPDF = true
-                                    }
-                                }) {
-                                    historyRow(title: entry.title, date: entry.inspection.timestamp)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -154,6 +129,24 @@ struct VehicleInspectionsListView: View {
         .fullScreenCover(isPresented: $showPDF) {
             if let url = selectedPDFURL {
                 PDFPreviewView(url: url, title: selectedReportTitle)
+            }
+        }
+        .overlay {
+            if isGeneratingPDF {
+                ZStack {
+                    Color.black.opacity(0.3).ignoresSafeArea()
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(.white)
+                        Text("Generating Report…")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                    .padding(32)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(16)
+                }
             }
         }
     }
@@ -192,69 +185,23 @@ struct VehicleInspectionsListView: View {
         .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
     }
     
-    // History Entry with real inspection data
-    struct HistoryEntry: Identifiable {
-        let id = UUID()
-        let title: String
-        let inspection: TripInspection
-    }
-    
-    struct ViewModel {
-        let mockHistoryEntries: [HistoryEntry]
-        
-        init(unitName: String) {
-            self.mockHistoryEntries = [
-                HistoryEntry(title: "Monthly Brake System Audit", inspection: TripInspection(
-                    title: "Monthly Brake System Audit",
-                    vehicleId: "V-HIST-1",
-                    unitName: unitName,
-                    unitVIN: "VIN-BRAKE-01",
-                    driverId: "SYSTEM",
-                    timestamp: Calendar.current.date(byAdding: .day, value: -30, to: Date())!,
-                    type: .maintenance,
-                    vehicleType: .truck,
-                    status: .completed,
-                    priority: .high,
-                    items: TripInspection.mockItems(for: .truck),
-                    maintenanceStaffId: "STAFF-01"
-                )),
-                HistoryEntry(title: "Annual Safety Certification", inspection: TripInspection(
-                    title: "Annual Safety Certification",
-                    vehicleId: "V-HIST-2",
-                    unitName: unitName,
-                    unitVIN: "VIN-SAFETY-02",
-                    driverId: "SYSTEM",
-                    timestamp: Calendar.current.date(byAdding: .day, value: -90, to: Date())!,
-                    type: .maintenance,
-                    vehicleType: .truck,
-                    status: .completed,
-                    priority: .critical,
-                    items: TripInspection.mockItems(for: .truck),
-                    maintenanceStaffId: "STAFF-02"
-                )),
-                HistoryEntry(title: "Engine Performance Report", inspection: TripInspection(
-                    title: "Engine Performance Report",
-                    vehicleId: "V-HIST-3",
-                    unitName: unitName,
-                    unitVIN: "VIN-ENGINE-03",
-                    driverId: "SYSTEM",
-                    timestamp: Calendar.current.date(byAdding: .day, value: -15, to: Date())!,
-                    type: .maintenance,
-                    vehicleType: .truck,
-                    status: .completed,
-                    priority: .medium,
-                    items: TripInspection.mockItems(for: .truck),
-                    maintenanceStaffId: "STAFF-03"
-                ))
-            ]
-        }
-    }
-    
-    @State private var viewModel: ViewModel
-    
     init(unitName: String) {
         self.unitName = unitName
-        self._viewModel = State(initialValue: ViewModel(unitName: unitName))
+    }
+
+    private func generateAndShowPDF(for inspection: TripInspection, title: String) {
+        isGeneratingPDF = true
+        selectedReportTitle = title
+        Task {
+            let url = await Task.detached(priority: .userInitiated) {
+                PDFService.shared.generateInspectionReport(inspection: inspection, inventoryParts: store.inventoryParts)
+            }.value
+            isGeneratingPDF = false
+            if let url = url {
+                selectedPDFURL = url
+                showPDF = true
+            }
+        }
     }
     
     private func deleteItems(at offsets: IndexSet) {

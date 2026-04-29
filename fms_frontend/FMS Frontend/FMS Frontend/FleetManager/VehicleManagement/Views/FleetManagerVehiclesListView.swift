@@ -1,19 +1,5 @@
 import SwiftUI
 
-// MARK: - Indian plate number mapping (local to Vehicle Management only)
-private let indianPlateMap: [String: String] = [
-    "TRK-9042": "KA 01 AB 9042",
-    "VN-4209":  "MH 12 CD 4209",
-    "EV-9910":  "DL 03 EF 9910",
-    "TRK-2101": "TN 07 GH 2101",
-    "VN-1100":  "RJ 14 JK 1100",
-    "TRK-5502": "UP 32 MN 5502"
-]
-
-private func indianPlate(for vehicleID: String) -> String {
-    indianPlateMap[vehicleID] ?? vehicleID
-}
-
 // MARK: - Vehicle Status Filter (no "All")
 private enum VehicleFilter: String, CaseIterable {
     case inTransit   = "IN TRANSIT"
@@ -44,7 +30,7 @@ struct FleetManagerVehiclesListView: View {
         let query = searchText.lowercased()
         return byStatus.filter { vehicle in
             let name   = "\(vehicle.make) \(vehicle.model)".lowercased()
-            let number = indianPlate(for: vehicle.id).lowercased()
+            let number = vehicle.registrationNumber.lowercased()
             let idRaw  = vehicle.id.lowercased()
             return name.contains(query) || number.contains(query) || idRaw.contains(query)
         }
@@ -56,8 +42,8 @@ struct FleetManagerVehiclesListView: View {
             // MARK: - Header Row
             HStack(alignment: .center, spacing: 16) {
                 Text("Vehicles")
-                    .font(.system(size: 26, weight: .black))
-                    .foregroundColor(.primary)
+                    .font(AppFonts.title1)
+                    .foregroundColor(AppColors.primaryText)
 
                 Spacer()
 
@@ -168,18 +154,27 @@ struct FleetManagerVehiclesListView: View {
             .background(AppTheme.background)
         }
         .navigationBarHidden(true)
-        .sheet(isPresented: $showingAddVehicle) { AddVehicleModalView() }
+        .sheet(isPresented: $showingAddVehicle) { AddVehicleModalView().environmentObject(dataManager) }
+        .task {
+            do {
+                try await dataManager.refreshVehicles()
+            } catch {
+                print("Failed to refresh vehicles: \(error)")
+            }
+        }
         // Long-press delete confirmation alert
         .alert("Delete Vehicle", isPresented: $showDeleteAlert, presenting: vehicleToDelete) { v in
             Button("Cancel", role: .cancel) { vehicleToDelete = nil }
             Button("Delete", role: .destructive) {
-                if let idx = dataManager.vehicles.firstIndex(where: { $0.id == v.id }) {
-                    dataManager.vehicles.remove(at: idx)
+                Task {
+                    await dataManager.deleteVehicle(v)
+                    await MainActor.run {
+                        vehicleToDelete = nil
+                    }
                 }
-                vehicleToDelete = nil
             }
         } message: { v in
-            Text("Are you sure you want to permanently delete \(indianPlate(for: v.id))? This cannot be undone.")
+            Text("Are you sure you want to permanently delete \(v.registrationNumber)? This cannot be undone.")
         }
     }
 }
@@ -196,21 +191,53 @@ struct VehicleGridCard: View {
                 .fill(Color(.systemGray6))
                 .frame(height: 170)
                 .overlay(
-                    Image(systemName: "truck.box.fill")
-                        .font(.system(size: 44))
-                        .foregroundColor(.gray.opacity(0.4))
+                    Group {
+                        if let urlString = vehicle.vehicleImageUrl, let url = URL(string: urlString) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .empty:
+                                    ProgressView()
+                                        .tint(AppTheme.primary)
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(height: 170)
+                                        .clipped()
+                                case .failure(_):
+                                    placeholderView
+                                @unknown default:
+                                    placeholderView
+                                }
+                            }
+                        } else {
+                            placeholderView
+                        }
+                    }
                 )
                 .clipShape(TopRoundedRectangle(radius: 18))
 
             // Vehicle Info
             VStack(alignment: .leading, spacing: 5) {
-                Text(indianPlate(for: vehicle.id))
-                    .font(.system(size: 22, weight: .black))
-                    .foregroundColor(.primary)
-                    .tracking(0.5)
+                HStack {
+                    Text(vehicle.registrationNumber)
+                        .font(AppFonts.title2)
+                        .foregroundColor(AppColors.primaryText)
+                        .tracking(0.5)
+                    Spacer()
+                    Text("\(Int(vehicle.maxLoadCapacity)) \(vehicle.capacityUnit)")
+                        .font(AppFonts.caption1)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppTheme.primary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(AppTheme.primary.opacity(0.1))
+                        .cornerRadius(6)
+                }
 
                 Text("\(vehicle.make) \(vehicle.model)".uppercased())
-                    .font(.system(size: 12, weight: .bold))
+                    .font(AppFonts.caption2)
+                    .fontWeight(.bold)
                     .foregroundColor(.gray)
             }
             .padding(.horizontal, 14)
@@ -219,6 +246,12 @@ struct VehicleGridCard: View {
         .background(Color.white)
         .cornerRadius(18)
         .modifier(AppTheme.cardShadow())
+    }
+
+    private var placeholderView: some View {
+        Image(systemName: "truck.box.fill")
+            .font(.system(size: 44))
+            .foregroundColor(.gray.opacity(0.4))
     }
 }
 

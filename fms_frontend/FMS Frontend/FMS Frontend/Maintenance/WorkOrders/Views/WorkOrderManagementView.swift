@@ -6,59 +6,48 @@
 import SwiftUI
 
 struct WorkOrderManagementView: View {
+    @Binding var isLoggedIn: Bool
     @EnvironmentObject var store: MaintenanceStore
     @StateObject private var viewModel: WorkOrdersViewModel
     @State private var showingCreateModal = false
     
-    init(maintenanceStore: MaintenanceStore) {
+    init(maintenanceStore: MaintenanceStore, isLoggedIn: Binding<Bool>) {
+        _isLoggedIn = isLoggedIn
         _viewModel = StateObject(wrappedValue: WorkOrdersViewModel(store: maintenanceStore))
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("Status", selection: $viewModel.selectedStatus) {
-                Text("Pending").tag(WorkOrderStatus.pending as WorkOrderStatus?)
-                Text("In Progress").tag(WorkOrderStatus.inProgress as WorkOrderStatus?)
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal)
-            .padding(.top, 10)
-            .padding(.bottom, 16)
-            .background(Color(.systemGroupedBackground))
-            
-            // Work Orders List
-            ScrollView {
-                LazyVStack(spacing: 16) {
-                    ForEach(viewModel.filteredWorkOrders) { order in
-                        NavigationLink(destination: WorkOrderDetailsView(workOrder: order)) {
-                            WorkOrderTaskCard(order: order)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                withAnimation {
-                                    viewModel.deleteOrder(order)
-                                }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                ForEach(viewModel.filteredWorkOrders) { order in
+                    NavigationLink(destination: WorkOrderDetailsView(workOrder: order)) {
+                        WorkOrderTaskCard(order: order)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            withAnimation {
+                                viewModel.deleteOrder(order)
                             }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
                         }
                     }
-                    
-                    if viewModel.filteredWorkOrders.isEmpty {
-                        EmptyStateView(
-                            icon: "wrench.and.screwdriver",
-                            title: "No \(viewModel.selectedStatus?.rawValue ?? "") Orders",
-                            message: "Try searching for a vehicle or adjusting filters."
-                        )
-                        .padding(.top, 60)
-                    }
-                    
-                    Spacer(minLength: 40)
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
+                
+                if viewModel.filteredWorkOrders.isEmpty {
+                    EmptyStateView(
+                        icon: "wrench.and.screwdriver",
+                        title: "No Matching Orders",
+                        message: "Try searching for a vehicle or adjusting filters."
+                    )
+                    .padding(.top, 60)
+                }
+                
+                Spacer(minLength: 40)
             }
+            .padding(.horizontal)
+            .padding(.top, 16)
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Work Orders")
@@ -74,7 +63,7 @@ struct WorkOrderManagementView: View {
                                 Button(priority.rawValue) { viewModel.selectedPriority = priority }
                             }
                         }
-                        
+
                         Section("Service Type") {
                             Button("All Types") { viewModel.selectedServiceType = nil }
                             let types = Array(Set(store.workOrders.map { $0.serviceType })).sorted()
@@ -93,11 +82,20 @@ struct WorkOrderManagementView: View {
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(AppColors.primary)
                     }
+
+                    NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
+                        Image(systemName: "person.circle")
+                            .font(.system(size: 22))
+                            .foregroundColor(AppColors.primary)
+                    }
                 }
             }
         }
         .sheet(isPresented: $showingCreateModal) {
             CreateWorkOrderModal()
+        }
+        .task {
+            try? await store.refreshWorkOrders()
         }
     }
 }

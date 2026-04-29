@@ -75,7 +75,6 @@ struct PriorityBadge: View {
     
     var color: Color {
         switch priority.lowercased() {
-        case "critical": return AppColors.priorityCritical
         case "high": return AppColors.priorityHigh
         case "medium": return AppColors.priorityMedium
         default: return AppColors.priorityLow
@@ -127,7 +126,6 @@ struct WorkOrderTaskCard: View {
 
     private func priorityColor(_ priority: WorkOrderPriority) -> Color {
         switch priority {
-        case .critical: return .red
         case .high:     return .orange
         case .medium:   return .blue
         case .low:      return .gray
@@ -154,9 +152,9 @@ struct WorkOrderTaskCard: View {
                             .foregroundColor(.primary)
                             .fixedSize(horizontal: false, vertical: true)
 
-                    Text(order.vehicleName)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.secondary)
+                        Text("\(order.vehicleName) • \(order.vehicleNum)")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary)
                 }
                 
                 Spacer()
@@ -171,15 +169,10 @@ struct WorkOrderTaskCard: View {
 
             Divider()
 
-            // Bottom 3-Part Metadata Row
+            // Bottom metadata row
             HStack(spacing: 0) {
                 // Date Section
                 MetadataCell(icon: "calendar", text: order.scheduledDate.formatted(.dateTime.day().month(.abbreviated)))
-                
-                Divider().frame(height: 16)
-                
-                // Time Section
-                MetadataCell(icon: "clock", text: order.scheduledDate.formatted(.dateTime.hour().minute()))
                 
                 Divider().frame(height: 16)
                 
@@ -274,7 +267,7 @@ struct InspectionTaskCard: View {
     private var statusColor: Color {
         switch inspection.status {
         case .completed: return .green
-        case .pending:    return .orange
+        case .progress:    return .orange
         }
     }
 
@@ -354,7 +347,6 @@ struct InspectionTaskCard: View {
 
     private func priorityColor(_ priority: WorkOrderPriority) -> Color {
         switch priority {
-        case .critical: return .red
         case .high:     return .orange
         case .medium:   return .blue
         case .low:      return .gray
@@ -544,96 +536,32 @@ struct FormGroup<Content: View>: View {
 // MARK: - Standardized Checklist Item
 struct InspectionListItem: View {
     @Binding var item: InspectionItem
-    @State private var showImagePicker = false
+
+    private var isChecked: Bool {
+        item.result == .good
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Row 1: Title & Status Menu
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    Text(item.verificationCriteria)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
-                }
-                Spacer(minLength: 12)
-                
-                Menu {
-                    Button(action: { item.result = .good }) {
-                        Label("Good", systemImage: "checkmark.circle.fill")
-                    }
-                    Button(action: { item.result = .repair }) {
-                        Label("Repair", systemImage: "wrench.and.screwdriver.fill")
-                    }
-                    Button(action: { item.result = .alert }) {
-                        Label("Alert", systemImage: "exclamationmark.triangle.fill")
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(item.result == .pending ? "Select" : item.result.rawValue.capitalized)
-                            .font(.system(size: 13, weight: .bold))
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 10, weight: .bold))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(statusColor(item.result).opacity(0.1))
-                    .foregroundColor(statusColor(item.result))
-                    .cornerRadius(8)
-                }
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.name)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Text(item.verificationCriteria)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
             }
-
-            // Row 2: Photo Button & Notes Field
-            HStack(spacing: 12) {
-                Button(action: { showImagePicker = true }) {
-                    if let data = item.imageData, let uiImage = UIImage(data: data) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 36, height: 36)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                            .overlay(
-                                Image(systemName: "pencil.circle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.white)
-                                    .shadow(radius: 1)
-                                    .padding(2),
-                                alignment: .bottomTrailing
-                            )
-                    } else {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color(.systemGray5))
-                                .frame(width: 36, height: 36)
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(item.isImageRequired ? AppColors.primary : .secondary)
-                        }
-                    }
-                }
-                
-                TextField("Add a note...", text: $item.notes)
-                    .font(.subheadline)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
+            
+            Spacer(minLength: 12)
+            
+            Button(action: {
+                item.result = isChecked ? .pending : .good
+            }) {
+                Image(systemName: isChecked ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 24))
+                    .foregroundColor(isChecked ? AppColors.primary : .secondary.opacity(0.5))
             }
-        }
-        .sheet(isPresented: $showImagePicker) {
-            ImagePicker(imageData: $item.imageData, sourceType: .photoLibrary)
-        }
-    }
-    
-    private func statusColor(_ result: InspectionResult) -> Color {
-        switch result {
-        case .good: return .green
-        case .repair: return .orange
-        case .alert: return .red
-        case .pending: return .blue
         }
     }
 }
