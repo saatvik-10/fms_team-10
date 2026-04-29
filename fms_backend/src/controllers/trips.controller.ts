@@ -347,4 +347,154 @@ export class Trip {
 
     return c.json({ message: 'Trip deleted successfully' }, 200);
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // DRIVER ACTIONS: start-trip / complete-trip
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * PATCH /trip/start-trip
+   * Called by the driver when they tap "Start Trip".
+   *
+   * Updates:
+   *  • trips.status          → IN_TRANSIT
+   *  • vehicles.status       → IN_TRANSIT
+   *  • vehicle_trips.status  → IN_TRANSIT
+   *  • drivers.status        → ON_TRIP
+   */
+  async startTrip(c: Context) {
+    const userId = c.get('userId') as string;
+    const { tripId } = await c.req.json<{ tripId: string }>();
+
+    if (!tripId) {
+      return c.json({ err: 'tripId is required' }, 400);
+    }
+
+    const driver = await prisma.driver.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!driver) {
+      return c.json({ err: 'Driver profile not found' }, 404);
+    }
+
+    const trip = await prisma.trips.findFirst({
+      where: { id: tripId, driverId: driver.id },
+      select: { id: true, vehicleId: true, status: true },
+    });
+
+    if (!trip) {
+      return c.json({ err: 'Trip not found or not assigned to you' }, 404);
+    }
+
+    if (trip.status === 'IN_TRANSIT') {
+      return c.json({ err: 'Trip is already in transit' }, 400);
+    }
+
+    if (trip.status === 'COMPLETED') {
+      return c.json({ err: 'Trip is already completed' }, 400);
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Update trip status
+      await tx.trips.update({
+        where: { id: trip.id },
+        data: { status: 'IN_TRANSIT' },
+      });
+
+      // 2. Update vehicle status
+      if (trip.vehicleId) {
+        await tx.vehicle.update({
+          where: { id: trip.vehicleId },
+          data: { status: 'IN_TRANSIT' },
+        });
+
+        // 3. Update vehicleTrip status
+        await tx.vehicleTrip.updateMany({
+          where: { vehicleId: trip.vehicleId },
+          data: { status: 'IN_TRANSIT', startTime: new Date() },
+        });
+      }
+
+      // 4. Update driver status
+      await tx.driver.update({
+        where: { id: driver.id },
+        data: { status: 'ON_TRIP' },
+      });
+    });
+
+    return c.json({ message: 'Trip started successfully' });
+  }
+
+  /**
+   * PATCH /trip/complete-trip
+   * Called by the driver when they tap "End Trip".
+   *
+   * Updates:
+   *  • trips.status          → COMPLETED
+   *  • vehicles.status       → AVAILABLE
+   *  • vehicle_trips.status  → COMPLETED
+   *  • drivers.status        → ACTIVE
+   */
+  async completeTrip(c: Context) {
+    const userId = c.get('userId') as string;
+    const { tripId } = await c.req.json<{ tripId: string }>();
+
+    if (!tripId) {
+      return c.json({ err: 'tripId is required' }, 400);
+    }
+
+    const driver = await prisma.driver.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!driver) {
+      return c.json({ err: 'Driver profile not found' }, 404);
+    }
+
+    const trip = await prisma.trips.findFirst({
+      where: { id: tripId, driverId: driver.id },
+      select: { id: true, vehicleId: true, status: true },
+    });
+
+    if (!trip) {
+      return c.json({ err: 'Trip not found or not assigned to you' }, 404);
+    }
+
+    if (trip.status === 'COMPLETED') {
+      return c.json({ err: 'Trip is already completed' }, 400);
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Update trip status
+      await tx.trips.update({
+        where: { id: trip.id },
+        data: { status: 'COMPLETED' },
+      });
+
+      if (trip.vehicleId) {
+        // 2. Update vehicle status
+        await tx.vehicle.update({
+          where: { id: trip.vehicleId },
+          data: { status: 'AVAILABLE' },
+        });
+
+        // 3. Update vehicleTrip status
+        await tx.vehicleTrip.updateMany({
+          where: { vehicleId: trip.vehicleId },
+          data: { status: 'COMPLETED' },
+        });
+      }
+
+      // 4. Update driver status
+      await tx.driver.update({
+        where: { id: driver.id },
+        data: { status: 'ACTIVE' },
+      });
+    });
+
+    return c.json({ message: 'Trip completed successfully' });
+  }
 }

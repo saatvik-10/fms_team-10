@@ -5,27 +5,20 @@ import CoreLocation
 
 enum TripStatus: String, CaseIterable {
     case scheduled = "SCHEDULED"
-<<<<<<< HEAD
-    case ongoing   = "IN TRANSIT"
-=======
-    case inTransit = "IN TRANSIT"
->>>>>>> 2ef748cbb5af745efc1818e835726b23f6d63e50
+    case ongoing   = "IN_TRANSIT"   // matches backend TripStatus.IN_TRANSIT
     case completed = "COMPLETED"
 }
 
 enum TripSegment: String, CaseIterable {
     case accepted = "Upcoming"
-    case past = "Completed"
+    case past     = "Completed"
 }
 
 // MARK: - Centralized Status Helper
 
-/// Derives a trip's dynamic status from its backend status string and departure time.
-/// - If the backend already says "COMPLETED" → `.completed`
-/// - Otherwise, compares departure time against `Date()`:
-///   • Future → `.scheduled`
-///   • Past or now → `.ongoing`
 struct TripStatusHelper {
+
+    // MARK: Date Parsing
 
     /// Shared date-parsing pipeline (ISO-8601 variants + custom fallback).
     static func parseDate(_ raw: String) -> Date? {
@@ -43,23 +36,43 @@ struct TripStatusHelper {
         return fmt.date(from: raw)
     }
 
-    /// Resolve a TripStatus from backend raw values.
+    // MARK: Status Resolution
+
+    /// Resolves the trip status from backend data.
+    ///
+    /// Priority order:
+    /// 1. Backend says COMPLETED → `.completed`
+    /// 2. Backend says IN_TRANSIT → `.ongoing`
+    /// 3. Departure time has passed → `.ongoing`
+    /// 4. Departure time is in the future → `.scheduled`
+    /// 5. Fallback → `.scheduled`
     static func resolve(backendStatus: String?, departureRaw: String?) -> TripStatus {
-        // Explicit completion from backend
-        if backendStatus?.uppercased() == "COMPLETED" {
+        switch backendStatus?.uppercased() {
+        case "COMPLETED":
             return .completed
+        case "IN_TRANSIT":
+            return .ongoing
+        default:
+            break
         }
 
-        // Time-based: if we can parse the departure time, compare with now
+        // Time-based fallback: if departure has passed, treat as ongoing
         if let raw = departureRaw, let departureDate = parseDate(raw) {
             return departureDate > Date() ? .scheduled : .ongoing
         }
 
-        // Fallback: treat as scheduled
         return .scheduled
     }
 
-    /// Format a departure date for display (e.g. "Apr 29, 14:30").
+    /// Returns true if the departure time has passed (i.e. trip can be started).
+    static func isDepartureReached(departureRaw: String?) -> Bool {
+        guard let raw = departureRaw, let date = parseDate(raw) else { return false }
+        return Date() >= date
+    }
+
+    // MARK: Display Formatters
+
+    /// e.g. "Apr 29, 14:30"
     static func formatScheduledDateTime(from raw: String?) -> String {
         guard let raw, let date = parseDate(raw) else { return "TBD" }
         let fmt = DateFormatter()
@@ -67,7 +80,7 @@ struct TripStatusHelper {
         return fmt.string(from: date)
     }
 
-    /// Format just the date portion (e.g. "Apr 29").
+    /// e.g. "Apr 29"
     static func formatDateValue(from raw: String?) -> String {
         guard let raw, let date = parseDate(raw) else { return "" }
         let fmt = DateFormatter()
@@ -75,7 +88,7 @@ struct TripStatusHelper {
         return fmt.string(from: date)
     }
 
-    /// Format just the time portion (e.g. "14:30").
+    /// e.g. "14:30"
     static func formatTimeValue(from raw: String?) -> String {
         guard let raw, let date = parseDate(raw) else { return "TBD" }
         let fmt = DateFormatter()
@@ -84,7 +97,7 @@ struct TripStatusHelper {
     }
 }
 
-// MARK: - Model
+// MARK: - LifecycleTrip Model
 
 struct LifecycleTrip: Identifiable {
     let id: String
@@ -101,7 +114,7 @@ struct LifecycleTrip: Identifiable {
     let sourceCoordinate: CLLocationCoordinate2D?
     let destinationCoordinate: CLLocationCoordinate2D?
 
-    /// Raw departure string from backend — used for time-based status checks.
+    /// Raw ISO-8601 departure string from backend — used for time-based gating.
     let rawDeparture: String?
 
     init(
@@ -135,27 +148,28 @@ struct LifecycleTrip: Identifiable {
         self.destinationCoordinate = destinationCoordinate
         self.rawDeparture = rawDeparture
     }
-    
+
+    // MARK: Computed
+
     var segment: TripSegment {
         switch status {
-<<<<<<< HEAD
         case .scheduled, .ongoing: return .accepted
         case .completed:           return .past
-=======
-        case .scheduled: return .accepted
-        case .inTransit: return .accepted
-        case .completed: return .past
->>>>>>> 2ef748cbb5af745efc1818e835726b23f6d63e50
         }
     }
 
-    /// Formatted "date & time" string for UI messages like "Trip available on Apr 29, 14:30".
+    /// True when departure time has been reached and trip hasn't started yet.
+    var isDepartureReached: Bool {
+        TripStatusHelper.isDepartureReached(departureRaw: rawDeparture)
+    }
+
+    /// Human-readable scheduled date/time, e.g. "Apr 29, 14:30".
     var scheduledDateTimeText: String {
         TripStatusHelper.formatScheduledDateTime(from: rawDeparture)
     }
 }
 
-// MARK: - Conversion to Dashboard Trip model
+// MARK: - Conversion to Dashboard Trip Model
 
 extension LifecycleTrip {
     func toTripModel() -> Trip {

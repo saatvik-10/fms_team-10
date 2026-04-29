@@ -2,13 +2,16 @@ import SwiftUI
 import GoogleMaps
 import CoreLocation
 
-// MARK: - Trip Progress State (Trips Tab Only)
+// MARK: - Trip Progress State
+
 enum TripProgressState {
-    case notStarted
-    case inProgress
-    case nearDestination
-    case ended
+    case notStarted   // status = SCHEDULED, departure time not reached
+    case canStart     // status = SCHEDULED, departure time reached
+    case inProgress   // status = IN_TRANSIT (navigation active)
+    case ended        // status = COMPLETED locally
 }
+
+// MARK: - TripDetailView
 
 struct TripDetailView: View {
     let trip: Trip
@@ -21,65 +24,73 @@ struct TripDetailView: View {
     @State private var routePolyline: String = ""
     @State private var isLoadingEta: Bool = true
     @State private var resolvedDestinationCoordinate: CLLocationCoordinate2D?
-    
+
     @StateObject private var locationManager = LocationManager()
 
-    @State var distanceToDestinationMeters: Double = 999
-    @State private var tripProgressState: TripProgressState = .notStarted
+    // Trip state
+    @State private var currentStatus: TripStatus
+    @State private var isStartingTrip: Bool = false
+    @State private var isEndingTrip: Bool = false
+    @State private var actionError: String? = nil
 
-    private var isEndTripEnabled: Bool {
-        distanceToDestinationMeters <= 100
-    }
-
-    private var hasReachedDestination: Bool {
-        distanceToDestinationMeters <= 0
-    }
-
-    /// Determines if the trip is currently ongoing (start time has passed).
-    private var isTripOngoing: Bool {
-        guard let lt = lifecycleTrip else {
-            // Fallback: if no lifecycle trip, check date string
-            guard !trip.tripDate.isEmpty else { return true }
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM d"
-            let todayString = formatter.string(from: Date())
-            return todayString == trip.tripDate
-        }
-        return lt.status == .ongoing
-    }
-
-    /// True if the trip is completed
-    private var isTripCompleted: Bool {
-        lifecycleTrip?.status == .completed
-    }
-
-    @State private var showMap = false
+    // Navigation
     @State private var showNavigationMap = false
     @State private var showReportIssue = false
 
     private let horizontalPadding: CGFloat = 20
 
+    init(trip: Trip,
+         showTripControls: Bool = false,
+         lifecycleTrip: LifecycleTrip? = nil,
+         onTripEnded: (() -> Void)? = nil) {
+        self.trip = trip
+        self.showTripControls = showTripControls
+        self.lifecycleTrip = lifecycleTrip
+        self.onTripEnded = onTripEnded
+        // Initialise current status from lifecycle trip so we track local mutations
+        _currentStatus = State(initialValue: lifecycleTrip?.status ?? .scheduled)
+    }
+
+    // MARK: - Derived State
+
+    private var isCompleted: Bool   { currentStatus == .completed }
+    private var isOngoing: Bool     { currentStatus == .ongoing }
+    private var isScheduled: Bool   { currentStatus == .scheduled }
+
+    /// Start button is visible and active only when:
+    ///  - status is SCHEDULED
+    ///  - AND departure time has been reached
+    private var canStartTrip: Bool {
+        isScheduled && (lifecycleTrip?.isDepartureReached ?? false)
+    }
+
+    private var tripId: String {
+        lifecycleTrip?.id ?? trip.routeNumber
+    }
+
     // MARK: - ETA Formatter
 
     private func formatETA(_ eta: String) -> String {
-        return eta
+        eta
             .replacingOccurrences(of: " hours", with: " hrs")
-            .replacingOccurrences(of: " hour", with: " hr")
-            .replacingOccurrences(of: " mins", with: " min")
+            .replacingOccurrences(of: " hour",  with: " hr")
+            .replacingOccurrences(of: " mins",  with: " min")
             .replacingOccurrences(of: " minutes", with: " min")
-            .replacingOccurrences(of: " minute", with: " min")
+            .replacingOccurrences(of: " minute",  with: " min")
     }
-    
+
+    // MARK: - Body
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                
+
                 Text("\(trip.pickup.name.split(separator: ",").first ?? "") ➝ \(trip.destination.name.split(separator: ",").first ?? "")")
                     .font(.title2)
                     .fontWeight(.bold)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, horizontalPadding)
-                
+
                 HStack(spacing: 16) {
                     MetricCardView(
                         title: "ESTIMATED ARRIVAL",
@@ -95,15 +106,15 @@ struct TripDetailView: View {
                     )
                 }
                 .padding(.horizontal, horizontalPadding)
-                
+
                 GoogleTripMapView(trip: trip, encodedPolyline: routePolyline)
                     .frame(height: 250)
                     .cornerRadius(16)
                     .padding(.horizontal, horizontalPadding)
                     .shadow(color: AppColors.shadow, radius: 8, x: 0, y: 4)
-                
+
                 VStack(alignment: .leading, spacing: 16) {
-                    RouteDetailRow(label: "PICKUP", value: trip.pickup.name)
+                    RouteDetailRow(label: "PICKUP",      value: trip.pickup.name)
                     RouteDetailRow(label: "DESTINATION", value: trip.destination.name)
                 }
                 .padding()
@@ -112,15 +123,22 @@ struct TripDetailView: View {
                 .cornerRadius(16)
                 .padding(.horizontal, horizontalPadding)
                 .shadow(color: AppColors.shadow, radius: 10, x: 0, y: 4)
-                
-                // ACTION BUTTONS — conditional on trip status
-                if showTripControls {
-                    // ── TRIPS TAB: State-driven buttons ──
-                    tripActionButtons
-                } else {
-                    // ── HOME TAB: Status-aware buttons ──
-                    homeTabActionButtons
+
+                // Error banner
+                if let err = actionError {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.red)
+                        Text(err)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
+                    .padding(.horizontal, horizontalPadding)
                 }
+
+                // Action buttons
+                actionButtonsSection
+
             }
             .padding(.top, 16)
         }
@@ -133,8 +151,7 @@ struct TripDetailView: View {
                 resolvedDestinationCoordinate: resolvedDestinationCoordinate,
                 onEndTrip: {
                     showNavigationMap = false
-                    tripProgressState = .ended
-                    onTripEnded?()
+                    handleEndTrip()
                 }
             )
         }
@@ -157,22 +174,7 @@ struct TripDetailView: View {
             }
         }
         .task {
-            do {
-                let result = try await GoogleDirectionsService.shared.fetchDirections(trip: trip)
-                DispatchQueue.main.async {
-                    self.routePolyline = result.polyline
-                    self.resolvedDestinationCoordinate = result.destinationCoordinate
-                    self.estimatedArrival = self.formatETA(result.eta)
-                    self.isLoadingEta = false
-                    print("--> New ETA (Static): \(result.eta)")
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.estimatedArrival = "Unavailable"
-                    self.isLoadingEta = false
-                }
-                print("Failed to fetch static route")
-            }
+            await fetchStaticRoute()
         }
         .onChange(of: locationManager.location) { _, newLocation in
             guard let currentLoc = newLocation else { return }
@@ -181,60 +183,45 @@ struct TripDetailView: View {
                   !(destination.latitude == 0 && destination.longitude == 0) else { return }
             Task {
                 do {
-                    let segmentResult = try await GoogleDirectionsService.shared.fetchSegmentDirections(
+                    let result = try await GoogleDirectionsService.shared.fetchSegmentDirections(
                         origin: currentLoc.coordinate,
                         destination: destination
                     )
-                    DispatchQueue.main.async {
-                        self.estimatedArrival = self.formatETA(segmentResult.eta)
-                        self.isLoadingEta = false
-                        print("--> Actual Live ETA: \(segmentResult.eta)")
-                    }
+                    self.estimatedArrival = formatETA(result.eta)
+                    self.isLoadingEta = false
                 } catch {
-                    DispatchQueue.main.async {
-                        self.estimatedArrival = "Unavailable"
-                        self.isLoadingEta = false
-                    }
-                }
-            }
-        }
-        .onChange(of: distanceToDestinationMeters) { _, newDistance in
-            guard showTripControls else { return }
-            if tripProgressState == .inProgress || tripProgressState == .nearDestination {
-                if newDistance <= 0 {
-                    tripProgressState = .ended
-                    onTripEnded?()
-                } else if newDistance <= 100 {
-                    tripProgressState = .nearDestination
-                } else {
-                    tripProgressState = .inProgress
+                    self.estimatedArrival = "Unavailable"
+                    self.isLoadingEta = false
                 }
             }
         }
     }
 
-    // MARK: - Home Tab Action Buttons
+    // MARK: - Static Route Fetch
+
+    private func fetchStaticRoute() async {
+        do {
+            let result = try await GoogleDirectionsService.shared.fetchDirections(trip: trip)
+            routePolyline = result.polyline
+            resolvedDestinationCoordinate = result.destinationCoordinate
+            estimatedArrival = formatETA(result.eta)
+            isLoadingEta = false
+        } catch {
+            estimatedArrival = "Unavailable"
+            isLoadingEta = false
+        }
+    }
+
+    // MARK: - Action Buttons Section
 
     @ViewBuilder
-    private var homeTabActionButtons: some View {
-        VStack(spacing: 16) {
-            if isTripCompleted {
-                // ── COMPLETED: Show status banner, no navigation button ──
-                HStack(spacing: 10) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .foregroundColor(AppColors.success)
-                        .font(.title3)
-                    Text("Trip Completed")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppColors.primaryText)
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(AppColors.success.opacity(0.12))
-                .cornerRadius(12)
-            } else if isTripOngoing {
-                // ── ONGOING: "Continue Navigation" — ENABLED ──
+    private var actionButtonsSection: some View {
+        VStack(spacing: 12) {
+            if isCompleted {
+                completedBanner
+
+            } else if isOngoing {
+                // IN TRANSIT — show navigation + end trip
                 PrimaryButton(
                     title: "Continue Navigation",
                     icon: "location.fill",
@@ -243,130 +230,50 @@ struct TripDetailView: View {
                 ) {
                     showNavigationMap = true
                 }
-            } else {
-                // ── SCHEDULED: "Start Trip" — DISABLED ──
-                HStack(spacing: 6) {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondaryText)
-                    Text("Trip available on \(lifecycleTrip?.scheduledDateTimeText ?? trip.tripDate)")
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondaryText)
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
 
-                ZStack {
+                endTripButton
+
+            } else {
+                // SCHEDULED
+                if canStartTrip {
+                    // Departure reached → Start Trip ENABLED
                     PrimaryButton(
-                        title: "Start Trip",
+                        title: isStartingTrip ? "Starting…" : "Start Trip",
                         icon: "arrow.right.circle.fill",
                         backgroundColor: Color(hex: "0a303a"),
                         textColor: .white
-                    ) { /* disabled — no action */ }
-                    .allowsHitTesting(false)
-
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(UIColor.systemBackground).opacity(0.45))
-                        .allowsHitTesting(false)
-                }
-                .opacity(0.5)
-            }
-
-            if !isTripCompleted {
-                reportIssueButton
-            }
-        }
-        .padding(.horizontal, horizontalPadding)
-        .padding(.bottom, 32)
-    }
-
-    // MARK: - Trips Tab Action Buttons
-
-    @ViewBuilder
-    private var tripActionButtons: some View {
-        VStack(spacing: 12) {
-            if isTripCompleted {
-                // ── COMPLETED: Just show completed banner ──
-                HStack(spacing: 10) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .foregroundColor(AppColors.success)
-                        .font(.title3)
-                    Text("Trip Completed")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppColors.primaryText)
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(AppColors.success.opacity(0.12))
-                .cornerRadius(12)
-            } else {
-                switch tripProgressState {
-
-                case .notStarted:
-                    if isTripOngoing {
-                        // ── ONGOING: "Continue Navigation" — ENABLED ──
-                        PrimaryButton(
-                            title: "Continue Navigation",
-                            icon: "location.fill",
-                            backgroundColor: Color(hex: "0a303a"),
-                            textColor: .white
-                        ) {
-                            showNavigationMap = true
-                        }
-                    } else {
-                        // ── SCHEDULED: "Start Navigation" — DISABLED ──
+                    ) {
+                        guard !isStartingTrip else { return }
+                        handleStartTrip()
+                    }
+                    .disabled(isStartingTrip)
+                    .opacity(isStartingTrip ? 0.6 : 1.0)
+                } else {
+                    // Departure not yet reached → Start Trip DISABLED
+                    VStack(spacing: 8) {
                         HStack(spacing: 6) {
                             Image(systemName: "calendar.badge.clock")
                                 .font(.caption)
                                 .foregroundColor(AppColors.secondaryText)
-                            Text("Trip available on \(lifecycleTrip?.scheduledDateTimeText ?? trip.tripDate)")
+                            Text("Available from \(lifecycleTrip?.scheduledDateTimeText ?? trip.tripDate)")
                                 .font(.caption)
                                 .foregroundColor(AppColors.secondaryText)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
 
-                        ZStack {
-                            PrimaryButton(
-                                title: "Start Navigation",
-                                icon: "arrow.right.circle.fill",
-                                backgroundColor: Color(hex: "0a303a"),
-                                textColor: .white
-                            ) { /* disabled */ }
-                            .allowsHitTesting(false)
-
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(UIColor.systemBackground).opacity(0.45))
-                                .allowsHitTesting(false)
-                        }
-                        .opacity(0.45)
+                        PrimaryButton(
+                            title: "Start Trip",
+                            icon: "arrow.right.circle.fill",
+                            backgroundColor: Color(hex: "0a303a"),
+                            textColor: .white
+                        ) { /* disabled */ }
+                        .allowsHitTesting(false)
+                        .opacity(0.4)
                     }
-
-                case .inProgress:
-                    distanceHintLabel
-                    endTripButton(enabled: false)
-
-                case .nearDestination:
-                    distanceHintLabel
-                    endTripButton(enabled: true)
-
-                case .ended:
-                    HStack(spacing: 10) {
-                        Image(systemName: "checkmark.seal.fill")
-                            .foregroundColor(AppColors.success)
-                            .font(.title3)
-                        Text("Trip Completed")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(AppColors.primaryText)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(AppColors.success.opacity(0.12))
-                    .cornerRadius(12)
                 }
             }
-            
-            if !isTripCompleted {
+
+            if !isCompleted {
                 reportIssueButton
             }
         }
@@ -374,44 +281,91 @@ struct TripDetailView: View {
         .padding(.bottom, 32)
     }
 
-    // MARK: - Sub-views
+    // MARK: - Start Trip
 
-    private var distanceHintLabel: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "location.fill")
-                .font(.caption)
-                .foregroundColor(isEndTripEnabled ? AppColors.success : AppColors.secondaryText)
-            Text(isEndTripEnabled
-                 ? String(format: "%.0f m to destination — you can end the trip", distanceToDestinationMeters)
-                 : String(format: "%.0f m to destination", distanceToDestinationMeters))
-                .font(.caption)
-                .foregroundColor(isEndTripEnabled ? AppColors.success : AppColors.secondaryText)
+    private func handleStartTrip() {
+        guard !isStartingTrip else { return }
+        isStartingTrip = true
+        actionError = nil
+
+        Task {
+            do {
+                _ = try await TripAPI.shared.startTripForDriver(tripId: tripId)
+                currentStatus = .ongoing
+                // Open navigation immediately after start
+                showNavigationMap = true
+            } catch {
+                actionError = "Could not start trip: \(error.localizedDescription)"
+            }
+            isStartingTrip = false
         }
-        .frame(maxWidth: .infinity, alignment: .center)
     }
 
-    @ViewBuilder
-    private func endTripButton(enabled: Bool) -> some View {
-        ZStack {
-            PrimaryButton(
-                title: "End Trip",
-                icon: "flag.checkered",
-                backgroundColor: enabled ? AppColors.success : AppColors.secondaryText.opacity(0.25),
-                textColor: enabled ? .white : AppColors.secondaryText
-            ) {
-                guard enabled else { return }
-                tripProgressState = .ended
-                onTripEnded?()
-            }
-            .allowsHitTesting(enabled)
+    // MARK: - End Trip
 
-            if !enabled {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.clear)
-                    .allowsHitTesting(false)
+    private func handleEndTrip() {
+        guard !isEndingTrip else { return }
+        isEndingTrip = true
+        actionError = nil
+
+        Task {
+            do {
+                _ = try await TripAPI.shared.completeTripForDriver(tripId: tripId)
+                currentStatus = .completed
+                onTripEnded?()
+            } catch {
+                // Still mark locally even if backend call fails (optimistic)
+                currentStatus = .completed
+                onTripEnded?()
+                print("⚠️ Complete trip backend error: \(error.localizedDescription)")
             }
+            isEndingTrip = false
         }
-        .opacity(enabled ? 1.0 : 0.45)
+    }
+
+    // MARK: - Sub-views
+
+    private var completedBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.seal.fill")
+                .foregroundColor(AppColors.success)
+                .font(.title3)
+            Text("Trip Completed")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(AppColors.primaryText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(AppColors.success.opacity(0.12))
+        .cornerRadius(12)
+    }
+
+    private var endTripButton: some View {
+        Button {
+            handleEndTrip()
+        } label: {
+            HStack(spacing: 8) {
+                if isEndingTrip {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                } else {
+                    Image(systemName: "flag.checkered")
+                        .font(.system(size: 14, weight: .bold))
+                }
+                Text(isEndingTrip ? "Ending…" : "End Trip")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(Color.red)
+            .cornerRadius(12)
+        }
+        .disabled(isEndingTrip)
+        .opacity(isEndingTrip ? 0.6 : 1.0)
     }
 
     private var reportIssueButton: some View {
@@ -441,14 +395,14 @@ struct MetricCardView: View {
     let value: String
     let subtext: String
     let isLoading: Bool
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.caption)
                 .fontWeight(.bold)
                 .foregroundColor(AppColors.secondaryText)
-            
+
             if isLoading {
                 ProgressView()
                     .frame(height: 24)
@@ -460,7 +414,7 @@ struct MetricCardView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
-            
+
             Text(subtext)
                 .font(.caption2)
                 .foregroundColor(AppColors.secondaryText)
@@ -473,15 +427,13 @@ struct MetricCardView: View {
     }
 }
 
-// MARK: - Timeline Component
+// MARK: - Timeline
 
 struct TimelineView: View {
     let trip: Trip
-    
-    var allStops: [TripStop] {
-        return [trip.pickup, trip.destination]
-    }
-    
+
+    var allStops: [TripStop] { [trip.pickup, trip.destination] }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(allStops.enumerated()), id: \.element.id) { index, stop in
@@ -492,17 +444,14 @@ struct TimelineView: View {
                         .foregroundColor(AppColors.secondaryText)
                         .frame(width: 65, alignment: .leading)
                         .padding(.top, 4)
-                    
+
                     VStack(spacing: 0) {
                         Circle()
                             .fill(indicatorColor(for: stop.status))
-                            .overlay(
-                                Circle()
-                                    .stroke(indicatorStrokeColor(for: stop.status), lineWidth: 2)
-                            )
+                            .overlay(Circle().stroke(indicatorStrokeColor(for: stop.status), lineWidth: 2))
                             .frame(width: 14, height: 14)
                             .padding(.top, 4)
-                        
+
                         if index < allStops.count - 1 {
                             Rectangle()
                                 .fill(AppColors.secondaryText.opacity(0.3))
@@ -511,13 +460,13 @@ struct TimelineView: View {
                                 .padding(.vertical, 2)
                         }
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text(stop.name.split(separator: ",").first ?? "")
                             .font(.subheadline)
                             .fontWeight(stop.status == .active ? .bold : .regular)
                             .foregroundColor(textColor(for: stop.status))
-                        
+
                         Text(statusText(for: stop.status))
                             .font(.caption)
                             .foregroundColor(statusTextColor(for: stop.status))
@@ -528,49 +477,47 @@ struct TimelineView: View {
             }
         }
     }
-    
+
     private func indicatorColor(for status: StopStatus) -> Color {
         switch status {
         case .completed: return AppColors.secondaryText
-        case .active: return AppColors.primary
-        case .upcoming: return AppColors.cardBackground
+        case .active:    return AppColors.primary
+        case .upcoming:  return AppColors.cardBackground
         }
     }
-    
+
     private func indicatorStrokeColor(for status: StopStatus) -> Color {
         switch status {
-        case .completed: return .clear
-        case .active: return .clear
         case .upcoming: return AppColors.secondaryText
+        default:        return .clear
         }
     }
-    
+
     private func textColor(for status: StopStatus) -> Color {
         switch status {
-        case .completed: return AppColors.primaryText
-        case .active: return AppColors.primaryText
         case .upcoming: return AppColors.secondaryText
+        default:        return AppColors.primaryText
         }
     }
-    
+
     private func statusText(for status: StopStatus) -> String {
         switch status {
         case .completed: return "Completed"
-        case .active: return "In Progress"
-        case .upcoming: return "Scheduled"
+        case .active:    return "In Progress"
+        case .upcoming:  return "Scheduled"
         }
     }
-    
+
     private func statusTextColor(for status: StopStatus) -> Color {
         switch status {
         case .completed: return AppColors.success
-        case .active: return AppColors.primary
-        case .upcoming: return AppColors.secondaryText
+        case .active:    return AppColors.primary
+        case .upcoming:  return AppColors.secondaryText
         }
     }
 }
 
-// MARK: - Google Maps SDK Wrapper
+// MARK: - Google Trip Map
 
 struct GoogleTripMapView: UIViewRepresentable {
     let trip: Trip
@@ -586,13 +533,13 @@ struct GoogleTripMapView: UIViewRepresentable {
     func updateUIView(_ uiView: GMSMapView, context: Context) {
         uiView.clear()
 
-        let activeStop = trip.destination
-
-        let destMarker = GMSMarker(position: activeStop.coordinate)
-        destMarker.title = activeStop.name
+        let dest = trip.destination
         let navyColor = UIColor(red: 15/255, green: 28/255, blue: 36/255, alpha: 1)
-        destMarker.icon = GMSMarker.markerImage(with: navyColor)
-        destMarker.map = uiView
+
+        let marker = GMSMarker(position: dest.coordinate)
+        marker.title = dest.name
+        marker.icon = GMSMarker.markerImage(with: navyColor)
+        marker.map = uiView
 
         if !encodedPolyline.isEmpty, let path = GMSPath(fromEncodedPath: encodedPolyline) {
             let polyline = GMSPolyline(path: path)
@@ -606,11 +553,9 @@ struct GoogleTripMapView: UIViewRepresentable {
                     uiView.animate(with: GMSCameraUpdate.fit(bounds, withPadding: 40.0))
                 }
             }
-        } else if CLLocationCoordinate2DIsValid(activeStop.coordinate),
-                  !(activeStop.coordinate.latitude == 0 && activeStop.coordinate.longitude == 0) {
-            uiView.animate(to: GMSCameraPosition.camera(
-                withTarget: activeStop.coordinate, zoom: 14
-            ))
+        } else if CLLocationCoordinate2DIsValid(dest.coordinate),
+                  !(dest.coordinate.latitude == 0 && dest.coordinate.longitude == 0) {
+            uiView.animate(to: GMSCameraPosition.camera(withTarget: dest.coordinate, zoom: 14))
         }
     }
 }
