@@ -176,9 +176,9 @@ class FleetDataManager: ObservableObject {
     var totalDriversCount: Int { drivers.count }
     var inTransitDriversCount: Int { drivers.filter { $0.status == .onTrip }.count }
     var offDutyDriversCount: Int { drivers.filter { $0.status == .offDuty }.count }
-    var idleDriversCount: Int { drivers.filter { $0.status == .active || $0.status == .onDuty }.count }
+    var idleDriversCount: Int { drivers.filter { $0.status == .active }.count }
     
-    var idleDrivers: [Driver] { drivers.filter { $0.status == .active || $0.status == .onDuty } }
+    var idleDrivers: [Driver] { drivers.filter { $0.status == .active } }
     
     // Computed Metrics
     var activeCount: Int {
@@ -393,7 +393,7 @@ class FleetDataManager: ObservableObject {
         vehicles = response.vehicles.map { item in
             // Filter and map trips for this vehicle
             let vehicleHistory = allTrips
-                .filter { $0.vehicle == item.id || $0.vehicleRegistrationNumber == item.registrationNumber }
+                .filter { $0.vehicle?.id == item.id || $0.vehicle?.registrationNumber == item.registrationNumber }
                 .map { trip in
                     VehicleTrip(
                         backendId: trip.id ?? UUID().uuidString,
