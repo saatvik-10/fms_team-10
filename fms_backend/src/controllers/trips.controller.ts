@@ -381,11 +381,17 @@ export class Trip {
 
     const trip = await prisma.trips.findFirst({
       where: { id: tripId, driverId: driver.id },
-      select: { id: true, vehicleId: true, status: true },
+      select: { id: true, vehicleId: true, status: true, departureTime: true },
     });
 
     if (!trip) {
       return c.json({ err: 'Trip not found or not assigned to you' }, 404);
+    }
+
+    // Check if departure time has been reached
+    const departureDate = new Date(trip.departureTime);
+    if (departureDate > new Date()) {
+      return c.json({ err: 'Trip cannot be started before the scheduled departure time' }, 400);
     }
 
     if (trip.status === 'IN_TRANSIT') {
