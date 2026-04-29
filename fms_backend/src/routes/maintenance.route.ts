@@ -22,21 +22,21 @@ maintenanceRoute.get(
 maintenanceRoute.get(
   '/work-orders/vehicles',
   proxyAuth,
-  requireRole(ROLES.MAINTENANCE),
+  requireRole(ROLES.MAINTENANCE, ROLES.MANAGER),
   controller.getWorkOrderVehicles,
 );
 
 maintenanceRoute.post(
   '/work-orders',
   proxyAuth,
-  requireRole(ROLES.MAINTENANCE),
+  requireRole(ROLES.MAINTENANCE, ROLES.MANAGER),
   controller.createWorkOrder,
 );
 
 maintenanceRoute.get(
   '/work-orders',
   proxyAuth,
-  requireRole(ROLES.MAINTENANCE),
+  requireRole(ROLES.MAINTENANCE, ROLES.MANAGER),
   controller.getWorkOrders,
 );
 
@@ -64,7 +64,7 @@ maintenanceRoute.delete(
 maintenanceRoute.get(
   '/inspections',
   proxyAuth,
-  requireRole(ROLES.MAINTENANCE),
+  requireRole(ROLES.MAINTENANCE, ROLES.MANAGER),
   controller.getInspections,
 );
 
