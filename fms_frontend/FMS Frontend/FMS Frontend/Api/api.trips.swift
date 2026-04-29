@@ -136,7 +136,8 @@ final class TripAPI {
       path: "/trip/start-trip",
       method: .patch,
       body: StartTripRequest(tripId: tripId),
-      requiresAuth: true)
+      requiresAuth: true
+    )
   }
 
   func deleteTrip(id: String) async throws -> BasicMessageResponse {
