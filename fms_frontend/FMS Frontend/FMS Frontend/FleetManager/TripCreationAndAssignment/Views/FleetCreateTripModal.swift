@@ -190,8 +190,8 @@ struct FleetCreateTripModal: View {
                             
                             Picker("Driver", selection: $selectedDriverID) {
                                 Text("Select Driver").tag("")
-                                Text("Auto Assign (Random)").tag("AUTO_ASSIGN")
-                                ForEach(dataManager.drivers.filter { $0.status == .active }) { d in
+                                Text("Auto Assign (Eligible)").tag("AUTO_ASSIGN")
+                                ForEach(dataManager.eligibleDrivers) { d in
                                     Text(d.name).tag(d.backendId ?? d.id)
                                 }
                             }
@@ -381,7 +381,7 @@ struct FleetCreateTripModal: View {
         
         var finalDriverID = selectedDriverID
         if finalDriverID == "AUTO_ASSIGN" {
-            let activeDrivers = dataManager.drivers.filter { $0.status == .active }
+            let activeDrivers = dataManager.eligibleDrivers
             finalDriverID = activeDrivers.randomElement()?.backendId ?? activeDrivers.randomElement()?.id ?? ""
         }
         

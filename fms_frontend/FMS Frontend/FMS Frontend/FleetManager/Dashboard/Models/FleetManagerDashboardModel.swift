@@ -146,6 +146,7 @@ struct Driver: Identifiable {
     let dlBackImageUrl: String?
     let dlFrontImageKey: String?
     let dlBackImageKey: String?
+    var lastTripCompletedAt: Date? // Cooldown tracking
 
     init(
         id: String,
@@ -169,7 +170,8 @@ struct Driver: Identifiable {
         dlFrontImageUrl: String? = nil,
         dlBackImageUrl: String? = nil,
         dlFrontImageKey: String? = nil,
-        dlBackImageKey: String? = nil
+        dlBackImageKey: String? = nil,
+        lastTripCompletedAt: Date? = nil
     ) {
         self.id = id
         self.backendId = backendId
@@ -193,6 +195,7 @@ struct Driver: Identifiable {
         self.dlBackImageUrl = dlBackImageUrl
         self.dlFrontImageKey = dlFrontImageKey
         self.dlBackImageKey = dlBackImageKey
+        self.lastTripCompletedAt = lastTripCompletedAt
     }
     
     var identifier: UUID { UUID() }
@@ -338,6 +341,7 @@ struct VehicleTrip: Identifiable {
     var originCoordinate: CLLocationCoordinate2D? = nil
     var destCoordinate: CLLocationCoordinate2D? = nil
     var encodedPolyline: String? = nil
+    var completedAt: Date? = nil
 }
 
 struct VehicleMaintenance {

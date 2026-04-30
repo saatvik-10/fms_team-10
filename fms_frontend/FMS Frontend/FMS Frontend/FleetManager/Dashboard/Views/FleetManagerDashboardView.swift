@@ -65,7 +65,12 @@ struct FleetManagerDashboardView: View {
                                 }
                             }
                             
-                            if dataManager.vehicles.compactMap({ $0.currentTrip }).isEmpty {
+                            // Only show trips that are NOT completed in the active grid
+                            let activeTrips = dataManager.vehicles.filter {
+                                if let t = $0.currentTrip { return t.status != .completed } else { return false }
+                            }
+
+                            if activeTrips.isEmpty {
                                 FleetDashboardEmptyTripsView(action: { showingAddOrder = true })
                             } else {
                                 LazyVGrid(columns: [
@@ -74,7 +79,7 @@ struct FleetManagerDashboardView: View {
                                     GridItem(.flexible(), spacing: 15)
                                 ], spacing: 15) {
                                     ForEach(dataManager.vehicles.indices, id: \.self) { index in
-                                        if let trip = dataManager.vehicles[index].currentTrip {
+                                        if let trip = dataManager.vehicles[index].currentTrip, trip.status != .completed {
                                             NavigationLink(destination: FleetTripDetailView(vehicle: $dataManager.vehicles[index])) {
                                                 FleetTripCardView(trip: trip, vehicle: dataManager.vehicles[index])
                                             }
@@ -132,13 +137,18 @@ struct FleetManagerDashboardView: View {
                             .padding(.vertical, 4)
                         
                         // MARK: - Section 5: Trip History
-                        // TripHistoryCard(trips: dataManager.allHistory, onSelect: { trip in
-                        //     selectedHistoryTrip = trip
-                        // }, onViewAll: {
-                        //     showingAllTrips = true
-                        // })
-                        // .frame(maxWidth: .infinity)
-                        
+                        VStack(alignment: .leading, spacing: 15) {
+                            DashboardSectionHeader(title: "Trip History")
+
+                            TripHistoryCard(
+                                trips: dataManager.allHistory,
+                                onSelect: { trip in
+                                    selectedHistoryTrip = trip
+                                }
+                            )
+                            .frame(maxWidth: .infinity)
+                        }
+
                         // Bottom padding for tab bar
                         Spacer().frame(height: 100)
                     }
@@ -148,10 +158,8 @@ struct FleetManagerDashboardView: View {
             }
         }
         .navigationBarHidden(true)
-        .fullScreenCover(item: $selectedHistoryTrip) { trip in
-            if let index = dataManager.vehicles.firstIndex(where: { $0.id == trip.vehicleID }) {
-                FleetTripDetailView(vehicle: $dataManager.vehicles[index], tripOverride: trip)
-            }
+        .sheet(item: $selectedHistoryTrip) { trip in
+            CompletedTripDetailSheet(trip: trip)
         }
         .sheet(isPresented: $showingAddOrder) {
             FleetCreateTripModal(isPresented: $showingAddOrder)
@@ -173,6 +181,8 @@ struct FleetManagerDashboardView: View {
             } catch {
                 print("Failed to refresh dashboard data: \(error)")
             }
+            // Compute analytics charts from the now-populated trip and work order data
+            await dataManager.refreshAnalytics()
         }
     }
 }
