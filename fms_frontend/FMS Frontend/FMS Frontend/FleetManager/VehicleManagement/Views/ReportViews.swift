@@ -193,7 +193,7 @@ struct MaintenanceRequestsListView: View {
     }
 }
 
-// MARK: - Maintenance Report Detail (Simulated PDF matching Screenshot)
+// MARK: - Maintenance Report Detail
 struct MaintenanceReportDetailView: View {
     let report: VehicleReport
     let vehicle: Vehicle
@@ -205,14 +205,11 @@ struct MaintenanceReportDetailView: View {
             HStack {
                 Button(action: { presentationMode.wrappedValue.dismiss() }) {
                     Image(systemName: "chevron.left")
-                    Text("InspectionReport_\(vehicle.id)")
+                    Text("Maintenance Report")
                         .font(AppFonts.headline)
                 }
                 .foregroundColor(.black)
                 Spacer()
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 20))
-                    .foregroundColor(.gray)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 15)
@@ -220,7 +217,7 @@ struct MaintenanceReportDetailView: View {
             
             ScrollView {
                 VStack(spacing: 0) {
-                    // Page Indicator header
+                    // Page indicator header
                     HStack {
                         Text("Fleet Management System — Confidential")
                             .font(AppFonts.caption2)
@@ -232,58 +229,48 @@ struct MaintenanceReportDetailView: View {
                     .padding(.horizontal, 40)
                     .padding(.vertical, 15)
                     
-                    // PDF Core Document Main Layout
+                    // PDF Document
                     VStack(alignment: .leading, spacing: 30) {
                         
-                        // Dark Blue Top Title
+                        // Dark top title banner
                         VStack(alignment: .leading, spacing: 8) {
                             Text("FLEET MANAGEMENT SYSTEM")
                                 .font(AppFonts.callout)
                                 .fontWeight(.black)
                                 .foregroundColor(.white)
-                            Text("Vehicle Inspection Report")
+                            Text(report.title)
                                 .font(AppFonts.caption1)
-                                .foregroundColor(.white.opacity(0.8))
+                                .foregroundColor(.white.opacity(0.85))
                         }
                         .padding(30)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(red: 0.04, green: 0.19, blue: 0.23)) // #0a303a AppColors.primary
+                        .background(Color(red: 0.04, green: 0.19, blue: 0.23))
                         
                         VStack(alignment: .leading, spacing: 25) {
                             
-                            // Section: VEHICLE INFORMATION
+                            // VEHICLE INFORMATION
                             VStack(alignment: .leading, spacing: 10) {
                                 PdfSectionHeader(title: "VEHICLE INFORMATION")
                                 PdfRow(label: "Vehicle", value: "\(vehicle.make) \(vehicle.model) (\(vehicle.type))", isZebra: false)
-                                PdfRow(label: "VIN", value: "VIN-5930", isZebra: true)
-                                PdfRow(label: "Type", value: vehicle.type, isZebra: false)
-                                PdfRow(label: "Inspection", value: "Pre-Trip", isZebra: true)
+                                PdfRow(label: "Registration", value: vehicle.registrationNumber, isZebra: true)
+                                PdfRow(label: "Chassis", value: vehicle.chassisNumber, isZebra: false)
+                                PdfRow(label: "Type", value: vehicle.type, isZebra: true)
                                 PdfRow(label: "Date", value: report.date, isZebra: false)
-                                PdfRow(label: "Inspector ID", value: "STAFF-01", isZebra: true)
-                                PdfRow(label: "Driver ID", value: "DRV-CURRENT", isZebra: false)
-                                PdfRow(label: "Status", value: "Pending", isZebra: true)
+                                PdfRow(label: "Service By", value: report.serviceProvider, isZebra: true)
+                                PdfRow(label: "Status", value: report.subtitle.components(separatedBy: "·").dropFirst().first?.trimmingCharacters(in: .whitespaces) ?? "Pending", isZebra: false)
                             }
                             
-                            // Section: VEHICLE METRICS
+                            // WORK ORDER SUMMARY
                             VStack(alignment: .leading, spacing: 10) {
-                                PdfSectionHeader(title: "VEHICLE METRICS")
-                                PdfRow(label: "Fuel Level", value: "75%", isZebra: false)
-                                PdfRow(label: "Fuel Effic.", value: "14.2 mpg", isZebra: true)
-                                PdfRow(label: "Engine Hours", value: "4,821 hrs", isZebra: false)
-                            }
-                            
-                            // Section: INSPECTION SUMMARY
-                            VStack(alignment: .leading, spacing: 10) {
-                                PdfSectionHeader(title: "INSPECTION SUMMARY")
-                                PdfRow(label: "Total Items", value: "13", isZebra: false)
-                                PdfRow(label: "Good", value: "9", isZebra: true)
-                                PdfRow(label: "Repair Needed", value: "0", isZebra: false)
-                                PdfRow(label: "Alert", value: "0", isZebra: true)
-                                PdfRow(label: "Pending", value: "4", isZebra: false)
-                                PdfRow(label: "Total Cost", value: "₹ \(report.totalCost.replacingOccurrences(of: "$", with: ""))", isZebra: true)
+                                PdfSectionHeader(title: "WORK ORDER SUMMARY")
+                                ForEach(Array(report.tasks.enumerated()), id: \.offset) { index, task in
+                                    PdfRow(label: "Task \(index + 1)", value: task.description, isZebra: index % 2 == 0)
+                                    PdfRow(label: "Cost", value: task.cost, isZebra: index % 2 != 0)
+                                }
+                                PdfRow(label: "Total Cost", value: report.totalCost, isZebra: report.tasks.count % 2 == 0)
                                 
                                 HStack {
-                                    Text("✓ PASS")
+                                    Text("✓ SUBMITTED")
                                         .font(AppFonts.headline)
                                         .foregroundColor(AppColors.activeGreen)
                                 }
@@ -292,41 +279,9 @@ struct MaintenanceReportDetailView: View {
                                 .background(AppColors.activeGreen.opacity(0.1))
                             }
                             
-                            Spacer().frame(height: 50)
+                            Spacer().frame(height: 30)
                             
-                            // Segment 2: Checklist Header
-                            Text("INSPECTION CHECKLIST")
-                                .font(AppFonts.title3)
-                                .fontWeight(.black)
-                            
-                            // Checklist Table Headers
-                            HStack {
-                                Text("Inspection Item").bold().frame(width: 180, alignment: .leading)
-                                Text("Result").bold().frame(width: 80, alignment: .leading)
-                                Text("Notes").bold().frame(width: 80, alignment: .leading)
-                                Text("Photo").bold().frame(width: 80, alignment: .leading)
-                            }
-                            .font(.system(size: 10))
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 10)
-                            .background(Color.gray.opacity(0.1))
-                            
-                            // Table Content Rows
-                            VStack(spacing: 0) {
-                                PdfChecklistRow(item: "Brakes & Braking System", result: "GOOD", isGood: true, hasPhoto: true, isZebra: false)
-                                PdfChecklistRow(item: "Tyres & Wheels", result: "PENDING", isGood: false, hasPhoto: false, isZebra: true)
-                                PdfChecklistRow(item: "Engine Oil & Fluid Levels", result: "GOOD", isGood: true, hasPhoto: false, isZebra: false)
-                                PdfChecklistRow(item: "Lighting & Electrical", result: "GOOD", isGood: true, hasPhoto: false, isZebra: true)
-                                PdfChecklistRow(item: "Steering & Suspension", result: "PENDING", isGood: false, hasPhoto: false, isZebra: false)
-                                PdfChecklistRow(item: "Seatbelts & Restraints", result: "GOOD", isGood: true, hasPhoto: false, isZebra: true)
-                                PdfChecklistRow(item: "Mirrors & Visibility", result: "GOOD", isGood: true, hasPhoto: false, isZebra: false)
-                                PdfChecklistRow(item: "Fuel System", result: "PENDING", isGood: false, hasPhoto: false, isZebra: true)
-                                PdfChecklistRow(item: "Battery & Charging System", result: "GOOD", isGood: true, hasPhoto: false, isZebra: false)
-                            }
-                            
-                            Spacer().frame(height: 50)
-                            
-                            // Signatures
+                            // Signature block
                             HStack {
                                 HStack {
                                     Text("Inspector Signature:")
@@ -337,14 +292,14 @@ struct MaintenanceReportDetailView: View {
                                 HStack {
                                     Text("Date:")
                                         .font(AppFonts.caption2)
-                                    Rectangle().frame(width: 80, height: 1).padding(.bottom, -5).foregroundColor(.black)
+                                    Text(report.date)
+                                        .font(AppFonts.caption2)
+                                        .fontWeight(.bold)
                                 }
                             }
                             .padding(.bottom, 30)
-                            
                         }
                         .padding(30)
-                        
                     }
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 1))
