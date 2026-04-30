@@ -468,7 +468,7 @@ class FleetDataManager: ObservableObject {
                         }(),
                         productType: trip.productType ?? "",
                         loadAmount: trip.loadAmount ?? "",
-                        completedAt: trip.status == "COMPLETED" ? trip.updatedAt : nil
+                        completedAt: nil // VehicleTripItem has no updatedAt; cooldown is tracked via refreshDrivers
                     )
                 },
                 assignedDriver: item.assignedDriver.map { driver in
