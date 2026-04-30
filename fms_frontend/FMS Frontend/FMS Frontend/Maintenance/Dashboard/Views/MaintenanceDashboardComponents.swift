@@ -240,6 +240,89 @@ struct MaintenanceDashboardAlertCard: View {
     }
 }
 
+// MARK: - Issue Report Card
+struct IssueReportTaskCard: View {
+    let report: MaintenanceIssueReportItem
+
+    private func statusColor(_ status: String) -> Color {
+        switch status.uppercased() {
+        case "RESOLVED": return .green
+        case "OPEN": return .red
+        default: return .blue
+        }
+    }
+
+    private var titleText: String {
+        let summary = report.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        if summary.isEmpty { return report.vehicleUnit }
+        return String(summary.prefix(48))
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 20) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color(.systemGray6))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.red)
+                        .font(.system(size: 20))
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(titleText)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("\(report.vehicleUnit) • \(report.incidentLocation)")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color(.systemGray4))
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+
+            Divider()
+
+            HStack(spacing: 0) {
+                MetadataCell(icon: "calendar", text: report.createdAt.formatted(.dateTime.day().month(.abbreviated)))
+
+                Divider().frame(height: 16)
+
+                HStack(spacing: 6) {
+                    Text(report.status.uppercased())
+                        .font(.system(size: 10, weight: .black))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(statusColor(report.status).opacity(0.12))
+                        .foregroundColor(statusColor(report.status))
+                        .cornerRadius(4)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 12)
+            .background(Color(.systemGray6).opacity(0.2))
+        }
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.primary.opacity(0.04), lineWidth: 1)
+        )
+    }
+}
+
 
 // MARK: - Dashboard Empty State Card
 /// Shown when a dashboard section has no data to display.

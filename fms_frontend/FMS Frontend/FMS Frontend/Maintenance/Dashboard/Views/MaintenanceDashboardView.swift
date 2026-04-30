@@ -53,16 +53,22 @@ struct MaintenanceDashboardView: View {
         }
         // ── Reactive updates from MaintenanceStore ──────────────────────────
         .onAppear {
-            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
+            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, issueReports: store.issueReports, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
+            Task {
+                try? await store.refreshIssueReports()
+            }
         }
         .onReceive(store.$workOrders) { orders in
-            viewModel.refresh(workOrders: orders, inspections: store.inspections, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
+            viewModel.refresh(workOrders: orders, inspections: store.inspections, issueReports: store.issueReports, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
         }
         .onReceive(store.$inspections) { inspections in
-            viewModel.refresh(workOrders: store.workOrders, inspections: inspections, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
+            viewModel.refresh(workOrders: store.workOrders, inspections: inspections, issueReports: store.issueReports, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
+        }
+        .onReceive(store.$issueReports) { issueReports in
+            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, issueReports: issueReports, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
         }
         .onReceive(store.$inventoryParts) { _ in
-            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
+            viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, issueReports: store.issueReports, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
         }
         // ── Modals ──────────────────────────────────────────────────────────
         .sheet(isPresented: $showingCreateInspection)    { CreateInspectionModal(isEmergency: false) }
@@ -150,39 +156,29 @@ struct MaintenanceDashboardView: View {
                 MaintenanceEmptyCard(message: "No alerts", icon: "checkmark.circle.fill")
                     .padding(.horizontal, 20)
             } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(viewModel.alertItems.prefix(3).enumerated()), id: \.element.id) { index, item in
-                        let matchingWorkOrder = item.workOrderId.flatMap { workOrderId in
-                            store.workOrders.first { $0.id == workOrderId }
-                        }
-                        let matchingInventoryPart = item.inventoryPartId.flatMap { partId in
-                            store.inventoryParts.first { $0.partId == partId }
-                        }
-                        let destination: AnyView = {
-                            if let order = matchingWorkOrder {
-                                return AnyView(WorkOrderDetailsView(workOrder: order, isFromAlert: true))
+                    VStack(spacing: 0) {
+                        ForEach(Array(viewModel.alertItems.prefix(3).enumerated()), id: \.element.id) { index, item in
+                            let matchingIssueReport = item.issueReportId.flatMap { reportId in
+                                store.issueReports.first { $0.id == reportId }
                             }
-                            if let part = matchingInventoryPart {
-                                return AnyView(InventoryDetailView(partId: part.partId))
-                            }
-                            return AnyView(MaintenanceAlertsListView())
-                        }()
 
-                        NavigationLink(destination: destination) {
-                            MaintenanceDashboardAlertCard(item: item)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        if index < min(viewModel.alertItems.count, 3) - 1 {
-                            Divider()
-                                .padding(.leading, 70)
+                            if let report = matchingIssueReport {
+                                NavigationLink(destination: IssueReportDetailView(report: report)) {
+                                    IssueReportTaskCard(report: report)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+
+                            if index < min(viewModel.alertItems.count, 3) - 1 {
+                                Divider()
+                                    .padding(.leading, 70)
+                            }
                         }
                     }
-                }
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
-                .padding(.horizontal, 20)
+                    .background(Color.white)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
+                    .padding(.horizontal, 20)
             }
         }
     }

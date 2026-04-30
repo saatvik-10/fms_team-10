@@ -12,6 +12,7 @@ class MaintenanceStore: ObservableObject {
     @Published var workOrders: [WorkOrder] = []
     @Published var completedWorkOrders: [WorkOrder] = []
     @Published var inspections: [TripInspection] = []
+    @Published var issueReports: [MaintenanceIssueReportItem] = []
     @Published var inventoryParts: [InventoryPart] = []
     @Published var currentProfile: UserProfile? = nil
     @Published var isLoadingProfile = false
@@ -202,6 +203,12 @@ class MaintenanceStore: ObservableObject {
     func refreshInspections() async throws {
         let response = try await MaintenanceAPI.shared.getInspections()
         self.inspections = response.inspections.map { TripInspection(apiItem: $0) }
+    }
+
+    @MainActor
+    func refreshIssueReports() async throws {
+        let response = try await MaintenanceAPI.shared.getIssueReports()
+        self.issueReports = response.issues
     }
     
     func addInspection(_ inspection: TripInspection) {

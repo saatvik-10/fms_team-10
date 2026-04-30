@@ -21,6 +21,7 @@ struct PriorityFeedItem: Identifiable {
 
 enum DashboardAlertSource {
     case workOrder
+    case issueReport
     case inventory
 }
 
@@ -31,6 +32,7 @@ struct DashboardAlertItem: Identifiable {
     let subtitle: String
     let sortOrder: Int
     let workOrderId: UUID?
+    let issueReportId: String?
     let inventoryPartId: String?
 }
 

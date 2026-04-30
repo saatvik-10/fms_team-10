@@ -27,10 +27,10 @@ class MaintenanceDashboardViewModel: ObservableObject {
 
     // MARK: - Public Refresh Entry Point
     /// Called by the View via `onReceive` whenever `MaintenanceStore` publishes changes.
-    func refresh(workOrders: [WorkOrder], inspections: [TripInspection], inventoryParts: [InventoryPart], lowStock: Int = 0) {
+    func refresh(workOrders: [WorkOrder], inspections: [TripInspection], issueReports: [MaintenanceIssueReportItem], inventoryParts: [InventoryPart], lowStock: Int = 0) {
         computeSystemStatus(workOrders: workOrders, inspections: inspections)
         computePriorityFeed(workOrders: workOrders)
-        computeAlertItems(workOrders: workOrders, inventoryParts: inventoryParts)
+        computeAlertItems(issueReports: issueReports)
         computeComplianceScore(inspections: inspections)
         computeActiveStaff(workOrders: workOrders)
         lowStockPartsCount = lowStock
@@ -54,24 +54,24 @@ class MaintenanceDashboardViewModel: ObservableObject {
         }
     }
 
-    private func computeAlertItems(workOrders: [WorkOrder], inventoryParts: [InventoryPart]) {
-        // Only show alerts for driver-reported issues (work orders with a tripId).
-        // Maintenance-created work orders are already in the Pending Work Orders card.
-        let workOrderAlerts = workOrders
-            .filter { $0.status != .completed && $0.tripId != nil && !($0.tripId?.isEmpty ?? true) }
-            .map { order in
-                DashboardAlertItem(
-                    id: "wo-\(order.id.uuidString)",
-                    source: .workOrder,
-                    title: order.title,
-                    subtitle: "\(order.vehicleName) • Priority: \(order.priority.rawValue.capitalized)",
-                    sortOrder: order.priority.sortingOrder,
-                    workOrderId: order.id,
+    private func computeAlertItems(issueReports: [MaintenanceIssueReportItem]) {
+        alertItems = issueReports
+            .filter { $0.tripId != nil && !($0.tripId?.isEmpty ?? true) }
+            .map { report in
+                let summary = report.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+                let title = summary.isEmpty ? report.vehicleUnit : String(summary.prefix(48))
+
+                return DashboardAlertItem(
+                    id: "ir-\(report.id)",
+                    source: .issueReport,
+                    title: title,
+                    subtitle: "\(report.vehicleUnit) • \(report.incidentLocation)",
+                    sortOrder: -Int(report.createdAt.timeIntervalSince1970),
+                    workOrderId: nil,
+                    issueReportId: report.id,
                     inventoryPartId: nil
                 )
             }
-
-        alertItems = workOrderAlerts
             .sorted { lhs, rhs in
                 if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
                 return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
