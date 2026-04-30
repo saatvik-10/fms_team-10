@@ -173,6 +173,8 @@ struct FleetManagerDashboardView: View {
             } catch {
                 print("Failed to refresh dashboard data: \(error)")
             }
+            // Compute analytics charts from the now-populated trip and work order data
+            await dataManager.refreshAnalytics()
         }
     }
 }

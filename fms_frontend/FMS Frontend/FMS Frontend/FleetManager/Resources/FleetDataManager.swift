@@ -677,4 +677,77 @@ class FleetDataManager: ObservableObject {
             }
         }
     }
+    
+    // MARK: - Analytics Refresh
+    
+    @MainActor
+    func refreshAnalytics() async {
+        await refreshTravelAnalytics()
+        await refreshMaintenanceCostAnalytics()
+    }
+    
+    @MainActor
+    private func refreshTravelAnalytics() async {
+        guard let tripsResponse = try? await TripAPI.shared.getTrips() else { return }
+        
+        let completedTrips = tripsResponse.trips.filter { $0.status == "COMPLETED" }
+        
+        // Total KMs across all completed trips
+        let total = completedTrips.reduce(0.0) { sum, trip in
+            let raw = (trip.distanceKm ?? trip.tripDistance ?? "")
+                .components(separatedBy: CharacterSet(charactersIn: "0123456789.").inverted)
+                .joined()
+            return sum + (Double(raw) ?? 0)
+        }
+        self.totalKmsTravelled = total
+        
+        // Group distance by month for the sparkline chart (last 6 months)
+        let monthFormatter = DateFormatter()
+        monthFormatter.dateFormat = "MMM"
+        
+        var monthBuckets: [String: Double] = [:]
+        for trip in completedTrips {
+            guard let date = trip.createdAt ?? trip.updatedAt else { continue }
+            let label = monthFormatter.string(from: date)
+            let raw = (trip.distanceKm ?? trip.tripDistance ?? "")
+                .components(separatedBy: CharacterSet(charactersIn: "0123456789.").inverted)
+                .joined()
+            monthBuckets[label, default: 0] += Double(raw) ?? 0
+        }
+        
+        // Build ordered 6-month history (include months with 0 for a clean chart)
+        let labels = last6MonthLabels()
+        self.travelsHistory = labels.map { label in
+            HistoricalPoint(label: label, value: monthBuckets[label] ?? 0)
+        }
+    }
+    
+    @MainActor
+    private func refreshMaintenanceCostAnalytics() async {
+        guard let workOrdersResponse = try? await MaintenanceAPI.shared.getWorkOrders(status: "COMPLETED") else { return }
+        
+        // Sum totalCost per vehicle registration number
+        var costByVehicle: [String: Double] = [:]
+        for order in workOrdersResponse.workOrders {
+            let label = order.vehicleNum.trimmingCharacters(in: .whitespaces).isEmpty
+                ? (order.vehicleId ?? "Unknown")
+                : order.vehicleNum
+            costByVehicle[label, default: 0] += order.totalCost ?? 0
+        }
+        
+        self.maintenanceCostPerVehicle = costByVehicle
+            .map { HistoricalPoint(label: $0.key, value: $0.value) }
+            .filter { $0.value > 0 }
+            .sorted { $0.value > $1.value }
+    }
+    
+    private func last6MonthLabels() -> [String] {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM"
+        let calendar = Calendar.current
+        return (0..<6).compactMap { offset in
+            calendar.date(byAdding: .month, value: -(5 - offset), to: Date())
+                .map { formatter.string(from: $0) }
+        }
+    }
 }
