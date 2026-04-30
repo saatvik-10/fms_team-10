@@ -184,7 +184,8 @@ struct MockDataProvider {
             reports: [],
             assessmentReason: "Route Optimized: Fuel Savings +12%",
             chassisNumber: "CHS-9042-IND",
-            registrationNumber: "REG-IND-442033"
+            registrationNumber: "REG-IND-442033",
+            createdAt: Date().addingTimeInterval(-86400 * 180)
         ),
         Vehicle(
             id: "EV-9910",
@@ -206,7 +207,8 @@ struct MockDataProvider {
             reports: [],
             assessmentReason: nil,
             chassisNumber: "CHS-9910-EV",
-            registrationNumber: "REG-IND-112099"
+            registrationNumber: "REG-IND-112099",
+            createdAt: Date().addingTimeInterval(-86400 * 90)
         ),
         Vehicle(
             id: "TRK-1088",
@@ -228,7 +230,8 @@ struct MockDataProvider {
             reports: [],
             assessmentReason: nil,
             chassisNumber: "CHS-1088-TRK",
-            registrationNumber: "REG-IND-882012"
+            registrationNumber: "REG-IND-882012",
+            createdAt: Date().addingTimeInterval(-86400 * 240)
         )
     ]
     

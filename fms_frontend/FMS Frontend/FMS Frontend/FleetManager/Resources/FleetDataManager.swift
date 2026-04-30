@@ -499,7 +499,8 @@ class FleetDataManager: ObservableObject {
                 rcImageUrl: item.rcImageUrl,
                 vehicleImageUrl: item.vehicleImageUrl,
                 maxLoadCapacity: item.maxLoadCapacity ?? 0.0,
-                capacityUnit: item.capacityUnit ?? "KG"
+                capacityUnit: item.capacityUnit ?? "KG",
+                createdAt: item.createdAt
             )
         }
     }

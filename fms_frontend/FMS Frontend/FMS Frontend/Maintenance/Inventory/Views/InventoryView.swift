@@ -39,58 +39,65 @@ struct InventoryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 
-                // ── Inline Search Bar + Filter ────────────────────────────────
-                HStack(spacing: 12) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundColor(.secondary)
-                        
-                        TextField("Search SKUs or category", text: $searchText)
-                            .font(.system(size: 17))
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                        
-                        if !searchText.isEmpty {
-                            Button {
-                                searchText = ""
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 15))
-                                    .foregroundColor(.secondary)
+                if !store.inventoryParts.isEmpty {
+                    // ── Inline Search Bar + Filter ────────────────────────────────
+                    HStack(spacing: 12) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundColor(.secondary)
+                            
+                            TextField("Search SKUs or category", text: $searchText)
+                                .font(.system(size: 17))
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                            
+                            if !searchText.isEmpty {
+                                Button {
+                                    searchText = ""
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 15))
+                                        .foregroundColor(.secondary)
+                                }
                             }
                         }
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .background(Color(.systemGray5))
-                    .cornerRadius(14)
-                    
-                    // Filter button – right of search bar
-                    Menu {
-                        Button("All Categories") { selectedCategory = nil }
-                        if !categories.isEmpty {
-                            Divider()
-                            ForEach(categories, id: \.self) { category in
-                                Button {
-                                    selectedCategory = category
-                                } label: {
-                                    HStack {
-                                        Text(category)
-                                        if selectedCategory == category {
-                                            Image(systemName: "checkmark")
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(Color(.systemGray5))
+                        .cornerRadius(14)
+                        
+                        // Filter button – right of search bar
+                        Menu {
+                            Button("All Categories") { selectedCategory = nil }
+                            if !categories.isEmpty {
+                                Divider()
+                                ForEach(categories, id: \.self) { category in
+                                    Button {
+                                        selectedCategory = category
+                                    } label: {
+                                        HStack {
+                                            Text(category)
+                                            if selectedCategory == category {
+                                                Image(systemName: "checkmark")
+                                            }
                                         }
                                     }
                                 }
                             }
+                        } label: {
+                            Image(systemName: selectedCategory == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                                .font(.system(size: 22, weight: .medium))
+                                .foregroundColor(selectedCategory == nil ? .secondary : AppColors.primary)
                         }
-                    } label: {
-                        Image(systemName: selectedCategory == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
-                            .font(.system(size: 22, weight: .medium))
-                            .foregroundColor(selectedCategory == nil ? .secondary : AppColors.primary)
                     }
+                    .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
+
+                if store.inventoryParts.isEmpty {
+                    prominentValuationCard
+                        .padding(.horizontal, 20)
+                }
                 
                 // ── Section 1: Parts Catalog ──────────────────────────────────
                 VStack(alignment: .leading, spacing: 12) {
@@ -149,10 +156,12 @@ struct InventoryView: View {
                             .foregroundColor(AppColors.primary)
                     }
 
-                    Button(action: { showingFileImporter = true }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(AppColors.primary)
+                    if !store.inventoryParts.isEmpty {
+                        Button(action: { showingFileImporter = true }) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(AppColors.primary)
+                        }
                     }
 
                     NavigationLink(destination: MaintenanceProfileView(isLoggedIn: $isLoggedIn)) {
@@ -210,11 +219,11 @@ struct InventoryView: View {
                     HStack {
                         Image(systemName: "info.circle.fill")
                             .foregroundColor(AppColors.primary)
-                        Text("CSV Import Requirements")
+                        Text("Add File")
                             .font(.system(size: 16, weight: .bold))
                     }
                     
-                    Text("To upload your inventory, ensure your CSV file contains these headers:")
+                    Text("Upload a CSV file with these headers:")
                         .font(.system(size: 13))
                         .foregroundColor(.secondary)
                     
@@ -225,7 +234,7 @@ struct InventoryView: View {
                     .padding(.top, 4)
                     
                     Button(action: { showingFileImporter = true }) {
-                        Text("Upload CSV Now")
+                        Text("Add File")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)

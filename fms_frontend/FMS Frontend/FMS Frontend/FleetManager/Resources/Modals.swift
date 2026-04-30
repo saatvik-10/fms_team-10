@@ -844,7 +844,8 @@ struct AddVehicleModalView: View {
                 rcImageUrl: response.vehicle.rcImageUrl,
                 vehicleImageUrl: response.vehicle.vehicleImageUrl,
                 maxLoadCapacity: response.vehicle.maxLoadCapacity ?? (Double(maxLoadCapacity) ?? 0),
-                capacityUnit: response.vehicle.capacityUnit ?? capacityUnit
+                capacityUnit: response.vehicle.capacityUnit ?? capacityUnit,
+                createdAt: response.vehicle.createdAt
             )
 
             await MainActor.run {
@@ -920,7 +921,8 @@ struct AddVehicleModalView: View {
                 rcImageUrl: response.vehicle.rcImageUrl ?? editingVehicle.rcImageUrl,
                 vehicleImageUrl: response.vehicle.vehicleImageUrl ?? editingVehicle.vehicleImageUrl,
                 maxLoadCapacity: response.vehicle.maxLoadCapacity ?? (Double(maxLoadCapacity) ?? 0),
-                capacityUnit: response.vehicle.capacityUnit ?? capacityUnit
+                capacityUnit: response.vehicle.capacityUnit ?? capacityUnit,
+                createdAt: response.vehicle.createdAt ?? editingVehicle.createdAt
             )
 
             await MainActor.run {

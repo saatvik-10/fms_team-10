@@ -247,6 +247,16 @@ struct VehicleGridCard: View {
                     .font(AppFonts.caption2)
                     .fontWeight(.bold)
                     .foregroundColor(.gray)
+
+                HStack(spacing: 6) {
+                    Text("NEXT MAINTENANCE")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.gray)
+                    Text(nextMaintenanceDate)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(AppTheme.primary)
+                }
+                .padding(.top, 6)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 14)
@@ -260,6 +270,16 @@ struct VehicleGridCard: View {
         Image(systemName: "truck.box.fill")
             .font(.system(size: 44))
             .foregroundColor(.gray.opacity(0.4))
+    }
+
+    private var nextMaintenanceDate: String {
+        guard let createdAt = vehicle.createdAt,
+              let dueDate = Calendar.current.date(byAdding: .month, value: 6, to: createdAt) else {
+            return "-"
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd MMM yyyy"
+        return formatter.string(from: dueDate)
     }
 }
 
@@ -280,4 +300,3 @@ private struct TopRoundedRectangle: Shape {
         return path
     }
 }
-

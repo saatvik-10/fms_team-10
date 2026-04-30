@@ -160,7 +160,7 @@ struct MaintenanceDashboardView: View {
                         }
                         let destination: AnyView = {
                             if let order = matchingWorkOrder {
-                                return AnyView(WorkOrderDetailsView(workOrder: order))
+                                return AnyView(WorkOrderDetailsView(workOrder: order, isFromAlert: true))
                             }
                             if let part = matchingInventoryPart {
                                 return AnyView(InventoryDetailView(partId: part.partId))

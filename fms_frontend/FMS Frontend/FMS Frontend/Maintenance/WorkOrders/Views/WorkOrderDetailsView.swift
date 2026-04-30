@@ -9,6 +9,12 @@ struct WorkOrderDetailsView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var store: MaintenanceStore
     @State var workOrder: WorkOrder
+    let isFromAlert: Bool
+
+    init(workOrder: WorkOrder, isFromAlert: Bool = false) {
+        _workOrder = State(initialValue: workOrder)
+        self.isFromAlert = isFromAlert
+    }
     
     @State private var showingDatePicker = false
     @State private var selectedDate = Date()
@@ -40,6 +46,10 @@ struct WorkOrderDetailsView: View {
 
     private var isChecklistComplete: Bool {
         workOrder.checklist.allSatisfy { $0.result != .pending }
+    }
+
+    private var isChecklistEditable: Bool {
+        !isFromAlert || workOrder.isAccepted
     }
     
     /// Returns true only when the work order originated from a driver-reported
@@ -176,6 +186,33 @@ struct WorkOrderDetailsView: View {
                             SectionHeader(title: "SYSTEM CHECKLIST", icon: "checklist")
                                 .padding(.horizontal)
                             checklistContent
+
+                            if !isChecklistEditable {
+                                Text("Checklist is locked until this work order is accepted.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal)
+                            }
+                        }
+
+                        if isFromAlert && !workOrder.isAccepted {
+                            Button(action: {
+                                acceptWorkOrder()
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.shield.fill")
+                                        .font(.system(size: 16, weight: .bold))
+                                    Text("Accept Work Order")
+                                        .font(.system(size: 15, weight: .bold))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(AppColors.primary)
+                                .foregroundColor(.white)
+                                .cornerRadius(14)
+                                .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
+                            }
+                            .padding(.horizontal, 20)
                         }
                         
                         // Technician Notes
@@ -516,6 +553,7 @@ struct WorkOrderDetailsView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if workOrder.status != .completed {
                     Button(action: {
+                        guard isChecklistEditable else { return }
                         guard isChecklistComplete else {
                             showingChecklistIncompleteAlert = true
                             return
@@ -524,8 +562,9 @@ struct WorkOrderDetailsView: View {
                     }) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(AppColors.primary)
+                            .foregroundColor(isChecklistEditable ? AppColors.primary : .secondary)
                     }
+                    .disabled(!isChecklistEditable)
                 }
             }
         }
@@ -635,7 +674,10 @@ struct WorkOrderDetailsView: View {
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+        .disabled(!isChecklistEditable)
+        .opacity(isChecklistEditable ? 1.0 : 0.6)
         .onChange(of: workOrder.checklist) { _ in
+            guard isChecklistEditable else { return }
             store.updateWorkOrder(workOrder)
         }
     }
