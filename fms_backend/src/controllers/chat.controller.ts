@@ -1,11 +1,11 @@
 import type { Context } from 'hono';
 import { prisma } from '../../prisma';
-import { createRoomSchema, sendMessageSchema } from '../validators/chat.validator';
+import {
+  createRoomSchema,
+  sendMessageSchema,
+} from '../validators/chat.validator';
 import { triggerRoomEvent, triggerUserEvent } from '../services/pusher.service';
 
-/**
- * Resolve a User ID to their display name by checking the role-specific profile tables.
- */
 async function resolveUserName(userId: string): Promise<string> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -18,18 +18,14 @@ async function resolveUserName(userId: string): Promise<string> {
   });
 
   if (!user) return 'Unknown';
-
   if (user.role === 'MANAGER' && user.manager) return user.manager.name;
   if (user.role === 'DRIVER' && user.driver) return user.driver.name;
-  if (user.role === 'MAINTENANCE' && user.maintenance) return user.maintenance.name;
+  if (user.role === 'MAINTENANCE' && user.maintenance)
+    return user.maintenance.name;
   if (user.role === 'SUPER_ADMIN') return 'Admin';
-
   return 'Unknown';
 }
 
-/**
- * Resolve a User ID to their role string (lowercased for the iOS client).
- */
 async function resolveUserRole(userId: string): Promise<string> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -38,9 +34,6 @@ async function resolveUserRole(userId: string): Promise<string> {
   return user?.role?.toLowerCase() ?? 'unknown';
 }
 
-/**
- * Format a ChatMessage row into the snake_case JSON shape the iOS client expects.
- */
 function formatMessage(msg: {
   id: string;
   roomId: string;
@@ -69,10 +62,6 @@ function formatMessage(msg: {
   };
 }
 
-/**
- * Format a ChatRoom row (with optional last message + unread count) into the
- * snake_case JSON shape the iOS ChatRoom Codable struct expects.
- */
 function formatRoom(
   room: {
     id: string;
@@ -102,7 +91,6 @@ function formatRoom(
 export class ChatController {
   /**
    * GET /chat/rooms
-   * Returns all rooms the authenticated user participates in, with last message + unread count.
    */
   async getRooms(c: Context) {
     const userId = c.get('userId') as string;
@@ -125,12 +113,12 @@ export class ChatController {
       const lastMsg = room.messages[0] ?? null;
       const readCursor = room.reads[0]?.lastReadAt ?? new Date(0);
 
-      // Count messages after the user's last read timestamp
-      // For efficiency we use the pre-fetched last message; full unread count
-      // is calculated on the fly only when needed.
       let unreadCount = 0;
-      if (lastMsg && lastMsg.timestamp > readCursor && lastMsg.senderId !== userId) {
-        // Simple heuristic: if there's an unread last message, show at least 1
+      if (
+        lastMsg &&
+        lastMsg.timestamp > readCursor &&
+        lastMsg.senderId !== userId
+      ) {
         unreadCount = 1;
       }
 
@@ -146,9 +134,9 @@ export class ChatController {
 
   /**
    * POST /chat/rooms
-   * Creates a new direct chat room between senderId and targetId, sends the initial message.
    */
   async createRoom(c: Context) {
+    const userId = c.get('userId') as string;
     const body = await c.req.json();
     const parsed = createRoomSchema.safeParse(body);
 
@@ -160,19 +148,24 @@ export class ChatController {
     }
 
     const { targetId, senderName, senderRole, message } = parsed.data;
-    const senderId = userId; // Always use authenticated ID
+    const senderId = userId;
 
-    // Resolve target user's name and role
+    const targetExists = await prisma.user.findUnique({
+      where: { id: targetId },
+      select: { id: true },
+    });
+
+    if (!targetExists) {
+      return c.json({ err: 'Target user not found' }, 404);
+    }
+
     const targetName = await resolveUserName(targetId);
-    const targetRole = await resolveUserRole(targetId);
 
-    // Build participant names map
     const participantNames: Record<string, string> = {
       [senderId]: senderName,
       [targetId]: targetName,
     };
 
-    // Create room + initial message in a transaction
     const room = await prisma.chatRoom.create({
       data: {
         name: `${senderName} & ${targetName}`,
@@ -203,11 +196,22 @@ export class ChatController {
     const formattedMsg = formatMessage(lastMsg);
     const formattedRoom = formatRoom(room, formattedMsg, 0);
 
-    // Notify both participants via Pusher
     try {
-      await triggerRoomEvent(room.id, 'new-message', formattedMsg as unknown as Record<string, unknown>);
-      await triggerUserEvent(senderId, 'new-message', formattedMsg as unknown as Record<string, unknown>);
-      await triggerUserEvent(targetId, 'new-message', formattedMsg as unknown as Record<string, unknown>);
+      await triggerRoomEvent(
+        room.id,
+        'new-message',
+        formattedMsg as unknown as Record<string, unknown>,
+      );
+      await triggerUserEvent(
+        senderId,
+        'new-message',
+        formattedMsg as unknown as Record<string, unknown>,
+      );
+      await triggerUserEvent(
+        targetId,
+        'new-message',
+        formattedMsg as unknown as Record<string, unknown>,
+      );
     } catch (err) {
       console.error('Pusher trigger failed (createRoom):', err);
     }
@@ -217,22 +221,35 @@ export class ChatController {
 
   /**
    * GET /chat/rooms/:roomId/messages
-   * Returns all messages in a room, ordered oldest-first.
    */
   async getMessages(c: Context) {
     const userId = c.get('userId') as string;
-    const roomId = c.req.param('roomId');
+    const rawRoomId = c.req.param('roomId');
 
-    // Verify the user is a participant
-    const room = await prisma.chatRoom.findFirst({
-      where: {
-        id: roomId,
-        participants: { has: userId },
-      },
+    if (!rawRoomId) {
+      return c.json({ err: 'Room ID is required' }, 400);
+    }
+
+    // ✅ Normalize to lowercase to match Prisma's stored UUID format
+    const roomId = rawRoomId.toLowerCase();
+
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: roomId },
     });
 
     if (!room) {
-      return c.json({ err: 'Room not found' }, 404);
+      return c.json(
+        { err: 'Room not found', receivedId: rawRoomId, normalizedId: roomId },
+        404,
+      );
+    }
+
+    // ✅ JS includes check — avoids Prisma array filter quirks
+    if (!room.participants.includes(userId)) {
+      return c.json(
+        { err: 'Not a participant', userId, participants: room.participants },
+        403,
+      );
     }
 
     const messages = await prisma.chatMessage.findMany({
@@ -245,11 +262,18 @@ export class ChatController {
 
   /**
    * POST /chat/rooms/:roomId/messages
-   * Sends a new message in a room. Triggers Pusher events for real-time delivery.
    */
   async sendMessage(c: Context) {
     const userId = c.get('userId') as string;
-    const roomId = c.req.param('roomId');
+    const rawRoomId = c.req.param('roomId');
+
+    if (!rawRoomId) {
+      return c.json({ err: 'Room ID is required' }, 400);
+    }
+
+    // ✅ Normalize to lowercase to match Prisma's stored UUID format
+    const roomId = rawRoomId.toLowerCase();
+
     const body = await c.req.json();
     const parsed = sendMessageSchema.safeParse(body);
 
@@ -260,30 +284,39 @@ export class ChatController {
       );
     }
 
-    // Resolve sender info: use auth-derived userId, prefer body values for name/role
     const senderId = userId;
     const senderName =
-      parsed.data.sender_name ?? parsed.data.senderName ?? (await resolveUserName(userId));
+      parsed.data.sender_name ??
+      parsed.data.senderName ??
+      (await resolveUserName(userId));
     const senderRole =
-      parsed.data.sender_role ?? parsed.data.senderRole ?? (await resolveUserRole(userId));
+      parsed.data.sender_role ??
+      parsed.data.senderRole ??
+      (await resolveUserRole(userId));
 
-    // Verify the user is a participant
-    const room = await prisma.chatRoom.findFirst({
-      where: {
-        id: roomId,
-        participants: { has: userId },
-      },
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: roomId },
     });
 
     if (!room) {
-      return c.json({ err: 'Room not found' }, 404);
+      return c.json(
+        { err: 'Room not found', receivedId: rawRoomId, normalizedId: roomId },
+        404,
+      );
     }
 
-    // Create the message and update room's lastActivity
+    // ✅ JS includes check — avoids Prisma array filter quirks
+    if (!room.participants.includes(userId)) {
+      return c.json(
+        { err: 'Not a participant', userId, participants: room.participants },
+        403,
+      );
+    }
+
     const [msg] = await prisma.$transaction([
       prisma.chatMessage.create({
         data: {
-          roomId,
+          roomId, // ✅ guaranteed string, already normalized
           senderId,
           senderName,
           senderRole,
@@ -299,12 +332,18 @@ export class ChatController {
 
     const formattedMsg = formatMessage(msg);
 
-    // Trigger Pusher: room channel + each participant's user channel
     try {
-      await triggerRoomEvent(roomId, 'new-message', formattedMsg as unknown as Record<string, unknown>);
-
+      await triggerRoomEvent(
+        roomId,
+        'new-message',
+        formattedMsg as unknown as Record<string, unknown>,
+      );
       for (const participantId of room.participants) {
-        await triggerUserEvent(participantId, 'new-message', formattedMsg as unknown as Record<string, unknown>);
+        await triggerUserEvent(
+          participantId,
+          'new-message',
+          formattedMsg as unknown as Record<string, unknown>,
+        );
       }
     } catch (err) {
       console.error('Pusher trigger failed (sendMessage):', err);
@@ -315,24 +354,37 @@ export class ChatController {
 
   /**
    * PUT /chat/rooms/:roomId/read
-   * Marks the room as read for the authenticated user.
    */
   async markRead(c: Context) {
     const userId = c.get('userId') as string;
-    const roomId = c.req.param('roomId');
+    const rawRoomId = c.req.param('roomId');
+
+    if (!rawRoomId) {
+      return c.json({ err: 'Room ID is required' }, 400);
+    }
+
+    // ✅ Normalize to lowercase to match Prisma's stored UUID format
+    const roomId = rawRoomId.toLowerCase();
+
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      return c.json({ err: 'Room not found' }, 404);
+    }
+
+    // ✅ JS includes check — avoids Prisma array filter quirks
+    if (!room.participants.includes(userId)) {
+      return c.json({ err: 'Not a participant' }, 403);
+    }
 
     await prisma.chatRoomRead.upsert({
       where: {
         roomId_userId: { roomId, userId },
       },
-      create: {
-        roomId,
-        userId,
-        lastReadAt: new Date(),
-      },
-      update: {
-        lastReadAt: new Date(),
-      },
+      create: { roomId, userId, lastReadAt: new Date() },
+      update: { lastReadAt: new Date() },
     });
 
     return c.json({ success: true });
@@ -340,7 +392,6 @@ export class ChatController {
 
   /**
    * GET /chat/users
-   * Returns all users in the system (Managers, Drivers, Maintenance) for starting new chats.
    */
   async getUsers(c: Context) {
     const users = await prisma.user.findMany({
