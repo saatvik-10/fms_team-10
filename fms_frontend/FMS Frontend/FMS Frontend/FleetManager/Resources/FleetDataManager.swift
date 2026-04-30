@@ -486,11 +486,11 @@ class FleetDataManager: ObservableObject {
                 },
                 maintenance: item.maintenance.map { maint in
                     VehicleMaintenance(
-                        nextService: maint.nextService ?? "TBD",
+                        nextService: maint.nextService ?? "",
                         inspectionStatus: maint.inspectionStatus ?? "Verified",
                         alerts: []
                     )
-                } ?? VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
+                } ?? VehicleMaintenance(nextService: "", inspectionStatus: "Verified", alerts: []),
                 history: vehicleHistory.filter { $0.status == .completed },
                 reports: [],
                 assessmentReason: item.assessmentReason,
