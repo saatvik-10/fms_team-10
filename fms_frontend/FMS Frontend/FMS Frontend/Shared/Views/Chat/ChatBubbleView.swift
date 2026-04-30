@@ -61,9 +61,29 @@ struct ChatBubbleView: View {
                         Label(message.isStarred ? "Unstar" : "Star", systemImage: message.isStarred ? "star.slash" : "star")
                     }
                     
-                    Button(action: {
-                        translateMessage()
-                    }) {
+                    Menu {
+                        let languages = ["English", "Hindi", "Bengali", "Telugu", "Marathi", "Tamil", "Urdu", "Gujarati", "Kannada", "Malayalam", "Punjabi", "Spanish", "French", "German", "Chinese", "Arabic"]
+                        ForEach(languages, id: \.self) { lang in
+                            Button(action: {
+                                targetLanguage = lang
+                                translateMessage(forceTranslate: true)
+                            }) {
+                                Text(lang)
+                                if targetLanguage == lang && translatedText != nil {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                        
+                        if translatedText != nil {
+                            Divider()
+                            Button(role: .destructive, action: {
+                                translatedText = nil
+                            }) {
+                                Label("Remove Translation", systemImage: "xmark.circle")
+                            }
+                        }
+                    } label: {
                         Label("Translate", systemImage: "globe")
                     }
                 }
@@ -89,13 +109,14 @@ struct ChatBubbleView: View {
         .padding(.horizontal, 10)
     }
     
-    private func translateMessage() {
-        guard translatedText == nil else {
+    private func translateMessage(forceTranslate: Bool = false) {
+        if !forceTranslate && translatedText != nil {
             translatedText = nil // Toggle translation off
             return
         }
         
         isTranslating = true
+        translatedText = nil
         Task {
             do {
                 let result = try await TranslationService.shared.translate(message.content, to: targetLanguage)
@@ -105,7 +126,9 @@ struct ChatBubbleView: View {
                 }
             } catch {
                 DispatchQueue.main.async {
+                    self.translatedText = "⚠️ Translation unavailable"
                     self.isTranslating = false
+                    print("Translation Error: \(error)")
                 }
             }
         }

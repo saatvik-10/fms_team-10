@@ -51,7 +51,6 @@ struct AddRC: View {
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 220)
                             .cornerRadius(12)
                             .padding(.horizontal)
                     } else {
@@ -60,7 +59,11 @@ struct AddRC: View {
                             systemImage: "card.text",
                             description: Text("Pick an image to begin")
                         )
-                        .frame(height: 220)
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(1.58, contentMode: .fit)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(12)
+                        .padding(.horizontal)
                     }
                 }
                 .padding(.top)

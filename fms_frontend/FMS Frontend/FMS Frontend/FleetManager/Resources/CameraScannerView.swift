@@ -18,33 +18,33 @@ struct CameraScannerView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    imageSlot(image: frontImage, label: "Front", pickerItem: $frontItem)
-                    imageSlot(image: backImage, label: "Back", pickerItem: $backItem)
-                }
-                .padding(.horizontal)
-                .padding(.top)
-                
-                Button(action: runOCR) {
-                    Group {
-                        if isProcessing {
-                            HStack(spacing: 8) {
-                                ProgressView().tint(.white)
-                                Text("Scanning...")
-                            }
-                        } else {
-                            Label("Scan Both Sides", systemImage: "barcode.viewfinder")
-                        }
+            ScrollView {
+                VStack(spacing: 0) {
+                    HStack(spacing: 12) {
+                        imageSlot(image: frontImage, label: "Front", pickerItem: $frontItem)
+                        imageSlot(image: backImage, label: "Back", pickerItem: $backItem)
                     }
-                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal)
+                    .padding(.top)
+                    
+                    Button(action: runOCR) {
+                        Group {
+                            if isProcessing {
+                                HStack(spacing: 8) {
+                                    ProgressView().tint(.white)
+                                    Text("Scanning...")
+                                }
+                            } else {
+                                Label("Scan Both Sides", systemImage: "barcode.viewfinder")
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled((frontImage == nil && backImage == nil) || isProcessing)
+                    .padding()
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled((frontImage == nil && backImage == nil) || isProcessing)
-                .padding()
-                
-                Spacer()
             }
             .navigationTitle("DL Scanner")
             .navigationBarTitleDisplayMode(.inline)
@@ -80,7 +80,7 @@ struct CameraScannerView: View {
                     .foregroundColor(.gray)
                 }
             }
-            .frame(height: 160)
+            .aspectRatio(1.58, contentMode: .fit)
         }
     }
     
@@ -287,49 +287,52 @@ struct RCScannerView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                Group {
-                    if let image = selectedImage {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 220)
+            ScrollView {
+                VStack(spacing: 0) {
+                    Group {
+                        if let image = selectedImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .cornerRadius(12)
+                                .padding(.horizontal)
+                        } else {
+                            VStack {
+                                Image(systemName: "doc.text.viewfinder")
+                                    .font(.system(size: 50))
+                                    .foregroundColor(.gray)
+                                Text("Pick an RC image to scan")
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .aspectRatio(1.58, contentMode: .fit)
+                            .background(Color(.secondarySystemBackground))
                             .cornerRadius(12)
                             .padding(.horizontal)
-                    } else {
-                        VStack {
-                            Image(systemName: "doc.text.viewfinder")
-                                .font(.system(size: 50))
-                                .foregroundColor(.gray)
-                            Text("Pick an RC image to scan")
-                                .foregroundColor(.gray)
                         }
-                        .frame(height: 220)
                     }
-                }
-                .padding(.top)
-                
-                HStack(spacing: 16) {
-                    PhotosPicker(selection: $selectedItem, matching: .images) {
-                        Label("Pick Photo", systemImage: "photo.on.rectangle")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
+                    .padding(.top)
                     
-                    Button(action: runOCR) {
-                        if isProcessing {
-                            ProgressView().tint(.white)
-                        } else {
-                            Label("Scan RC", systemImage: "barcode.viewfinder")
+                    HStack(spacing: 16) {
+                        PhotosPicker(selection: $selectedItem, matching: .images) {
+                            Label("Pick Photo", systemImage: "photo.on.rectangle")
+                                .frame(maxWidth: .infinity)
                         }
+                        .buttonStyle(.bordered)
+                        
+                        Button(action: runOCR) {
+                            if isProcessing {
+                                ProgressView().tint(.white)
+                            } else {
+                                Label("Scan RC", systemImage: "barcode.viewfinder")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(selectedImage == nil || isProcessing)
+                        .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(selectedImage == nil || isProcessing)
-                    .frame(maxWidth: .infinity)
+                    .padding()
                 }
-                .padding()
-                
-                Spacer()
             }
             .navigationTitle("RC Scanner")
             .navigationBarTitleDisplayMode(.inline)

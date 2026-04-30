@@ -335,7 +335,7 @@ struct DLImageSlot: View {
                 if let image {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 } else {
                     VStack {
@@ -344,7 +344,7 @@ struct DLImageSlot: View {
                     }
                 }
             }
-            .frame(height: 160)
+            .aspectRatio(1.58, contentMode: .fit)
         }
     }
 }
