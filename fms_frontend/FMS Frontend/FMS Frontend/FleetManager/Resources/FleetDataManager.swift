@@ -178,7 +178,18 @@ class FleetDataManager: ObservableObject {
     var offDutyDriversCount: Int { drivers.filter { $0.status == .offDuty }.count }
     var idleDriversCount: Int { drivers.filter { $0.status == .active }.count }
     
-    var idleDrivers: [Driver] { drivers.filter { $0.status == .active } }
+    var idleDrivers: [Driver] { eligibleDrivers }
+    
+    var eligibleDrivers: [Driver] {
+        drivers.filter { driver in
+            guard driver.status == .active else { return false }
+            if let lastCompleted = driver.lastTripCompletedAt {
+                // 24-hour cooldown: 24 * 60 * 60 = 86400 seconds
+                return Date().timeIntervalSince(lastCompleted) >= 86400
+            }
+            return true
+        }
+    }
     
     // Computed Metrics
     var activeCount: Int {
@@ -409,7 +420,8 @@ class FleetDataManager: ObservableObject {
                         startTime: trip.createdAt,
                         status: trip.status == "COMPLETED" ? .completed : (trip.status == "IN_TRANSIT" ? .inTransit : .scheduled),
                         productType: trip.productType ?? "General",
-                        loadAmount: trip.loadAmount ?? "0"
+                        loadAmount: trip.loadAmount ?? "0",
+                        completedAt: trip.status == "COMPLETED" ? trip.updatedAt : nil
                     )
                 }
             
@@ -455,7 +467,8 @@ class FleetDataManager: ObservableObject {
                             }
                         }(),
                         productType: trip.productType ?? "",
-                        loadAmount: trip.loadAmount ?? ""
+                        loadAmount: trip.loadAmount ?? "",
+                        completedAt: trip.status == "COMPLETED" ? trip.updatedAt : nil
                     )
                 },
                 assignedDriver: item.assignedDriver.map { driver in
@@ -539,8 +552,20 @@ class FleetDataManager: ObservableObject {
     @MainActor
     func refreshDrivers() async throws {
         let response = try await DriverAPI.shared.getDrivers()
+        
+        // Fetch trips to calculate cooldown for each driver
+        let allTripsResponse = try? await TripAPI.shared.getTrips()
+        let allTrips = allTripsResponse?.trips ?? []
+        
         drivers = response.drivers.map { item in
             let classes = item.classes ?? []
+            
+            // Find the most recent completed trip for this driver
+            let lastCompletedTrip = allTrips
+                .filter { ($0.driverId == item.id || $0.driver?.id == item.id) && $0.status == "COMPLETED" }
+                .compactMap { $0.updatedAt }
+                .sorted(by: { $0 > $1 })
+                .first
             
             let mappedStatus: DriverStatus
             switch item.status {
@@ -572,7 +597,8 @@ class FleetDataManager: ObservableObject {
                 dlFrontImageUrl: item.dlFrontImageUrl,
                 dlBackImageUrl: item.dlBackImageUrl,
                 dlFrontImageKey: item.dlFrontImageKey,
-                dlBackImageKey: item.dlBackImageKey
+                dlBackImageKey: item.dlBackImageKey,
+                lastTripCompletedAt: lastCompletedTrip
             )
         }
 }
