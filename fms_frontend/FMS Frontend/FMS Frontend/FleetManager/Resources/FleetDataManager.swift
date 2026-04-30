@@ -401,6 +401,17 @@ class FleetDataManager: ObservableObject {
         let allTripsResponse = try? await TripAPI.shared.getTrips()
         let allTrips = allTripsResponse?.trips ?? []
         
+        // Fetch all work orders to populate maintenance reports per vehicle
+        let allWorkOrdersResponse = try? await MaintenanceAPI.shared.getWorkOrders()
+        let allWorkOrders = allWorkOrdersResponse?.workOrders ?? []
+        
+        // Group work orders by vehicleId for O(1) lookup
+        var workOrdersByVehicle: [String: [WorkOrderAPIItem]] = [:]
+        for order in allWorkOrders {
+            guard let vId = order.vehicleId else { continue }
+            workOrdersByVehicle[vId, default: []].append(order)
+        }
+        
         vehicles = response.vehicles.map { item in
             // Filter and map trips for this vehicle
             let vehicleHistory = allTrips
@@ -422,6 +433,33 @@ class FleetDataManager: ObservableObject {
                         productType: trip.productType ?? "General",
                         loadAmount: trip.loadAmount ?? "0",
                         completedAt: trip.status == "COMPLETED" ? trip.updatedAt : nil
+                    )
+                }
+            
+            // Map work orders for this vehicle → VehicleReport
+            let vehicleReports: [VehicleReport] = (workOrdersByVehicle[item.id] ?? [])
+                .sorted { ($0.createdAt ?? $0.date) > ($1.createdAt ?? $1.date) }
+                .map { order in
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateStyle = .medium
+                    dateFormatter.timeStyle = .none
+                    let displayDate = (order.createdAt.map { dateFormatter.string(from: $0) })
+                        ?? dateFormatter.string(from: order.date)
+                    
+                    let statusBadge = order.status?.capitalized ?? "Pending"
+                    let serviceLabel = order.serviceType ?? "General Service"
+                    
+                    return VehicleReport(
+                        title: order.title,
+                        subtitle: "\(serviceLabel) · \(statusBadge) · \(displayDate)",
+                        fileType: "pdf",
+                        date: displayDate,
+                        serviceProvider: "Maintenance Staff",
+                        tasks: [ReportTask(
+                            description: order.taskDetails.isEmpty ? "Maintenance task" : order.taskDetails,
+                            cost: order.totalCost.map { "₹\(String(format: "%.0f", $0))" } ?? "TBD"
+                        )],
+                        totalCost: order.totalCost.map { "₹\(String(format: "%.0f", $0))" } ?? "TBD"
                     )
                 }
             
@@ -505,7 +543,7 @@ class FleetDataManager: ObservableObject {
                     )
                 } ?? VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
                 history: vehicleHistory.filter { $0.status == .completed },
-                reports: [],
+                reports: vehicleReports,
                 assessmentReason: item.assessmentReason,
                 chassisNumber: item.chassisNumber,
                 registrationNumber: item.registrationNumber,
