@@ -51,6 +51,10 @@ struct WorkOrderDetailsView: View {
     private var isChecklistEditable: Bool {
         !isFromAlert || workOrder.isAccepted
     }
+
+    private var isPreInspection: Bool {
+        workOrder.serviceType == "Inspection"
+    }
     
     /// Returns true only when the work order originated from a driver-reported
     /// issue during a trip (i.e. has a tripId, voice transcript, or driver media).
@@ -67,326 +71,8 @@ struct WorkOrderDetailsView: View {
         ZStack(alignment: .bottom) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    // 1. Hero Section
-                    ZStack(alignment: .center) {
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color(.systemGray5), Color(.systemGray6)]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        
-                        if let assetName = workOrder.imageAsset, !assetName.isEmpty {
-                            Image(assetName)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 240)
-                                .clipped()
-                        } else {
-                            Image(systemName: "truck.box.fill")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 140)
-                                .foregroundColor(AppColors.primary.opacity(0.8))
-                                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 10)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 240)
-                    
-                    // 2. Content Section
-                    VStack(alignment: .leading, spacing: 28) {
-                        // Vehicle Info Header
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text("Work ID: \(workOrder.orderID)")
-                                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                                    .foregroundColor(AppColors.primary)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(AppColors.primary.opacity(0.1))
-                                    .cornerRadius(6)
-                                
-                                Spacer()
-                            }
-                            
-                            Text(workOrder.vehicleName)
-                                .font(.largeTitle.weight(.heavy))
-                                .foregroundColor(.primary)
-                            
-                            Text(workOrder.vehicleNum)
-                                .font(.title3.weight(.bold))
-                                .foregroundColor(.secondary)
-                            
-                            // Scheduled Date Subtitle
-                            Text("Scheduled for: \(workOrder.scheduledDate.formatted(date: .long, time: .omitted))")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                             
-                            HStack(spacing: 12) {
-                                StatusBadge(text: workOrder.status.rawValue, color: .blue)
-                                PriorityBadge(priority: workOrder.priority.rawValue)
-                            }
-                            .padding(.top, 8)
-                            
-                            if workOrder.isAccepted, let techId = workOrder.acceptedByTechnicianId {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "person.badge.shield.checkmark.fill")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.green)
-                                    Text("Accepted by: \(techId)")
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundColor(.green)
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(Color.green.opacity(0.1))
-                                .cornerRadius(8)
-                                .padding(.top, 4)
-                            }
-                        }
-                        
-                        // Divider().padding(.vertical, 12)
-                        
-                        // Task Details Card
-                        // VStack(alignment: .leading, spacing: 12) {
-                        //     SectionHeader(title: "TASK DETAILS", icon: "doc.text.fill")
-                            
-                        //     VStack(alignment: .leading, spacing: 12) {
-                        //         ForEach(taskPoints, id: \.self) { point in
-                        //             Text(point)
-                        //                 .font(.body)
-                        //                 .foregroundColor(.primary)
-                        //         }
-                        //     }
-                        //     .padding(20)
-                        //     .frame(maxWidth: .infinity, alignment: .leading)
-                        //     .background(Color.white)
-                        //     .cornerRadius(16)
-                        //     .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-                        // }
-                        
-                        // Driver Notes & Media — only shown for driver-reported issues
-                        if hasDriverReportedContent {
-                            // Driver Notes Card
-                            VStack(alignment: .leading, spacing: 12) {
-                                SectionHeader(title: "DRIVER NOTES", icon: "person.wave.2.fill")
-                                driverNotesContent
-                            }
-                            
-                            // Driver Media Card
-                            VStack(alignment: .leading, spacing: 12) {
-                                SectionHeader(title: "MEDIA", icon: "camera.fill")
-                                driverMediaContent
-                            }
-                        }
-                        
-                        // System Checklist
-                        VStack(alignment: .leading, spacing: 20) {
-                            SectionHeader(title: "SYSTEM CHECKLIST", icon: "checklist")
-                                .padding(.horizontal)
-                            checklistContent
-
-                            if !isChecklistEditable {
-                                Text("Checklist is locked until this work order is accepted.")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .padding(.horizontal)
-                            }
-                        }
-
-                        if isFromAlert && !workOrder.isAccepted {
-                            Button(action: {
-                                acceptWorkOrder()
-                            }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "checkmark.shield.fill")
-                                        .font(.system(size: 16, weight: .bold))
-                                    Text("Accept Work Order")
-                                        .font(.system(size: 15, weight: .bold))
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(AppColors.primary)
-                                .foregroundColor(.white)
-                                .cornerRadius(14)
-                                .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
-                            }
-                            .padding(.horizontal, 20)
-                        }
-                        
-                        // Technician Notes
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "TECHNICIAN NOTES", icon: "wrench.and.screwdriver.fill")
-                            technicianNotesContent
-                        }
-                        
-                        // Resource Link: Parts Consumed
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "PARTS CONSUMED", icon: "shippingbox.fill")
-                            
-                            VStack(alignment: .leading, spacing: 16) {
-                                if workOrder.consumedParts.isEmpty {
-                                    Text("No parts consumed yet.")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    ForEach(workOrder.consumedParts) { usage in
-                                        if let inventoryPart = store.inventoryParts.first(where: { $0.partId == usage.inventoryPartId }) {
-                                            HStack(spacing: 12) {
-                                                Image(systemName: "shippingbox.fill")
-                                                    .foregroundColor(AppColors.primary)
-                                                    .frame(width: 32, height: 32)
-                                                    .background(AppColors.primary.opacity(0.1))
-                                                    .cornerRadius(8)
-
-                                                VStack(alignment: .leading, spacing: 2) {
-                                                    Text(inventoryPart.partName)
-                                                        .font(.system(size: 15, weight: .bold))
-                                                    Text(inventoryPart.partId)
-                                                        .font(.caption)
-                                                        .foregroundColor(.secondary)
-                                                    Text("Total ₹\(String(format: "%.2f", inventoryPart.unitPriceInr * Double(usage.quantity)))")
-                                                        .font(.caption2)
-                                                        .foregroundColor(.secondary)
-                                                }
-
-                                                Spacer()
-
-                                                HStack(spacing: 8) {
-                                                    Button {
-                                                        updateConsumedQuantity(partId: usage.inventoryPartId, quantity: usage.quantity - 1)
-                                                    } label: {
-                                                        Image(systemName: "minus.circle.fill")
-                                                            .font(.title3)
-                                                            .foregroundColor(.secondary)
-                                                    }
-
-                                                     Text("\(usage.quantity)")
-                                                         .font(.system(size: 14, weight: .bold, design: .rounded))
-                                                         .frame(minWidth: 22)
-
-                                                     if recentlyUpdatedPartId == usage.inventoryPartId {
-                                                         Image(systemName: "checkmark.circle.fill")
-                                                             .font(.subheadline)
-                                                             .foregroundColor(.green)
-                                                             .transition(.scale.combined(with: .opacity))
-                                                     }
-
-                                                    Button {
-                                                        if usage.quantity >= inventoryPart.stockQty {
-                                                            stockLimitMessage = "Only \(inventoryPart.stockQty) unit(s) available in stock."
-                                                            showingStockLimitAlert = true
-                                                            return
-                                                        }
-                                                        updateConsumedQuantity(partId: usage.inventoryPartId, quantity: usage.quantity + 1)
-                                                    } label: {
-                                                        Image(systemName: "plus.circle.fill")
-                                                            .font(.title3)
-                                                            .foregroundColor(usage.quantity >= inventoryPart.stockQty ? .secondary : AppColors.primary)
-                                                    }
-
-                                                    Button {
-                                                        removeConsumedPart(partId: usage.inventoryPartId)
-                                                    } label: {
-                                                        Image(systemName: "trash")
-                                                            .font(.subheadline)
-                                                            .foregroundColor(.red)
-                                                    }
-                                                    .padding(.leading, 2)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Button {
-                                    pendingSelectedPartIds = Set(workOrder.consumedParts.map { $0.inventoryPartId })
-                                    showingPartPicker = true
-                                } label: {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "plus")
-                                        Text("Add Part")
-                                    }
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(AppColors.primary)
-                                }
-
-                                if !workOrder.consumedParts.isEmpty {
-                                    Text("Stock updates automatically when quantities change.")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            .padding(20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white)
-                            .cornerRadius(16)
-                            .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-                        }
-                        
-                        // Service Media Gallery
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "MEDIA", icon: "camera.fill")
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
-                                    ForEach(0..<workOrder.proofOfWorkImages.count, id: \.self) { index in
-                                        Image(uiImage: UIImage(data: workOrder.proofOfWorkImages[index]) ?? UIImage())
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                            .frame(width: 90, height: 90)
-                                            .cornerRadius(12)
-                                            .clipped()
-                                    }
-                                    
-                                    Button(action: { showingProofSource = true }) {
-                                        VStack(spacing: 4) {
-                                            Image(systemName: "camera.fill")
-                                                .font(.title3)
-                                            Text("Capture")
-                                                .font(.caption2.weight(.bold))
-                                        }
-                                        .frame(width: 90, height: 90)
-                                        .background(Color(.systemGray6))
-                                        .foregroundColor(AppColors.primary)
-                                        .cornerRadius(12)
-                                    }
-                                }
-                            }
-                            .padding(20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white)
-                            .cornerRadius(16)
-                            .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-                        }
-                        
-                        // Action Buttons (Now part of the scroll content)
-                        // VStack(spacing: 16) {
-                        //     if !workOrder.isAccepted {
-                        //         Button(action: {
-                        //             acceptWorkOrder()
-                        //         }) {
-                        //             HStack(spacing: 8) {
-                        //                 Image(systemName: "checkmark.shield.fill")
-                        //                     .font(.system(size: 16, weight: .bold))
-                        //                 Text("Accept Work Order")
-                        //                     .font(.system(size: 15, weight: .bold))
-                        //             }
-                        //             .frame(maxWidth: .infinity)
-                        //             .padding(.vertical, 16)
-                        //             .background(AppColors.primary)
-                        //             .foregroundColor(.white)
-                        //             .cornerRadius(14)
-                        //             .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
-                        //         }
-                        //     }
-                        // }
-                        .padding(.top, 32)
-                        .padding(.bottom, 40)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 24)
+                    heroSection
+                    contentSection
                 }
             }
         }
@@ -582,6 +268,111 @@ struct WorkOrderDetailsView: View {
             Text("Please ensure all system checklist items are marked as complete before closing this work order.")
         }
     }
+
+    private var heroSection: some View {
+        ZStack(alignment: .center) {
+            LinearGradient(
+                gradient: Gradient(colors: [Color(.systemGray5), Color(.systemGray6)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            if let assetName = workOrder.imageAsset, !assetName.isEmpty {
+                Image(assetName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 240)
+                    .clipped()
+            } else {
+                Image(systemName: "truck.box.fill")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 140)
+                    .foregroundColor(AppColors.primary.opacity(0.8))
+                    .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 10)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 240)
+    }
+
+    private var contentSection: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            WorkOrderHeaderView(
+                orderId: workOrder.orderID,
+                vehicleName: workOrder.vehicleName,
+                vehicleNum: workOrder.vehicleNum,
+                scheduledDate: workOrder.scheduledDate,
+                statusText: workOrder.status.rawValue,
+                priorityText: workOrder.priority.rawValue,
+                acceptedByTechnicianId: workOrder.acceptedByTechnicianId,
+                isAccepted: workOrder.isAccepted
+            )
+
+            driverReportedSection
+            checklistSection
+            technicianNotesSection
+            partsConsumedSection
+            serviceMediaSection
+            acceptWorkOrderSection
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 24)
+        .padding(.bottom, 40)
+    }
+
+    @ViewBuilder
+    private var driverReportedSection: some View {
+        if hasDriverReportedContent && !isPreInspection {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "DRIVER NOTES", icon: "person.wave.2.fill")
+                driverNotesContent
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "MEDIA", icon: "camera.fill")
+                driverMediaContent
+            }
+        }
+    }
+
+    private var checklistSection: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            SectionHeader(title: "SYSTEM CHECKLIST", icon: "checklist")
+                .padding(.horizontal)
+            checklistContent
+            checklistLockHint
+        }
+    }
+
+    private var technicianNotesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "TECHNICIAN NOTES", icon: "wrench.and.screwdriver.fill")
+            technicianNotesContent
+        }
+    }
+
+    @ViewBuilder
+    private var serviceMediaSection: some View {
+        if !isPreInspection {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "MEDIA", icon: "camera.fill")
+                serviceMediaContent
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var acceptWorkOrderSection: some View {
+        if isFromAlert && !workOrder.isAccepted {
+            AcceptWorkOrderButton {
+                acceptWorkOrder()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 32)
+        }
+    }
     
     @ViewBuilder
     private var driverNotesContent: some View {
@@ -679,6 +470,170 @@ struct WorkOrderDetailsView: View {
         .onChange(of: workOrder.checklist) { _ in
             guard isChecklistEditable else { return }
             store.updateWorkOrder(workOrder)
+        }
+    }
+
+    @ViewBuilder
+    private var serviceMediaContent: some View {
+        let proofImages = workOrder.proofOfWorkImages
+
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(proofImages.indices, id: \.self) { index in
+                    if let uiImage = UIImage(data: proofImages[index]) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 90, height: 90)
+                            .cornerRadius(12)
+                            .clipped()
+                    }
+                }
+
+                Button(action: { showingProofSource = true }) {
+                    VStack(spacing: 4) {
+                        Image(systemName: "camera.fill")
+                            .font(.title3)
+                        Text("Capture")
+                            .font(.caption2.weight(.bold))
+                    }
+                    .frame(width: 90, height: 90)
+                    .background(Color(.systemGray6))
+                    .foregroundColor(AppColors.primary)
+                    .cornerRadius(12)
+                }
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+    }
+
+    private var partsConsumedSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "PARTS CONSUMED", icon: "shippingbox.fill")
+
+            partsConsumedContent
+        }
+    }
+
+    @ViewBuilder
+    private var checklistLockHint: some View {
+        if !isChecklistEditable && !isPreInspection {
+            ChecklistLockedHint()
+        }
+    }
+
+    private var partsConsumedContent: some View {
+        let consumedPartIds = workOrder.consumedParts.map { $0.inventoryPartId }
+        let hasConsumedParts = !consumedPartIds.isEmpty
+
+        return VStack(alignment: .leading, spacing: 16) {
+            if workOrder.consumedParts.isEmpty {
+                Text("No parts consumed yet.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(workOrder.consumedParts) { usage in
+                    consumedPartRow(for: usage)
+                }
+            }
+
+            AddPartButton {
+                pendingSelectedPartIds = Set(consumedPartIds)
+                showingPartPicker = true
+            }
+
+            if hasConsumedParts {
+                Text("Stock updates automatically when quantities change.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private func consumedPartRow(for usage: WorkOrderPartUsage) -> some View {
+        if let inventoryPart = store.inventoryParts.first(where: { $0.partId == usage.inventoryPartId }) {
+            consumedPartRowContent(for: usage, inventoryPart: inventoryPart)
+        }
+    }
+
+
+    private func consumedPartRowContent(for usage: WorkOrderPartUsage, inventoryPart: InventoryPart) -> some View {
+        let totalCost = inventoryPart.unitPriceInr * Double(usage.quantity)
+        let isAtStockLimit = usage.quantity >= inventoryPart.stockQty
+        let showUpdatedCheckmark = recentlyUpdatedPartId == usage.inventoryPartId
+
+        return HStack(spacing: 12) {
+            Image(systemName: "shippingbox.fill")
+                .foregroundColor(AppColors.primary)
+                .frame(width: 32, height: 32)
+                .background(AppColors.primary.opacity(0.1))
+                .cornerRadius(8)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(inventoryPart.partName)
+                    .font(.system(size: 15, weight: .bold))
+                Text(inventoryPart.partId)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Text("Total ₹\(String(format: "%.2f", totalCost))")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                Button {
+                    updateConsumedQuantity(partId: usage.inventoryPartId, quantity: usage.quantity - 1)
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.secondary)
+                }
+
+                Text("\(usage.quantity)")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .frame(minWidth: 22)
+
+                if showUpdatedCheckmark {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.subheadline)
+                        .foregroundColor(.green)
+                        .transition(.scale.combined(with: .opacity))
+                }
+
+                Button {
+                    if isAtStockLimit {
+                        stockLimitMessage = "Only \(inventoryPart.stockQty) unit(s) available in stock."
+                        showingStockLimitAlert = true
+                        return
+                    }
+                    updateConsumedQuantity(partId: usage.inventoryPartId, quantity: usage.quantity + 1)
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(isAtStockLimit ? .secondary : AppColors.primary)
+                }
+
+                Button {
+                    removeConsumedPart(partId: usage.inventoryPartId)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.subheadline)
+                        .foregroundColor(.red)
+                }
+                .padding(.leading, 2)
+            }
         }
     }
 
@@ -832,6 +787,121 @@ struct WorkOrderDetailsView: View {
                 }
             } catch {
                 print("Failed to complete work order: \(error)")
+            }
+        }
+    }
+}
+
+private struct AddPartButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: "plus")
+                Text("Add Part")
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundColor(AppColors.primary)
+        }
+    }
+}
+
+private struct AcceptWorkOrderButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.shield.fill")
+                    .font(.system(size: 16, weight: .bold))
+                Text("Accept Work Order")
+                    .font(.system(size: 15, weight: .bold))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(AppColors.primary)
+            .foregroundColor(.white)
+            .cornerRadius(14)
+            .shadow(color: AppColors.primary.opacity(0.3), radius: 8, x: 0, y: 4)
+        }
+    }
+}
+
+private struct ChecklistLockedHint: View {
+    var body: some View {
+        Text("Checklist is locked until this work order is accepted.")
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .padding(.horizontal)
+    }
+}
+
+private struct StatusAndPriorityBadges: View {
+    let statusText: String
+    let priorityText: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            StatusBadge(text: statusText, color: .blue)
+            PriorityBadge(priority: priorityText)
+        }
+        .padding(.top, 8)
+    }
+}
+
+private struct WorkOrderHeaderView: View {
+    let orderId: String
+    let vehicleName: String
+    let vehicleNum: String
+    let scheduledDate: Date
+    let statusText: String
+    let priorityText: String
+    let acceptedByTechnicianId: String?
+    let isAccepted: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Work ID: \(orderId)")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(AppColors.primary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(AppColors.primary.opacity(0.1))
+                    .cornerRadius(6)
+
+                Spacer()
+            }
+
+            Text(vehicleName)
+                .font(.largeTitle.weight(.heavy))
+                .foregroundColor(.primary)
+
+            Text(vehicleNum)
+                .font(.title3.weight(.bold))
+                .foregroundColor(.secondary)
+
+            Text("Scheduled for: \(scheduledDate.formatted(date: .long, time: .omitted))")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            StatusAndPriorityBadges(statusText: statusText, priorityText: priorityText)
+
+            if isAccepted, let techId = acceptedByTechnicianId {
+                HStack(spacing: 6) {
+                    Image(systemName: "person.badge.shield.checkmark.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.green)
+                    Text("Accepted by: \(techId)")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.green)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.green.opacity(0.1))
+                .cornerRadius(8)
+                .padding(.top, 4)
             }
         }
     }
