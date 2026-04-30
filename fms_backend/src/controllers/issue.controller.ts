@@ -21,7 +21,17 @@ async function getSignedImageUrls(imageKeys: string[]) {
     .filter((item): item is string => Boolean(item));
 }
 
+async function hydrateIssueReports(reports: Awaited<ReturnType<typeof prisma.issueReport.findMany>>) {
+  return Promise.all(
+    reports.map(async (report) => ({
+      ...report,
+      imageUrls: await getSignedImageUrls(report.imageKeys),
+    })),
+  );
+}
+
 export class IssueController {
+
   async createIssueReport(c: Context) {
     const body = await c.req.json();
     const result = createIssueReportSchema.safeParse(body);
@@ -50,7 +60,7 @@ export class IssueController {
       const trip = await prisma.trips.findFirst({
         where: {
           id: tripId,
-          driver: driver.id,
+          driverId: driver.id,
         },
         select: { id: true },
       });
@@ -130,14 +140,34 @@ export class IssueController {
       take: limit,
     });
 
-    const hydrated = await Promise.all(
-      reports.map(async (report) => ({
-        ...report,
-        imageUrls: await getSignedImageUrls(report.imageKeys),
-      })),
-    );
+    const hydrated = await hydrateIssueReports(reports);
 
     return c.json({ issues: hydrated });
+  }
+
+  async getMaintenanceIssueReports(c: Context) {
+    const queryResult = getIssueReportsQuerySchema.safeParse({
+      limit: c.req.query('limit'),
+    });
+
+    if (!queryResult.success) {
+      return c.json(
+        { err: 'Invalid query params', details: queryResult.error.flatten() },
+        400,
+      );
+    }
+
+    const limit = queryResult.data.limit ?? 50;
+
+    const reports = await prisma.issueReport.findMany({
+      where: { tripId: { not: null } },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    const issues = await hydrateIssueReports(reports);
+
+    return c.json({ issues });
   }
 
   async getIssueReportById(c: Context) {

@@ -591,7 +591,7 @@ export class Maintenance {
         unitVIN: workOrder.vehicleId || '-',
         driverId: 'N/A',
         timestamp: new Date(),
-        type: 'Post-Trip',
+        type: 'Pre-Trip',
         vehicleType: isBus ? 'Car' : 'Truck',
         status: 'Completed',
         priority: workOrder.priority,

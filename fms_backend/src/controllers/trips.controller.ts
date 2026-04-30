@@ -462,7 +462,17 @@ export class Trip {
 
     const trip = await prisma.trips.findFirst({
       where: { id: tripId, driverId: driver.id },
-      select: { id: true, vehicleId: true, status: true },
+      select: {
+        id: true,
+        vehicleId: true,
+        status: true,
+        sourceLocation: true,
+        destinationLocation: true,
+        departureTime: true,
+        productType: true,
+        amount: true,
+        unit: true,
+      },
     });
 
     if (!trip) {
@@ -481,6 +491,46 @@ export class Trip {
       });
 
       if (trip.vehicleId) {
+        const [vehicle, vehicleTrip] = await Promise.all([
+          tx.vehicle.findUnique({
+            where: { id: trip.vehicleId },
+            select: { id: true, registrationNumber: true },
+          }),
+          tx.vehicleTrip.findUnique({
+            where: { vehicleId: trip.vehicleId },
+            select: {
+              origin: true,
+              destination: true,
+              progress: true,
+              eta: true,
+              date: true,
+              distance: true,
+              duration: true,
+              costEstimate: true,
+              startTime: true,
+            },
+          }),
+        ]);
+
+        await tx.tripHistory.create({
+          data: {
+            vehicleId: trip.vehicleId,
+            vehicleID: vehicle?.registrationNumber ?? trip.vehicleId,
+            origin: vehicleTrip?.origin ?? trip.sourceLocation,
+            destination: vehicleTrip?.destination ?? trip.destinationLocation,
+            progress: vehicleTrip?.progress ?? 1,
+            eta: vehicleTrip?.eta ?? null,
+            date: vehicleTrip?.date ?? trip.departureTime,
+            distance: vehicleTrip?.distance ?? null,
+            duration: vehicleTrip?.duration ?? null,
+            costEstimate: vehicleTrip?.costEstimate ?? null,
+            startTime: vehicleTrip?.startTime ?? null,
+            status: 'COMPLETED',
+            productType: trip.productType,
+            loadAmount: `${trip.amount} ${trip.unit}`,
+          },
+        });
+
         // 2. Update vehicle status
         await tx.vehicle.update({
           where: { id: trip.vehicleId },
@@ -490,7 +540,7 @@ export class Trip {
         // 3. Update vehicleTrip status
         await tx.vehicleTrip.updateMany({
           where: { vehicleId: trip.vehicleId },
-          data: { status: 'COMPLETED' },
+          data: { status: 'COMPLETED', progress: 1.0 },
         });
       }
 
