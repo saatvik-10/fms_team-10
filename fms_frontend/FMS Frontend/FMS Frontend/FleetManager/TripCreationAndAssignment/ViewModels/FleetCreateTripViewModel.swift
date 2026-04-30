@@ -32,6 +32,7 @@ class FleetCreateTripViewModel: ObservableObject {
     private let baseFee: Double = 1500.0 // INR
     private let ratePerKM: Double = 18.0 // INR
     private let hourlyRate: Double = 250.0 // INR
+    private let ratePerLoadUnit: Double = 120.0 // INR per Ton/KG/Unit
     
     var canCreate: Bool {
         sourceLocation != nil && destinationLocation != nil && !selectedVehicleID.isEmpty && !selectedDriverID.isEmpty
@@ -81,7 +82,12 @@ class FleetCreateTripViewModel: ObservableObject {
                 self.encodedPolyline = result.polyline
                 self.estimatedDistance = dist
                 self.estimatedDuration = totalHours
-                self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
+                
+                // Load-based fee calculation
+                let load = Double(loadAmount) ?? 0.0
+                let loadFee = load * ratePerLoadUnit
+                
+                self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate) + loadFee
                 self.isCalculatingRoute = false
             } catch {
                 print("Route fetch error: \(error)")
@@ -90,7 +96,12 @@ class FleetCreateTripViewModel: ObservableObject {
                 let hours = dist / 60.0
                 self.estimatedDistance = dist
                 self.estimatedDuration = hours
-                self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate)
+                
+                // Load-based fee calculation (fallback)
+                let load = Double(loadAmount) ?? 0.0
+                let loadFee = load * ratePerLoadUnit
+                
+                self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate) + loadFee
                 self.isCalculatingRoute = false
             }
         }
