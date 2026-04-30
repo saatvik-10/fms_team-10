@@ -408,26 +408,54 @@ struct FleetManagerVehicleDetailView: View {
     // MARK: - Maintenance Card (next service only, no heading)
     private var maintenanceCard: some View {
         CardWrapper {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 14) {
                     ZStack {
                         Circle()
                             .fill(AppTheme.primary.opacity(0.08))
-                            .frame(width: 38, height: 38)
-                        Image(systemName: "calendar.badge.checkmark")
-                            .font(.system(size: 16))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.system(size: 18, weight: .medium))
                             .foregroundColor(AppTheme.primary)
                     }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("NEXT SERVICE").cardLabel()
-                        Text(vehicle.maintenance.nextService)
-                            .font(.system(size: 17, weight: .bold))
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("NEXT SERVICE")
+                            .cardLabel()
+                        Text(formattedNextService)
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.primary)
+                        Text("Based on vehicle registration date")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(spacing: 4) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 22))
+                            .foregroundColor(.green)
+                        Text("Scheduled")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.green)
                     }
                 }
             }
             .padding(22)
         }
+    }
+    
+    private var formattedNextService: String {
+        let dateStr = vehicle.maintenance.nextService
+        guard !dateStr.isEmpty else { return "Not set" }
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        guard let date = formatter.date(from: dateStr) else { return dateStr }
+        
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter.string(from: date)
     }
 
     // MARK: - Recent History Card

@@ -95,6 +95,7 @@ struct WorkOrderAPIItem: Decodable {
   let maintenanceId: String
   let mediaUrls: [String]?
   let tripId: String?
+  let totalCost: Double?   // populated once work order is completed
   let createdAt: Date?
   let updatedAt: Date?
 }

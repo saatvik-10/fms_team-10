@@ -1,16 +1,12 @@
-
 import Foundation
 import Combine
 
 final class ChatService {
     private let client = APIClient.shared
-    
-    /// The base URL for chat services.
     private let chatBaseURL = APIConfig.baseURL
 
     // MARK: - Fetch Rooms
 
-    /// GET /chat/rooms
     func fetchRooms() -> AnyPublisher<[ChatRoom], Error> {
         return Future { [weak self] promise in
             Task {
@@ -34,14 +30,14 @@ final class ChatService {
 
     // MARK: - Fetch Messages
 
-    /// GET /chat/rooms/{roomId}/messages
     func fetchMessages(for roomId: UUID) -> AnyPublisher<[ChatMessage], Error> {
         return Future { [weak self] promise in
             Task {
                 guard let self = self else { return }
                 do {
+                    // ✅ lowercased() to match Prisma's stored UUID format
                     let messages: [ChatMessage] = try await self.client.request(
-                        path: "/chat/rooms/\(roomId.uuidString)/messages",
+                        path: "/chat/rooms/\(roomId.uuidString.lowercased())/messages",
                         method: .get,
                         requiresAuth: true,
                         baseURL: self.chatBaseURL
@@ -58,14 +54,14 @@ final class ChatService {
 
     // MARK: - Send Message
 
-    /// POST /chat/rooms/{roomId}/messages
     func sendMessage(_ message: ChatMessage) -> AnyPublisher<ChatMessage, Error> {
         return Future { [weak self] promise in
             Task {
                 guard let self = self else { return }
                 do {
+                    // ✅ lowercased() to match Prisma's stored UUID format
                     let sentMessage: ChatMessage = try await self.client.request(
-                        path: "/chat/rooms/\(message.roomId.uuidString)/messages",
+                        path: "/chat/rooms/\(message.roomId.uuidString.lowercased())/messages",
                         method: .post,
                         body: message,
                         requiresAuth: true,
@@ -83,14 +79,14 @@ final class ChatService {
 
     // MARK: - Mark Read
 
-    /// PUT /chat/rooms/{roomId}/read
     func markRead(roomId: UUID) -> AnyPublisher<Void, Error> {
         return Future { [weak self] promise in
             Task {
                 guard let self = self else { return }
                 do {
+                    // ✅ lowercased() to match Prisma's stored UUID format
                     let _: EmptyResponse = try await self.client.request(
-                        path: "/chat/rooms/\(roomId.uuidString)/read",
+                        path: "/chat/rooms/\(roomId.uuidString.lowercased())/read",
                         method: .put,
                         requiresAuth: true,
                         baseURL: self.chatBaseURL
@@ -104,7 +100,8 @@ final class ChatService {
         .eraseToAnyPublisher()
     }
 
-    /// POST /chat/rooms
+    // MARK: - Create Room
+
     func createRoom(targetId: String, senderId: String, senderName: String, senderRole: String, initialMessage: String) -> AnyPublisher<ChatRoom, Error> {
         return Future { [weak self] promise in
             Task {
@@ -117,7 +114,7 @@ final class ChatService {
                         "senderRole": senderRole,
                         "message": initialMessage
                     ]
-                    
+
                     let room: ChatRoom = try await self.client.request(
                         path: "/chat/rooms",
                         method: .post,

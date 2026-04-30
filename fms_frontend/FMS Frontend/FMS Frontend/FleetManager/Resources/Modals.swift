@@ -835,7 +835,7 @@ struct AddVehicleModalView: View {
                 operationalStatus: response.vehicle.operationalStatus ?? "OPERATIONAL",
                 currentTrip: nil,
                 assignedDriver: nil,
-                maintenance: VehicleMaintenance(nextService: "TBD", inspectionStatus: "Verified", alerts: []),
+                maintenance: VehicleMaintenance(nextService: "", inspectionStatus: "Verified", alerts: []),
                 history: [],
                 reports: [],
                 assessmentReason: response.vehicle.assessmentReason,
