@@ -18,8 +18,8 @@ final class AppSessionStore: ObservableObject {
     
     @Published var currentRoleValue: AppUserRole = .none
     @Published private(set) var state: State = .restoring
-    private(set) var managerProfile: ManagerProfileData?
-    private(set) var userProfile: UserProfile?
+    @Published private(set) var managerProfile: ManagerProfileData?
+    @Published private(set) var userProfile: UserProfile?
     
     private let authAPI: AuthAPI
     private var didRestoreSession = false
@@ -199,25 +199,17 @@ struct ContentView: View {
             }
             .onChange(of: session.state) { newState in
                 if case let .authenticated(role) = newState {
-                    let userId: String
-                    let name: String
-                    
-                    if let profile = session.userProfile {
-                        userId = profile.id
-                        name = profile.name
-                    } else if let manager = session.managerProfile {
-                        userId = manager.id
-                        name = manager.name
-                    } else {
-                        userId = "unknown"
-                        name = "User"
-                    }
-                    
-                    chatViewModel.configure(
-                        userId: userId,
-                        name: name,
-                        role: String(describing: role)
-                    )
+                    configureChat(role: role)
+                }
+            }
+            .onChange(of: session.userProfile?.id) { _ in
+                if case let .authenticated(role) = session.state {
+                    configureChat(role: role)
+                }
+            }
+            .onChange(of: session.managerProfile?.id) { _ in
+                if case let .authenticated(role) = session.state {
+                    configureChat(role: role)
                 }
             }
             // --- CHAT MODIFIERS ---
@@ -254,6 +246,27 @@ struct ContentView: View {
             }
             // -----------------------------------
         }
+    }
+    
+    private func configureChat(role: AppUserRole) {
+        let userId: String
+        let name: String
+        
+        if let profile = session.userProfile {
+            userId = profile.id
+            name = profile.name
+        } else if let manager = session.managerProfile {
+            userId = manager.id
+            name = manager.name
+        } else {
+            return // Skip until profile is loaded
+        }
+        
+        chatViewModel.configure(
+            userId: userId,
+            name: name,
+            role: String(describing: role)
+        )
     }
 }
 

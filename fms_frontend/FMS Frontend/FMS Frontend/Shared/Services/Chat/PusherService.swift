@@ -12,7 +12,7 @@ final class PusherService: ObservableObject, PusherDelegate {
     private let pusherCluster = "ap2" 
     
     private var pusher: Pusher?
-    private var currentChannel: PusherChannel?
+    private var userChannel: PusherChannel?
     
     private let messageSubject = PassthroughSubject<ChatMessage, Never>()
     var messagePublisher: AnyPublisher<ChatMessage, Never> {
@@ -40,12 +40,18 @@ final class PusherService: ObservableObject, PusherDelegate {
     func subscribeToRoom(roomId: UUID) {
         let cleanId = roomId.uuidString.replacingOccurrences(of: "-", with: "").lowercased()
         let channelName = "chat_\(cleanId)"
-        print("📡 Pusher: Subscribing to \(channelName)")
         
-        currentChannel = pusher?.subscribe(channelName)
+        // Avoid duplicate room subscriptions
+        if let existing = pusher?.connection.channels.find(name: channelName), existing.subscribed {
+            print("📡 Pusher: Already subscribed to \(channelName)")
+            return
+        }
+        
+        print("📡 Pusher: Subscribing to \(channelName)")
+        let channel = pusher?.subscribe(channelName)
         
         // Bind to the "new-message" event
-        currentChannel?.bind(eventName: "new-message", eventCallback: { [weak self] event in
+        channel?.bind(eventName: "new-message", eventCallback: { [weak self] event in
             guard let self = self,
                   let dataString = event.data,
                   let data = try? JSONSerialization.jsonObject(with: Data(dataString.utf8)) as? [String: Any] else { return }
@@ -59,9 +65,20 @@ final class PusherService: ObservableObject, PusherDelegate {
     func subscribeToUser(userId: String) {
         let cleanId = userId.replacingOccurrences(of: "-", with: "").lowercased()
         let channelName = "user_\(cleanId)"
-        print("📡 Pusher: Subscribing to user channel \(channelName)")
         
-        let userChannel = pusher?.subscribe(channelName)
+        if let current = userChannel, current.name == channelName {
+            print("📡 Pusher: Already subscribed to user channel \(channelName)")
+            return
+        }
+        
+        // Unsubscribe from previous user channel if any
+        if let current = userChannel {
+            print("📡 Pusher: Unsubscribing from old user channel \(current.name)")
+            pusher?.unsubscribe(current.name)
+        }
+        
+        print("📡 Pusher: Subscribing to user channel \(channelName)")
+        userChannel = pusher?.subscribe(channelName)
         
         // Bind to "new-message" on the user channel as well
         userChannel?.bind(eventName: "new-message", eventCallback: { [weak self] event in
@@ -78,6 +95,7 @@ final class PusherService: ObservableObject, PusherDelegate {
     func disconnect() {
         print("📡 Pusher: Disconnecting")
         pusher?.disconnect()
+        userChannel = nil
     }
     
     // MARK: - Decoding Logic
