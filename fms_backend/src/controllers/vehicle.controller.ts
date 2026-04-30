@@ -30,6 +30,16 @@ async function getFreshSignedUrl(
   return objectKey ? r2Service.getSignedDownloadUrl(objectKey) : null;
 }
 
+/**
+ * Calculate nextService date as createdAt + 6 months.
+ * Returns ISO string date (YYYY-MM-DD).
+ */
+function calculateNextService(createdAt: Date): string {
+  const d = new Date(createdAt);
+  d.setMonth(d.getMonth() + 6);
+  return d.toISOString().split('T')[0] as string;
+}
+
 async function uploadVehicleImage(params: {
   managerId: string;
   registrationNum: string;
@@ -432,6 +442,23 @@ export class Vehicle {
         );
         const rcImageUrl = await getFreshSignedUrl(v.rcImageKey, v.rcImageUrl);
 
+        // Calculate nextService from createdAt + 6 months if not set
+        // If no maintenance record exists, create a virtual one with calculated nextService
+        const resolvedMaintenance = maintenance
+          ? {
+              ...maintenance,
+              nextService: maintenance.nextService ?? calculateNextService(v.createdAt),
+            }
+          : {
+              id: '',
+              vehicleId: v.id,
+              nextService: calculateNextService(v.createdAt),
+              inspectionStatus: 'Verified',
+              alerts: null,
+              createdAt: v.createdAt,
+              updatedAt: v.updatedAt,
+            };
+
         return {
           ...v,
           status:
@@ -441,7 +468,7 @@ export class Vehicle {
           vehicleImageUrl,
           rcImageUrl,
           currentTrip: hydratedCurrentTrip,
-          maintenance,
+          maintenance: resolvedMaintenance,
           assignedDriver,
         };
       }),
@@ -501,11 +528,19 @@ export class Vehicle {
       }),
     ]);
 
+    // Calculate nextService from createdAt + 6 months if not set
+    const resolvedMaintenance = maintenance
+      ? {
+          ...maintenance,
+          nextService: maintenance.nextService ?? calculateNextService(vehicle.createdAt),
+        }
+      : null;
+
     return c.json({
       vehicle: {
         ...vehicle,
         currentTrip,
-        maintenance,
+        maintenance: resolvedMaintenance,
         assignedDriver: driver,
       },
       history,
