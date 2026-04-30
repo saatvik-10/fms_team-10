@@ -76,3 +76,19 @@ struct ActiveStaffItem: Identifiable {
     let taskTitle: String
     let vehicleName: String
 }
+
+// MARK: - Maintenance Issue Report Item
+/// Driver-submitted issue report from trip inspections.
+struct MaintenanceIssueReportItem: Identifiable, Decodable {
+    let id: UUID
+    let tripId: String?
+    let driverUserId: String
+    let transcript: String
+    let vehicleUnit: String
+    let incidentLocation: String
+    let status: String
+    let imageKeys: [String]
+    let imageUrls: [String]?
+    let createdAt: Date
+    let updatedAt: Date
+}

@@ -159,7 +159,7 @@ struct MaintenanceDashboardView: View {
                     VStack(spacing: 0) {
                         ForEach(Array(viewModel.alertItems.prefix(3).enumerated()), id: \.element.id) { index, item in
                             let matchingIssueReport = item.issueReportId.flatMap { reportId in
-                                store.issueReports.first { $0.id == reportId }
+                                store.issueReports.first { $0.id.uuidString == reportId }
                             }
 
                             if let report = matchingIssueReport {

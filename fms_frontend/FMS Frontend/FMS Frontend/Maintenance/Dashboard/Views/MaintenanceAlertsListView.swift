@@ -74,7 +74,7 @@ struct IssueReportDetailView: View {
             }
 
             Section("Report Details") {
-                detailRow("Report ID", report.id)
+                detailRow("Report ID", report.id.uuidString)
                 detailRow("Driver User ID", report.driverUserId)
                 detailRow("Trip ID", report.tripId ?? "Not linked")
                 detailRow("Status", report.status)

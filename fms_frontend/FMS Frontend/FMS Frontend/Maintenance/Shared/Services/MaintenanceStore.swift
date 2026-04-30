@@ -208,7 +208,21 @@ class MaintenanceStore: ObservableObject {
     @MainActor
     func refreshIssueReports() async throws {
         let response = try await MaintenanceAPI.shared.getIssueReports()
-        self.issueReports = response.issues
+        self.issueReports = response.issues.map {
+            MaintenanceIssueReportItem(
+                id: UUID(uuidString: $0.id) ?? UUID(),
+                tripId: $0.tripId,
+                driverUserId: $0.driverUserId,
+                transcript: $0.transcript,
+                vehicleUnit: $0.vehicleUnit,
+                incidentLocation: $0.incidentLocation,
+                status: $0.status,
+                imageKeys: $0.imageKeys,
+                imageUrls: $0.imageUrls,
+                createdAt: $0.createdAt,
+                updatedAt: $0.updatedAt
+            )
+        }
     }
     
     func addInspection(_ inspection: TripInspection) {

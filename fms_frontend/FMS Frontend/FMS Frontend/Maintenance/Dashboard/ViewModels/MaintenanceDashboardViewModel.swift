@@ -68,7 +68,7 @@ class MaintenanceDashboardViewModel: ObservableObject {
                     subtitle: "\(report.vehicleUnit) • \(report.incidentLocation)",
                     sortOrder: -Int(report.createdAt.timeIntervalSince1970),
                     workOrderId: nil,
-                    issueReportId: report.id,
+                    issueReportId: report.id.uuidString,
                     inventoryPartId: nil
                 )
             }

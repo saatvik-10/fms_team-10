@@ -171,7 +171,7 @@ struct InspectionAPIItem: Decodable {
 }
 
 struct GetInspectionsResponse: Decodable {
-  let inspections: [InspectionAPIItem]
+    let inspections: [InspectionAPIItem]
 }
 
 struct UpdateInspectionRequest: Encodable {
@@ -275,6 +275,14 @@ final class MaintenanceAPI {
       path: "/maintenance/inspections/\(id)",
       method: .patch,
       body: request,
+      requiresAuth: true
+    )
+  }
+
+  func getIssueReports() async throws -> GetIssueReportsResponse {
+    try await client.request(
+      path: "/maintenance/issue-reports",
+      method: .get,
       requiresAuth: true
     )
   }
