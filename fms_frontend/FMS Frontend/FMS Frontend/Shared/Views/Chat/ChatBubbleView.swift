@@ -1,9 +1,6 @@
-
 //
 //  ChatBubbleView.swift
-//  FMS Chat — Chat Module
-//
-//  ✅ DRAG THIS FILE (inside Chat/ folder) into the main project.
+//  Created by Monica Rokade
 //
 
 import SwiftUI
@@ -11,17 +8,23 @@ import SwiftUI
 struct ChatBubbleView: View {
     let message: ChatMessage
     let isCurrentUser: Bool
+    @ObservedObject var viewModel: ChatViewModel
     
-    @State private var translatedText: String?
-    @State private var isTranslating = false
     @State private var targetLanguage: String = Locale.current.localizedString(forLanguageCode: Locale.current.language.languageCode?.identifier ?? "en") ?? "English"
+    
+    private var translatedText: String? {
+        viewModel.translations[message.id]
+    }
+    
+    private var isTranslating: Bool {
+        viewModel.translatingMessageIds.contains(message.id)
+    }
     
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
             if isCurrentUser { Spacer(minLength: 60) }
             
             VStack(alignment: isCurrentUser ? .trailing : .leading, spacing: 4) {
-                // Sender name only for groups and not current user
                 if !isCurrentUser {
                     Text(message.senderName)
                         .font(.system(size: 11, weight: .medium))
@@ -49,7 +52,6 @@ struct ChatBubbleView: View {
                 .background(isCurrentUser ? AppColors.primary : Color(white: 0.92))
                 .foregroundColor(isCurrentUser ? .white : .black)
                 .cornerRadius(20)
-                // Tail effect via masked corners
                 .background(
                     BubbleTail(isCurrentUser: isCurrentUser)
                         .fill(isCurrentUser ? AppColors.primary : Color(white: 0.92))
@@ -66,7 +68,7 @@ struct ChatBubbleView: View {
                         ForEach(languages, id: \.self) { lang in
                             Button(action: {
                                 targetLanguage = lang
-                                translateMessage(forceTranslate: true)
+                                viewModel.translateMessage(message, to: lang, force: true)
                             }) {
                                 Text(lang)
                                 if targetLanguage == lang && translatedText != nil {
@@ -78,7 +80,7 @@ struct ChatBubbleView: View {
                         if translatedText != nil {
                             Divider()
                             Button(role: .destructive, action: {
-                                translatedText = nil
+                                viewModel.translateMessage(message, to: targetLanguage, force: false)
                             }) {
                                 Label("Remove Translation", systemImage: "xmark.circle")
                             }
@@ -108,31 +110,6 @@ struct ChatBubbleView: View {
         }
         .padding(.horizontal, 10)
     }
-    
-    private func translateMessage(forceTranslate: Bool = false) {
-        if !forceTranslate && translatedText != nil {
-            translatedText = nil // Toggle translation off
-            return
-        }
-        
-        isTranslating = true
-        translatedText = nil
-        Task {
-            do {
-                let result = try await TranslationService.shared.translate(message.content, to: targetLanguage)
-                DispatchQueue.main.async {
-                    self.translatedText = result
-                    self.isTranslating = false
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.translatedText = "⚠️ Translation unavailable"
-                    self.isTranslating = false
-                    print("Translation Error: \(error)")
-                }
-            }
-        }
-    }
 }
 
 struct BubbleTail: Shape {
@@ -152,30 +129,12 @@ struct BubbleTail: Shape {
     }
 }
 
-// MARK: - Helpers
-
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCornerStyle(radius: radius, corners: corners))
-    }
-}
-
-struct RoundedCornerStyle: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
-        return Path(path.cgPath)
-    }
-}
-
 #Preview {
     ZStack {
         AppColors.background.ignoresSafeArea()
         VStack(spacing: 20) {
-            ChatBubbleView(message: ChatMessage(roomId: UUID(), senderId: "1", senderName: "John Doe", senderRole: "driver", content: "Hello! Is the truck ready for pickup?"), isCurrentUser: false)
-            ChatBubbleView(message: ChatMessage(roomId: UUID(), senderId: "current_user", senderName: "Dave", senderRole: "maintenance", content: "Almost done. Just finishing the inspection."), isCurrentUser: true)
+            ChatBubbleView(message: ChatMessage(roomId: UUID(), senderId: "1", senderName: "John Doe", senderRole: "driver", content: "Hello! Is the truck ready for pickup?"), isCurrentUser: false, viewModel: ChatViewModel())
+            ChatBubbleView(message: ChatMessage(roomId: UUID(), senderId: "current_user", senderName: "Dave", senderRole: "maintenance", content: "Almost done. Just finishing the inspection."), isCurrentUser: true, viewModel: ChatViewModel())
         }
     }
 }

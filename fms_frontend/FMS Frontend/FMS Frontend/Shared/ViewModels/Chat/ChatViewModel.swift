@@ -1,3 +1,7 @@
+//
+//  ChatViewModel.swift
+//  Created by Gargee Mohairr
+//
 
 import SwiftUI
 import Combine
@@ -9,6 +13,10 @@ class ChatViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var availableUsers: [ChatService.UserContact] = []
+    
+    // Translation state
+    @Published var translations: [UUID: String] = [:]
+    @Published var translatingMessageIds: Set<UUID> = []
     
     // Notification state
     @Published var latestNotification: ChatMessage?
@@ -32,7 +40,7 @@ class ChatViewModel: ObservableObject {
     
     func configure(userId: String, name: String, role: String) {
         guard userId != "unknown" else {
-            print("⚠️ ChatViewModel: Skipping configuration for 'unknown' user")
+            print("[DEBUG] [DEBUG]  ChatViewModel: Skipping configuration for 'unknown' user")
             return
         }
         
@@ -63,11 +71,11 @@ class ChatViewModel: ObservableObject {
         // Get the current list for this room
         var roomMessages = messages[message.roomId] ?? []
         
-        // Dedup — don't add if already present
+        // Dedup  don't add if already present
         guard !roomMessages.contains(where: { $0.id == message.id }) else { return }
         roomMessages.append(message)
         
-        // ⚡ CRITICAL: Reassign the entire dictionary (not just a subscript value).
+        //  CRITICAL: Reassign the entire dictionary (not just a subscript value).
         // SwiftUI's @Published observation can miss nested dictionary mutations via subscript.
         // A full assignment guarantees objectWillChange fires and the view re-renders.
         objectWillChange.send()
@@ -75,7 +83,7 @@ class ChatViewModel: ObservableObject {
         updated[message.roomId] = roomMessages
         messages = updated
         
-        print("📩 ChatViewModel: Added live message to room \(message.roomId) — total: \(roomMessages.count)")
+        print("[DEBUG] [DEBUG]  ChatViewModel: Added live message to room \(message.roomId)  total: \(roomMessages.count)")
         
         // Update room's last message and re-sort
         if let index = rooms.firstIndex(where: { $0.id == message.roomId }) {
@@ -90,9 +98,9 @@ class ChatViewModel: ObservableObject {
             
             rooms = updatedRooms.sorted(by: { $0.lastActivity > $1.lastActivity })
         } else {
-            // 💡 NEW: If the room doesn't exist yet (e.g., someone just started a chat with us),
+            //  NEW: If the room doesn't exist yet (e.g., someone just started a chat with us),
             // reload the entire room list so it appears in the UI.
-            print("🆕 ChatViewModel: Received message for unknown room \(message.roomId) — reloading rooms...")
+            print("[DEBUG] [DEBUG]  ChatViewModel: Received message for unknown room \(message.roomId)  reloading rooms...")
             loadRooms()
         }
         
@@ -123,7 +131,7 @@ class ChatViewModel: ObservableObject {
             } receiveValue: { [weak self] rooms in
                 self?.rooms = rooms.sorted(by: { $0.lastActivity > $1.lastActivity })
                 
-                // 📡 NEW: Subscribe to ALL rooms for real-time updates (unread counts, previews)
+                //  NEW: Subscribe to ALL rooms for real-time updates (unread counts, previews)
                 // even when we are just looking at the room list.
                 rooms.forEach { room in
                     self?.pusher.subscribeToRoom(roomId: room.id)
@@ -259,5 +267,32 @@ class ChatViewModel: ObservableObject {
                 self?.availableUsers = users
             }
             .store(in: &cancellables)
+    }
+    
+    func translateMessage(_ message: ChatMessage, to language: String, force: Bool = false) {
+        if !force && translations[message.id] != nil {
+            translations.removeValue(forKey: message.id)
+            return
+        }
+        
+        translatingMessageIds.insert(message.id)
+        translations.removeValue(forKey: message.id)
+        
+        Task {
+            do {
+                let result = try await TranslationService.shared.translate(message.content, to: language)
+                await MainActor.run {
+                    self.translations[message.id] = result
+                    self.translatingMessageIds.remove(message.id)
+                    print("[SUCCESS] [SUCCESS] Message translated to \(language)")
+                }
+            } catch {
+                await MainActor.run {
+                    self.translations[message.id] = "Translation unavailable"
+                    self.translatingMessageIds.remove(message.id)
+                    print("[ERROR] [ERROR] Translation Error: \(error)")
+                }
+            }
+        }
     }
 }

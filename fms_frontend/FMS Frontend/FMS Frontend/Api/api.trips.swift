@@ -1,3 +1,8 @@
+//
+//  api.trips.swift
+//  Created by Kunal Khude
+//
+
 import Foundation
 
 struct CreateTripRequest: Encodable {

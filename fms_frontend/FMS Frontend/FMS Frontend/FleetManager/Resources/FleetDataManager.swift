@@ -1,3 +1,8 @@
+//
+//  FleetDataManager.swift
+//  Created by Saatvik Madan
+//
+
 import Combine
 import SwiftUI
 import Foundation
@@ -154,7 +159,7 @@ class FleetDataManager: ObservableObject {
         
         if let vIndex = vehicles.firstIndex(where: { $0.currentTrip?.id.uuidString == tripID }) {
             let vehicle = vehicles[vIndex]
-            let message = "⚠️ ROUTE DEVIATION: Vehicle \(vehicle.id) has left the assigned corridor!"
+            let message = " ROUTE DEVIATION: Vehicle \(vehicle.id) has left the assigned corridor!"
             
             DispatchQueue.main.async {
                 let alert = GeofenceAlert(
@@ -436,7 +441,7 @@ class FleetDataManager: ObservableObject {
                     )
                 }
             
-            // Map work orders for this vehicle → VehicleReport
+            // Map work orders for this vehicle  VehicleReport
             let vehicleReports: [VehicleReport] = (workOrdersByVehicle[item.id] ?? [])
                 .sorted { ($0.createdAt ?? $0.date) > ($1.createdAt ?? $1.date) }
                 .map { order in
@@ -451,15 +456,15 @@ class FleetDataManager: ObservableObject {
                     
                     return VehicleReport(
                         title: order.title,
-                        subtitle: "\(serviceLabel) · \(statusBadge) · \(displayDate)",
+                        subtitle: "\(serviceLabel)  \(statusBadge)  \(displayDate)",
                         fileType: "pdf",
                         date: displayDate,
                         serviceProvider: "Maintenance Staff",
                         tasks: [ReportTask(
                             description: order.taskDetails.isEmpty ? "Maintenance task" : order.taskDetails,
-                            cost: order.totalCost.map { "₹\(String(format: "%.0f", $0))" } ?? "TBD"
+                            cost: order.totalCost.map { "\(String(format: "%.0f", $0))" } ?? "TBD"
                         )],
-                        totalCost: order.totalCost.map { "₹\(String(format: "%.0f", $0))" } ?? "TBD"
+                        totalCost: order.totalCost.map { "\(String(format: "%.0f", $0))" } ?? "TBD"
                     )
                 }
             
@@ -562,7 +567,7 @@ class FleetDataManager: ObservableObject {
             do {
                 _ = try await VehicleAPI.shared.deleteVehicle(id: backendId)
             } catch {
-                print("Delete API failed for vehicle ID \(backendId): \(error)")
+                print("[ERROR] [ERROR] Delete API failed for vehicle ID \(backendId): \(error)")
             }
         }
 
@@ -664,7 +669,7 @@ class FleetDataManager: ObservableObject {
             do {
                 _ = try await DriverAPI.shared.deleteDriver(id: backendId)
             } catch {
-                print("Delete API failed for driver ID \(backendId): \(error)")
+                print("[ERROR] [ERROR] Delete API failed for driver ID \(backendId): \(error)")
             }
         }
 
@@ -697,7 +702,7 @@ class FleetDataManager: ObservableObject {
             do {
                 _ = try await MaintenanceAPI.shared.deleteMaintenance(id: targetId)
             } catch {
-                print("Delete API failed for maintenance ID \(targetId): \(error)")
+                print("[ERROR] [ERROR] Delete API failed for maintenance ID \(targetId): \(error)")
             }
         }
 

@@ -1,3 +1,8 @@
+//
+//  FleetCreateTripViewModel.swift
+//  Created by Saatvik Madan
+//
+
 import SwiftUI
 import CoreLocation
 import Combine
@@ -90,7 +95,7 @@ class FleetCreateTripViewModel: ObservableObject {
                 self.estimatedCost = baseFee + (dist * ratePerKM) + (hours * hourlyRate) + loadFee
                 self.isCalculatingRoute = false
             } catch {
-                print("Route fetch error: \(error)")
+                print("[ERROR] [ERROR] Route fetch error: \(error)")
                 // Fallback to mock if API fails
                 let dist = 100.0
                 let hours = dist / 60.0
@@ -122,7 +127,7 @@ class FleetCreateTripViewModel: ObservableObject {
             date: "Today",
             distance: "\(Int(estimatedDistance)) KM",
             duration: "\(Int(estimatedDuration)) HRS",
-            costEstimate: "₹\(String(format: "%.2f", estimatedCost))",
+            costEstimate: "\(String(format: "%.2f", estimatedCost))",
             startTime: Date(),
             status: .scheduled,
             productType: productName,

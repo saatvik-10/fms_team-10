@@ -1,3 +1,8 @@
+//
+//  DashboardView.swift
+//  Created by Anshul Kumaria
+//
+
 import SwiftUI
 import CoreLocation
 import GoogleMaps
@@ -88,7 +93,7 @@ class DashboardViewModel: ObservableObject {
             var seen = Set<String>()
             let uniqueTrips = lifecycleTrips.filter { seen.insert($0.id).inserted }
 
-            // Filter out completed trips — dashboard only shows scheduled/ongoing
+            // Filter out completed trips  dashboard only shows scheduled/ongoing
             let activeTrips = uniqueTrips.filter { $0.status != .completed }
 
             if let active = activeTrips.first(where: { $0.status == .ongoing })
@@ -115,9 +120,9 @@ class DashboardViewModel: ObservableObject {
         Task {
             do {
                 let response = try await tripAPI.completeTripForDriver(tripId: tripId)
-                print("✅ Trip completed from dashboard: \(response.message)")
+                print("[SUCCESS] [SUCCESS]  Trip completed from dashboard: \(response.message)")
             } catch {
-                print("❌ Failed to complete trip: \(error.localizedDescription)")
+                print("[ERROR] [ERROR]  Failed to complete trip: \(error.localizedDescription)")
             }
             await loadActiveTrip()
         }
@@ -408,13 +413,13 @@ struct RouteDetailRow: View {
             let parts = value.split(separator: ",", maxSplits: 1).map(String.init)
             
             VStack(alignment: .leading, spacing: 2) {
-                // ✅ Place name (bold)
+                //  Place name (bold)
                 Text(parts.first ?? "")
                     .font(.subheadline)
                     .fontWeight(.bold)
                     .foregroundColor(.black)
                 
-                // ✅ Remaining address (lighter)
+                //  Remaining address (lighter)
                 if parts.count > 1 {
                     Text(parts[1])
                         .font(.caption)

@@ -1,3 +1,8 @@
+//
+//  api.manager.swift
+//  Created by Mrunal Aralkar
+//
+
 import Foundation
 
 struct CreateManagerRequest: Encodable {

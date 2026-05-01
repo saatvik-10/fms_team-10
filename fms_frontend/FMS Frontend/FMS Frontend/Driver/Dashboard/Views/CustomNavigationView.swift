@@ -1,3 +1,8 @@
+//
+//  CustomNavigationView.swift
+//  Created by Kunal Khude
+//
+
 import SwiftUI
 import GoogleMaps
 
@@ -119,7 +124,7 @@ private struct BottomTrackingCard: View {
             .padding(.vertical, 16)
             .padding(.horizontal, 16)
 
-            // ── End Trip Button ──
+            //  End Trip Button 
             if let onEndTrip {
                 Button {
                     showEndTripConfirmation = true

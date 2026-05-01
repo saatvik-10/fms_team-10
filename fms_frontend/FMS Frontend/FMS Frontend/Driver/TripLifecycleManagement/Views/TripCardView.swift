@@ -1,3 +1,8 @@
+//
+//  TripCardView.swift
+//  Created by Akhilesh Mykalwar
+//
+
 import SwiftUI
 
 struct TripCardView: View {
@@ -87,7 +92,7 @@ struct TripCardView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Text(trip.timeLabel)
-                        Text("•")
+                        Text("")
                         Text(trip.dateValue)
                     }
                     .font(.caption)
@@ -177,7 +182,7 @@ struct TripCardView: View {
                 )
                 routeDistance = result.distance
             } catch {
-                print("Trip card distance fetch error: \(error)")
+                print("[ERROR] [ERROR] Trip card distance fetch error: \(error)")
             }
             isFetchingDistance = false
         }

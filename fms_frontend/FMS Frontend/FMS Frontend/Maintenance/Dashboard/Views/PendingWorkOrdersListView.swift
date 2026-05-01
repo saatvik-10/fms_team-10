@@ -1,9 +1,6 @@
 //
 //  PendingWorkOrdersListView.swift
-//  FMS Frontend
-//
-//  Dashboard-only detail screen listing all pending work orders.
-//  Filter via bar button item (action sheet).
+//  Created by Mrunal Aralkar
 //
 
 import SwiftUI
@@ -69,7 +66,7 @@ struct PendingWorkOrdersListView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(order.title)
                                     .font(.system(size: 16, weight: .semibold))
-                                Text("\(order.vehicleName) • \(order.priority.rawValue.capitalized)")
+                                Text("\(order.vehicleName)  \(order.priority.rawValue.capitalized)")
                                     .font(.system(size: 13))
                                     .foregroundColor(.secondary)
                                     .lineLimit(1)

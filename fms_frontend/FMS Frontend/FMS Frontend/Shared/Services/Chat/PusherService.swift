@@ -1,3 +1,7 @@
+//
+//  PusherService.swift
+//  Created by Kunal Khude
+//
 
 import Foundation
 import Combine
@@ -7,7 +11,7 @@ final class PusherService: ObservableObject, PusherDelegate {
     static let shared = PusherService()
     
     // MARK: - Credentials (PLACEHOLDERS)
-    // 💡 Fill these from your Pusher Dashboard (App Keys tab)
+    //  Fill these from your Pusher Dashboard (App Keys tab)
     private let pusherAppKey = "b73a2a2fb84d3828322a"
     private let pusherCluster = "ap2" 
     
@@ -33,7 +37,7 @@ final class PusherService: ObservableObject, PusherDelegate {
     }
     
     func connect(userId: String) {
-        print("📡 Pusher: Attempting to connect for user \(userId)...")
+        print("[DEBUG] [DEBUG]  Pusher: Attempting to connect for user \(userId)...")
         pusher?.connect()
     }
     
@@ -43,11 +47,11 @@ final class PusherService: ObservableObject, PusherDelegate {
         
         // Avoid duplicate room subscriptions
         if let existing = pusher?.connection.channels.find(name: channelName), existing.subscribed {
-            print("📡 Pusher: Already subscribed to \(channelName)")
+            print("[DEBUG] [DEBUG]  Pusher: Already subscribed to \(channelName)")
             return
         }
         
-        print("📡 Pusher: Subscribing to \(channelName)")
+        print("[DEBUG] [DEBUG]  Pusher: Subscribing to \(channelName)")
         let channel = pusher?.subscribe(channelName)
         
         // Bind to the "new-message" event
@@ -67,17 +71,17 @@ final class PusherService: ObservableObject, PusherDelegate {
         let channelName = "user_\(cleanId)"
         
         if let current = userChannel, current.name == channelName {
-            print("📡 Pusher: Already subscribed to user channel \(channelName)")
+            print("[DEBUG] [DEBUG]  Pusher: Already subscribed to user channel \(channelName)")
             return
         }
         
         // Unsubscribe from previous user channel if any
         if let current = userChannel {
-            print("📡 Pusher: Unsubscribing from old user channel \(current.name)")
+            print("[DEBUG] [DEBUG]  Pusher: Unsubscribing from old user channel \(current.name)")
             pusher?.unsubscribe(current.name)
         }
         
-        print("📡 Pusher: Subscribing to user channel \(channelName)")
+        print("[DEBUG] [DEBUG]  Pusher: Subscribing to user channel \(channelName)")
         userChannel = pusher?.subscribe(channelName)
         
         // Bind to "new-message" on the user channel as well
@@ -93,7 +97,7 @@ final class PusherService: ObservableObject, PusherDelegate {
     }
     
     func disconnect() {
-        print("📡 Pusher: Disconnecting")
+        print("[DEBUG] [DEBUG]  Pusher: Disconnecting")
         pusher?.disconnect()
         userChannel = nil
     }
@@ -109,7 +113,7 @@ final class PusherService: ObservableObject, PusherDelegate {
               let senderName = (data["sender_name"] as? String) ?? (data["senderName"] as? String),
               let senderRole = (data["sender_role"] as? String) ?? (data["senderRole"] as? String),
               let content = data["content"] as? String else {
-            print("⚠️ Pusher: Failed to decode message data: \(data)")
+            print("[ERROR] [ERROR]  Pusher: Failed to decode message data: \(data)")
             return nil
         }
         
@@ -134,10 +138,10 @@ final class PusherService: ObservableObject, PusherDelegate {
     // MARK: - PusherDelegate
     
     func debugLog(message: String) {
-        print("🛠️ Pusher Debug: \(message)")
+        print("[DEBUG] [DEBUG]  Pusher Debug: \(message)")
     }
     
     func changedConnectionState(from old: ConnectionState, to new: ConnectionState) {
-        print("📡 Pusher: Connection state changed from \(old) to \(new)")
+        print("[DEBUG] [DEBUG]  Pusher: Connection state changed from \(old) to \(new)")
     }
 }

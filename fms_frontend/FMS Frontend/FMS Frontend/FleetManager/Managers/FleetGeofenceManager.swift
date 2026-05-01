@@ -1,3 +1,8 @@
+//
+//  FleetGeofenceManager.swift
+//  Created by Tanishka Kumar
+//
+
 import Foundation
 import CoreLocation
 import Combine
@@ -37,12 +42,12 @@ class FleetGeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegat
     
     func startMonitoring(trip: VehicleTrip) {
         guard CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) else {
-            print("Geofencing is not supported on this device!")
+            print("[DEBUG] [DEBUG] Geofencing is not supported on this device!")
             return
         }
         
         guard authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse else {
-            print("Location permission not granted for geofencing.")
+            print("[DEBUG] [DEBUG] Location permission not granted for geofencing.")
             requestPermissions()
             return
         }
@@ -54,7 +59,7 @@ class FleetGeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegat
             originRegion.notifyOnEntry = true
             originRegion.notifyOnExit = true
             locationManager.startMonitoring(for: originRegion)
-            print("Started monitoring origin region for trip \(trip.id)")
+            print("[DEBUG] [DEBUG] Started monitoring origin region for trip \(trip.id)")
         }
         
         if let dest = trip.destCoordinate {
@@ -62,7 +67,7 @@ class FleetGeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegat
             destRegion.notifyOnEntry = true
             destRegion.notifyOnExit = true
             locationManager.startMonitoring(for: destRegion)
-            print("Started monitoring destination region for trip \(trip.id)")
+            print("[DEBUG] [DEBUG] Started monitoring destination region for trip \(trip.id)")
         }
     }
     
@@ -82,7 +87,7 @@ class FleetGeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegat
     
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         if let circularRegion = region as? CLCircularRegion {
-            print("🚙 GEOFENCE EVENT: Entered region \(circularRegion.identifier)")
+            print("[DEBUG] [DEBUG]  GEOFENCE EVENT: Entered region \(circularRegion.identifier)")
             
             // In a real app, we would update the trip status in FleetDataManager
             // e.g., if identifier contains "destination", status = .completed
@@ -94,7 +99,7 @@ class FleetGeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegat
     
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         if let circularRegion = region as? CLCircularRegion {
-            print("🚙 GEOFENCE EVENT: Exited region \(circularRegion.identifier)")
+            print("[DEBUG] [DEBUG]  GEOFENCE EVENT: Exited region \(circularRegion.identifier)")
             
             // e.g., if identifier contains "origin", status = .inTransit
             
@@ -103,10 +108,10 @@ class FleetGeofenceManager: NSObject, ObservableObject, CLLocationManagerDelegat
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location Manager failed: \(error)")
+        print("[ERROR] [ERROR] Location Manager failed: \(error)")
     }
     
     func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
-        print("Monitoring failed for region \(region?.identifier ?? "unknown"): \(error)")
+        print("[ERROR] Monitoring failed for region \(region?.identifier ?? "unknown"): \(error)")
     }
 }

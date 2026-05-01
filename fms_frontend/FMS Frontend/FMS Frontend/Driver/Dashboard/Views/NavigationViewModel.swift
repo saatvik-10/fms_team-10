@@ -1,3 +1,8 @@
+//
+//  NavigationViewModel.swift
+//  Created by Mrunal Aralkar
+//
+
 import Foundation
 import CoreLocation
 import GoogleMaps
@@ -21,7 +26,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
     // Resolved destination coordinate (from Directions API or passed in)
     private var resolvedDestination: CLLocationCoordinate2D?
 
-    // Uses clean NavigationInstruction — no HTML, no formatting in ViewModel
+    // Uses clean NavigationInstruction  no HTML, no formatting in ViewModel
     var rawSteps: [NavigationInstruction] = []
     var currentStepIndex = 0
     private var currentGMSPath: GMSPath?
@@ -66,13 +71,13 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
                coord.longitude >= -180 && coord.longitude <= 180
     }
 
-    // MARK: - Resolve Destination (place name → coordinate via Directions API)
+    // MARK: - Resolve Destination (place name  coordinate via Directions API)
 
     private func resolveDestinationIfNeeded(from origin: CLLocationCoordinate2D) {
         guard !isResolvingDestination else { return }
         isResolvingDestination = true
 
-        print("[Nav] Resolving destination from place name: \(trip.destination.name)")
+        print("[DEBUG] [DEBUG] [Nav] Resolving destination from place name: \(trip.destination.name)")
         Task {
             do {
                 let result = try await GoogleDirectionsService.shared.fetchDirections(
@@ -82,7 +87,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
                 await MainActor.run {
                     self.resolvedDestination = result.destinationCoordinate
                     self.isResolvingDestination = false
-                    print("[Nav] Resolved destination: \(result.destinationCoordinate)")
+                    print("[DEBUG] [DEBUG] [Nav] Resolved destination: \(result.destinationCoordinate)")
                     // Now fetch segment route with the resolved coordinate
                     self.fetchSegmentRoute(from: origin)
                 }
@@ -90,7 +95,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
                 await MainActor.run {
                     self.isResolvingDestination = false
                     self.currentInstruction = "Could not resolve destination. Retrying..."
-                    print("[Nav] Resolve error: \(error.localizedDescription)")
+                    print("[ERROR] [ERROR] [Nav] Resolve error: \(error.localizedDescription)")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                         self.resolveDestinationIfNeeded(from: origin)
                     }
@@ -99,7 +104,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
         }
     }
 
-    // MARK: - Route Fetch (user location → next stop only)
+    // MARK: - Route Fetch (user location  next stop only)
 
     private func fetchSegmentRoute(from origin: CLLocationCoordinate2D? = nil) {
         guard !isFetching else { return }
@@ -112,7 +117,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
         } else if let l = locationManager.location?.coordinate {
             resolvedOrigin = l
         } else {
-            print("[Nav] No location yet — waiting for GPS fix")
+            print("[DEBUG] [DEBUG] [Nav] No location yet  waiting for GPS fix")
             return
         }
 
@@ -123,13 +128,13 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
         } else if isValidCoordinate(trip.destination.coordinate) {
             destination = trip.destination.coordinate
         } else {
-            // Destination coordinate is (0,0) — resolve it via place name first
-            print("[Nav] Destination coordinate is invalid (0,0), resolving from place name...")
+            // Destination coordinate is (0,0)  resolve it via place name first
+            print("[DEBUG] [DEBUG] [Nav] Destination coordinate is invalid (0,0), resolving from place name...")
             resolveDestinationIfNeeded(from: resolvedOrigin)
             return
         }
 
-        print("[Nav] Fetching segment: \(resolvedOrigin) → \(destination)")
+        print("[DEBUG] [DEBUG] [Nav] Fetching segment: \(resolvedOrigin)  \(destination)")
         isFetching = true
 
         Task {
@@ -142,18 +147,18 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
                     self.etaText            = result.eta
                     self.distanceRemaining  = result.distance
                     self.polylineString     = result.polyline
-                    self.rawSteps           = result.steps      // [NavigationInstruction] — already clean
+                    self.rawSteps           = result.steps      // [NavigationInstruction]  already clean
                     self.currentStepIndex   = 0
                     self.currentGMSPath     = GMSPath(fromEncodedPath: result.polyline)
                     self.updateInstructions()
                     self.isFetching         = false
-                    print("[Nav] Route loaded: eta=\(result.eta) dist=\(result.distance)")
+                    print("[DEBUG] [DEBUG] [Nav] Route loaded: eta=\(result.eta) dist=\(result.distance)")
                 }
             } catch {
                 await MainActor.run {
                     self.currentInstruction = "Route unavailable. Retrying..."
                     self.isFetching = false
-                    print("[Nav] Fetch error: \(error.localizedDescription)")
+                    print("[ERROR] [ERROR] [Nav] Fetch error: \(error.localizedDescription)")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                         self.fetchSegmentRoute()
                     }
@@ -166,13 +171,13 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
-        print("[Nav] Auth status: \(status.rawValue)")
+        print("[DEBUG] [DEBUG] [Nav] Auth status: \(status.rawValue)")
         switch status {
         case .authorizedWhenInUse, .authorizedAlways:
             manager.startUpdatingLocation()
             manager.startUpdatingHeading()
         case .denied, .restricted:
-            print("[Nav] Location denied")
+            print("[DEBUG] [DEBUG] [Nav] Location denied")
         case .notDetermined:
             manager.requestWhenInUseAuthorization()
         @unknown default:
@@ -187,7 +192,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
             self.currentLocation = location.coordinate
         }
 
-        // First location fix → trigger initial route fetch
+        // First location fix  trigger initial route fetch
         if !hasStartedInitialFetch {
             hasStartedInitialFetch = true
             DispatchQueue.main.async {
@@ -211,7 +216,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
             }
         }
 
-        // Periodic reroute — keeps polyline origin close to user
+        // Periodic reroute  keeps polyline origin close to user
         let distSinceLast = lastLocation?.distance(from: location) ?? 0
         if distSinceLast >= 80 {
             lastLocation = location
@@ -222,7 +227,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
         let timeSinceLast = lastLocation.map { location.timestamp.timeIntervalSince($0.timestamp) } ?? 30
         if timeSinceLast > 10 { lastLocation = location }
 
-        // Step-level progression — uses endLocation from NavigationInstruction
+        // Step-level progression  uses endLocation from NavigationInstruction
         guard currentStepIndex < rawSteps.count else { return }
         let step    = rawSteps[currentStepIndex]
         let stepEnd = CLLocation(latitude: step.endLocation.latitude,
@@ -241,7 +246,7 @@ class NavigationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("[Nav] Location error: \(error.localizedDescription)")
+        print("[ERROR] [ERROR] [Nav] Location error: \(error.localizedDescription)")
     }
 
     // MARK: - Instruction Updates (no HTML or string formatting here)

@@ -1,8 +1,6 @@
 //
 //  InventoryDetailView.swift
-//  FMS Frontend
-//
-//  Created by Antigravity on 26/04/24.
+//  Created by Saatvik Madan
 //
 
 import SwiftUI
@@ -58,9 +56,9 @@ struct InventoryDetailView: View {
                         if isEditing {
                             editableRow(title: "Unit Price", text: $editPartPrice, keyboard: .decimalPad)
                         } else {
-                            detailRow(title: "Unit Price", value: "₹\(part.unitPriceInr, default: "%.2f")")
+                            detailRow(title: "Unit Price", value: "\(part.unitPriceInr, default: "%.2f")")
                         }
-                        detailRow(title: "Total Cost", value: "₹\(part.totalValue, default: "%.2f")", color: AppColors.primary)
+                        detailRow(title: "Total Cost", value: "\(part.totalValue, default: "%.2f")", color: AppColors.primary)
                     }
                     
                     Section("Supply & Logistics") {

@@ -1,6 +1,6 @@
 //
 //  PDFPreviewView.swift
-//  FMS Frontend
+//  Created by Gargee Mohairr
 //
 
 import SwiftUI
@@ -33,7 +33,7 @@ struct PDFPreviewView: View {
                     VStack(spacing: 12) {
                         ProgressView()
                             .scaleEffect(1.2)
-                        Text("Loading Report…")
+                        Text("Loading Report")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }

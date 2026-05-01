@@ -1,3 +1,8 @@
+//
+//  TripDetailView.swift
+//  Created by Monica Rokade
+//
+
 import SwiftUI
 import GoogleMaps
 import CoreLocation
@@ -85,7 +90,7 @@ struct TripDetailView: View {
         ScrollView {
             VStack(spacing: 24) {
 
-                Text("\(trip.pickup.name.split(separator: ",").first ?? "") ➝ \(trip.destination.name.split(separator: ",").first ?? "")")
+                Text("\(trip.pickup.name.split(separator: ",").first ?? "")  \(trip.destination.name.split(separator: ",").first ?? "")")
                     .font(.title2)
                     .fontWeight(.bold)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -221,7 +226,7 @@ struct TripDetailView: View {
                 completedBanner
 
             } else if isOngoing {
-                // IN TRANSIT — show navigation + end trip
+                // IN TRANSIT  show navigation + end trip
                 PrimaryButton(
                     title: "Continue Navigation",
                     icon: "location.fill",
@@ -236,9 +241,9 @@ struct TripDetailView: View {
             } else {
                 // SCHEDULED
                 if canStartTrip {
-                    // Departure reached → Start Trip ENABLED
+                    // Departure reached  Start Trip ENABLED
                     PrimaryButton(
-                        title: isStartingTrip ? "Starting…" : "Start Trip",
+                        title: isStartingTrip ? "Starting" : "Start Trip",
                         icon: "arrow.right.circle.fill",
                         backgroundColor: Color(hex: "0a303a"),
                         textColor: .white
@@ -249,7 +254,7 @@ struct TripDetailView: View {
                     .disabled(isStartingTrip)
                     .opacity(isStartingTrip ? 0.6 : 1.0)
                 } else {
-                    // Departure not yet reached → Start Trip DISABLED
+                    // Departure not yet reached  Start Trip DISABLED
                     VStack(spacing: 8) {
                         HStack(spacing: 6) {
                             Image(systemName: "calendar.badge.clock")
@@ -317,7 +322,7 @@ struct TripDetailView: View {
                 // Still mark locally even if backend call fails (optimistic)
                 currentStatus = .completed
                 onTripEnded?()
-                print("⚠️ Complete trip backend error: \(error.localizedDescription)")
+                print("[ERROR] [ERROR]  Complete trip backend error: \(error.localizedDescription)")
             }
             isEndingTrip = false
         }
@@ -354,7 +359,7 @@ struct TripDetailView: View {
                     Image(systemName: "flag.checkered")
                         .font(.system(size: 14, weight: .bold))
                 }
-                Text(isEndingTrip ? "Ending…" : "End Trip")
+                Text(isEndingTrip ? "Ending" : "End Trip")
                     .font(.headline)
                     .fontWeight(.semibold)
             }

@@ -1,3 +1,8 @@
+//
+//  DashboardComponents.swift
+//  Created by Anshul Kumaria
+//
+
 import SwiftUI
 import Charts
 
@@ -83,7 +88,7 @@ struct FleetOpsAssessmentCard: View {
                         Text("ROUTE")
                             .font(AppFonts.caption2)
                             .foregroundColor(AppTheme.textSecondary)
-                        Text("\(assessment.routeFrom) →")
+                        Text("\(assessment.routeFrom) ")
                             .font(AppFonts.footnote)
                         Text(assessment.routeTo)
                             .font(AppFonts.footnote)
@@ -484,7 +489,7 @@ struct VisualMetricCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
-            // ── Header row ──────────────────────────────────────────
+            //  Header row 
             HStack(alignment: .center) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 10)
@@ -509,7 +514,7 @@ struct VisualMetricCard: View {
             .padding(.horizontal, 18)
             .padding(.top, 18)
 
-            // ── Hero value ──────────────────────────────────────────
+            //  Hero value 
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(value)
                     .font(AppFonts.title1)
@@ -522,7 +527,7 @@ struct VisualMetricCard: View {
             .padding(.top, 10)
             .padding(.bottom, 14)
 
-            // ── Chart ────────────────────────────────────────────────
+            //  Chart 
             Group {
                 switch chartType {
                 case .distribution:
@@ -547,7 +552,7 @@ struct VisualMetricCard: View {
         .onAppear { withAnimation(.easeOut(duration: 0.6)) { appeared = true } }
     }
 
-    // Donut chart — proportional breakdown
+    // Donut chart  proportional breakdown
     private var distributionChart: some View {
         HStack(spacing: 12) {
             Chart(chartData) { point in
@@ -583,7 +588,7 @@ struct VisualMetricCard: View {
         .padding(.horizontal, 6)
     }
 
-    // Area + Line sparkline — continuous 7-day trend
+    // Area + Line sparkline  continuous 7-day trend
     private var sparklineChart: some View {
         Chart(chartData) { point in
             AreaMark(
@@ -627,7 +632,7 @@ struct VisualMetricCard: View {
         .chartYAxis(.hidden)
     }
 
-    // Bar chart — discrete daily bars
+    // Bar chart  discrete daily bars
     private var barsChart: some View {
         Chart(chartData) { point in
             BarMark(
@@ -867,7 +872,7 @@ struct UnifiedMaintenanceCostCard: View {
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("₹\(Int(totalMonthlyCost).formatted())")
+                    Text("\(Int(totalMonthlyCost).formatted())")
                         .font(AppFonts.title2)
                         .fontWeight(.bold)
                         .foregroundColor(AppTheme.primary)
@@ -893,7 +898,7 @@ struct UnifiedMaintenanceCostCard: View {
                         AxisMarks(values: [0, 5000, 10000, 15000]) { value in
                             AxisValueLabel {
                                 if let v = value.as(Double.self) {
-                                    Text("₹\(Int(v/1000))k").font(AppFonts.caption2).foregroundColor(.gray.opacity(0.5))
+                                    Text("\(Int(v/1000))k").font(AppFonts.caption2).foregroundColor(.gray.opacity(0.5))
                                 }
                             }
                         }
@@ -920,12 +925,12 @@ struct UnifiedMaintenanceCostCard: View {
                 Chart(topVehicles) { item in
                     BarMark(
                         x: .value("Vehicle", item.label),
-                        y: .value("Cost (₹)", item.value)
+                        y: .value("Cost ()", item.value)
                     )
                     .foregroundStyle(AppTheme.primary.gradient)
                     .cornerRadius(6)
                     .annotation(position: .top) {
-                        Text("₹\(Int(item.value / 1000))k")
+                        Text("\(Int(item.value / 1000))k")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(AppTheme.primary)
                     }
@@ -945,7 +950,7 @@ struct UnifiedMaintenanceCostCard: View {
                     AxisMarks { value in
                         AxisValueLabel {
                             if let v = value.as(Double.self) {
-                                Text("₹\(Int(v / 1000))k")
+                                Text("\(Int(v / 1000))k")
                                     .font(AppFonts.caption2)
                                     .foregroundColor(.gray)
                             }
@@ -958,7 +963,7 @@ struct UnifiedMaintenanceCostCard: View {
             // HStack {
             //     Label("Monthly aggregated", systemImage: "calendar")
             //     Spacer()
-            //     Text("Values in Indian Rupees (₹)")
+            //     Text("Values in Indian Rupees ()")
             // }
             // .font(.system(size: 10))
             // .foregroundColor(.gray)

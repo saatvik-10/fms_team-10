@@ -1,4 +1,0 @@
-//
-//  NotificationsAndAlertsView.swift
-//  FMS Frontend
-//

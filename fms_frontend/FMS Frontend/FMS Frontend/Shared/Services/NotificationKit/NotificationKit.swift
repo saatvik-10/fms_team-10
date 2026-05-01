@@ -1,9 +1,6 @@
-
 //
 //  NotificationKit.swift
-//  FMS Chat — Notification Framework
-//
-//  ✅ DRAG THIS FILE into your main project's NotificationKit module if needed.
+//  Created by Gargee Mohairr
 //
 
 import Foundation
@@ -19,9 +16,9 @@ public final class NotificationKit {
     public func requestPermissions() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
-                print("NotificationKit: Permissions granted")
+                print("[DEBUG] [DEBUG] NotificationKit: Permissions granted")
             } else if let error = error {
-                print("NotificationKit: Error - \(error.localizedDescription)")
+                print("[ERROR] [ERROR] NotificationKit: Error - \(error.localizedDescription)")
             }
         }
     }
@@ -41,7 +38,7 @@ public final class NotificationKit {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("NotificationKit: Failed to add notification - \(error.localizedDescription)")
+                print("[ERROR] [ERROR] NotificationKit: Failed to add notification - \(error.localizedDescription)")
             }
         }
         

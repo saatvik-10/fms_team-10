@@ -1,6 +1,6 @@
 //
 //  DetailedInspectionView.swift
-//  FMS Frontend
+//  Created by Daksh Ratnawat
 //
 
 import SwiftUI
@@ -73,7 +73,7 @@ struct DetailedInspectionView: View {
                                     .font(.caption.bold())
                                     .foregroundColor(AppColors.primary)
                                 
-                                Text("•")
+                                Text("")
                                     .foregroundColor(.secondary)
                                 
                                 Text(inspection.status.rawValue.uppercased())
@@ -90,7 +90,7 @@ struct DetailedInspectionView: View {
                 .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.05), lineWidth: 1))
 
-                // ── Parity with WorkOrder Details ──────────────────────────
+                //  Parity with WorkOrder Details 
                 
                 // 1. Audit Scope Card
                 VStack(alignment: .leading, spacing: 12) {
@@ -248,7 +248,7 @@ struct DetailedInspectionView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(part.partName)
                                         .foregroundColor(.primary)
-                                    Text("\(part.partId) • In stock: \(part.stockQty)")
+                                    Text("\(part.partId)  In stock: \(part.stockQty)")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }

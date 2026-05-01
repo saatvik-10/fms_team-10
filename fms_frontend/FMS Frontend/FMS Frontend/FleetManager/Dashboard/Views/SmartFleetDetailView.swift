@@ -1,3 +1,8 @@
+//
+//  SmartFleetDetailView.swift
+//  Created by Daksh Ratnawat
+//
+
 import SwiftUI
 
 struct SmartFleetDetailView: View {
@@ -28,7 +33,7 @@ struct SmartFleetDetailView: View {
                 }
                 GridRow {
                     DetailRow(title: "Status", value: "\(assessment.status)")
-                    DetailRow(title: "Location", value: "34.0522° N, 118.2437° W")
+                    DetailRow(title: "Location", value: "34.0522 N, 118.2437 W")
                 }
             }
             .padding()

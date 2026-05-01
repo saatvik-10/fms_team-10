@@ -1,9 +1,6 @@
-
 //
 //  ChatListView.swift
-//  FMS Chat — Chat Module
-//
-//  ✅ DRAG THIS FILE (inside Chat/ folder) into the main project.
+//  Created by Akhilesh Mykalwar
 //
 
 import SwiftUI

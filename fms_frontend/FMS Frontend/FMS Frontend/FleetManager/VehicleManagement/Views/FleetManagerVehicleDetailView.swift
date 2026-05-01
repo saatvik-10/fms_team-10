@@ -1,3 +1,8 @@
+//
+//  FleetManagerVehicleDetailView.swift
+//  Created by Akhilesh Mykalwar
+//
+
 import SwiftUI
 import GoogleMaps
 import CoreLocation
@@ -77,7 +82,7 @@ struct AsyncFleetVehicleMap: View {
                 }
             } catch {
                 await MainActor.run {
-                    print("Map load error: \(error)")
+                    print("[ERROR] [ERROR] Map load error: \(error)")
                     self.isLoading = false
                 }
             }
@@ -105,7 +110,7 @@ private struct CardWrapper<Content: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             content
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top) // ← frame FIRST
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top) //  frame FIRST
         .background(Color.white)
         .cornerRadius(20)
         .modifier(AppTheme.cardShadow())
@@ -150,16 +155,16 @@ struct FleetManagerVehicleDetailView: View {
                 ScrollView {
                     VStack(spacing: 20) {
 
-                        // ── Map ────────────────────────────────────────────
+                        //  Map 
                         AsyncFleetVehicleMap(vehicle: vehicle)
                             .frame(height: 230)
                             .cornerRadius(20)
                             .modifier(AppTheme.cardShadow())
 
-                        // ── Row 1: Vehicle Info — always full width ────────
+                        //  Row 1: Vehicle Info  always full width 
                         vehicleInfoCard
 
-                        // ── Row 2: Assigned Driver | Active Trip ──────────
+                        //  Row 2: Assigned Driver | Active Trip 
                         if hasDriver, let driver = vehicle.assignedDriver {
                             HStack(alignment: .top, spacing: 18) {
                                 driverCard(driver: driver)
@@ -174,12 +179,12 @@ struct FleetManagerVehicleDetailView: View {
                             }
                         }
 
-                        // ── Row 3: Next Service full width ────────────────
+                        //  Row 3: Next Service full width 
                         maintenanceCard
                             .frame(maxWidth: .infinity)
                             .frame(height: 150)
 
-                        // ── Row 4: Recent History | Past Reports — always ─
+                        //  Row 4: Recent History | Past Reports  always 
                         SideBySide(recentHistoryCard, pastReportsCard)
                     }
                     .padding(20)
@@ -240,7 +245,7 @@ struct FleetManagerVehicleDetailView: View {
         CardWrapper {
             VStack(alignment: .leading, spacing: 0) {
 
-                // ── Row A: Vehicle Number | Owner ──────────────────
+                //  Row A: Vehicle Number | Owner 
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("VEHICLE NUMBER").cardLabel()
@@ -259,7 +264,7 @@ struct FleetManagerVehicleDetailView: View {
 
                 Divider().padding(.horizontal, 22)
 
-                // ── Row B: Model ─────────────────────────────
+                //  Row B: Model 
                 HStack(alignment: .top, spacing: 0) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("MODEL").cardLabel()
@@ -294,7 +299,7 @@ struct FleetManagerVehicleDetailView: View {
                     }
                 }
                 Divider()
-                // FROM → TO horizontal
+                // FROM  TO horizontal
                 HStack(alignment: .top, spacing: 0) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("FROM").cardLabel()
@@ -401,7 +406,7 @@ struct FleetManagerVehicleDetailView: View {
                 routeDistance = trip.distance ?? ""
                 routeDuration = trip.duration ?? ""
             }
-            print("Vehicle route metrics failed: \(error)")
+            print("[ERROR] [ERROR] Vehicle route metrics failed: \(error)")
         }
     }
 
@@ -486,10 +491,10 @@ struct FleetManagerVehicleDetailView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(trip.date ?? "").cardLabel()
-                                    Text("\(trip.origin)  →  \(trip.destination)")
+                                    Text("\(trip.origin)    \(trip.destination)")
                                         .font(.system(size: 13, weight: .bold))
                                     if let d = trip.distance, let dr = trip.duration {
-                                        Text("\(d)  •  \(dr)")
+                                        Text("\(d)    \(dr)")
                                             .font(.system(size: 11))
                                             .foregroundColor(.gray)
                                     }

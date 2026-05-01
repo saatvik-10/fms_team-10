@@ -1,6 +1,6 @@
 //
 //  MaintenanceSchedulingView.swift
-//  FMS Frontend
+//  Created by Saatvik Madan
 //
 
 import SwiftUI
@@ -72,7 +72,7 @@ struct MaintenanceSchedulingView: View {
             ScrollView {
                 VStack(spacing: 28) {
 
-                    // ── Form fields ──────────────────────────────────────
+                    //  Form fields 
                     VStack(alignment: .leading, spacing: 16) {
                         Text("SCHEDULE MAINTENANCE")
                             .font(.caption2.bold())
@@ -130,7 +130,7 @@ struct MaintenanceSchedulingView: View {
                         .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
                     }
 
-                    // ── Full Calendar ─────────────────────────────────────
+                    //  Full Calendar 
                     VStack(alignment: .leading, spacing: 12) {
                         Text("SELECT DATE & TIME")
                             .font(.caption2.bold())
@@ -172,7 +172,7 @@ struct MaintenanceSchedulingView: View {
                         presentationMode.wrappedValue.dismiss()
                     }
 
-                    // ── Active Schedules ──────────────────────────────────
+                    //  Active Schedules 
                     VStack(alignment: .leading, spacing: 16) {
                         Text("ACTIVE SCHEDULES")
                             .font(.caption2.bold())

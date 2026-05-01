@@ -1,3 +1,8 @@
+//
+//  CompletedTripDetailSheet.swift
+//  Created by Saatvik Madan
+//
+
 import SwiftUI
 
 // MARK: - Completed Trip Detail Sheet (Read-Only)

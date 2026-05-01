@@ -1,4 +1,0 @@
-//
-//  ReportingView.swift
-//  FMS Frontend
-//

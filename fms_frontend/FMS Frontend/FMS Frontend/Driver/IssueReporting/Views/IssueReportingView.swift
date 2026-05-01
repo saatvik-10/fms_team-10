@@ -1,3 +1,8 @@
+//
+//  IssueReportingView.swift
+//  Created by Tanishka Kumar
+//
+
 import SwiftUI
 import PhotosUI
 
@@ -50,7 +55,7 @@ struct ReportIssueView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // ── Background ─────────────────────────────────────────────
+            //  Background 
             Color(UIColor.systemGroupedBackground)
                 .ignoresSafeArea()
 
@@ -77,7 +82,7 @@ struct ReportIssueView: View {
                 }
             }
 
-            // ── Custom Image Source Popup ────────────────────────────────
+            //  Custom Image Source Popup 
             if showImageSourcePopup {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
@@ -95,7 +100,7 @@ struct ReportIssueView: View {
         .onDisappear {
             speechManager.stopRecording()
         }
-        // ── Camera sheet ───────────────────────────────────────────────────
+        //  Camera sheet 
         .fullScreenCover(isPresented: $showCamera) {
             IssueReportingCameraPicker(image: $cameraImage)
                 .ignoresSafeArea()
@@ -105,7 +110,7 @@ struct ReportIssueView: View {
                 selectedImages.append(img)
             }
         }
-        // ── PhotosPicker result ────────────────────────────────────────────
+        //  PhotosPicker result 
         .onChange(of: photoPickerItems) { items in
             Task {
                 for item in items {
@@ -121,7 +126,7 @@ struct ReportIssueView: View {
                 await MainActor.run { photoPickerItems = [] }
             }
         }
-        // ── Permission denied alert ────────────────────────────────────────
+        //  Permission denied alert 
         .alert("Microphone Access Required", isPresented: $showPermissionAlert) {
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -132,7 +137,7 @@ struct ReportIssueView: View {
         } message: {
             Text("Please allow microphone and speech recognition access in Settings to use voice input.")
         }
-        // ── Submission success alert ──────────────────────────────────────
+        //  Submission success alert 
         .alert("Issue Submitted Successfully", isPresented: $showSuccessAlert) {
             Button("OK") {
                 dismiss()
@@ -163,7 +168,7 @@ struct ReportIssueView: View {
                         self.currentAddress = address
                     }
                 } catch {
-                    print("Failed to reverse geocode: \(error)")
+                    print("[ERROR] [ERROR] Failed to reverse geocode: \(error)")
                 }
             }
         }
@@ -197,13 +202,13 @@ struct ReportIssueView: View {
                 .tracking(1.5)
                 .frame(maxWidth: .infinity, alignment: .center)
 
-            // ── Live transcription area ────────────────────────────────
+            //  Live transcription area 
             VStack(spacing: 8) {
 
                 ZStack(alignment: .topLeading) {
                     // Placeholder
                     if speechManager.transcript.isEmpty {
-                        Text("Speak to describe the issue…")
+                        Text("Speak to describe the issue")
                             .font(.body)
                             .foregroundColor(Color(UIColor.placeholderText))
                             .padding(.top, 8)
@@ -384,7 +389,7 @@ struct ReportIssueView: View {
     private var micStateLabel: String {
         switch speechManager.recordingState {
         case .idle:      return "TAP TO START RECORDING"
-        case .recording: return "LISTENING…"
+        case .recording: return "LISTENING"
         case .stopped:   return "TAP TO RECORD AGAIN"
         }
     }

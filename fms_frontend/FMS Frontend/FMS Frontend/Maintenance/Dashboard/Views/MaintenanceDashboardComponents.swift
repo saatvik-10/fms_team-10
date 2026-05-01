@@ -1,9 +1,6 @@
 //
 //  MaintenanceDashboardComponents.swift
-//  FMS Frontend
-//
-//  Reusable sub-views for the Maintenance Dashboard.
-//  Follows iOS HIG native design guidelines.
+//  Created by Akhilesh Mykalwar
 //
 
 import SwiftUI

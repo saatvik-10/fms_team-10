@@ -1,4 +1,0 @@
-//
-//  NotificationsAndAlertsModel.swift
-//  FMS Frontend
-//

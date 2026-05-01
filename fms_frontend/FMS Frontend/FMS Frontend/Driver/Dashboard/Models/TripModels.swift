@@ -1,3 +1,8 @@
+//
+//  TripModels.swift
+//  Created by Anshul Kumaria
+//
+
 import Foundation
 import CoreLocation
 

@@ -1,3 +1,8 @@
+//
+//  FleetManagerVehiclesListView.swift
+//  Created by Akhilesh Mykalwar
+//
+
 import SwiftUI
 
 // MARK: - Vehicle Status Filter (no "All")
@@ -145,7 +150,7 @@ struct FleetManagerVehiclesListView: View {
                                 VehicleGridCard(vehicle: vehicle)
                             }
                             .buttonStyle(PlainButtonStyle())
-                            // Long-press → confirm delete
+                            // Long-press  confirm delete
                             .contextMenu {
                                 Button(role: .destructive) {
                                     vehicleToDelete = vehicle
@@ -167,7 +172,7 @@ struct FleetManagerVehiclesListView: View {
             do {
                 try await dataManager.refreshVehicles()
             } catch {
-                print("Failed to refresh vehicles: \(error)")
+                print("[ERROR] [ERROR] Failed to refresh vehicles: \(error)")
             }
         }
         // Long-press delete confirmation alert
@@ -194,7 +199,7 @@ struct VehicleGridCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
-            // Image area — full bleed, flush to top corners
+            // Image area  full bleed, flush to top corners
             Rectangle()
                 .fill(Color(.systemGray6))
                 .frame(height: 170)

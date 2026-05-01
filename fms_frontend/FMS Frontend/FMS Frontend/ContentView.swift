@@ -1,8 +1,6 @@
 //
 //  ContentView.swift
-//  FMS Frontend
-//
-//  Created by Anshul Kumaria on 16/04/26.
+//  Created by Anshul Kumaria
 //
 
 import SwiftUI
@@ -55,20 +53,20 @@ final class AppSessionStore: ObservableObject {
     }
     
     func fetchProfile() async {
-        print("🟡 Checking for token...")
+        print("[DEBUG] Checking for token...")
         
         guard let token = authAPI.getCurrentToken(), !token.isEmpty else {
-            print("🔴 No token found — going to login")
+            print("[DEBUG] No token found, redirecting to login")
             state = .unauthenticated
             return
         }
         
-        print("🟢 Token found:", token)
+        print("[DEBUG] Token found: \(token)")
         
         do {
             let profileResponse = try await authAPI.getProfile()
             let profile = profileResponse.profile
-            print("🟢 Profile fetched — role:", profile.role)
+            print("[SUCCESS] Profile fetched, role: \(profile.role)")
             
             if profile.role == .manager || profile.role == .superAdmin {
                 managerProfile = ManagerProfileData(
@@ -87,7 +85,7 @@ final class AppSessionStore: ObservableObject {
             
             state = .authenticated(AppUserRole(profile.role))
         } catch {
-            print("🔴 Session restore failed:", error)
+            print("[ERROR] Session restore failed: \(error)")
             authAPI.logout()
             state = .unauthenticated
         }

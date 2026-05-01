@@ -1,3 +1,8 @@
+//
+//  SpeechManager.swift
+//  Created by Saatvik Madan
+//
+
 import Foundation
 import Speech
 import AVFoundation
@@ -75,14 +80,14 @@ final class SpeechManager: NSObject, ObservableObject {
             try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
-            print("SpeechManager: AudioSession setup failed: \(error)")
+            print("[ERROR] [ERROR] SpeechManager: AudioSession setup failed: \(error)")
             return
         }
 
         // 3. Create Request
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else {
-            print("SpeechManager: Unable to create recognition request")
+            print("[DEBUG] [DEBUG] SpeechManager: Unable to create recognition request")
             return
         }
         recognitionRequest.shouldReportPartialResults = true
@@ -93,7 +98,7 @@ final class SpeechManager: NSObject, ObservableObject {
         
         // Safety: Ensure we have a valid format (Simulator can return 0 channels/sampleRate)
         guard recordingFormat.sampleRate > 0 && recordingFormat.channelCount > 0 else {
-            print("SpeechManager: Invalid audio format. Check simulator microphone settings.")
+            print("[DEBUG] [DEBUG] SpeechManager: Invalid audio format. Check simulator microphone settings.")
             return
         }
 
@@ -124,7 +129,7 @@ final class SpeechManager: NSObject, ObservableObject {
             try audioEngine.start()
             DispatchQueue.main.async { self.recordingState = .recording }
         } catch {
-            print("SpeechManager: AudioEngine start failed: \(error)")
+            print("[ERROR] [ERROR] SpeechManager: AudioEngine start failed: \(error)")
             self.stopRecording()
         }
     }

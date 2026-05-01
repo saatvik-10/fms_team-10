@@ -1,3 +1,8 @@
+//
+//  FleetManagerDashboardView.swift
+//  Created by Daksh Ratnawat
+//
+
 import SwiftUI
 
 struct FleetManagerDashboardView: View {
@@ -103,7 +108,7 @@ struct FleetManagerDashboardView: View {
                             
                             // Outer card wrapping all Fleet Intelligence content
                             VStack(spacing: 16) {
-                                // Row A: Total KMs (full width — dark card)
+                                // Row A: Total KMs (full width  dark card)
                                 TravelAnalyticsCard(
                                     totalKms: dataManager.totalKmsTravelled,
                                     history: dataManager.travelsHistory
@@ -179,7 +184,7 @@ struct FleetManagerDashboardView: View {
                 try await dataManager.refreshVehicles()
                 try await dataManager.refreshDrivers()
             } catch {
-                print("Failed to refresh dashboard data: \(error)")
+                print("[ERROR] [ERROR] Failed to refresh dashboard data: \(error)")
             }
             // Compute analytics charts from the now-populated trip and work order data
             await dataManager.refreshAnalytics()

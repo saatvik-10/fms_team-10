@@ -1,3 +1,8 @@
+//
+//  FleetRouteTracker.swift
+//  Created by Akhilesh Mykalwar
+//
+
 import Foundation
 import CoreLocation
 import GoogleMaps
@@ -25,14 +30,14 @@ class FleetRouteTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         guard trip.encodedPolyline != nil else { return }
         trackedTrips[trip.id.uuidString] = trip
         locationManager.startUpdatingLocation()
-        print("Started route tracking for trip: \(trip.id.uuidString)")
+        print("[DEBUG] [DEBUG] Started route tracking for trip: \(trip.id.uuidString)")
     }
     
     func stopTracking(tripID: String) {
         trackedTrips.removeValue(forKey: tripID)
         if trackedTrips.isEmpty {
             locationManager.stopUpdatingLocation()
-            print("Stopped all route tracking")
+            print("[DEBUG] [DEBUG] Stopped all route tracking")
         }
     }
     
@@ -59,7 +64,7 @@ class FleetRouteTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             )
             
             if !isOnPath {
-                print("⚠️ ROUTE DEVIATION DETECTED for Trip \(tripID)")
+                print("[DEBUG] [DEBUG]  ROUTE DEVIATION DETECTED for Trip \(tripID)")
                 NotificationCenter.default.post(
                     name: .routeDeviationDetected,
                     object: nil,

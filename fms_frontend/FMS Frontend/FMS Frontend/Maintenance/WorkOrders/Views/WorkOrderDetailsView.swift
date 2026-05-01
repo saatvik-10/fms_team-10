@@ -1,6 +1,6 @@
 //
 //  WorkOrderDetailsView.swift
-//  FMS Frontend
+//  Created by Daksh Ratnawat
 //
 
 import SwiftUI
@@ -166,7 +166,7 @@ struct WorkOrderDetailsView: View {
                         //     .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
                         // }
                         
-                        // Driver Notes & Media — only shown for driver-reported issues
+                        // Driver Notes & Media  only shown for driver-reported issues
                         if hasDriverReportedContent {
                             // Driver Notes Card
                             VStack(alignment: .leading, spacing: 12) {
@@ -246,7 +246,7 @@ struct WorkOrderDetailsView: View {
                                                     Text(inventoryPart.partId)
                                                         .font(.caption)
                                                         .foregroundColor(.secondary)
-                                                    Text("Total ₹\(String(format: "%.2f", inventoryPart.unitPriceInr * Double(usage.quantity)))")
+                                                    Text("Total \(String(format: "%.2f", inventoryPart.unitPriceInr * Double(usage.quantity)))")
                                                         .font(.caption2)
                                                         .foregroundColor(.secondary)
                                                 }
@@ -476,7 +476,7 @@ struct WorkOrderDetailsView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(part.partName)
                                         .foregroundColor(.primary)
-                                    Text("\(part.partId) • In stock: \(part.stockQty)")
+                                    Text("\(part.partId)  In stock: \(part.stockQty)")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -831,7 +831,7 @@ struct WorkOrderDetailsView: View {
                     dismiss()
                 }
             } catch {
-                print("Failed to complete work order: \(error)")
+                print("[ERROR] [ERROR] Failed to complete work order: \(error)")
             }
         }
     }

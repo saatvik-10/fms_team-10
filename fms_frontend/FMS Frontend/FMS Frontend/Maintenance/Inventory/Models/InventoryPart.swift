@@ -1,8 +1,6 @@
 //
 //  InventoryPart.swift
-//  FMS Frontend
-//
-//  Created by opencode on 21/04/26.
+//  Created by Akhilesh Mykalwar
 //
 
 import Foundation

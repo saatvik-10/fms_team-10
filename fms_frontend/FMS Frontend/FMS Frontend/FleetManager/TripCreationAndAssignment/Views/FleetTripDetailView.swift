@@ -1,3 +1,8 @@
+//
+//  FleetTripDetailView.swift
+//  Created by Tanishka Kumar
+//
+
 import SwiftUI
 import GoogleMaps
 import CoreLocation
@@ -238,7 +243,7 @@ struct FleetTripDetailView: View {
                             _ = try await TripAPI.shared.deleteTrip(id: tripID)
                             try? await dataManager.refreshVehicles()
                         } catch {
-                            print("Error deleting trip: \(error)")
+                            print("[ERROR] [ERROR] Error deleting trip: \(error)")
                         }
                     }
                     vehicle.currentTrip = nil
@@ -313,7 +318,7 @@ struct FleetTripDetailView: View {
             await MainActor.run {
                 self.routeError = "Route unavailable: \(error.localizedDescription)"
                 self.isLoadingRoute = false
-                print("Route fetch error: \(error.localizedDescription)")
+                print("[ERROR] [ERROR] Route fetch error: \(error.localizedDescription)")
             }
         }
     }

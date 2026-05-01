@@ -1,11 +1,16 @@
+//
+//  TripsView.swift
+//  Created by Mrunal Aralkar
+//
+
 import SwiftUI
 
 struct TripsView: View {
     @StateObject private var viewModel = TripsViewModel()
 
     // Navigation destinations
-    @State private var tripToNavigate: LifecycleTrip?   // "View Trip" → TripDetailView
-    @State private var tripForReport:  LifecycleTrip?   // "View Report" → TripReportView
+    @State private var tripToNavigate: LifecycleTrip?   // "View Trip"  TripDetailView
+    @State private var tripForReport:  LifecycleTrip?   // "View Report"  TripReportView
 
     var body: some View {
         NavigationStack {
@@ -14,7 +19,7 @@ struct TripsView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    // ── Header ───────────────────────────────────────────
+                    //  Header 
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Your Trips")
@@ -39,7 +44,7 @@ struct TripsView: View {
                     .padding(.top, 16)
                     .background(Color(UIColor.systemGroupedBackground))
 
-                    // ── Trip card list ────────────────────────────────────
+                    //  Trip card list 
                     ScrollView {
                         LazyVStack(spacing: 16) {
                             ForEach(viewModel.filteredTrips) { trip in
@@ -89,7 +94,7 @@ struct TripsView: View {
                 Text(viewModel.errorMessage ?? "Please try again.")
             }
 
-            // ── "View Trip" → TripDetailView (Trips tab controls enabled) ──
+            //  "View Trip"  TripDetailView (Trips tab controls enabled) 
             .navigationDestination(isPresented: Binding(
                 get: { tripToNavigate != nil },
                 set: { if !$0 { tripToNavigate = nil } }
@@ -106,7 +111,7 @@ struct TripsView: View {
                 }
             }
 
-            // ── "View Report" → TripReportView ──────────────────────────
+            //  "View Report"  TripReportView 
             .navigationDestination(isPresented: Binding(
                 get: { tripForReport != nil },
                 set: { if !$0 { tripForReport = nil } }

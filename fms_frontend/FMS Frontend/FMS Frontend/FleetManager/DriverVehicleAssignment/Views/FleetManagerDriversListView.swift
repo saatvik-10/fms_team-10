@@ -1,3 +1,8 @@
+//
+//  FleetManagerDriversListView.swift
+//  Created by Mrunal Aralkar
+//
+
 import SwiftUI
 
 struct FleetManagerDriversListView: View {
@@ -137,7 +142,7 @@ struct FleetManagerDriversListView: View {
             do {
                 try await dataManager.refreshDrivers()
             } catch {
-                print("Failed to refresh drivers: \(error)")
+                print("[ERROR] [ERROR] Failed to refresh drivers: \(error)")
             }
         }
     }

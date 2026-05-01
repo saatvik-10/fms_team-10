@@ -1,8 +1,6 @@
 //
 //  FullInventoryListView.swift
-//  FMS Frontend
-//
-//  Created by Antigravity on 26/04/24.
+//  Created by Akhilesh Mykalwar
 //
 
 import SwiftUI

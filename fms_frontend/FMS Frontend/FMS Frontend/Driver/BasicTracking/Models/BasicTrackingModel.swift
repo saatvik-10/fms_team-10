@@ -1,4 +1,0 @@
-//
-//  BasicTrackingModel.swift
-//  FMS Frontend
-//

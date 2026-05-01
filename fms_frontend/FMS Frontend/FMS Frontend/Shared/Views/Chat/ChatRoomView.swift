@@ -1,9 +1,6 @@
-
 //
 //  ChatRoomView.swift
-//  FMS Chat — Chat Module
-//
-//  ✅ DRAG THIS FILE (inside Chat/ folder) into the main project.
+//  Created by Gargee Mohairr
 //
 
 import SwiftUI
@@ -40,7 +37,8 @@ struct ChatRoomView: View {
                             ForEach(messages) { message in
                                 ChatBubbleView(
                                     message: message,
-                                    isCurrentUser: message.senderId == (viewModel.currentUserId ?? "")
+                                    isCurrentUser: message.senderId == (viewModel.currentUserId ?? ""),
+                                    viewModel: viewModel
                                 )
                                 .id(message.id)
                             }
@@ -49,7 +47,7 @@ struct ChatRoomView: View {
                     .padding(.vertical, 16)
                 }
                 .background(AppColors.background)
-                // Observe message COUNT (Int) — much more reliably tracked by SwiftUI
+                // Observe message COUNT (Int)  much more reliably tracked by SwiftUI
                 // than observing the whole [ChatMessage]? optional array.
                 .onChange(of: viewModel.messages[room.id]?.count ?? 0) { _ in
                     scrollToBottom(proxy: proxy)

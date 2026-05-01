@@ -1,4 +1,0 @@
-//
-//  SuperAdminAndRoleManagementViewModel.swift
-//  FMS Frontend
-//

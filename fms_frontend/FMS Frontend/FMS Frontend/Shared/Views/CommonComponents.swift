@@ -1,3 +1,8 @@
+//
+//  CommonComponents.swift
+//  Created by Saatvik Madan
+//
+
 import SwiftUI
 
 // MARK: - PrimaryButton

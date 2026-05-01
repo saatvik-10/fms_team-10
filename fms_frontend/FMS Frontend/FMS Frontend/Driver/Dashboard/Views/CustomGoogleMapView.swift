@@ -1,3 +1,8 @@
+//
+//  CustomGoogleMapView.swift
+//  Created by Daksh Ratnawat
+//
+
 import SwiftUI
 import GoogleMaps
 
@@ -31,7 +36,7 @@ struct CustomGoogleMapViewRepresentable: UIViewRepresentable {
 
     func updateUIView(_ uiView: GMSMapView, context: Context) {
 
-        // 1. Polyline — redraw only on change
+        // 1. Polyline  redraw only on change
         if viewModel.polylineString != context.coordinator.lastPolylineString {
             context.coordinator.lastPolylineString = viewModel.polylineString
             context.coordinator.currentPolyline?.map = nil
@@ -48,7 +53,7 @@ struct CustomGoogleMapViewRepresentable: UIViewRepresentable {
             }
         }
 
-        // 2. Destination marker — redraw only when destination changes
+        // 2. Destination marker  redraw only when destination changes
         let newDestKey = "\(viewModel.trip.destination.coordinate.latitude),\(viewModel.trip.destination.coordinate.longitude)"
         if newDestKey != context.coordinator.lastDestinationKey {
             context.coordinator.lastDestinationKey = newDestKey
@@ -65,13 +70,13 @@ struct CustomGoogleMapViewRepresentable: UIViewRepresentable {
             context.coordinator.destinationMarker = marker
         }
 
-        // 3. Camera follows user — unconditional, with bearing
+        // 3. Camera follows user  unconditional, with bearing
         if let location = viewModel.currentLocation {
             let camera = GMSCameraPosition(
                 target: location,
                 zoom: 20,              // closer like Google Maps
                 bearing: viewModel.userHeading,
-                viewingAngle: 50       // 🔥 THIS gives navigation tilt
+                viewingAngle: 50       //  THIS gives navigation tilt
             )
             CATransaction.begin()
             CATransaction.setAnimationDuration(1.0)

@@ -1,3 +1,8 @@
+//
+//  TripReportData.swift
+//  Created by Kunal Khude
+//
+
 import Foundation
 
 // MARK: - Trip Report Data Model
@@ -5,7 +10,7 @@ import Foundation
 
 struct TripReportData {
 
-    // MARK: 1 – Trip Information
+    // MARK: 1  Trip Information
     var tripID: String
     var vehicleID: String
     var vehicleNumber: String
@@ -18,13 +23,13 @@ struct TripReportData {
     var endLocation: String
     var routeMapURL: String?           // optional Google Maps deep-link
 
-    // MARK: 2 – Distance & Fuel Metrics
+    // MARK: 2  Distance & Fuel Metrics
     var totalDistanceKm: Double
     var fuelConsumedLiters: Double
     var fuelEfficiencyKmL: Double
     var fuelCostINR: Double
 
-    // MARK: 3 – Performance Metrics
+    // MARK: 3  Performance Metrics
     var averageSpeedKmH: Double
     var maxSpeedKmH: Double
     var drivingTimeHours: Double
@@ -32,7 +37,7 @@ struct TripReportData {
     var restingHours: Double?          // optional
     var stopsCount: Int
 
-    // MARK: 4 – Cost Breakdown
+    // MARK: 4  Cost Breakdown
     var tollCostINR: Double
     var driverCostINR: Double
     var totalCostINR: Double           // highlighted in PDF
@@ -51,11 +56,11 @@ struct TripReportData {
         // Fuel estimates based on distance
         let fuelEfficiency = 12.4                                 // km/l typical for fleet
         let fuel           = dist / max(fuelEfficiency, 0.001)
-        let fuelCost       = fuel * 91.0                          // ₹91/l
+        let fuelCost       = fuel * 91.0                          // 91/l
 
         // Cost estimates
         let toll       = dist * 2.3
-        let driverCost = drivingHrs * 350.0                       // ₹350/hr
+        let driverCost = drivingHrs * 350.0                       // 350/hr
         let total      = fuelCost + toll + driverCost
 
         // Build a Google Maps URL for the route (using real source/destination)

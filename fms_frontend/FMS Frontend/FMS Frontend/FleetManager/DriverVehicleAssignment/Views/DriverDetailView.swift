@@ -1,3 +1,8 @@
+//
+//  DriverDetailView.swift
+//  Created by Akhilesh Mykalwar
+//
+
 import SwiftUI
 
 struct DriverDetailView: View {
@@ -100,7 +105,7 @@ struct DriverDetailView: View {
                             .foregroundColor(.gray)
 
                         let trip = assignedTrip
-                        let routeStr = trip != nil ? "\(trip!.origin) → \(trip!.destination)" : "Idle"
+                        let routeStr = trip != nil ? "\(trip!.origin)  \(trip!.destination)" : "Idle"
                         let vehicleStr = assignedVehicle?.registrationNumber ?? "N/A"
 
                         HStack {
@@ -166,7 +171,7 @@ struct DriverDetailView: View {
         do {
             try await dataManager.refreshVehicles()
         } catch {
-            print("Failed to refresh vehicle assignment: \(error)")
+            print("[ERROR] [ERROR] Failed to refresh vehicle assignment: \(error)")
         }
         await loadRouteEta()
     }
@@ -189,7 +194,7 @@ struct DriverDetailView: View {
             await MainActor.run { routeEta = route.eta }
         } catch {
             await MainActor.run { routeEta = trip.eta.isEmpty ? "--" : trip.eta }
-            print("Failed to load assignment ETA: \(error)")
+            print("[ERROR] [ERROR] Failed to load assignment ETA: \(error)")
         }
     }
 }
@@ -262,7 +267,7 @@ struct ActivityRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(event.title)
                     .font(AppFonts.headline)
-                Text(event.detail + " • " + event.time)
+                Text(event.detail + "  " + event.time)
                     .font(AppFonts.caption2)
                     .foregroundColor(.gray)
             }

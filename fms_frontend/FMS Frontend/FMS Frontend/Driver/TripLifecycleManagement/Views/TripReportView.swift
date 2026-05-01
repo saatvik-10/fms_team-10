@@ -1,3 +1,8 @@
+//
+//  TripReportView.swift
+//  Created by Aryan Dev
+//
+
 import SwiftUI
 import PDFKit
 
@@ -18,28 +23,28 @@ struct TripReportView: View {
 
     var body: some View {
         ZStack {
-            // ── Background ──────────────────────────────────────
+            //  Background 
             Color(UIColor.systemGroupedBackground)
                 .ignoresSafeArea()
 
             if isLoading {
-                // ── Loading state ────────────────────────────────
+                //  Loading state 
                 VStack(spacing: 16) {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle())
                         .scaleEffect(1.4)
-                    Text("Generating Report…")
+                    Text("Generating Report")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
 
             } else if let doc = pdfDocument {
-                // ── Inline PDF viewer ─────────────────────────────
+                //  Inline PDF viewer 
                 PDFKitView(document: doc)
                     .ignoresSafeArea(edges: .bottom)
 
             } else {
-                // ── Error state ───────────────────────────────────
+                //  Error state 
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 40))
@@ -55,7 +60,7 @@ struct TripReportView: View {
         .navigationTitle(trip.id)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
-        // ── Custom back button (top-left) ─────────────────────
+        //  Custom back button (top-left) 
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
@@ -70,7 +75,7 @@ struct TripReportView: View {
                 }
             }
 
-            // ── Share button (top-right) ──────────────────────
+            //  Share button (top-right) 
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showShareSheet = true
@@ -82,23 +87,23 @@ struct TripReportView: View {
                 .disabled(pdfURL == nil)
             }
         }
-        // ── Share sheet ───────────────────────────────────────
+        //  Share sheet 
         .sheet(isPresented: $showShareSheet) {
             if let url = pdfURL {
                 ShareSheet(items: [url])
             }
         }
-        // ── Generate PDF on appear ────────────────────────────
+        //  Generate PDF on appear 
         .task {
             await generatePDF()
         }
     }
 
-    // MARK: – PDF Generation
+    // MARK:  PDF Generation
 
     private func generatePDF() async {
         // Build data off the main actor, then publish results on it.
-        let trip = self.trip   // capture value type — safe to cross actor boundary
+        let trip = self.trip   // capture value type  safe to cross actor boundary
         let driverName = session.userProfile?.name ?? "Unknown Driver"
 
         let (pdfData, url): (Data, URL) = await Task.detached(priority: .userInitiated) {

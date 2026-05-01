@@ -1,8 +1,6 @@
 //
 //  MaintenanceStore.swift
-//  FMS Frontend
-//
-//  Created by Antigravity on 16/04/26.
+//  Created by Mrunal Aralkar
 //
 
 import SwiftUI
@@ -75,7 +73,7 @@ class MaintenanceStore: ObservableObject {
                 saveInventory()
             }
             if !errors.isEmpty {
-                print("Encountered \(errors.count) errors loading initial inventory from CSV.")
+                print("[ERROR] [ERROR] Encountered \(errors.count) errors loading initial inventory from CSV.")
             }
         }
     }

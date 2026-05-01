@@ -1,24 +1,29 @@
+//
+//  TripReportGenerator.swift
+//  Created by Saatvik Madan
+//
+
 internal import UIKit
 import PDFKit
 
 // MARK: - Professional Fleet Trip Report Generator
 // Produces an industry-grade A4 PDF with:
-//   • Full-bleed navy header + trip-ID badge
-//   • Dark sub-banner (vehicle / driver / date / status)
-//   • 4 sectioned blocks with PRE-rendered backgrounds (correct PDF layer order)
-//   • Zebra-striped rows, label-value columns
-//   • Navy highlighted "TOTAL COST" row
-//   • Clickable Google Maps route link
-//   • Confidential footer with generation timestamp
+//    Full-bleed navy header + trip-ID badge
+//    Dark sub-banner (vehicle / driver / date / status)
+//    4 sectioned blocks with PRE-rendered backgrounds (correct PDF layer order)
+//    Zebra-striped rows, label-value columns
+//    Navy highlighted "TOTAL COST" row
+//    Clickable Google Maps route link
+//    Confidential footer with generation timestamp
 
 final class TripReportGenerator {
 
-    // ── Page geometry ──────────────────────────────────────────────────────
+    //  Page geometry 
     private let pageWidth:  CGFloat = 595.2   // A4 pt width
     private let pageHeight: CGFloat = 841.8   // A4 pt height
     private let marginH:    CGFloat = 20  // Reduced for wider card
 
-    // ── Brand palette ──────────────────────────────────────────────────────
+    //  Brand palette 
     private let navy       = UIColor(red: 15/255,  green: 28/255,  blue: 36/255,  alpha: 1)
     private let darkBanner = UIColor(red: 30/255,  green: 50/255,  blue: 65/255,  alpha: 1)
     private let sectionBg  = UIColor(red: 246/255, green: 248/255, blue: 250/255, alpha: 1)
@@ -27,14 +32,14 @@ final class TripReportGenerator {
     private let bodyGray   = UIColor(red: 85/255,  green: 95/255,  blue: 107/255, alpha: 1)
     private let zebraWhite = UIColor.white.withAlphaComponent(0.55)
 
-    // ── Computed helpers ───────────────────────────────────────────────────
+    //  Computed helpers 
     private var sectionX: CGFloat { marginH }
     private var sectionW: CGFloat { pageWidth - marginH * 2 }
 
-    // ── Running vertical cursor ────────────────────────────────────────────
+    //  Running vertical cursor 
     private var y: CGFloat = 0
 
-    // MARK: ── Row model ───────────────────────────────────────────────────
+    // MARK:  Row model 
 
     enum RowItem {
         case standard(label: String, value: String)
@@ -49,7 +54,7 @@ final class TripReportGenerator {
         }
     }
 
-    // MARK: ── Public entry point ──────────────────────────────────────────
+    // MARK:  Public entry point 
 
     func generate(from data: TripReportData) -> Data {
         let format = UIGraphicsPDFRendererFormat()
@@ -74,7 +79,7 @@ final class TripReportGenerator {
         }
     }
 
-    // MARK: ── Header ──────────────────────────────────────────────────────
+    // MARK:  Header 
 
     private func drawHeader(data: TripReportData) {
         let h: CGFloat = 90
@@ -96,7 +101,7 @@ final class TripReportGenerator {
         y = h
     }
 
-    // MARK: ── Meta banner ─────────────────────────────────────────────────
+    // MARK:  Meta banner 
 
     private func drawMetaBanner(data: TripReportData) {
         let h: CGFloat = 44
@@ -120,7 +125,7 @@ final class TripReportGenerator {
         y += h
     }
 
-    // MARK: ── Section block (single-pass, bg drawn before text) ──────────
+    // MARK:  Section block (single-pass, bg drawn before text) 
 
     private func drawBlock(title: String, rows: [RowItem], context: UIGraphicsPDFRendererContext) {
         // Page-break guard
@@ -165,7 +170,7 @@ final class TripReportGenerator {
         y += 14  // gap to next section
     }
 
-    // MARK: ── Row rendering ───────────────────────────────────────────────
+    // MARK:  Row rendering 
 
     private func drawRow(_ row: RowItem, index: Int) {
         let labelX = sectionX + 20
@@ -218,7 +223,7 @@ final class TripReportGenerator {
         }
     }
 
-    // MARK: ── Section data builders ──────────────────────────────────────
+    // MARK:  Section data builders 
 
     private func tripInfoRows(_ d: TripReportData) -> [RowItem] {
         [
@@ -242,7 +247,7 @@ final class TripReportGenerator {
         ]
     }
 
-    // MARK: ── Footer ──────────────────────────────────────────────────────
+    // MARK:  Footer 
 
     private func drawFooter() {
         let fy = pageHeight - 26
@@ -253,7 +258,7 @@ final class TripReportGenerator {
             at: CGPoint(x: marginH, y: fy),
             font: .systemFont(ofSize: 8, weight: .regular), color: bodyGray)
 
-        let conf = "CONFIDENTIAL — For internal fleet use only"
+        let conf = "CONFIDENTIAL  For internal fleet use only"
         let cw = (conf as NSString).size(withAttributes: [
             .font: UIFont.systemFont(ofSize: 8, weight: .regular)
         ]).width
@@ -262,7 +267,7 @@ final class TripReportGenerator {
             font: .systemFont(ofSize: 8, weight: .regular), color: bodyGray)
     }
 
-    // MARK: ── Primitives ──────────────────────────────────────────────────
+    // MARK:  Primitives 
 
     @discardableResult
     private func put(_ text: String,
@@ -286,9 +291,9 @@ final class TripReportGenerator {
     private func fmt(_ amount: Double) -> String {
         let f = NumberFormatter()
         f.numberStyle           = .currency
-        f.currencySymbol        = "₹"
+        f.currencySymbol        = ""
         f.maximumFractionDigits = 2
-        return f.string(from: NSNumber(value: amount)) ?? String(format: "₹%.2f", amount)
+        return f.string(from: NSNumber(value: amount)) ?? String(format: "%.2f", amount)
     }
 
     private func formattedNow() -> String {

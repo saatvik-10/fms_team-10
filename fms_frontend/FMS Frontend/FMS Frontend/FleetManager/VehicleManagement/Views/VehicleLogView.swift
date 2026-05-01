@@ -1,3 +1,8 @@
+//
+//  VehicleLogView.swift
+//  Created by Gargee Mohairr
+//
+
 import SwiftUI
 
 struct VehicleLogView: View {

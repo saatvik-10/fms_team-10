@@ -1,3 +1,8 @@
+//
+//  TripHistoryCard.swift
+//  Created by Monica Rokade
+//
+
 import SwiftUI
 
 // MARK: - Trip History Card
@@ -97,7 +102,7 @@ struct TripHistoryRow: View {
                         .foregroundColor(.gray)
 
                     if let dist = trip.distance {
-                        Text("·")
+                        Text("")
                             .foregroundColor(.gray)
                         Text(dist)
                             .font(AppFonts.caption2)
@@ -105,7 +110,7 @@ struct TripHistoryRow: View {
                     }
 
                     if let cost = trip.costEstimate {
-                        Text("·")
+                        Text("")
                             .foregroundColor(.gray)
                         Text(cost)
                             .font(AppFonts.caption2)

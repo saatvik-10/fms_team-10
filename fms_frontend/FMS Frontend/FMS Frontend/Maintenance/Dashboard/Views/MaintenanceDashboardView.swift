@@ -1,9 +1,6 @@
 //
 //  MaintenanceDashboardView.swift
-//  FMS Frontend
-//
-//  Tab 1 – Dashboard
-//  Displays aggregated KPIs, Priority Feed, Compliance Score, and Active Staff.
+//  Created by Akhilesh Mykalwar
 //
 
 import SwiftUI
@@ -26,11 +23,11 @@ struct MaintenanceDashboardView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
 
-                // ── Section 1: System Status KPIs ──────────────────────────
+                //  Section 1: System Status KPIs 
                 systemStatusSection
                     .padding(.top, 8)
 
-                // ── Section 2: Maintenance Alerts ─────────────────────────────
+                //  Section 2: Maintenance Alerts 
                 maintenanceAlertsSection
                     .padding(.top, 28)
 
@@ -51,7 +48,7 @@ struct MaintenanceDashboardView: View {
                 }
             }
         }
-        // ── Reactive updates from MaintenanceStore ──────────────────────────
+        //  Reactive updates from MaintenanceStore 
         .onAppear {
             viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
         }
@@ -64,7 +61,7 @@ struct MaintenanceDashboardView: View {
         .onReceive(store.$inventoryParts) { _ in
             viewModel.refresh(workOrders: store.workOrders, inspections: store.inspections, inventoryParts: store.inventoryParts, lowStock: store.lowStockCount)
         }
-        // ── Modals ──────────────────────────────────────────────────────────
+        //  Modals 
         .sheet(isPresented: $showingCreateInspection)    { CreateInspectionModal(isEmergency: false) }
         .sheet(isPresented: $showingEmergencyInspection) { CreateInspectionModal(isEmergency: true)  }
         .sheet(isPresented: $showingCreateWorkOrder)     { CreateWorkOrderModal() }
@@ -83,7 +80,7 @@ struct MaintenanceDashboardView: View {
                 self.importErrors = errors
                 self.showingImportAlert = true
             case .failure(let error):
-                print("Import failed: \(error.localizedDescription)")
+                print("[ERROR] [ERROR] Import failed: \(error.localizedDescription)")
             }
         }
         .alert("Import Status", isPresented: $showingImportAlert) {
@@ -142,7 +139,7 @@ struct MaintenanceDashboardView: View {
 
     private var maintenanceAlertsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // Header – chevron navigates to dedicated alerts list, NOT Work Orders tab
+            // Header  chevron navigates to dedicated alerts list, NOT Work Orders tab
             MaintenanceSectionHeader(title: "Maintenance Alerts", destination: MaintenanceAlertsListView())
                 .padding(.horizontal, 20)
 
@@ -189,11 +186,11 @@ struct MaintenanceDashboardView: View {
 
     private func formatCurrency(_ value: Double) -> String {
         if value >= 10_000_000 { // 1 Crore = 100 Lakhs
-            return String(format: "₹%.2f C", value / 10_000_000)
+            return String(format: "%.2f C", value / 10_000_000)
         } else if value >= 100_000 { // 1 Lakh
-            return String(format: "₹%.2f L", value / 100_000)
+            return String(format: "%.2f L", value / 100_000)
         } else {
-            return String(format: "₹%.2f", value)
+            return String(format: "%.2f", value)
         }
     }
 }

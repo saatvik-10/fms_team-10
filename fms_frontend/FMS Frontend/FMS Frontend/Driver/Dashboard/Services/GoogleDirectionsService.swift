@@ -1,3 +1,8 @@
+//
+//  GoogleDirectionsService.swift
+//  Created by Saatvik Madan
+//
+
 import Foundation
 import CoreLocation
 internal import UIKit
@@ -66,7 +71,7 @@ class GoogleDirectionsService {
                coord.longitude >= -180 && coord.longitude <= 180
     }
 
-    // MARK: - HTML Stripping (service layer only — not in ViewModel)
+    // MARK: - HTML Stripping (service layer only  not in ViewModel)
 
     func stripHTML(from string: String) -> String {
         guard let data = string.data(using: .utf8) else {
@@ -82,7 +87,7 @@ class GoogleDirectionsService {
         return string.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
     }
 
-    // MARK: - DirectionStep → NavigationInstruction
+    // MARK: - DirectionStep  NavigationInstruction
 
     private func makeInstruction(from step: DirectionStep) -> NavigationInstruction {
         let clean = stripHTML(from: step.html_instructions)
@@ -134,7 +139,7 @@ guard let route = directionsResponse.routes.first,
     }
 
     func fetchDirections(trip: Trip) async throws -> (eta: String, polyline: String, steps: [NavigationInstruction], distance: String, destinationCoordinate: CLLocationCoordinate2D) {
-        print("--- DEBUG Directions API ---")
+        print("[DEBUG] [DEBUG] --- DEBUG Directions API ---")
 
         let hasValidCoordinates = isValidCoordinate(trip.pickup.coordinate)
             && isValidCoordinate(trip.destination.coordinate)
@@ -198,7 +203,7 @@ guard let route = directionsResponse.routes.first,
             longitude: endLocation?.lng ?? trip.destination.coordinate.longitude
         )
 
-        print("[Directions] ETA: \(etaText), distance: \(distanceText), steps: \(allInstructions.count)")
+        print("[DEBUG] [DEBUG] [Directions] ETA: \(etaText), distance: \(distanceText), steps: \(allInstructions.count)")
         return (
             eta: etaText,
             polyline: route.overview_polyline.points,
@@ -208,7 +213,7 @@ guard let route = directionsResponse.routes.first,
         )
     }
 
-    // MARK: - Segment Directions (used by NavigationViewModel — origin = user location)
+    // MARK: - Segment Directions (used by NavigationViewModel  origin = user location)
 
     func fetchSegmentDirections(
         origin: CLLocationCoordinate2D,
@@ -244,7 +249,7 @@ guard let route = directionsResponse.routes.first,
 
         let instructions = leg.steps.map { makeInstruction(from: $0) }
 
-        print("[Segment] dist=\(leg.distance.text) eta=\(leg.duration.text) steps=\(instructions.count)")
+        print("[DEBUG] [DEBUG] [Segment] dist=\(leg.distance.text) eta=\(leg.duration.text) steps=\(instructions.count)")
         return (
             eta:      leg.duration.text,
             distance: leg.distance.text,

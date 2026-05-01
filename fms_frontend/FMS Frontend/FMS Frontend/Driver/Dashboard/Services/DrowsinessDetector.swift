@@ -1,8 +1,6 @@
 //
 //  DrowsinessDetector.swift
-//  FMS Frontend
-//
-//  Created by Mrunal Aralkar on 22/04/26.
+//  Created by Mrunal Aralkar
 //
 
 import AVFoundation
@@ -102,7 +100,7 @@ class DrowsinessDetector: NSObject, ObservableObject {
         guard let landmarks = face.landmarks,
               let leftEye  = landmarks.leftEye,
               let rightEye = landmarks.rightEye else {
-            print("[Drowsy] Face found but NO eye landmarks detected")
+            print("[DEBUG] [DEBUG] [Drowsy] Face found but NO eye landmarks detected")
             return
         }
         
@@ -124,7 +122,7 @@ class DrowsinessDetector: NSObject, ObservableObject {
                 self.drowsyFrameCount = 0
                 self.isDrowsy = false
             }
-            // avgEAR between 0.22–0.25: do nothing, hold current count
+            // avgEAR between 0.220.25: do nothing, hold current count
         }
     }
     
@@ -173,7 +171,7 @@ extension DrowsinessDetector: AVCaptureVideoDataOutputSampleBufferDelegate {
         
         let request = VNDetectFaceLandmarksRequest { [weak self] req, _ in
             guard let face = (req.results as? [VNFaceObservation])?.first else {
-                print("[Drowsy] No face detected in frame")
+                print("[DEBUG] [DEBUG] [Drowsy] No face detected in frame")
                 return
             }
             self?.analyzeFace(face)

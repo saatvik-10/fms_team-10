@@ -1,3 +1,8 @@
+//
+//  FleetCreateTripModal.swift
+//  Created by Akhilesh Mykalwar
+//
+
 import SwiftUI
 
 struct FleetCreateTripModal: View {
@@ -24,7 +29,7 @@ struct FleetCreateTripModal: View {
     @State private var estimatedDistance: Double = 0.0
     @State private var estimatedDuration: Double = 0.0
     
-    // ✅ NEW: Geofence
+    //  NEW: Geofence
     @State private var geofenceRadius: Double = 500
     
     // Enterprise Constants
@@ -235,7 +240,7 @@ struct FleetCreateTripModal: View {
                             } else {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("₹\(String(format: "%.2f", estimatedCost))")
+                                        Text("\(String(format: "%.2f", estimatedCost))")
                                             .font(AppFonts.title3)
                                             .foregroundColor(AppTheme.primary)
                                         Text("Total Estimated Fee")
@@ -259,7 +264,7 @@ struct FleetCreateTripModal: View {
                                         .stroke(AppTheme.primary.opacity(0.1), lineWidth: 1)
                                 )
                                 .accessibilityElement(children: .combine)
-                                .accessibilityLabel("Estimated cost: ₹\(String(format: "%.2f", estimatedCost)). Distance: \(Int(estimatedDistance)) km. Duration: \(formatDuration(estimatedDuration))")
+                                .accessibilityLabel("Estimated cost: \(String(format: "%.2f", estimatedCost)). Distance: \(Int(estimatedDistance)) km. Duration: \(formatDuration(estimatedDuration))")
                             }
                         }
                     }
@@ -418,7 +423,7 @@ struct FleetCreateTripModal: View {
                 try? await dataManager.refreshDrivers()
                 isPresented = false
             } catch {
-                print(error)
+                print("[ERROR] \(error)")
             }
         }
     }

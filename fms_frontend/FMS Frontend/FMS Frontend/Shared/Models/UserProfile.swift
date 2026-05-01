@@ -1,3 +1,8 @@
+//
+//  UserProfile.swift
+//  Created by Anshul Kumaria
+//
+
 import Foundation
 
 struct UserProfile: Codable, Identifiable {

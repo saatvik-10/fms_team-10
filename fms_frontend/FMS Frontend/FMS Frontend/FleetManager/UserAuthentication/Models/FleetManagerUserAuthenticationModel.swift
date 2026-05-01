@@ -1,4 +1,0 @@
-//
-//  UserAuthenticationModel.swift
-//  FMS Frontend
-//

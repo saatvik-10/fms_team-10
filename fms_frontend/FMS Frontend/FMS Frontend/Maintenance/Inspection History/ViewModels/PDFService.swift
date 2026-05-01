@@ -1,6 +1,6 @@
 //
 //  PDFService.swift
-//  FMS Frontend
+//  Created by Saatvik Madan
 //
 
 import PDFKit
@@ -87,7 +87,7 @@ class PDFService {
             (isPass ? UIColor.systemGreen : UIColor.systemRed).withAlphaComponent(0.1).setFill()
             context.fill(passBadgeRect)
             
-            let badgeText = isPass ? "✓ PASS" : "✗ ATTENTION REQUIRED"
+            let badgeText = isPass ? " PASS" : " ATTENTION REQUIRED"
             let badgeAttr: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: 12, weight: .bold),
                 .foregroundColor: isPass ? UIColor.systemGreen : UIColor.systemRed
@@ -143,14 +143,14 @@ class PDFService {
                     let unitPrice = part?.unitPriceInr ?? 0
                     let lineCost = unitPrice * Double(usage.quantity)
                     totalCost += lineCost
-                    partLines.append((name, "Qty: \(usage.quantity)  —  ₹\(String(format: "%.2f", lineCost))"))
+                    partLines.append((name, "Qty: \(usage.quantity)    \(String(format: "%.2f", lineCost))"))
                 }
                 drawKeyValueGrid(info: partLines, at: &currentY, context: context)
                 currentY += 10
 
                 // Total Cost
                 drawSectionHeader(title: "TOTAL MAINTENANCE COST", at: &currentY, in: context)
-                let costText = "₹\(String(format: "%.2f", totalCost))"
+                let costText = "\(String(format: "%.2f", totalCost))"
                 costText.draw(at: CGPoint(x: margin + 5, y: currentY), withAttributes: [
                     .font: UIFont.systemFont(ofSize: 14, weight: .black),
                     .foregroundColor: UIColor.label
@@ -212,7 +212,7 @@ class PDFService {
                 item.result.rawValue.uppercased().draw(at: CGPoint(x: rowX + colWidths[0], y: currentY + 18), withAttributes: resultAttr)
                 
                 // Notes
-                let noteText = item.notes.isEmpty ? "—" : item.notes
+                let noteText = item.notes.isEmpty ? "" : item.notes
                 noteText.draw(in: CGRect(x: rowX + colWidths[0] + colWidths[1], y: currentY + 10, width: colWidths[2] - 10, height: rowHeight - 10), withAttributes: [
                     .font: UIFont.systemFont(ofSize: 8),
                     .foregroundColor: item.notes.isEmpty ? UIColor.secondaryLabel : UIColor.label
@@ -222,7 +222,7 @@ class PDFService {
                 if let imageData = item.imageData, let image = UIImage(data: imageData) {
                     image.draw(in: CGRect(x: rowX + colWidths[0] + colWidths[1] + colWidths[2] + 10, y: currentY + 5, width: 40, height: 40))
                 } else {
-                    "—".draw(at: CGPoint(x: rowX + colWidths[0] + colWidths[1] + colWidths[2] + 25, y: currentY + 18), withAttributes: [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.secondaryLabel])
+                    "".draw(at: CGPoint(x: rowX + colWidths[0] + colWidths[1] + colWidths[2] + 25, y: currentY + 18), withAttributes: [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.secondaryLabel])
                 }
                 
                 currentY += rowHeight
@@ -245,7 +245,7 @@ class PDFService {
             try data.write(to: fileURL)
             return fileURL
         } catch {
-            print("PDF Error: \(error)")
+            print("[ERROR] [ERROR] PDF Error: \(error)")
             return nil
         }
     }
@@ -292,7 +292,7 @@ class PDFService {
         line.stroke()
         
         let attr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 8), .foregroundColor: UIColor.secondaryLabel]
-        "Fleet Management System — Confidential".draw(at: CGPoint(x: margin, y: footerY + 10), withAttributes: attr)
+        "Fleet Management System  Confidential".draw(at: CGPoint(x: margin, y: footerY + 10), withAttributes: attr)
         "Page \(pageNum)".draw(at: CGPoint(x: pageWidth - margin - 40, y: footerY + 10), withAttributes: attr)
     }
     

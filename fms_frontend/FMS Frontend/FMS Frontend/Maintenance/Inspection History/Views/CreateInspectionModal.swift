@@ -1,6 +1,6 @@
 //
 //  CreateInspectionModal.swift
-//  FMS Frontend
+//  Created by Akhilesh Mykalwar
 //
 
 import SwiftUI
@@ -8,35 +8,8 @@ import SwiftUI
 struct CreateInspectionModal: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var store: MaintenanceStore
+    @StateObject private var viewModel = CreateInspectionViewModel()
     var isEmergency: Bool
-
-    @State private var unitName = "Mercedes-Benz Actros (Truck)"
-    @State private var inspectionType: InspectionType = .preTrip
-    @State private var title = ""
-    @State private var notes = ""
-    @State private var selectedImages: [UIImage] = []
-    @State private var showingImagePicker = false
-    @State private var showingCamera = false
-    @State private var showingSourceSelect = false
-    @State private var showingVehiclePicker = false
-    @State private var vehicleSearchText = ""
-
-    let units = [
-        "Mercedes-Benz Actros (Truck)",
-        "Volvo FH16 (Truck)",
-        "MAN TGX (Truck)",
-        "Scania R450 (Truck)",
-        "Toyota Coaster (Bus)",
-        "Tata Starbus (Bus)",
-        "BharatBenz 1617 (Bus)",
-        "Ashok Leyland Lynx (Bus)",
-        "Ford Transit (Van)",
-        "Mercedes-Benz Sprinter (Van)",
-        "Toyota HiAce (Van)",
-        "Toyota Land Cruiser (SUV)",
-        "Ford Ranger (Pickup)",
-        "Isuzu D-Max (Pickup)"
-    ]
 
     var body: some View {
         NavigationStack {
@@ -45,17 +18,15 @@ struct CreateInspectionModal: View {
 
                 ScrollView {
                     VStack(spacing: 20) {
-
-                        // Fields
                         FormGroup(title: "INSPECTION TITLE") {
-                            TextField("Enter title (e.g. Trip to California)", text: $title)
+                            TextField("Enter title (e.g. Trip to California)", text: $viewModel.title)
                                 .font(.system(size: 16))
                         }
 
                         FormGroup(title: "SELECT VEHICLE") {
-                            Button(action: { showingVehiclePicker = true }) {
+                            Button(action: { viewModel.showingVehiclePicker = true }) {
                                 HStack {
-                                    Text(unitName)
+                                    Text(viewModel.unitName)
                                         .font(.system(size: 16))
                                         .foregroundColor(.primary)
                                     Spacer()
@@ -67,7 +38,7 @@ struct CreateInspectionModal: View {
                         }
 
                         FormGroup(title: "INSPECTION TYPE") {
-                            Picker("Type", selection: $inspectionType) {
+                            Picker("Type", selection: $viewModel.inspectionType) {
                                 ForEach([InspectionType.preTrip, InspectionType.postTrip], id: \.self) {
                                     Text($0.rawValue).tag($0)
                                 }
@@ -78,14 +49,14 @@ struct CreateInspectionModal: View {
                         FormGroup(title: "PHOTOS") {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 12) {
-                                    ForEach(0..<selectedImages.count, id: \.self) { index in
-                                        Image(uiImage: selectedImages[index])
+                                    ForEach(0..<viewModel.selectedImages.count, id: \.self) { index in
+                                        Image(uiImage: viewModel.selectedImages[index])
                                             .resizable()
                                             .aspectRatio(contentMode: .fill)
                                             .frame(width: 80, height: 80)
                                             .cornerRadius(12)
                                             .overlay(
-                                                Button(action: { selectedImages.remove(at: index) }) {
+                                                Button(action: { viewModel.selectedImages.remove(at: index) }) {
                                                     Image(systemName: "xmark.circle.fill")
                                                         .foregroundColor(.white)
                                                         .background(Color.black.opacity(0.5))
@@ -96,7 +67,7 @@ struct CreateInspectionModal: View {
                                             )
                                     }
                                     
-                                    Button(action: { showingSourceSelect = true }) {
+                                    Button(action: { viewModel.showingSourceSelect = true }) {
                                         VStack(spacing: 4) {
                                             Image(systemName: "plus")
                                                 .font(.system(size: 20, weight: .semibold))
@@ -117,7 +88,7 @@ struct CreateInspectionModal: View {
                         }
 
                         FormGroup(title: "ADDITIONAL NOTES") {
-                            TextEditor(text: $notes)
+                            TextEditor(text: $viewModel.notes)
                                 .frame(height: 100)
                                 .font(.system(size: 14))
                         }
@@ -128,24 +99,24 @@ struct CreateInspectionModal: View {
             }
             .navigationTitle(isEmergency ? "Emergency Request" : "New Inspection")
             .navigationBarTitleDisplayMode(.inline)
-            .confirmationDialog("Add Photo", isPresented: $showingSourceSelect) {
-                Button("Camera") { showingCamera = true }
-                Button("Photo Library") { showingImagePicker = true }
+            .confirmationDialog("Add Photo", isPresented: $viewModel.showingSourceSelect) {
+                Button("Camera") { viewModel.showingCamera = true }
+                Button("Photo Library") { viewModel.showingImagePicker = true }
                 Button("Cancel", role: .cancel) { }
             }
-            .sheet(isPresented: $showingVehiclePicker) {
+            .sheet(isPresented: $viewModel.showingVehiclePicker) {
                 NavigationStack {
                     List {
-                        ForEach(units.filter { vehicleSearchText.isEmpty || $0.localizedCaseInsensitiveContains(vehicleSearchText) }, id: \.self) { vehicle in
+                        ForEach(viewModel.units.filter { viewModel.vehicleSearchText.isEmpty || $0.localizedCaseInsensitiveContains(viewModel.vehicleSearchText) }, id: \.self) { vehicle in
                             Button(action: {
-                                unitName = vehicle
-                                showingVehiclePicker = false
+                                viewModel.unitName = vehicle
+                                viewModel.showingVehiclePicker = false
                             }) {
                                 HStack {
                                     Text(vehicle)
                                         .foregroundColor(.primary)
                                     Spacer()
-                                    if unitName == vehicle {
+                                    if viewModel.unitName == vehicle {
                                         Image(systemName: "checkmark")
                                             .foregroundColor(AppColors.primary)
                                     }
@@ -153,24 +124,24 @@ struct CreateInspectionModal: View {
                             }
                         }
                     }
-                    .searchable(text: $vehicleSearchText, prompt: "Search vehicles")
+                    .searchable(text: $viewModel.vehicleSearchText, prompt: "Search vehicles")
                     .navigationTitle("Select Vehicle")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarLeading) {
-                            Button("Cancel") { showingVehiclePicker = false }
+                            Button("Cancel") { viewModel.showingVehiclePicker = false }
                         }
                     }
                 }
                 .presentationDetents([.medium, .large])
             }
-            .sheet(isPresented: $showingImagePicker) {
-                PhotoPicker(images: $selectedImages)
+            .sheet(isPresented: $viewModel.showingImagePicker) {
+                PhotoPicker(images: $viewModel.selectedImages)
             }
-            .sheet(isPresented: $showingCamera) {
+            .sheet(isPresented: $viewModel.showingCamera) {
                 CameraPicker(image: Binding(
                     get: { nil },
-                    set: { if let img = $0 { selectedImages.append(img) } }
+                    set: { if let img = $0 { viewModel.selectedImages.append(img) } }
                 ))
             }
             .toolbar {
@@ -186,39 +157,7 @@ struct CreateInspectionModal: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        let vehicleType: VehicleType = unitName.contains("Bus") ? .car : .truck
-                        var newInspection = TripInspection(
-                            title: title.isEmpty ? inspectionType.rawValue : title,
-                            vehicleId: "V-\(Int.random(in: 100...999))",
-                            unitName: unitName,
-                            unitVIN: "VIN-\(Int.random(in: 1000...9999))",
-                            driverId: "DRV-CURRENT",
-                            timestamp: Date(),
-                            type: inspectionType,
-                            vehicleType: vehicleType,
-                            status: .progress,
-                            items: TripInspection.mockItems(for: vehicleType),
-                            notes: notes,
-                            maintenanceStaffId: "STAFF-01",
-                            isEmergency: isEmergency
-                        )
-                        
-                        // Convert images to data and set placeholders
-                        newInspection.imagesData = selectedImages.compactMap { $0.jpegData(compressionQuality: 0.7) }
-                        newInspection.imageAnalyses = Array(repeating: "Analysis in progress...", count: selectedImages.count)
-                        
-                        store.addInspection(newInspection)
-                        
-                        // Trigger Mock AI Analysis
-                        let capturedImages = selectedImages
-                        let inspectionId = newInspection.id
-                        for (index, image) in capturedImages.enumerated() {
-                            AIAnalysisService.analyze(image: image) { result in
-                                store.updateInspectionAnalysis(id: inspectionId, index: index, analysis: result)
-                            }
-                        }
-                        
-                        dismiss()
+                        viewModel.createInspection(store: store, isEmergency: isEmergency, dismiss: { dismiss() })
                     }) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 16, weight: .bold))

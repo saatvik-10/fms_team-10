@@ -1,3 +1,8 @@
+//
+//  GoogleMapViewRepresentable.swift
+//  Created by Aryan Dev
+//
+
 import SwiftUI
 import GoogleMaps
 import CoreLocation
@@ -5,12 +10,12 @@ import CoreLocation
 // MARK: - Fleet Google Map View
 // A self-contained UIViewRepresentable that renders a GMSMapView for the Fleet Manager trip detail.
 // Features:
-//  • User location blue-dot
-//  • Compass enabled
-//  • Start marker (green) + End marker (navy)
-//  • Encoded polyline route drawn in navy
-//  • Camera auto-fits to route bounds; initially focuses on user location
-//  • Only redraws when polyline string changes (performance cache)
+//   User location blue-dot
+//   Compass enabled
+//   Start marker (green) + End marker (navy)
+//   Encoded polyline route drawn in navy
+//   Camera auto-fits to route bounds; initially focuses on user location
+//   Only redraws when polyline string changes (performance cache)
 
 struct FleetGoogleMapView: UIViewRepresentable {
 
@@ -33,7 +38,7 @@ struct FleetGoogleMapView: UIViewRepresentable {
     // MARK: - makeUIView
 
     func makeUIView(context: Context) -> GMSMapView {
-        // Default camera — Delhi fallback
+        // Default camera  Delhi fallback
         let camera = GMSCameraPosition.camera(
             withLatitude: 28.6139, longitude: 77.2090, zoom: 12
         )

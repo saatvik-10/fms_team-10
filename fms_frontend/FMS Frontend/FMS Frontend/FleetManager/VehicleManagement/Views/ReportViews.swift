@@ -1,3 +1,8 @@
+//
+//  ReportViews.swift
+//  Created by Saatvik Madan
+//
+
 import SwiftUI
 
 // MARK: - Archive List View
@@ -219,7 +224,7 @@ struct MaintenanceReportDetailView: View {
                 VStack(spacing: 0) {
                     // Page indicator header
                     HStack {
-                        Text("Fleet Management System — Confidential")
+                        Text("Fleet Management System  Confidential")
                             .font(AppFonts.caption2)
                         Spacer()
                         Text("Page 1")
@@ -257,7 +262,7 @@ struct MaintenanceReportDetailView: View {
                                 PdfRow(label: "Type", value: vehicle.type, isZebra: true)
                                 PdfRow(label: "Date", value: report.date, isZebra: false)
                                 PdfRow(label: "Service By", value: report.serviceProvider, isZebra: true)
-                                PdfRow(label: "Status", value: report.subtitle.components(separatedBy: "·").dropFirst().first?.trimmingCharacters(in: .whitespaces) ?? "Pending", isZebra: false)
+                                PdfRow(label: "Status", value: report.subtitle.components(separatedBy: "").dropFirst().first?.trimmingCharacters(in: .whitespaces) ?? "Pending", isZebra: false)
                             }
                             
                             // WORK ORDER SUMMARY
@@ -270,7 +275,7 @@ struct MaintenanceReportDetailView: View {
                                 PdfRow(label: "Total Cost", value: report.totalCost, isZebra: report.tasks.count % 2 == 0)
                                 
                                 HStack {
-                                    Text("✓ SUBMITTED")
+                                    Text(" SUBMITTED")
                                         .font(AppFonts.headline)
                                         .foregroundColor(AppColors.activeGreen)
                                 }

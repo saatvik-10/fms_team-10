@@ -1,8 +1,6 @@
 //
 //  UIComponents.swift
-//  FMS Frontend
-//
-//  Created by Antigravity on 16/04/26.
+//  Created by Daksh Ratnawat
 //
 
 import SwiftUI
@@ -152,7 +150,7 @@ struct WorkOrderTaskCard: View {
                             .foregroundColor(.primary)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text("\(order.vehicleName) • \(order.vehicleNum)")
+                        Text("\(order.vehicleName)  \(order.vehicleNum)")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.secondary)
                 }

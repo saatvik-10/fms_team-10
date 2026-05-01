@@ -1,9 +1,6 @@
 //
 //  LowStockPartsView.swift
-//  FMS Frontend
-//
-//  Dashboard-only detail screen listing all low stock / restock alert parts.
-//  Filter via bar button item (Menu).
+//  Created by Daksh Ratnawat
 //
 
 import SwiftUI

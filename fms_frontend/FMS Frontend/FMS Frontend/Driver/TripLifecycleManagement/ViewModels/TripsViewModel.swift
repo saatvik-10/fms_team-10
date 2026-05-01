@@ -1,3 +1,8 @@
+//
+//  TripsViewModel.swift
+//  Created by Tanishka Kumar
+//
+
 import Foundation
 import Combine
 
@@ -26,7 +31,7 @@ class TripsViewModel: ObservableObject {
             let response = try await tripAPI.getDriverTrips()
             let mappedTrips = response.trips.compactMap(Self.mapTripItemToLifecycleTrip)
 
-            // Deduplicate by trip ID — backend may return duplicates
+            // Deduplicate by trip ID  backend may return duplicates
             // when multiple trip records share the same vehicle
             var seen = Set<String>()
             let uniqueTrips = mappedTrips.filter { seen.insert($0.id).inserted }
@@ -103,7 +108,7 @@ class TripsViewModel: ObservableObject {
     }
     
     func acceptTrip(_ trip: LifecycleTrip) {
-        print("Accept Trip tapped for \(trip.id)")
+        print("[DEBUG] [DEBUG] Accept Trip tapped for \(trip.id)")
         if let index = trips.firstIndex(where: { $0.id == trip.id }) {
             let existing = trips[index]
             trips[index] = LifecycleTrip(
@@ -132,16 +137,16 @@ class TripsViewModel: ObservableObject {
     }
     
     func declineTrip(_ trip: LifecycleTrip) {
-        print("Decline Trip tapped for \(trip.id)")
+        print("[DEBUG] [DEBUG] Decline Trip tapped for \(trip.id)")
         trips.removeAll { $0.id == trip.id }
     }
     
     func startTrip(_ trip: LifecycleTrip) {
-        print("Start Trip tapped for \(trip.id)")
+        print("[DEBUG] [DEBUG] Start Trip tapped for \(trip.id)")
     }
     
     func endTrip(_ tripId: String) {
-        print("End Trip called for \(tripId)")
+        print("[DEBUG] [DEBUG] End Trip called for \(tripId)")
 
         // Immediately update UI
         if let index = trips.firstIndex(where: { $0.id == tripId }) {
@@ -170,14 +175,14 @@ class TripsViewModel: ObservableObject {
         Task {
             do {
                 let response = try await tripAPI.completeTripForDriver(tripId: tripId)
-                print("✅ Trip completed on backend: \(response.message)")
+                print("[SUCCESS] [SUCCESS]  Trip completed on backend: \(response.message)")
             } catch {
-                print("❌ Failed to complete trip on backend: \(error.localizedDescription)")
+                print("[ERROR] [ERROR]  Failed to complete trip on backend: \(error.localizedDescription)")
             }
         }
     }
     
     func viewSummary(_ trip: LifecycleTrip) {
-        print("View Summary tapped for \(trip.id)")
+        print("[DEBUG] [DEBUG] View Summary tapped for \(trip.id)")
     }
 }

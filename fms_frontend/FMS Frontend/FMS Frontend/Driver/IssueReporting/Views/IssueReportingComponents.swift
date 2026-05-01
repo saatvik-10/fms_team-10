@@ -1,3 +1,8 @@
+//
+//  IssueReportingComponents.swift
+//  Created by Daksh Ratnawat
+//
+
 import SwiftUI
 import PhotosUI
 

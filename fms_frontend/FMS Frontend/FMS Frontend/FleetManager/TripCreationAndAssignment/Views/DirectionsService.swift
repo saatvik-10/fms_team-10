@@ -1,3 +1,8 @@
+//
+//  DirectionsService.swift
+//  Created by Gargee Mohairr
+//
+
 import Foundation
 import CoreLocation
 
@@ -16,7 +21,7 @@ struct FleetDirectionsResult {
 // MARK: - Fleet Directions Service
 
 /// Fetches route data from Google Directions API for the Fleet-side trip detail view.
-/// This is a self-contained service scoped to FleetManager — does NOT depend on Driver-side services.
+/// This is a self-contained service scoped to FleetManager  does NOT depend on Driver-side services.
 actor FleetDirectionsService {
 
     static let shared = FleetDirectionsService()
@@ -61,7 +66,7 @@ actor FleetDirectionsService {
         do {
             return try await geocode(placeName: place)
         } catch {
-            print("[FleetDirections] Geocoding failed for \(place): \(error.localizedDescription)")
+            print("[ERROR] [ERROR] [FleetDirections] Geocoding failed for \(place): \(error.localizedDescription)")
             return nil
         }
     }
@@ -104,7 +109,7 @@ actor FleetDirectionsService {
         let originAddress = commonAbbreviations[origin] ?? origin
         let destinationAddress = commonAbbreviations[destination] ?? destination
 
-        print("[FleetDirections] Requesting address route: \(originAddress) -> \(destinationAddress)")
+        print("[DEBUG] [DEBUG] [FleetDirections] Requesting address route: \(originAddress) -> \(destinationAddress)")
 
         var urlString =
             "https://maps.googleapis.com/maps/api/directions/json" +
@@ -122,11 +127,11 @@ actor FleetDirectionsService {
             throw URLError(.badURL)
         }
 
-        print("[FleetDirections] Requesting: \(encoded)")
+        print("[DEBUG] [DEBUG] [FleetDirections] Requesting: \(encoded)")
 
         let (data, response) = try await URLSession.shared.data(from: url)
         if let http = response as? HTTPURLResponse {
-            print("[FleetDirections] HTTP status: \(http.statusCode)")
+            print("[DEBUG] [DEBUG] [FleetDirections] HTTP status: \(http.statusCode)")
         }
 
         struct DResponse: Decodable {
@@ -158,9 +163,9 @@ actor FleetDirectionsService {
 
         let decoded = try JSONDecoder().decode(DResponse.self, from: data)
 
-        print("[FleetDirections] Directions API Status: \(decoded.status)")
+        print("[DEBUG] [DEBUG] [FleetDirections] Directions API Status: \(decoded.status)")
         if let msg = decoded.error_message {
-            print("[FleetDirections] API Error Message: \(msg)")
+            print("[ERROR] [ERROR] [FleetDirections] API Error Message: \(msg)")
         }
 
         guard decoded.status == "OK",
@@ -196,10 +201,10 @@ actor FleetDirectionsService {
         destName: String = ""
     ) async throws -> FleetDirectionsResult {
         
-        print("[FleetDirections] Origin: (\(originCoord.latitude), \(originCoord.longitude))")
-        print("[FleetDirections] Destination: (\(destCoord.latitude), \(destCoord.longitude))")
+        print("[DEBUG] [DEBUG] [FleetDirections] Origin: (\(originCoord.latitude), \(originCoord.longitude))")
+        print("[DEBUG] [DEBUG] [FleetDirections] Destination: (\(destCoord.latitude), \(destCoord.longitude))")
         if let wp = waypointCoord {
-            print("[FleetDirections] Waypoint: (\(wp.latitude), \(wp.longitude))")
+            print("[DEBUG] [DEBUG] [FleetDirections] Waypoint: (\(wp.latitude), \(wp.longitude))")
         }
         
         var urlString =
@@ -218,11 +223,11 @@ actor FleetDirectionsService {
             throw URLError(.badURL)
         }
 
-        print("[FleetDirections] Requesting: \(encoded)")
+        print("[DEBUG] [DEBUG] [FleetDirections] Requesting: \(encoded)")
 
         let (data, response) = try await URLSession.shared.data(from: url)
         if let http = response as? HTTPURLResponse {
-            print("[FleetDirections] HTTP status: \(http.statusCode)")
+            print("[DEBUG] [DEBUG] [FleetDirections] HTTP status: \(http.statusCode)")
         }
 
         // MARK: - Response models
@@ -249,9 +254,9 @@ actor FleetDirectionsService {
 
         let decoded = try JSONDecoder().decode(DResponse.self, from: data)
         
-        print("[FleetDirections] Directions API Status: \(decoded.status)")
+        print("[DEBUG] [DEBUG] [FleetDirections] Directions API Status: \(decoded.status)")
         if let msg = decoded.error_message {
-            print("[FleetDirections] API Error Message: \(msg)")
+            print("[ERROR] [ERROR] [FleetDirections] API Error Message: \(msg)")
         }
 
         guard decoded.status == "OK",
@@ -268,7 +273,7 @@ actor FleetDirectionsService {
             )
         }
 
-        print("[FleetDirections] ETA: \(leg.duration.text), Distance: \(leg.distance.text)")
+        print("[DEBUG] [DEBUG] [FleetDirections] ETA: \(leg.duration.text), Distance: \(leg.distance.text)")
 
         return FleetDirectionsResult(
             eta: leg.duration.text,

@@ -1,9 +1,6 @@
 //
 //  MaintenanceAlertsListView.swift
-//  FMS Frontend
-//
-//  Dashboard-only detail screen for all Maintenance Alerts.
-//  NOT a tab-level screen – accessible only via Dashboard chevron.
+//  Created by Gargee Mohairr
 //
 
 import SwiftUI
@@ -30,7 +27,7 @@ struct MaintenanceAlertsListView: View {
                     id: "wo-\(order.id.uuidString)",
                     source: .workOrder,
                     title: order.title,
-                    subtitle: "\(order.vehicleName) • Priority: \(order.priority.rawValue.capitalized)",
+                    subtitle: "\(order.vehicleName)  Priority: \(order.priority.rawValue.capitalized)",
                     sortOrder: order.priority.sortingOrder,
                     workOrderId: order.id,
                     inventoryPartId: nil

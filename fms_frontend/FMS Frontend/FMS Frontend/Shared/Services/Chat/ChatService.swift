@@ -1,3 +1,8 @@
+//
+//  ChatService.swift
+//  Created by Tanishka Kumar
+//
+
 import Foundation
 import Combine
 
@@ -20,7 +25,7 @@ final class ChatService {
                     ) ?? []
                     promise(.success(rooms))
                 } catch {
-                    print("❌ ChatService Error (Rooms): \(error)")
+                    print("[ERROR] [ERROR]  ChatService Error (Rooms): \(error)")
                     promise(.failure(error))
                 }
             }
@@ -35,7 +40,7 @@ final class ChatService {
             Task {
                 guard let self = self else { return }
                 do {
-                    // ✅ lowercased() to match Prisma's stored UUID format
+                    //  lowercased() to match Prisma's stored UUID format
                     let messages: [ChatMessage] = try await self.client.request(
                         path: "/chat/rooms/\(roomId.uuidString.lowercased())/messages",
                         method: .get,
@@ -44,7 +49,7 @@ final class ChatService {
                     ) ?? []
                     promise(.success(messages))
                 } catch {
-                    print("❌ ChatService Error (Messages): \(error)")
+                    print("[ERROR] [ERROR]  ChatService Error (Messages): \(error)")
                     promise(.failure(error))
                 }
             }
@@ -59,7 +64,7 @@ final class ChatService {
             Task {
                 guard let self = self else { return }
                 do {
-                    // ✅ lowercased() to match Prisma's stored UUID format
+                    //  lowercased() to match Prisma's stored UUID format
                     let sentMessage: ChatMessage = try await self.client.request(
                         path: "/chat/rooms/\(message.roomId.uuidString.lowercased())/messages",
                         method: .post,
@@ -69,7 +74,7 @@ final class ChatService {
                     ) ?? message
                     promise(.success(sentMessage))
                 } catch {
-                    print("❌ ChatService Error (Send): \(error)")
+                    print("[ERROR] [ERROR]  ChatService Error (Send): \(error)")
                     promise(.failure(error))
                 }
             }
@@ -84,7 +89,7 @@ final class ChatService {
             Task {
                 guard let self = self else { return }
                 do {
-                    // ✅ lowercased() to match Prisma's stored UUID format
+                    //  lowercased() to match Prisma's stored UUID format
                     let _: EmptyResponse = try await self.client.request(
                         path: "/chat/rooms/\(roomId.uuidString.lowercased())/read",
                         method: .put,
@@ -124,7 +129,7 @@ final class ChatService {
                     )
                     promise(.success(room))
                 } catch {
-                    print("❌ ChatService Error (CreateRoom): \(error)")
+                    print("[ERROR] [ERROR]  ChatService Error (CreateRoom): \(error)")
                     promise(.failure(error))
                 }
             }
@@ -154,7 +159,7 @@ final class ChatService {
                     ) ?? []
                     promise(.success(users))
                 } catch {
-                    print("❌ ChatService Error (Users): \(error)")
+                    print("[ERROR] [ERROR]  ChatService Error (Users): \(error)")
                     promise(.failure(error))
                 }
             }

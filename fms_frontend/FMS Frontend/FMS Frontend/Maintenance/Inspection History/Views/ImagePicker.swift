@@ -1,8 +1,6 @@
 //
 //  ImagePicker.swift
-//  FMS Frontend
-//
-//  Created by Antigravity on 16/04/26.
+//  Created by Daksh Ratnawat
 //
 
 import SwiftUI

@@ -1,3 +1,8 @@
+//
+//  DriverEmailStore.swift
+//  Created by Monica Rokade
+//
+
 import Foundation
 
 /// Temporary storage for driver emails until backend integration
@@ -10,7 +15,7 @@ class DriverEmailStore {
     
     func saveEmail(_ email: String, forDriverID id: String) {
         emails[id] = email
-        print("DEBUG: Saved email \(email) for driver \(id)")
+        print("[DEBUG] [DEBUG] DEBUG: Saved email \(email) for driver \(id)")
     }
     
     func getEmail(forDriverID id: String) -> String? {

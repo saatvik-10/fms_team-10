@@ -1,8 +1,6 @@
 //
 //  InventoryCSVImportService.swift
-//  FMS Frontend
-//
-//  Created by opencode on 21/04/26.
+//  Created by Saatvik Madan
 //
 
 import Foundation
@@ -72,7 +70,7 @@ class InventoryCSVImportService {
                 let category = columns[ci].trimmingCharacters(in: .whitespaces)
                 
                 let stockString = columns[sti].trimmingCharacters(in: .whitespaces)
-                let costString = columns[coi].trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "₹", with: "").replacingOccurrences(of: "$", with: "").replacingOccurrences(of: ",", with: "")
+                let costString = columns[coi].trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "", with: "").replacingOccurrences(of: "$", with: "").replacingOccurrences(of: ",", with: "")
                 
                 guard let stock = Int(stockString), stock >= 0 else {
                     errors.append(ImportError(row: rowNum, reason: "Invalid stock count: '\(stockString)'."))

@@ -1,3 +1,8 @@
+//
+//  SessionManager.swift
+//  Created by Gargee Mohairr
+//
+
 import SwiftUI
 import Combine
 

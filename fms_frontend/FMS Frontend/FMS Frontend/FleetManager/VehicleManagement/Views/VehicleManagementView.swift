@@ -1,4 +1,0 @@
-//
-//  VehicleManagementView.swift
-//  FMS Frontend
-//

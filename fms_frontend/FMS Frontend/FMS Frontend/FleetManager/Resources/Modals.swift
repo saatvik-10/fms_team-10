@@ -1,3 +1,8 @@
+//
+//  Modals.swift
+//  Created by Monica Rokade
+//
+
 import MapKit
 import SwiftUI
 import Combine
@@ -1195,7 +1200,7 @@ struct OrderModalView: View {
                                 }
                                 Spacer()
                                 VStack(alignment: .trailing, spacing: 8) {
-                                    Text("Dist: 120mi • 8mpg • ₹3.50/gal")
+                                    Text("Dist: 120mi  8mpg  3.50/gal")
                                         .font(AppFonts.footnote)
                                         .foregroundColor(.gray)
                                 }
@@ -1243,7 +1248,7 @@ struct OrderModalView: View {
                                 date: "Now",
                                 distance: "0 mi",
                                 duration: "0 hrs",
-                                costEstimate: String(format: "₹%.2f", estimatedCost),
+                                costEstimate: String(format: "%.2f", estimatedCost),
                                 startTime: Date(),
                                 status: .scheduled,
                                 productType: productName,

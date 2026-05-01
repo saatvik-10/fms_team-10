@@ -1,8 +1,6 @@
 //
 //  InventoryView.swift
-//  FMS Frontend
-//
-//  Created by opencode on 21/04/26.
+//  Created by Aryan Dev
 //
 
 import SwiftUI
@@ -40,7 +38,7 @@ struct InventoryView: View {
             VStack(alignment: .leading, spacing: 16) {
                 
                 if !store.inventoryParts.isEmpty {
-                    // ── Inline Search Bar + Filter ────────────────────────────────
+                    //  Inline Search Bar + Filter 
                     HStack(spacing: 12) {
                         HStack(spacing: 10) {
                             Image(systemName: "magnifyingglass")
@@ -67,7 +65,7 @@ struct InventoryView: View {
                         .background(Color(.systemGray5))
                         .cornerRadius(14)
                         
-                        // Filter button – right of search bar
+                        // Filter button  right of search bar
                         Menu {
                             Button("All Categories") { selectedCategory = nil }
                             if !categories.isEmpty {
@@ -99,7 +97,7 @@ struct InventoryView: View {
                         .padding(.horizontal, 20)
                 }
                 
-                // ── Section 1: Parts Catalog ──────────────────────────────────
+                //  Section 1: Parts Catalog 
                 VStack(alignment: .leading, spacing: 12) {
                     VStack(spacing: 0) {
                         if filteredParts.isEmpty {
@@ -189,7 +187,7 @@ struct InventoryView: View {
                     self.showingErrorAlert = true
                 }
             case .failure(let error):
-                print("Import failed: \(error.localizedDescription)")
+                print("[ERROR] [ERROR] Import failed: \(error.localizedDescription)")
             }
         }
         .alert("Import Status", isPresented: $showingErrorAlert) {
@@ -285,11 +283,11 @@ struct InventoryView: View {
 
     private func formatCurrency(_ value: Double) -> String {
         if value >= 10_000_000 { // 1 Crore = 100 Lakhs
-            return String(format: "₹%.2f C", value / 10_000_000)
+            return String(format: "%.2f C", value / 10_000_000)
         } else if value >= 100_000 { // 1 Lakh
-            return String(format: "₹%.2f L", value / 100_000)
+            return String(format: "%.2f L", value / 100_000)
         } else {
-            return String(format: "₹%.2f", value)
+            return String(format: "%.2f", value)
         }
     }
 
@@ -315,7 +313,7 @@ struct InventoryAlertRow: View {
                     .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
                 
-                Text("\(part.partId) • Stock: \(part.stockQty)")
+                Text("\(part.partId)  Stock: \(part.stockQty)")
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
                     .lineLimit(1)

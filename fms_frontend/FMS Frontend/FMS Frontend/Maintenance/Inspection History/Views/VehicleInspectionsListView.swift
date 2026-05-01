@@ -1,8 +1,6 @@
 //
 //  VehicleInspectionsListView.swift
-//  FMS Frontend
-//
-//  Created by Antigravity on 17/04/26.
+//  Created by Anshul Kumaria
 //
 
 import SwiftUI
@@ -139,7 +137,7 @@ struct VehicleInspectionsListView: View {
                         ProgressView()
                             .scaleEffect(1.5)
                             .tint(.white)
-                        Text("Generating Report…")
+                        Text("Generating Report")
                             .font(.headline)
                             .foregroundColor(.white)
                     }

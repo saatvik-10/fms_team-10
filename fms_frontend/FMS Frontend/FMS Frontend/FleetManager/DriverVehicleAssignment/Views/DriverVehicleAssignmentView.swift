@@ -1,4 +1,0 @@
-//
-//  DriverVehicleAssignmentView.swift
-//  FMS Frontend
-//

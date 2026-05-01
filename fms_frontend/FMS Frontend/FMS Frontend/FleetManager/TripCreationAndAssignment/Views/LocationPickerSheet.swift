@@ -1,3 +1,8 @@
+//
+//  LocationPickerSheet.swift
+//  Created by Saatvik Madan
+//
+
 import SwiftUI
 import GoogleMaps
 import CoreLocation
@@ -215,7 +220,7 @@ struct LocationPickerSheet: View {
                     }
                 }
             } catch {
-                print("Search error: \(error)")
+                print("[ERROR] [ERROR] Search error: \(error)")
                 await MainActor.run { self.suggestions = [] }
             }
         }
@@ -265,7 +270,7 @@ struct LocationPickerSheet: View {
                     }
                 }
             } catch {
-                print("Reverse geocode error: \(error)")
+                print("[ERROR] [ERROR] Reverse geocode error: \(error)")
                 await MainActor.run {
                     self.selectedPlaceName = String(format: "%.4f, %.4f", coordinate.latitude, coordinate.longitude)
                 }

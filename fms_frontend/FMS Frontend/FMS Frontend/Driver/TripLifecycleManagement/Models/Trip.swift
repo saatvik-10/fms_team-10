@@ -1,3 +1,8 @@
+//
+//  Trip.swift
+//  Created by Saatvik Madan
+//
+
 import Foundation
 import CoreLocation
 
@@ -41,11 +46,11 @@ struct TripStatusHelper {
     /// Resolves the trip status from backend data.
     ///
     /// Priority order:
-    /// 1. Backend says COMPLETED → `.completed`
-    /// 2. Backend says IN_TRANSIT → `.ongoing`
-    /// 3. Departure time has passed → `.ongoing`
-    /// 4. Departure time is in the future → `.scheduled`
-    /// 5. Fallback → `.scheduled`
+    /// 1. Backend says COMPLETED  `.completed`
+    /// 2. Backend says IN_TRANSIT  `.ongoing`
+    /// 3. Departure time has passed  `.ongoing`
+    /// 4. Departure time is in the future  `.scheduled`
+    /// 5. Fallback  `.scheduled`
     static func resolve(backendStatus: String?, departureRaw: String?) -> TripStatus {
         switch backendStatus?.uppercased() {
         case "COMPLETED":
@@ -107,7 +112,7 @@ struct LifecycleTrip: Identifiable {
     let sourceCoordinate: CLLocationCoordinate2D?
     let destinationCoordinate: CLLocationCoordinate2D?
 
-    /// Raw ISO-8601 departure string from backend — used for time-based gating.
+    /// Raw ISO-8601 departure string from backend  used for time-based gating.
     let rawDeparture: String?
 
     init(

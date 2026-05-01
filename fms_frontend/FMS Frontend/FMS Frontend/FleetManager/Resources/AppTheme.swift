@@ -1,3 +1,8 @@
+//
+//  AppTheme.swift
+//  Created by Saatvik Madan
+//
+
 import SwiftUI
 
 // Compatibility shim for FleetManager code that still references `AppTheme`.

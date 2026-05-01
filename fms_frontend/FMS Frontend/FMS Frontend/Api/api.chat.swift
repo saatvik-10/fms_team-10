@@ -1,10 +1,6 @@
-
 //
 //  api.chat.swift
-//  FMS Chat — API Definitions
-//
-//  ✅ DRAG THIS FILE into the `Api/` folder of your main project.
-//  This assumes you have an `APIClient` that uses an `Endpoint` enum.
+//  Created by Saatvik Madan
 //
 
 import Foundation
